@@ -36,4 +36,4 @@
 
 # Build directories
 build
-wasm/custom_emcc
+custom_emcc
