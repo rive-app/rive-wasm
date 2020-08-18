@@ -23,11 +23,12 @@ then
     # git fetch dans
     # git checkout -b dansmaster --track dans/master
     # get closure compiler
-    npm install
-    cd ../../
+    # npm install
+    cd ../../../../
 else
     cd emsdk
     source ./emsdk_env.sh
+    cd ../../
 fi
 
 # Note that you'll need to cd into custom_emcc/emsdk and run source
