@@ -48,7 +48,7 @@ public:
 
 	void reset() override { call<void>("reset"); }
 	// TODO: add commands like cubicTo, moveTo, etc...
-	void addPath(rive::RenderPath* path, const rive::Mat2D& transform) override
+	void addPath(rive::CommandPath* path, const rive::Mat2D& transform) override
 	{
 		call<void>("addPath", path, transform);
 	}
@@ -160,6 +160,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	    .function("align", &rive::Renderer::align)
 	    .allow_subclass<RendererWrapper>("RendererWrapper");
 
+	class_<rive::CommandPath>("CommandPath");
 	class_<rive::RenderPath>("RenderPath")
 	    .function("reset",
 	              &RenderPathWrapper::reset,

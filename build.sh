@@ -30,13 +30,13 @@ em++ -Oz --js-opts 0 -g1 \
     -fno-exceptions \
     -fno-rtti \
     -fno-unwind-tables \
-    -I../submodules/rive-cpp/rive/include \
+    -I../submodules/rive-cpp/include \
     --no-entry \
     --post-js ../js/marker.js \
-    ../submodules/rive-cpp/rive/src/*/*.cpp \
-    ../submodules/rive-cpp/rive/src/*.cpp \
-    ../submodules/rive-cpp/rive/src/core/field_types/*.cpp \
-    ../submodules/rive-cpp/rive/src/shapes/paint/*.cpp \
+    ../submodules/rive-cpp/src/*/*.cpp \
+    ../submodules/rive-cpp/src/*.cpp \
+    ../submodules/rive-cpp/src/core/field_types/*.cpp \
+    ../submodules/rive-cpp/src/shapes/paint/*.cpp \
     ../src/bindings.cpp
 
 awk 'NR==FNR { a[n++]=$0; next }
