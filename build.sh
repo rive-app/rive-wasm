@@ -47,4 +47,9 @@ if ! command -v terser &>/dev/null; then
     npm install terser -g
 fi
 terser --compress --mangle -o ./bin/release/rive.min.js -- ./bin/release/rive_combined.js
+
+# copy to publish folder
+cp ./bin/release/rive.min.js ../publish/rive.js
+cp ./bin/release/rive.wasm ../publish/rive.wasm
+
 popd &>/dev/null
