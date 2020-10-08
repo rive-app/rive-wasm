@@ -330,7 +330,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	        select_overload<float() const>(
 	            &rive::LinearAnimationInstance::time),
 	        select_overload<void(float)>(&rive::LinearAnimationInstance::time))
-	    .function("advance", &rive::LinearAnimationInstance::advance)
+	    .function("advance", select_overload<bool(float)>(&rive::LinearAnimationInstance::advance))
 	    .function("apply",
 	              &rive::LinearAnimationInstance::apply,
 	              allow_raw_pointers());
