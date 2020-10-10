@@ -1,0 +1,196 @@
+
+enum RenderPaintStyle
+{
+	"RenderPaintStyle::stroke",
+	"RenderPaintStyle::fill",
+};
+
+enum FillRule
+{
+	"FillRule::nonZero",
+	"FillRule::evenOdd",
+};
+
+enum StrokeJoin
+{
+	"StrokeJoin::miter",
+	"StrokeJoin::round",
+	"StrokeJoin::bevel",
+};
+
+enum StrokeCap
+{
+	"StrokeCap::butt",
+	"StrokeCap::round",
+	"StrokeCap::square",
+};
+
+enum BlendMode
+{
+	"BlendMode::srcOver",
+	"BlendMode::screen",
+	"BlendMode::overlay",
+	"BlendMode::darken",
+	"BlendMode::lighten",
+	"BlendMode::colorDodge",
+	"BlendMode::colorBurn",
+	"BlendMode::hardLight",
+	"BlendMode::softLight",
+	"BlendMode::difference",
+	"BlendMode::exclusion",
+	"BlendMode::multiply",
+	"BlendMode::hue",
+	"BlendMode::saturation",
+	"BlendMode::color",
+	"BlendMode::luminosity",
+};
+
+enum Fit
+{
+	"Fit::fill",
+	"Fit::contain",
+	"Fit::cover",
+	"Fit::fitWidth",
+	"Fit::fitHeight",
+	"Fit::none",
+	"Fit::scaleDown",
+};
+
+interface Alignment { void Alignment(double x, double y); };
+interface AABB
+{
+	void AABB(float minX, float minY, float maxX, float maxY);
+	float width();
+};
+
+interface Renderer
+{
+	void save();
+	void restore();
+	void align(Fit fit,
+	           [Ref] Alignment alignment,
+	           [Ref] AABB frame,
+	           [Ref] AABB content);
+};
+
+interface CommandPath{
+
+};
+
+interface RenderPath
+{
+	void reset();
+	void addPath(CommandPath path, [ Const, Ref ] Mat2D transform);
+	void moveTo(float x, float y);
+	void lineTo(float x, float y);
+	void cubicTo(float ox, float oy, float ix, float iy, float x, float y);
+	void close();
+	void fillRule(FillRule value);
+};
+
+RenderPath implements CommandPath;
+
+interface RenderPaint
+{
+	void style(RenderPaintStyle value);
+	void color(unsigned long value);
+	void thickness(float value);
+	void join(StrokeJoin value);
+	void cap(StrokeCap value);
+	void blendMode(BlendMode value);
+
+	void linearGradient(float sx, float sy, float ex, float ey);
+	void radialGradient(float sx, float sy, float ex, float ey);
+	void addStop(unsigned long color, float stop);
+	void completeGradient();
+};
+
+interface LinearAnimation
+{
+	long duration();
+	long fps();
+	void apply(Artboard artboard, float time, float mix);
+};
+
+interface LinearAnimationInstance
+{
+	float time();
+
+	boolean advance(float elapsedTime);
+	void apply(Artboard artboard, float mix);
+};
+
+interface LinearAnimationInstanceJS
+{
+	void LinearAnimationInstanceJS(LinearAnimation animation);
+	void setTime(float value);
+};
+
+LinearAnimationInstanceJS implements LinearAnimationInstance;
+
+interface Mat2D
+{
+	float xx();
+	float xy();
+	float yx();
+	float yy();
+	float tx();
+	float ty();
+};
+
+interface Artboard
+{
+	boolean advance(double seconds);
+	void draw(Renderer renderer);
+	[Value] AABB bounds();
+	// Animation animation(DOMString name);
+	// unsigned long animationCount();
+	// Animation animation(unsigned long index);
+};
+
+interface File
+{
+	Artboard artboard(DOMString name);
+	Artboard artboard();
+};
+
+interface RiveHelper
+{
+	static File makeFile(byte[] bytes, unsigned long numBytes);
+	static LinearAnimation animation(Artboard artboard, DOMString name);
+};
+
+[JSImplementation = "Renderer"] interface RendererJS {
+	void RendererJS();
+	void save();
+	void restore();
+	void transform([ Const, Ref ] Mat2D transform);
+  void drawPath(RenderPath? path, RenderPaint? paint);
+  void clipPath(RenderPath? path);
+};
+
+[JSImplementation = "RenderPath"] interface RenderPathJS {
+	void RenderPathJS();
+	void reset();
+	void addPath(CommandPath path, [ Const, Ref ] Mat2D transform);
+	void moveTo(float x, float y);
+	void lineTo(float x, float y);
+	void cubicTo(float ox, float oy, float ix, float iy, float x, float y);
+	void close();
+	void fillRule(FillRule value);
+};
+
+[JSImplementation = "RenderPaint"] interface RenderPaintJS {
+	void RenderPaintJS();
+	void style(RenderPaintStyle value);
+	void color(unsigned long value);
+	void thickness(float value);
+	void join(StrokeJoin value);
+	void cap(StrokeCap value);
+	void blendMode(BlendMode value);
+
+	void linearGradient(float sx, float sy, float ex, float ey);
+	void radialGradient(float sx, float sy, float ex, float ey);
+	void addStop(unsigned long color, float stop);
+	void completeGradient();
+};

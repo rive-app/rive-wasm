@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Animation</title>
+    <script src="build/bin/release/rive.js"></script>
+</head>
+
+<body>
+
+    <canvas id="myCanvas" width=512 height=512></canvas>
+    <script>
+        Rive({
+            locateFile: (file) => "build/bin/release/" + file,
+        }).then((module) => {
+
+            const {
+                RendererJS,
+                RiveHelper,
+                RenderPaintJS,
+                RenderPathJS,
+                Mat2D,
+                AABB,
+                Alignment,
+                LinearAnimationInstanceJS,
+                getCache,
+            } = module;
+
+            const LinearAnimationInstance = LinearAnimationInstanceJS;
+
+            const {
+                _emscripten_enum_RenderPaintStyle_fill,
+                _emscripten_enum_RenderPaintStyle_stroke,
+
+                _emscripten_enum_FillRule_nonZero,
+                _emscripten_enum_FillRule_evenOdd,
+
+                _emscripten_enum_StrokeJoin_miter,
+                _emscripten_enum_StrokeJoin_round,
+                _emscripten_enum_StrokeJoin_bevel,
+
+                _emscripten_enum_StrokeCap_butt,
+                _emscripten_enum_StrokeCap_round,
+                _emscripten_enum_StrokeCap_square,
+
+                _emscripten_enum_BlendMode_srcOver,
+                _emscripten_enum_BlendMode_screen,
+                _emscripten_enum_BlendMode_overlay,
+                _emscripten_enum_BlendMode_darken,
+                _emscripten_enum_BlendMode_lighten,
+                _emscripten_enum_BlendMode_colorDodge,
+                _emscripten_enum_BlendMode_colorBurn,
+                _emscripten_enum_BlendMode_hardLight,
+                _emscripten_enum_BlendMode_softLight,
+                _emscripten_enum_BlendMode_difference,
+                _emscripten_enum_BlendMode_exclusion,
+                _emscripten_enum_BlendMode_multiply,
+                _emscripten_enum_BlendMode_hue,
+                _emscripten_enum_BlendMode_saturation,
+                _emscripten_enum_BlendMode_color,
+                _emscripten_enum_BlendMode_luminosity,
+
+                _emscripten_enum_Fit_fill,
+                _emscripten_enum_Fit_contain,
+                _emscripten_enum_Fit_cover,
+                _emscripten_enum_Fit_fitWidth,
+                _emscripten_enum_Fit_fitHeight,
+                _emscripten_enum_Fit_none,
+                _emscripten_enum_Fit_scaleDown,
+            } = module;
+
+            const RenderPaintStyle = {
+                fill: _emscripten_enum_RenderPaintStyle_fill(),
+                stroke: _emscripten_enum_RenderPaintStyle_stroke(),
+            };
+
+            const FillRule = {
+                nonZero: _emscripten_enum_FillRule_nonZero(),
+                evenOdd: _emscripten_enum_FillRule_evenOdd(),
+            };
+
+            const StrokeJoin = {
+                miter: _emscripten_enum_StrokeJoin_miter(),
+                round: _emscripten_enum_StrokeJoin_round(),
+                bevel: _emscripten_enum_StrokeJoin_bevel()
+            };
+
+            const StrokeCap = {
+                butt: _emscripten_enum_StrokeCap_butt(),
+                round: _emscripten_enum_StrokeCap_round(),
+                square: _emscripten_enum_StrokeCap_square()
+            };
+
+            const BlendMode = {
+                srcOver: _emscripten_enum_BlendMode_srcOver(),
+                screen: _emscripten_enum_BlendMode_screen(),
+                overlay: _emscripten_enum_BlendMode_overlay(),
+                darken: _emscripten_enum_BlendMode_darken(),
+                lighten: _emscripten_enum_BlendMode_lighten(),
+                colorDodge: _emscripten_enum_BlendMode_colorDodge(),
+                colorBurn: _emscripten_enum_BlendMode_colorBurn(),
+                hardLight: _emscripten_enum_BlendMode_hardLight(),
+                softLight: _emscripten_enum_BlendMode_softLight(),
+                difference: _emscripten_enum_BlendMode_difference(),
+                exclusion: _emscripten_enum_BlendMode_exclusion(),
+                multiply: _emscripten_enum_BlendMode_multiply(),
+                hue: _emscripten_enum_BlendMode_hue(),
+                saturation: _emscripten_enum_BlendMode_saturation(),
+                color: _emscripten_enum_BlendMode_color(),
+                luminosity: _emscripten_enum_BlendMode_luminosity()
+            };
+
+            const Fit = {
+                fill: _emscripten_enum_Fit_fill(),
+                contain: _emscripten_enum_Fit_contain(),
+                cover: _emscripten_enum_Fit_cover(),
+                fitWidth: _emscripten_enum_Fit_fitWidth(),
+                fitHeight: _emscripten_enum_Fit_fitHeight(),
+                none: _emscripten_enum_Fit_none(),
+                scaleDown: _emscripten_enum_Fit_scaleDown(),
+            };
+
+
+            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+
+            const {
+                xx,
+                xy,
+                yx,
+                yy,
+                tx,
+                ty
+            } = Mat2D.prototype;
+
+            function _makeMatrix(ptr) {
+                const ref = {
+                    ptr
+                };
+
+                var m = svg.createSVGMatrix();
+                m.a = xx.call(ref);
+                m.b = xy.call(ref);
+                m.c = yx.call(ref);
+                m.d = yy.call(ref);
+                m.e = tx.call(ref);
+                m.f = ty.call(ref);
+                return m;
+            }
+
+            function _colorStyle(value) {
+                return 'rgba(' + ((0x00ff0000 & value) >>>
+                        16) + ',' + ((0x0000ff00 &
+                        value) >>> 8) + ',' + ((0x000000ff & value) >>> 0) + ',' +
+                    (((0xff000000 & value) >>> 24) / 0xFF) + ')'
+            }
+
+            const renderPathCache = getCache(RenderPathJS);
+            const renderPaintCache = getCache(RenderPaintJS);
+
+            class CanvasRenderer extends RendererJS {
+                constructor(ctx) {
+                    super();
+                    this._ctx = ctx;
+                }
+                save() {
+                    this._ctx.save();
+                }
+
+                restore() {
+                    this._ctx.restore();
+                }
+
+                transform(ptr) {
+
+                    const ref = {
+                        ptr
+                    };
+
+                    this._ctx.transform(xx.call(ref), xy.call(ref), yx.call(ref), yy.call(ref), tx.call(
+                            ref),
+                        ty.call(ref));
+                }
+
+                drawPath(pptr, ppaint) {
+                    const path = renderPathCache[pptr];
+                    const paint = renderPaintCache[ppaint];
+                    paint.draw(this._ctx, path);
+                }
+
+                clipPath(pptr) {
+                    const path = renderPathCache[pptr];
+                    this._ctx.clip(path._path2D, path._fillRule === module.evenOdd ? 'evenodd' : 'nonzero');
+                }
+            }
+
+            class CanvasRenderPath extends RenderPathJS {
+                constructor() {
+                    super();
+                    this._path2D = new Path2D();
+                }
+
+                reset() {
+                    this._path2D = new Path2D();
+                }
+
+                addPath(path, m2d) {
+                    this._path2D.addPath(renderPathCache[path]._path2D, _makeMatrix(m2d));
+                }
+                fillRule(fillRule) {
+                    this._fillRule = fillRule;
+                }
+
+                moveTo(x, y) {
+                    this._path2D.moveTo(x, y);
+                }
+
+                lineTo(x, y) {
+                    this._path2D.lineTo(x, y);
+                }
+
+                cubicTo(ox, oy, ix, iy, x, y) {
+                    this._path2D.bezierCurveTo(ox, oy, ix, iy, x, y);
+                }
+
+                close() {
+                    this._path2D.closePath();
+                }
+            }
+
+            class CanvasRenderPaint extends RenderPaintJS {
+                constructor() {
+                    super();
+                }
+                color(value) {
+                    this._value = _colorStyle(value);
+                }
+                thickness(value) {
+                    this._thickness = value;
+                }
+                join(value) {
+                    switch (value) {
+                        case StrokeJoin.miter:
+                            this._join = 'miter';
+                            break;
+                        case StrokeJoin.round:
+                            this._join = 'round';
+                            break;
+                        case StrokeJoin.bevel:
+                            this._join = 'bevel';
+                            break;
+                    }
+                }
+                cap(value) {
+                    switch (value) {
+                        case StrokeCap.butt:
+                            this._cap = 'butt';
+                            break;
+                        case StrokeCap.round:
+                            this._cap = 'round';
+                            break;
+                        case StrokeCap.square:
+                            this._cap = 'square';
+                            break;
+                    }
+                }
+                style(value) {
+                    this._style = value;
+                }
+                blendMode(value) {
+                    switch (value) {
+                        case BlendMode.srcOver:
+                            this._blend = 'source-over';
+                            break;
+                        case BlendMode.screen:
+                            this._blend = 'screen';
+                            break;
+                        case BlendMode.overlay:
+                            this._blend = 'overlay';
+                            break;
+                        case BlendMode.darken:
+                            this._blend = 'darken';
+                            break;
+                        case BlendMode.lighten:
+                            this._blend = 'lighten';
+                            break;
+                        case BlendMode.colorDodge:
+                            this._blend = 'color-dodge';
+                            break;
+                        case BlendMode.colorBurn:
+                            this._blend = 'color-burn';
+                            break;
+                        case BlendMode.hardLight:
+                            this._blend = 'hard-light';
+                            break;
+                        case BlendMode.softLight:
+                            this._blend = 'soft-light';
+                            break;
+                        case BlendMode.difference:
+                            this._blend = 'difference';
+                            break;
+                        case BlendMode.exclusion:
+                            this._blend = 'exclusion';
+                            break;
+                        case BlendMode.multiply:
+                            this._blend = 'multiply';
+                            break;
+                        case BlendMode.hue:
+                            this._blend = 'hue';
+                            break;
+                        case BlendMode.saturation:
+                            this._blend = 'saturation';
+                            break;
+                        case BlendMode.color:
+                            this._blend = 'color';
+                            break;
+                        case BlendMode.luminosity:
+                            this._blend = 'luminosity';
+                            break;
+                    }
+                }
+                linearGradient(sx, sy, ex, ey) {
+                    this._gradient = {
+                        sx,
+                        sy,
+                        ex,
+                        ey,
+                        stops: []
+                    };
+                }
+                radialGradient(sx, sy, ex, ey) {
+                    this._gradient = {
+                        sx,
+                        sy,
+                        ex,
+                        ey,
+                        stops: [],
+                        isRadial: true
+                    };
+                }
+                addStop(color, stop) {
+                    this._gradient.stops.push({
+                        color,
+                        stop
+                    });
+                }
+
+                completeGradient() {
+
+                }
+
+                draw(ctx, path) {
+                    let {
+                        _style,
+                        _value,
+                        _gradient,
+                        _blend
+                    } = this;
+
+                    ctx.globalCompositeOperation = _blend;
+
+                    if (_gradient != null) {
+                        const {
+                            sx,
+                            sy,
+                            ex,
+                            ey,
+                            stops,
+                            isRadial
+                        } = _gradient;
+
+                        if (isRadial) {
+                            var dx = ex - sx;
+                            var dy = ey - sy;
+                            var radius = Math.sqrt(dx * dx + dy * dy);
+                            _value = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
+                        } else {
+                            _value = ctx.createLinearGradient(sx, sy, ex, ey);
+                        }
+                        for (var value of stops) {
+                            const {
+                                stop,
+                                color
+                            } = value;
+                            _value.addColorStop(stop, _colorStyle(color));
+                        }
+                        this._value = _value;
+                        this._gradient = null;
+                    }
+                    switch (_style) {
+                        case RenderPaintStyle.stroke:
+                            ctx.strokeStyle = _value;
+                            ctx.lineWidth = this._thickness;
+                            ctx.lineCap = this._cap;
+                            ctx.lineJoin = this._join;
+                            ctx.stroke(path._path2D);
+                            break;
+                        case RenderPaintStyle.fill:
+                            ctx.fillStyle = _value;
+                            ctx.fill(path._path2D);
+                            break;
+                    }
+                }
+            }
+
+            module.makeRenderPaint = function () {
+                return new CanvasRenderPaint();
+            };
+            module.makeRenderPath = function () {
+                return new CanvasRenderPath();
+            };
+
+            const assetRequest = new Request('../assets/open_source.riv');
+
+            Alignment.center = new Alignment(0, 0);
+
+            fetch(assetRequest).then(function (response) {
+                return response.arrayBuffer();
+            }).then(function (buffer) {
+
+                // var r = new CanvasRenderer();
+                // // console.log("R", r);
+                // r.save();
+
+                const array8 = new Uint8Array(buffer);
+                const file = RiveHelper.prototype.makeFile(array8, array8.length);
+
+                // Get the default artboard.
+                const artboard = file.artboard();
+
+
+                artboard.__proto__.animation = function (name) {
+                    return RiveHelper.prototype.animation(this, name);
+                };
+                const animation = artboard.animation("Untitled 1");
+                // const animation = artboard.animation("Untitled 1");
+                // // const dayNight = artboard.animation("day_night");
+                // // // Make an animation instance (stores time and direction state
+                // // // for a single animation). Make sure to call .delete on this
+                // // // object when you are done with it.
+                const animationInstance = new LinearAnimationInstance(animation);
+
+                const canvas = document.getElementById("myCanvas");
+                const ctx = canvas.getContext("2d");
+
+                const renderer = new CanvasRenderer(ctx);
+                artboard.advance(0);
+
+
+                ctx.save();
+                renderer.align(Fit.contain, Alignment.center, new AABB(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                ), artboard.bounds());
+                artboard.draw(renderer);
+                ctx.restore();
+
+                let lastTime = 0;
+                function drawFrame(time) {
+                    if (!lastTime) {
+                        lastTime = time;
+                    }
+                    const elapsedSeconds = (time - lastTime) / 1000;
+                    lastTime = time;
+
+                    animationInstance.advance(elapsedSeconds);
+                    animationInstance.apply(artboard, 1.0);
+
+                    artboard.advance(elapsedSeconds);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.save();
+
+                    renderer.align(Fit.contain, Alignment.center, new AABB(
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    ), artboard.bounds());
+                    artboard.draw(renderer);
+                    ctx.restore();
+
+                    requestAnimationFrame(drawFrame);
+                }
+                requestAnimationFrame(drawFrame);
+            });
+        });
+    </script>
+</body>
+
+</html>
