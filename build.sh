@@ -26,6 +26,7 @@ em++ -Oz --js-opts 0 -g1 \
     -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 \
     -DSINGLE \
     -DANSI_DECLARATORS \
+    -DNDEBUG \
     -Wno-c++17-extensions \
     -fno-exceptions \
     -fno-rtti \
