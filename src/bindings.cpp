@@ -1,12 +1,17 @@
 #include "animation/linear_animation.hpp"
 #include "animation/linear_animation_instance.hpp"
 #include "artboard.hpp"
+#include "bones/bone.hpp"
+#include "bones/root_bone.hpp"
+#include "component.hpp"
+#include "core.hpp"
 #include "core/binary_reader.hpp"
 #include "file.hpp"
 #include "layout.hpp"
 #include "math/mat2d.hpp"
 #include "node.hpp"
 #include "renderer.hpp"
+#include "transform_component.hpp"
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -290,7 +295,16 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	class_<rive::Artboard>("Artboard")
 	    .function("advance", &rive::Artboard::advance)
 	    .function("draw", &rive::Artboard::draw, allow_raw_pointers())
-	    .function("node", &rive::Artboard::node, allow_raw_pointers())
+	    .function("transformComponent",
+	              &rive::Artboard::find<rive::TransformComponent>,
+	              allow_raw_pointers())
+	    .function(
+	        "node", &rive::Artboard::find<rive::Node>, allow_raw_pointers())
+	    .function(
+	        "bone", &rive::Artboard::find<rive::Bone>, allow_raw_pointers())
+	    .function("rootBone",
+	              &rive::Artboard::find<rive::RootBone>,
+	              allow_raw_pointers())
 	    .function(
 	        "animation",
 	        optional_override([](rive::Artboard& artboard,
@@ -307,13 +321,44 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	    .function("animationCount", &rive::Artboard::animationCount)
 	    .property("bounds", &rive::Artboard::bounds);
 
-	class_<rive::Node>("Node")
+	class_<rive::TransformComponent>
+	    ("TransformComponent")
+	        .property(
+	            "scaleX",
+	            select_overload<float() const>(
+	                &rive::TransformComponent::scaleX),
+	            select_overload<void(float)>(&rive::TransformComponent::scaleX))
+	        .property(
+	            "scaleY",
+	            select_overload<float() const>(
+	                &rive::TransformComponent::scaleY),
+	            select_overload<void(float)>(&rive::TransformComponent::scaleY))
+	        .property("rotation",
+	                  select_overload<float() const>(
+	                      &rive::TransformComponent::rotation),
+	                  select_overload<void(float)>(
+	                      &rive::TransformComponent::rotation));
+
+	class_<rive::Node, base<rive::TransformComponent>>("Node")
 	    .property("x",
-	              select_overload<float() const>(&rive::Node::x),
+	              select_overload<float() const>(&rive::TransformComponent::x),
 	              select_overload<void(float)>(&rive::Node::x))
 	    .property("y",
-	              select_overload<float() const>(&rive::Node::y),
+	              select_overload<float() const>(&rive::TransformComponent::y),
 	              select_overload<void(float)>(&rive::Node::y));
+
+	class_<rive::Bone, base<rive::TransformComponent>>("Bone").property(
+	    "length",
+	    select_overload<float() const>(&rive::Bone::length),
+	    select_overload<void(float)>(&rive::Bone::length));
+
+	class_<rive::RootBone, base<rive::Bone>>("RootBone")
+	    .property("x",
+	              select_overload<float() const>(&rive::TransformComponent::x),
+	              select_overload<void(float)>(&rive::RootBone::x))
+	    .property("y",
+	              select_overload<float() const>(&rive::TransformComponent::y),
+	              select_overload<void(float)>(&rive::RootBone::y));
 
 	class_<rive::LinearAnimation>("LinearAnimation")
 	    .property(
@@ -330,7 +375,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	        select_overload<float() const>(
 	            &rive::LinearAnimationInstance::time),
 	        select_overload<void(float)>(&rive::LinearAnimationInstance::time))
-	    .function("advance", select_overload<bool(float)>(&rive::LinearAnimationInstance::advance))
+	    .function("advance",
+	              select_overload<bool(float)>(
+	                  &rive::LinearAnimationInstance::advance))
 	    .function("apply",
 	              &rive::LinearAnimationInstance::apply,
 	              allow_raw_pointers());
