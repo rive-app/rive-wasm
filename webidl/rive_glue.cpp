@@ -5,6 +5,7 @@
 #include "file.hpp"
 #include "math/mat2d.hpp"
 #include "renderer.hpp"
+#include "transform_component.hpp"
 
 using namespace rive;
 
@@ -23,13 +24,20 @@ public:
 	{
 		return artboard->animation<LinearAnimation>(name);
 	}
+
+	static TransformComponent* transformComponent(Artboard* artboard,
+	                                              std::string name)
+	{
+		return artboard->find<TransformComponent>(name);
+	}
 };
 
 class LinearAnimationInstanceJS : public LinearAnimationInstance
 {
 public:
-	LinearAnimationInstanceJS(LinearAnimation* animation) : LinearAnimationInstance(animation) {
-
+	LinearAnimationInstanceJS(LinearAnimation* animation) :
+	    LinearAnimationInstance(animation)
+	{
 	}
 	void setTime(float value) { time(value); }
 };

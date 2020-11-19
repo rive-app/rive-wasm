@@ -611,6 +611,51 @@ File.prototype['artboard'] = File.prototype.artboard = /** @suppress {undefinedV
   var self = this.ptr;
   _emscripten_bind_File___destroy___0(self);
 };
+// TransformComponent
+/** @suppress {undefinedVars, duplicate} @this{Object} */function TransformComponent() { throw "cannot construct a TransformComponent, no constructor in IDL" }
+TransformComponent.prototype = Object.create(WrapperObject.prototype);
+TransformComponent.prototype.constructor = TransformComponent;
+TransformComponent.prototype.__class__ = TransformComponent;
+TransformComponent.__cache__ = {};
+Module['TransformComponent'] = TransformComponent;
+
+TransformComponent.prototype['scaleX'] = TransformComponent.prototype.scaleX = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_TransformComponent_scaleX_0(self);
+};;
+
+TransformComponent.prototype['scaleY'] = TransformComponent.prototype.scaleY = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_TransformComponent_scaleY_0(self);
+};;
+
+TransformComponent.prototype['setScaleX'] = TransformComponent.prototype.setScaleX = /** @suppress {undefinedVars, duplicate} @this{Object} */function(value) {
+  var self = this.ptr;
+  if (value && typeof value === 'object') value = value.ptr;
+  _emscripten_bind_TransformComponent_setScaleX_1(self, value);
+};;
+
+TransformComponent.prototype['setScaleY'] = TransformComponent.prototype.setScaleY = /** @suppress {undefinedVars, duplicate} @this{Object} */function(value) {
+  var self = this.ptr;
+  if (value && typeof value === 'object') value = value.ptr;
+  _emscripten_bind_TransformComponent_setScaleY_1(self, value);
+};;
+
+TransformComponent.prototype['rotation'] = TransformComponent.prototype.rotation = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_TransformComponent_rotation_0(self);
+};;
+
+TransformComponent.prototype['setRotation'] = TransformComponent.prototype.setRotation = /** @suppress {undefinedVars, duplicate} @this{Object} */function(value) {
+  var self = this.ptr;
+  if (value && typeof value === 'object') value = value.ptr;
+  _emscripten_bind_TransformComponent_setRotation_1(self, value);
+};;
+
+  TransformComponent.prototype['__destroy__'] = TransformComponent.prototype.__destroy__ = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {
+  var self = this.ptr;
+  _emscripten_bind_TransformComponent___destroy___0(self);
+};
 // RiveHelper
 /** @suppress {undefinedVars, duplicate} @this{Object} */function RiveHelper() { throw "cannot construct a RiveHelper, no constructor in IDL" }
 RiveHelper.prototype = Object.create(WrapperObject.prototype);
@@ -634,6 +679,15 @@ RiveHelper.prototype['animation'] = RiveHelper.prototype.animation = /** @suppre
   if (name && typeof name === 'object') name = name.ptr;
   else name = ensureString(name);
   return wrapPointer(_emscripten_bind_RiveHelper_animation_2(self, artboard, name), LinearAnimation);
+};;
+
+RiveHelper.prototype['transformComponent'] = RiveHelper.prototype.transformComponent = /** @suppress {undefinedVars, duplicate} @this{Object} */function(artboard, name) {
+  var self = this.ptr;
+  ensureCache.prepare();
+  if (artboard && typeof artboard === 'object') artboard = artboard.ptr;
+  if (name && typeof name === 'object') name = name.ptr;
+  else name = ensureString(name);
+  return wrapPointer(_emscripten_bind_RiveHelper_transformComponent_2(self, artboard, name), TransformComponent);
 };;
 
   RiveHelper.prototype['__destroy__'] = RiveHelper.prototype.__destroy__ = /** @suppress {undefinedVars, duplicate} @this{Object} */function() {

@@ -461,6 +461,36 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_File___destroy___0(File* self) {
   delete self;
 }
 
+// TransformComponent
+
+float EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_scaleX_0(TransformComponent* self) {
+  return self->scaleX();
+}
+
+float EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_scaleY_0(TransformComponent* self) {
+  return self->scaleY();
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_setScaleX_1(TransformComponent* self, float value) {
+  self->scaleX(value);
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_setScaleY_1(TransformComponent* self, float value) {
+  self->scaleY(value);
+}
+
+float EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_rotation_0(TransformComponent* self) {
+  return self->rotation();
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent_setRotation_1(TransformComponent* self, float value) {
+  self->rotation(value);
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_TransformComponent___destroy___0(TransformComponent* self) {
+  delete self;
+}
+
 // RiveHelper
 
 File* EMSCRIPTEN_KEEPALIVE emscripten_bind_RiveHelper_makeFile_2(RiveHelper* self, char* bytes, unsigned int numBytes) {
@@ -469,6 +499,10 @@ File* EMSCRIPTEN_KEEPALIVE emscripten_bind_RiveHelper_makeFile_2(RiveHelper* sel
 
 LinearAnimation* EMSCRIPTEN_KEEPALIVE emscripten_bind_RiveHelper_animation_2(RiveHelper* self, Artboard* artboard, char* name) {
   return self->animation(artboard, name);
+}
+
+TransformComponent* EMSCRIPTEN_KEEPALIVE emscripten_bind_RiveHelper_transformComponent_2(RiveHelper* self, Artboard* artboard, char* name) {
+  return self->transformComponent(artboard, name);
 }
 
 void EMSCRIPTEN_KEEPALIVE emscripten_bind_RiveHelper___destroy___0(RiveHelper* self) {

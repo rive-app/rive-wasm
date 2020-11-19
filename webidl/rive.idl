@@ -154,10 +154,22 @@ interface File
 	Artboard artboard();
 };
 
+interface TransformComponent
+{
+	float scaleX();
+	float scaleY();
+	void setScaleX(float value);
+	void setScaleY(float value);
+	float rotation();
+	void setRotation(float value);
+};
+
 interface RiveHelper
 {
 	static File makeFile(byte[] bytes, unsigned long numBytes);
 	static LinearAnimation animation(Artboard artboard, DOMString name);
+	static TransformComponent transformComponent(Artboard artboard,
+	                                             DOMString name);
 };
 
 [JSImplementation = "Renderer"] interface RendererJS {

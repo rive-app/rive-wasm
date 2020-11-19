@@ -7,13 +7,11 @@
 </head>
 
 <body>
-
-    <canvas id="myCanvas" width=512 height=512></canvas>
+    <canvas id="myCanvas" width="512" height="512"></canvas>
     <script>
         Rive({
             locateFile: (file) => "build/bin/release/" + file,
         }).then((module) => {
-
             const {
                 RendererJS,
                 RiveHelper,
@@ -82,13 +80,13 @@
             const StrokeJoin = {
                 miter: _emscripten_enum_StrokeJoin_miter(),
                 round: _emscripten_enum_StrokeJoin_round(),
-                bevel: _emscripten_enum_StrokeJoin_bevel()
+                bevel: _emscripten_enum_StrokeJoin_bevel(),
             };
 
             const StrokeCap = {
                 butt: _emscripten_enum_StrokeCap_butt(),
                 round: _emscripten_enum_StrokeCap_round(),
-                square: _emscripten_enum_StrokeCap_square()
+                square: _emscripten_enum_StrokeCap_square(),
             };
 
             const BlendMode = {
@@ -107,7 +105,7 @@
                 hue: _emscripten_enum_BlendMode_hue(),
                 saturation: _emscripten_enum_BlendMode_saturation(),
                 color: _emscripten_enum_BlendMode_color(),
-                luminosity: _emscripten_enum_BlendMode_luminosity()
+                luminosity: _emscripten_enum_BlendMode_luminosity(),
             };
 
             const Fit = {
@@ -120,8 +118,7 @@
                 scaleDown: _emscripten_enum_Fit_scaleDown(),
             };
 
-
-            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
             const {
                 xx,
@@ -134,7 +131,7 @@
 
             function _makeMatrix(ptr) {
                 const ref = {
-                    ptr
+                    ptr,
                 };
 
                 var m = svg.createSVGMatrix();
@@ -148,10 +145,17 @@
             }
 
             function _colorStyle(value) {
-                return 'rgba(' + ((0x00ff0000 & value) >>>
-                        16) + ',' + ((0x0000ff00 &
-                        value) >>> 8) + ',' + ((0x000000ff & value) >>> 0) + ',' +
-                    (((0xff000000 & value) >>> 24) / 0xFF) + ')'
+                return (
+                    "rgba(" +
+                    ((0x00ff0000 & value) >>> 16) +
+                    "," +
+                    ((0x0000ff00 & value) >>> 8) +
+                    "," +
+                    ((0x000000ff & value) >>> 0) +
+                    "," +
+                    ((0xff000000 & value) >>> 24) / 0xff +
+                    ")"
+                );
             }
 
             const renderPathCache = getCache(RenderPathJS);
@@ -171,14 +175,18 @@
                 }
 
                 transform(ptr) {
-
                     const ref = {
-                        ptr
+                        ptr,
                     };
 
-                    this._ctx.transform(xx.call(ref), xy.call(ref), yx.call(ref), yy.call(ref), tx.call(
-                            ref),
-                        ty.call(ref));
+                    this._ctx.transform(
+                        xx.call(ref),
+                        xy.call(ref),
+                        yx.call(ref),
+                        yy.call(ref),
+                        tx.call(ref),
+                        ty.call(ref)
+                    );
                 }
 
                 drawPath(pptr, ppaint) {
@@ -189,7 +197,10 @@
 
                 clipPath(pptr) {
                     const path = renderPathCache[pptr];
-                    this._ctx.clip(path._path2D, path._fillRule === module.evenOdd ? 'evenodd' : 'nonzero');
+                    this._ctx.clip(
+                        path._path2D,
+                        path._fillRule === module.evenOdd ? "evenodd" : "nonzero"
+                    );
                 }
             }
 
@@ -204,7 +215,10 @@
                 }
 
                 addPath(path, m2d) {
-                    this._path2D.addPath(renderPathCache[path]._path2D, _makeMatrix(m2d));
+                    this._path2D.addPath(
+                        renderPathCache[path]._path2D,
+                        _makeMatrix(m2d)
+                    );
                 }
                 fillRule(fillRule) {
                     this._fillRule = fillRule;
@@ -240,26 +254,26 @@
                 join(value) {
                     switch (value) {
                         case StrokeJoin.miter:
-                            this._join = 'miter';
+                            this._join = "miter";
                             break;
                         case StrokeJoin.round:
-                            this._join = 'round';
+                            this._join = "round";
                             break;
                         case StrokeJoin.bevel:
-                            this._join = 'bevel';
+                            this._join = "bevel";
                             break;
                     }
                 }
                 cap(value) {
                     switch (value) {
                         case StrokeCap.butt:
-                            this._cap = 'butt';
+                            this._cap = "butt";
                             break;
                         case StrokeCap.round:
-                            this._cap = 'round';
+                            this._cap = "round";
                             break;
                         case StrokeCap.square:
-                            this._cap = 'square';
+                            this._cap = "square";
                             break;
                     }
                 }
@@ -269,52 +283,52 @@
                 blendMode(value) {
                     switch (value) {
                         case BlendMode.srcOver:
-                            this._blend = 'source-over';
+                            this._blend = "source-over";
                             break;
                         case BlendMode.screen:
-                            this._blend = 'screen';
+                            this._blend = "screen";
                             break;
                         case BlendMode.overlay:
-                            this._blend = 'overlay';
+                            this._blend = "overlay";
                             break;
                         case BlendMode.darken:
-                            this._blend = 'darken';
+                            this._blend = "darken";
                             break;
                         case BlendMode.lighten:
-                            this._blend = 'lighten';
+                            this._blend = "lighten";
                             break;
                         case BlendMode.colorDodge:
-                            this._blend = 'color-dodge';
+                            this._blend = "color-dodge";
                             break;
                         case BlendMode.colorBurn:
-                            this._blend = 'color-burn';
+                            this._blend = "color-burn";
                             break;
                         case BlendMode.hardLight:
-                            this._blend = 'hard-light';
+                            this._blend = "hard-light";
                             break;
                         case BlendMode.softLight:
-                            this._blend = 'soft-light';
+                            this._blend = "soft-light";
                             break;
                         case BlendMode.difference:
-                            this._blend = 'difference';
+                            this._blend = "difference";
                             break;
                         case BlendMode.exclusion:
-                            this._blend = 'exclusion';
+                            this._blend = "exclusion";
                             break;
                         case BlendMode.multiply:
-                            this._blend = 'multiply';
+                            this._blend = "multiply";
                             break;
                         case BlendMode.hue:
-                            this._blend = 'hue';
+                            this._blend = "hue";
                             break;
                         case BlendMode.saturation:
-                            this._blend = 'saturation';
+                            this._blend = "saturation";
                             break;
                         case BlendMode.color:
-                            this._blend = 'color';
+                            this._blend = "color";
                             break;
                         case BlendMode.luminosity:
-                            this._blend = 'luminosity';
+                            this._blend = "luminosity";
                             break;
                     }
                 }
@@ -324,7 +338,7 @@
                         sy,
                         ex,
                         ey,
-                        stops: []
+                        stops: [],
                     };
                 }
                 radialGradient(sx, sy, ex, ey) {
@@ -334,19 +348,17 @@
                         ex,
                         ey,
                         stops: [],
-                        isRadial: true
+                        isRadial: true,
                     };
                 }
                 addStop(color, stop) {
                     this._gradient.stops.push({
                         color,
-                        stop
+                        stop,
                     });
                 }
 
-                completeGradient() {
-
-                }
+                completeGradient() {}
 
                 draw(ctx, path) {
                     let {
@@ -409,82 +421,102 @@
                 return new CanvasRenderPath();
             };
 
-            const assetRequest = new Request('../assets/open_source.riv');
+            const assetRequest = new Request("../assets/animation_playground.riv");
 
             Alignment.center = new Alignment(0, 0);
 
-            fetch(assetRequest).then(function (response) {
-                return response.arrayBuffer();
-            }).then(function (buffer) {
+            fetch(assetRequest)
+                .then(function (response) {
+                    return response.arrayBuffer();
+                })
+                .then(function (buffer) {
+                    // var r = new CanvasRenderer();
+                    // // console.log("R", r);
+                    // r.save();
 
-                // var r = new CanvasRenderer();
-                // // console.log("R", r);
-                // r.save();
+                    const array8 = new Uint8Array(buffer);
+                    const file = RiveHelper.prototype.makeFile(array8, array8.length);
 
-                const array8 = new Uint8Array(buffer);
-                const file = RiveHelper.prototype.makeFile(array8, array8.length);
+                    // Get the default artboard.
+                    const artboard = file.artboard();
 
-                // Get the default artboard.
-                const artboard = file.artboard();
+                    artboard.__proto__.animation = function (name) {
+                        const animation = RiveHelper.prototype.animation(this, name);
+                        if (animation.ptr === 0) {
+                            return null;
+                        }
+                        return animation;
+                    };
+                    artboard.__proto__.transformComponent = function (name) {
+                        const component = RiveHelper.prototype.transformComponent(
+                            this,
+                            name
+                        );
+                        if (component.ptr === 0) {
+                            return null;
+                        }
+                        return component;
+                    };
+                    const scaleMe = artboard.transformComponent("ScaleMe");
+                    console.log("GOT SCALEME?", scaleMe, scaleMe.scaleX());
 
+                    const animation = artboard.animation("Untitled 1");
+                    // const animation = artboard.animation("Untitled 1");
+                    // // const dayNight = artboard.animation("day_night");
+                    // // // Make an animation instance (stores time and direction state
+                    // // // for a single animation). Make sure to call .delete on this
+                    // // // object when you are done with it.
+                    const animationInstance = new LinearAnimationInstance(animation);
 
-                artboard.__proto__.animation = function (name) {
-                    return RiveHelper.prototype.animation(this, name);
-                };
-                const animation = artboard.animation("Untitled 1");
-                // const animation = artboard.animation("Untitled 1");
-                // // const dayNight = artboard.animation("day_night");
-                // // // Make an animation instance (stores time and direction state
-                // // // for a single animation). Make sure to call .delete on this
-                // // // object when you are done with it.
-                const animationInstance = new LinearAnimationInstance(animation);
+                    const canvas = document.getElementById("myCanvas");
+                    const ctx = canvas.getContext("2d");
 
-                const canvas = document.getElementById("myCanvas");
-                const ctx = canvas.getContext("2d");
+                    const renderer = new CanvasRenderer(ctx);
+                    artboard.advance(0);
 
-                const renderer = new CanvasRenderer(ctx);
-                artboard.advance(0);
-
-
-                ctx.save();
-                renderer.align(Fit.contain, Alignment.center, new AABB(
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                ), artboard.bounds());
-                artboard.draw(renderer);
-                ctx.restore();
-
-                let lastTime = 0;
-                function drawFrame(time) {
-                    if (!lastTime) {
-                        lastTime = time;
-                    }
-                    const elapsedSeconds = (time - lastTime) / 1000;
-                    lastTime = time;
-
-                    animationInstance.advance(elapsedSeconds);
-                    animationInstance.apply(artboard, 1.0);
-
-                    artboard.advance(elapsedSeconds);
-
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.save();
-
-                    renderer.align(Fit.contain, Alignment.center, new AABB(
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    ), artboard.bounds());
+                    renderer.align(
+                        Fit.contain,
+                        Alignment.center,
+                        new AABB(0, 0, canvas.width, canvas.height),
+                        artboard.bounds()
+                    );
                     artboard.draw(renderer);
                     ctx.restore();
 
+                    let lastTime = 0;
+
+                    function drawFrame(time) {
+                        if (!lastTime) {
+                            lastTime = time;
+                        }
+                        const elapsedSeconds = (time - lastTime) / 1000;
+                        lastTime = time;
+
+                        animationInstance.advance(elapsedSeconds);
+                        animationInstance.apply(artboard, 1.0);
+                        scaleMe.setScaleX(0.2 + (1 + Math.sin(Date.now() / 100)) * 1);
+                        scaleMe.setScaleY(0.2 + (1 + Math.sin(Date.now() / 100)) * 2);
+                        scaleMe.setRotation(0.2 + (1 + Math.sin(Date.now() / 100)) * 2);
+
+                        artboard.advance(elapsedSeconds);
+
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.save();
+
+                        renderer.align(
+                            Fit.contain,
+                            Alignment.center,
+                            new AABB(0, 0, canvas.width, canvas.height),
+                            artboard.bounds()
+                        );
+                        artboard.draw(renderer);
+                        ctx.restore();
+
+                        requestAnimationFrame(drawFrame);
+                    }
                     requestAnimationFrame(drawFrame);
-                }
-                requestAnimationFrame(drawFrame);
-            });
+                });
         });
     </script>
 </body>
