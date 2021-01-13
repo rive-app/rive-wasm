@@ -366,6 +366,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	        select_overload<int() const>(&rive::LinearAnimationBase::duration))
 	    .property("fps",
 	              select_overload<int() const>(&rive::LinearAnimationBase::fps))
+		.property("workStart",
+	              select_overload<int() const>(&rive::LinearAnimationBase::workStart))
+		.property("workEnd",
+	              select_overload<int() const>(&rive::LinearAnimationBase::workEnd))
+		.property("loopValue",
+	              select_overload<int() const>(&rive::LinearAnimationBase::loopValue))
+		.property("speed",
+	              select_overload<float() const>(&rive::LinearAnimationBase::speed))
 	    .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
 
 	class_<rive::LinearAnimationInstance>("LinearAnimationInstance")
