@@ -17,5 +17,6 @@
     "Luigi Rosso <luigi@rive.app> (https://rive.app)",
     "Matthew Sullivan <matt@rive.app> (https://rive.app)"
   ],
+  "typings": "./types.d.ts",
   "license": "MIT"
 }
