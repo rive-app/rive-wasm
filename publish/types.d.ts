@@ -28,37 +28,37 @@ export interface RiveCanvas {
 // RENDERER //
 //////////////
 export declare class RendererWrapper {
-  save(): void;
-  restore(): void;
-  transform(tranform: Mat2D): void;
+	save(): void;
+	restore(): void;
+	transform(tranform: Mat2D): void;
   drawPath(path: RenderPath, paint: RenderPaint): void;
-  clipPath(path: RenderPath): void;
-}
+	clipPath(path: RenderPath): void;
+};
 
 export declare class RenderPathWrapper {
-  reset(): void;
-  addPath(path: CommandPath, transform: Mat2D): void;
-  fillRule(value: FillRule ): void;
-  moveTo(x: number, y: number): void
-  lineTo(x: number, y: number): void
-  cubicTo(ox: number, oy: number, ix: number, iy: number, x: number, y: number): void;
-  lose(): void;
-}
+	reset(): void;
+	addPath(path: CommandPath, transform: Mat2D): void;
+	fillRule(value: FillRule ): void;
+	moveTo(x: number, y: number): void
+	lineTo(x: number, y: number): void
+	cubicTo(ox: number, oy: number, ix: number, iy: number, x: number, y: number): void;
+	close(): void;
+};
 
 
 export declare class RenderPaintWrapper {
-  color(value: number): void;
-  thickness(value: number): void;
-  join(value: StrokeJoin): void;
-  cap(value: StrokeCap ): void;
-  blendMode(value: BlendMode): void;
+	color(value: number): void;
+	thickness(value: number): void;
+	join(value: StrokeJoin): void;
+	cap(value: StrokeCap ): void;
+	blendMode(value: BlendMode): void;
 
-  style(value: RenderPaintStyle): void;
-  linearGradient(sx: number, sy: number, ex: number, ey: number): void;
-  radialGradient(sx: number, sy: number, ex: number, ey: number): void;
-  addStop(color: number, stop: number): void;
-  completeGradient(): void;
-}
+	style(value: RenderPaintStyle): void;
+	linearGradient(sx: number, sy: number, ex: number, ey: number): void;
+	radialGradient(sx: number, sy: number, ex: number, ey: number): void;
+	addStop(color: number, stop: number): void;
+	completeGradient(): void;
+};
 
 export declare class Renderer extends RendererWrapper {
   align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void
@@ -81,7 +81,7 @@ export declare class CanvasRenderer extends Renderer {
 
 
 export declare class CanvasRenderPaint extends RenderPaint {
-  draw(ctx: CanvasRenderingContext2D, path): void;
+  draw(ctx: CanvasRenderingContext2D, path: RenderPath): void;
 }
 
 export declare class CanvasRenderPath extends RenderPath {}
@@ -111,7 +111,7 @@ export declare class Artboard {
   /** advance the artboard to a time in sec */
   advance(sec: number): any;
   /** Draw frame on the canvas */
-  draw(renderer: CanvasRenderer);
+  draw(renderer: CanvasRenderer): void;
   /** Get the animation at index */
   animationAt(index: number): LinearAnimation;
   /** Get the amount of animations in the artboard */
@@ -254,7 +254,7 @@ export interface AABB {
 }
 
 
-export class Mat2D {
+export declare class Mat2D {
   xx: number;
   xy: number;
   yx: number;
