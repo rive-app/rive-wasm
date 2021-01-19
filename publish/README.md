@@ -15,7 +15,7 @@ To use the library, run `npm install rive-canvas` and then simply include it:
 
 As with all npm packages, there's a freely available CDN via unpkg.com:
 
-    <script src="https://unpkg.com/rive-canvas@0.6.7/rive.js"></script>
+    <script src="https://unpkg.com/rive-canvas@0.6.8/rive.js"></script>
     Rive({
-         locateFile: (file) => 'https://unpkg.com/rive-canvas@0.6.7/'+file,
+         locateFile: (file) => 'https://unpkg.com/rive-canvas@0.6.8/'+file,
     }).then(...)
