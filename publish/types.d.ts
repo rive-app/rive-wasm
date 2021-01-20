@@ -5,28 +5,26 @@ interface RiveOptions {
 declare function Rive(options: RiveOptions): Promise<RiveCanvas>;
 export default Rive;
 
-
 export interface RiveCanvas {
   Alignment: AlignmentFactory;
   CanvasRenderer: typeof CanvasRenderer;
-  LinearAnimation: typeof LinearAnimation
-  LinearAnimationInstance: typeof LinearAnimationInstance
-  renderFactory: CanvasRenderFactory
-  // Enum
+  LinearAnimationInstance: typeof LinearAnimationInstance;
+  renderFactory: CanvasRenderFactory;
+
   BlendMode: typeof BlendMode;
   FillRule: typeof FillRule;
   Fit: typeof Fit;
-  RenderPaintStyle: typeof RenderPaintStyle
-  StrokeCap: typeof StrokeCap
-  StrokeJoin: typeof StrokeJoin
+  RenderPaintStyle: typeof RenderPaintStyle;
+  StrokeCap: typeof StrokeCap;
+  StrokeJoin: typeof StrokeJoin;
+
   load(buffer: Uint8Array): File;
 }
-
-
 
 //////////////
 // RENDERER //
 //////////////
+
 export declare class RendererWrapper {
   save(): void;
   restore(): void;
@@ -38,21 +36,19 @@ export declare class RendererWrapper {
 export declare class RenderPathWrapper {
   reset(): void;
   addPath(path: CommandPath, transform: Mat2D): void;
-  fillRule(value: FillRule ): void;
+  fillRule(value: FillRule): void;
   moveTo(x: number, y: number): void
   lineTo(x: number, y: number): void
   cubicTo(ox: number, oy: number, ix: number, iy: number, x: number, y: number): void;
   close(): void;
 };
 
-
 export declare class RenderPaintWrapper {
   color(value: number): void;
   thickness(value: number): void;
   join(value: StrokeJoin): void;
-  cap(value: StrokeCap ): void;
+  cap(value: StrokeCap): void;
   blendMode(value: BlendMode): void;
-
   style(value: RenderPaintStyle): void;
   linearGradient(sx: number, sy: number, ex: number, ey: number): void;
   radialGradient(sx: number, sy: number, ex: number, ey: number): void;
@@ -64,11 +60,11 @@ export declare class Renderer extends RendererWrapper {
   align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void
 }
 
-export declare class CommandPath {}
+export declare class CommandPath { }
 
-export declare class RenderPath extends RenderPathWrapper {}
+export declare class RenderPath extends RenderPathWrapper { }
 
-export declare class RenderPaint extends RenderPaintWrapper {}
+export declare class RenderPaint extends RenderPaintWrapper { }
 
 
 /////////////////////
@@ -79,52 +75,41 @@ export declare class CanvasRenderer extends Renderer {
   constructor(ctx: CanvasRenderingContext2D);
 }
 
-
 export declare class CanvasRenderPaint extends RenderPaint {
   draw(ctx: CanvasRenderingContext2D, path: RenderPath): void;
 }
 
-export declare class CanvasRenderPath extends RenderPath {}
-
+export declare class CanvasRenderPath extends RenderPath { }
 
 export interface CanvasRenderFactory {
-  makeRenderPaint():CanvasRenderPaint
-  makeRenderPath(): CanvasRenderPath
+  makeRenderPaint(): CanvasRenderPaint;
+  makeRenderPath(): CanvasRenderPath;
 }
-
-
-
 
 //////////
 // File //
 //////////
-
 export declare class File {
   defaultArtboard(): Artboard;
   artboard(name: string): Artboard;
 }
-
 export declare class Artboard {
   get bounds(): AABB;
-  /** Get an animation */
   animation(name: string): LinearAnimation;
-  /** advance the artboard to a time in sec */
   advance(sec: number): any;
-  /** Draw frame on the canvas */
   draw(renderer: CanvasRenderer): void;
-  /** Get the animation at index */
   animationAt(index: number): LinearAnimation;
-  /** Get the amount of animations in the artboard */
   animationCount(): number;
   bone(name: string): Bone;
   node(name: string): Node;
   rootBone(name: string): RootBone;
-  transformComponent(name: string): TransformComponent
+  transformComponent(name: string): TransformComponent;
 }
 
 export declare class Bone extends TransformComponent {
   length: number;
 }
+
 export declare class RootBone extends Bone {
   x: number;
   y: number;
@@ -134,17 +119,16 @@ export declare class Node extends TransformComponent {
   x: number;
   y: number;
 }
+
 export declare class TransformComponent {
   rotation: number;
   scaleX: number;
   scaleY: number;
 }
 
-
 ///////////////
 // Animation //
 ///////////////
-
 export declare class LinearAnimation {
   get duration(): number;
   get fps(): number;
@@ -154,22 +138,18 @@ export declare class LinearAnimation {
   get speed(): number;
   apply(artboard: Artboard, time: number, mix: number): void;
 }
-
-export declare class LinearAnimationInstance {
-  /** Time of the animation from 0 to 1 */
+export declare class LinearAnimationInstance {
+  /** Time of the animation in seconds */
   time: number;
   constructor(animation: LinearAnimation);
-  /** increment the animation to a time in sec */
   advance(sec: number): any;
   /**
-   * apply animation on the artboard
-   * @param artboard the Artboard on which apply the frame
-   * @param mix 0-1 the strengh of the animaiton in the animation mix
+   * Apply animation on the artboard
+   * @param artboard the Artboard on which apply the frame.
+   * @param mix 0-1 the strength of the animation in the animations mix.
    */
   apply(artboard: Artboard, mix: number): any;
 }
-
-
 
 ///////////
 // ENUMS //
@@ -187,7 +167,7 @@ export enum Fit {
 
 export enum RenderPaintStyle {
   fill,
-  stroke
+  stroke,
 }
 
 export enum FillRule {
@@ -228,6 +208,7 @@ export enum BlendMode {
 ///////////
 // UTILS //
 ///////////
+
 export declare class Alignment {
   get x(): number;
   get y(): number;
@@ -245,14 +226,12 @@ export declare class AlignmentFactory {
   get bottomRight(): Alignment;
 }
 
-/** Frame */
 export interface AABB {
   minX: number;
   minY: number;
   maxX: number;
   maxY: number;
 }
-
 
 export declare class Mat2D {
   xx: number;
