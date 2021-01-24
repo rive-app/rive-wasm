@@ -72,11 +72,11 @@ export declare class RenderPaint extends RenderPaintWrapper { }
 /////////////////////
 
 export declare class CanvasRenderer extends Renderer {
-  constructor(ctx: CanvasRenderingContext2D);
+  constructor(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D);
 }
 
 export declare class CanvasRenderPaint extends RenderPaint {
-  draw(ctx: CanvasRenderingContext2D, path: RenderPath): void;
+  draw(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, path: RenderPath): void;
 }
 
 export declare class CanvasRenderPath extends RenderPath { }
