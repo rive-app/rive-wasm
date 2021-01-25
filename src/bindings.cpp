@@ -383,6 +383,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	        select_overload<float() const>(
 	            &rive::LinearAnimationInstance::time),
 	        select_overload<void(float)>(&rive::LinearAnimationInstance::time))
+		.property("didLoop",
+ 			select_overload<bool() const>(&rive::LinearAnimationInstance::didLoop))
 	    .function("advance",
 	              select_overload<bool(float)>(
 	                  &rive::LinearAnimationInstance::advance))
