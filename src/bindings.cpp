@@ -361,6 +361,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	              select_overload<void(float)>(&rive::RootBone::y));
 
 	class_<rive::LinearAnimation>("LinearAnimation")
+		.property(
+	        "name",
+	        select_overload<std::string() const>(&rive::AnimationBase::name))
 	    .property(
 	        "duration",
 	        select_overload<int() const>(&rive::LinearAnimationBase::duration))
