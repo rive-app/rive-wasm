@@ -1,7 +1,5 @@
-var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-
 function makeMatrix(m2d) {
-    var m = svg.createSVGMatrix();
+    const m = new DOMMatrix();
     m.a = m2d.xx;
     m.b = m2d.xy;
     m.c = m2d.yx;
