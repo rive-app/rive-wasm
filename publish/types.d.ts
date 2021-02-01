@@ -31,7 +31,7 @@ export declare class RendererWrapper {
   transform(tranform: Mat2D): void;
   drawPath(path: RenderPath, paint: RenderPaint): void;
   clipPath(path: RenderPath): void;
-};
+}
 
 export declare class RenderPathWrapper {
   reset(): void;
@@ -41,7 +41,7 @@ export declare class RenderPathWrapper {
   lineTo(x: number, y: number): void
   cubicTo(ox: number, oy: number, ix: number, iy: number, x: number, y: number): void;
   close(): void;
-};
+}
 
 export declare class RenderPaintWrapper {
   color(value: number): void;
@@ -54,7 +54,7 @@ export declare class RenderPaintWrapper {
   radialGradient(sx: number, sy: number, ex: number, ey: number): void;
   addStop(color: number, stop: number): void;
   completeGradient(): void;
-};
+}
 
 export declare class Renderer extends RendererWrapper {
   align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void
@@ -130,6 +130,7 @@ export declare class TransformComponent {
 // Animation //
 ///////////////
 export declare class LinearAnimation {
+  get name(): string;
   get duration(): number;
   get fps(): number;
   get workStart(): number;
@@ -141,6 +142,7 @@ export declare class LinearAnimation {
 export declare class LinearAnimationInstance {
   /** Time of the animation in seconds */
   time: number;
+  didLoop: boolean;
   constructor(animation: LinearAnimation);
   advance(sec: number): any;
   /**
