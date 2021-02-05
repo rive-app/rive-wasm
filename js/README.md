@@ -11,7 +11,7 @@ The simplest way to get this running is copy ```src/rive.js``` into your project
 
 Play the first animation in the default artboard:
 
-html```
+```html
 <canvas id="canvas"></canvas>
 <script src="https://unpkg.com/rive-js/rive.js"></script>
 <script>
@@ -30,7 +30,7 @@ Rive.js requires two things: a link to the Rive file, and a canvas element where
 
 If you want to specify which artboard or animation to play:
 
-js```
+```js
 new RiveAnimation({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
@@ -42,7 +42,7 @@ new RiveAnimation({
 
 ```animations``` can also take a list of animations, which will be mixed together:
 
-js```
+```js
 new RiveAnimation({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
@@ -53,7 +53,7 @@ new RiveAnimation({
 
 You can manually start and pause playback, and check if playback is active:
 
-js```
+```js
 const animation = new RiveAnimation({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
@@ -68,7 +68,7 @@ animation.isPlaying();
 
 Rive.js has a number of events that you can listen for:
 
-js```
+```js
 const animation = new RiveAnimation({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
@@ -102,13 +102,13 @@ Event callbacks currently supported are:
 
 To run the examples in the ```examples``` folder, run a HTTP server at the root of the ```js``` directory. If you have Python installed, the following works nicely:
 
-bash```
+```bash
 python3 -m http.server 8000
 ```
 
 or Node:
 
-bash```
+```bash
 npx http-server
 ```
 

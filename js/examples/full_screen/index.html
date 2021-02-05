@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="user-scalable=no">
-        <title>Rive Animation Player</title>
+        <title>Full Screen Rive Animation</title>
         <link rel="stylesheet" href="styles.css">
     </head>
     <body>
@@ -26,10 +26,6 @@
                 // 'contain', 'fill', 'fitWidth', 'fitHeight', 'none' and
                 // 'scaleDown'
                 alignment: new CanvasAlignment({fit: 'cover'}),
-            });
-
-            animation.on('loop', function(event) {
-                console.log(event.animationName + ' has looped as a ' + event.loopName);
             });
 
             // When the window resizes, resize the canvas
