@@ -144,17 +144,30 @@
     * RiveAnimation constructor
     */    
     function RiveAnimation({
-        src, artboard, animations, canvas, alignment, autoplay,
-        onload, onloaderror, onplay, onpause, onstop, onplayerror, onloop
+        src, // uri foir a Rive file (.riv)
+        buffer, // ArrayBuffer containing Rive data
+        artboard,
+        animations,
+        canvas,
+        alignment,
+        autoplay,
+        onload,
+        onloaderror,
+        onplay,
+        onpause,
+        onstop,
+        onplayerror,
+        onloop
     }) {
         const self = this;
 
         // If no source file url specified, it's a bust
-        if (!src) {
-            console.error('Rive source file is required.');
+        if (!src && !buffer) {
+            console.error('Either a Rive source file or a data buffer is required.');
             return;
         }
         self._src = src;
+        self._buffer = buffer;
 
         // Name of the artboard. RiveAnimation operates on only one artboard. If
         // you want to have multiple artboards, use multiple RiveAnimations.
@@ -232,55 +245,70 @@
         * Callback when Wasm bundle is loaded
         */
         _wasmLoadEvent: function (rive) {
-            var self = this;
+            const self = this;
 
             self._rive = rive;
+            if (self._src) {
                 self._loadRiveFile();
+            } else if (self._buffer) {
+                self._loadRiveData(self._buffer);
+            }
         },
 
         /*
-            * Loads a Rive file
-            */
+         * Loads a Rive file
+         */
         _loadRiveFile: function () {
-            var self = this;
+            const self = this;
 
             const req = new Request(self._src);
             return fetch(req).then((res) => {
                 return res.arrayBuffer();
-            }).then((buf) => {
-                // The raw bytes of the animation are in the buffer, load them into a
-                // Rive file
-                self._file = self._rive.load(new Uint8Array(buf));
-
-                // Fire the 'load' event and trigger the task queue
-                if (self._file) {
-                    self._loaded = true;
-
-                    // Initialize playback and paint first frame; do this here
-                    // so that if play() has already beren called, things are
-                    // initialized before we start firing loaded events
-                    self._initializePlayback();
-
-                    // Paint the first frame
-                    self._paintFrame();
-
-                    // Emit the load event, which will also kick off processing
-                    // the load queue
-                    self._emit('load', 'File ' + self._src + ' loaded');
-                }
+            }).then((buffer) => {
+                self._loadRiveData(buffer);
             }).catch((e) => {
-                self._emit('loaderror', 'Unable to load ' + self._src);
+                self._emit('loaderror', 'Unable to load file ' + self._src);
                 console.error('Unable to load Rive file: ' + self._src);
                 throw e;
             });
         },
 
         /*
-            * Emits events of specified type
-            */
+         * Loads and initializes Rive data from an ArrayBuffer
+         */
+        _loadRiveData: function(buffer) {
+            const self = this;
+
+            // The raw bytes of the animation are in the buffer, load them into a
+            // Rive file
+            self._file = self._rive.load(new Uint8Array(buffer));
+            // Fire the 'load' event and trigger the task queue
+            if (self._file) {
+                self._loaded = true;
+
+                // Initialize playback and paint first frame; do this here
+                // so that if play() has already beren called, things are
+                // initialized before we start firing loaded events
+                self._initializePlayback();
+
+                // Paint the first frame
+                self._paintFrame();
+
+                // Emit the load event, which will also kick off processing
+                // the load queue
+                self._emit('load', 'File ' + self._src + ' loaded');
+            } else {
+                self._emit('loaderror', 'Unable to load buffer');
+                console.error('Unable to load buffer');
+            }
+        },
+
+        /*
+         * Emits events of specified type
+         */
         _emit: function (event, msg) {
-            var self = this;
-            var events = self['_on' + event];
+            const self = this;
+            const events = self['_on' + event];
 
             // Loop through event store and fire all functions.
             for (var i = events.length - 1; i >= 0; i--) {
@@ -301,7 +329,7 @@
             * task in the queue, that task is skipped as it's already occurred.
             */
         _loadQueue: function (event) {
-            var self = this;
+            const self = this;
 
             if (self._queue.length > 0) {
                 var task = self._queue[0];
