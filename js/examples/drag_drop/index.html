@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive Drag and Drop Player</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <div id="dropzone">
+            Drop your files here.
+        </div>
+        <div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+
+        <!-- Drag and drop script -->
+        <script>
+            window.onload = function () {
+                if (window.File && window.FileReader && window.FileList && window.Blob) {
+                    function handleFileSelect(evt) {
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        var files = evt.dataTransfer.files;
+                        // Handles the first file if multiple are dragged
+                        var file = files[0];
+
+                        var reader = new FileReader();
+                        reader.onload = function() {
+                            playBuffer(reader.result);
+                        };
+                        reader.readAsArrayBuffer(file); 
+                    }
+
+                    function handleDragOver(evt) {
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+                    }
+
+                    // Setup the dnd listeners.
+                    var dropZone = document.getElementById('dropzone');
+                    dropZone.addEventListener('dragover', handleDragOver, false);
+                    dropZone.addEventListener('drop', handleFileSelect, false);
+
+                } else {
+                    alert('This browser is not supported.');
+                }
+            };
+        </script>
+
+        <!-- Rive animation scripts -->
+        <script src="/src/rive.js"></script>
+        <script>
+            function playBuffer(buffer) {
+                new RiveAnimation({
+                    // src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+                    buffer: buffer,
+                    canvas: document.getElementById('canvas'),
+                    autoplay: true,
+                });
+            };
+        </script>
+
+    </body>
+</html>
