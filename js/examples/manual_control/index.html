@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive Hello World</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+            <button id="button">Play</button>
+        </div>
+
+        <script src="/src/rive.js"></script>
+        <script>
+            // animation will show the first frame but not start playing
+            const animation = new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+                canvas: document.getElementById('canvas'),
+            });
+
+            const button = document.getElementById('button');
+            button.addEventListener('click', function() {
+                // isPlaying() returns a boolean
+                if (animation.isPlaying()) {
+                    // pause() the animation
+                    animation.pause();
+                    button.innerHTML = 'Play';
+
+                } else {
+                    // play() the animation
+                    animation.play();
+                    button.innerHTML = 'Pause';
+                }
+            });
+
+        </script>
+
+    </body>
+</html>

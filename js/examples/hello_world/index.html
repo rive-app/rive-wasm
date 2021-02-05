@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive Hello World</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+
+        <script src="/src/rive.js"></script>
+        <script>
+            // autoplays the first animation in the default artboard
+            new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+                canvas: document.getElementById('canvas'),
+                autoplay: true,
+            });
+        </script>
+
+    </body>
+</html>
