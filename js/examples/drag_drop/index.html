@@ -54,7 +54,8 @@
         <script>
             function playBuffer(buffer) {
                 new RiveAnimation({
-                    // src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+                    // An ArrayBuffer containing Rive data can be used to
+                    // initialize an animation
                     buffer: buffer,
                     canvas: document.getElementById('canvas'),
                     autoplay: true,

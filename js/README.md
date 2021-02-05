@@ -64,6 +64,20 @@ animation.pause();
 animation.isPlaying();
 ```
 
+If Rive data's being loaded by other means, you can pass in an ArrayBuffer:
+
+```js
+const reader = new FileReader();
+reader.onload = function() {
+    const riveArrayBuffer = reader.result;
+    new RiveAnimation({
+        buffer: riveArrayBuffer,
+        canvas: document.getElementById('canvas'),
+    });
+};
+reader.readAsArrayBuffer(file);
+```
+
 ## Events
 
 Rive.js has a number of events that you can listen for:
