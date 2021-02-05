@@ -31,9 +31,6 @@
 *.out
 *.app
 
-# OSX stuff
-*.DS_Store
-
 # Build directories
 build
 custom_emcc
