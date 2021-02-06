@@ -24,8 +24,11 @@ export declare class CanvasAlignment {
 type LoopType = 'oneShot' | 'loop' | 'pingPong';
 
 declare class LoopEvent {
+  /** Name of the animation which triggers the event */
   animationName: string;
+  /** Index of the type: 0 (oneShot), 1 (loop), 2 (pingPong)  */
   loopType: number;
+  /** Type of loop of the animation  */
   loopName: LoopType;
 }
 
