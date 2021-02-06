@@ -20,5 +20,6 @@
   "license": "MIT",
   "files": [
     "src/rive.js"
-  ]
+  ],
+  "typings": "./rive.d.ts"
 }
