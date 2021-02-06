@@ -65,7 +65,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
     * Loop event constructor
     */
     var LoopEvent = function ({animationName, loopValue}) {
-        if (loopValue < 0 || loopValue > loopTypes.length) {
+        if (loopValue < 0 || loopValue >= loopTypes.length) {
             console.error('Invalid loop value');
             return;
         }
@@ -150,7 +150,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
     * RiveAnimation constructor
     */    
     var RiveAnimation = function({
-        src, // uri foir a Rive file (.riv)
+        src, // uri for a Rive file (.riv)
         buffer, // ArrayBuffer containing Rive data
         artboard,
         animations,
