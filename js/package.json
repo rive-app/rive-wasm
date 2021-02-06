@@ -1,7 +1,7 @@
 {
   "name": "rive-js",
   "version": "0.0.1",
-  "description": "Rive Web API.",
+  "description": "Rive's web api.",
   "main": "src/rive.js",
   "homepage": "https://beta.rive.app",
   "repository": {
@@ -17,5 +17,8 @@
     "Luigi Rosso <luigi@rive.app> (https://rive.app)",
     "Matthew Sullivan <matt@rive.app> (https://rive.app)"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "src/rive.js"
+  ]
 }
