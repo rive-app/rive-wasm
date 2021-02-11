@@ -1,12 +1,15 @@
 {
   "name": "rive-js",
-  "version": "0.0.1-alpha.2",
+  "version": "0.0.1-alpha.3",
   "description": "Rive's web api.",
-  "main": "src/rive.js",
+  "main": "dist/rive.js",
   "homepage": "https://beta.rive.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
+  },
+  "scripts": {
+    "minify": "terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js"
   },
   "keywords": [
     "rive",
@@ -19,7 +22,7 @@
   ],
   "license": "MIT",
   "files": [
-    "src/rive.js"
+    "dist/rive.js"
   ],
   "typings": "./rive.d.ts"
 }

@@ -146,6 +146,32 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         }
     };
 
+
+    /*
+     * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
+     */
+    function _Animation({animation, instance}) {
+        if (!animation || !instance) {
+            console.error('_Animation requires both an animation and instance');
+        }
+        this.animation = animation;
+        this.instance = instance;
+        // Tracks whether the instance has looped
+        this.loopCount = 0; 
+    };
+
+    // _Animation api; FOR INTERNAL USE ONLY
+    _Animation.prototype = {
+
+        /*
+         * Name of the animation
+         */
+        _name: function () {
+            const self = this;
+            return self.animation.name;
+        }
+    };
+
     /*
     * RiveAnimation constructor
     */    
@@ -180,13 +206,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         self._artboardName = artboard;
 
         // List of animations that should be played.
-        if (!animations) {
-            self._animationNames = [];
-        } else if (typeof animations === 'string') {
-            self._animationNames = [animations];
-        } else if (animations.constructor === Array) {
-            self._animationNames = animations;
-        }
+        self._startingAnimationNames = animations;
         
         self._canvas = canvas;
         self._alignment = alignment;
@@ -200,6 +220,8 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         self._ctx = null;
         // Rive renderer
         self._renderer
+        // List of animation instances that will be played
+        self._animations = [];
 
         // Tracks when the Rive file is successfully loaded and the Wasm
         // runtime is initialized.
@@ -376,24 +398,60 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             self._ctx = self._canvas.getContext('2d');
             self._renderer = new self._rive.CanvasRenderer(self._ctx);
 
+            // Initialize the animations
+            self._updateAnimations(self._startingAnimationNames);
+        },
+
+        /*
+         * Updates which animations will play back This will remove any existing
+         * animations, and add the named animations. If any animation is not
+         * found, then the function returns false; true otherwise. If
+         * animationNames is not passed, then the default animation will be
+         * added.
+         */
+        _updateAnimations: function (animationNames) {
+            const self = this;
+
+            var result = true;
+            var animationList = [];
             // Get the animation and instance them
-            if (self._animationNames.length == 0) {
+            if (!animationNames || (animationNames.constructor === Array && animationNames.length === 0)) {
                 // No animations given, use the first one
-                self._animations = [self._artboard.animationAt(0)];
-                // Set its name in the animationNames list
-                self._animationNames = [self._animations[0].name];
+                animationList.push(self._artboard.animationAt(0));
             } else {
-                self._animations = self._animationNames.map(name => self._artboard.animation(name));
+                // If it's a string, then convert to an array
+                if (typeof animationNames === 'string') {
+                    animationNames = [animationNames];
+                }
+                // animationList = animationNames.map(name => self._artboard.animation(name));
+                for (var i in animationNames) {
+                    var a = self._artboard.animation(animationNames[i]);
+                    if (!a) {
+                        result = false;
+                    } else {
+                        animationList.push(a);
+                    }
+                }
             }
 
-            self._instances = self._animations.map(a => new self._rive.LinearAnimationInstance(a));
+            // Ignore animations already in the list
+            // var existingAnimationNames = self._animations.map(a => a.name);
+            // var namesToAdd = animationList.filter(animation => existingAnimationNames.indexOf(animation.name) === -1);
 
-
-            // Tracks the loop states of all animations
-            self._loopCounts = [];
-            for (var i=0; i< self._instances.length; i++) {
-                self._loopCounts.push(0);
+            // Instantiate the animations
+            for (var i in animationList) {
+                var animation = animationList[i];
+                self._animations.push(new _Animation({
+                    animation: animation,
+                    instance: new self._rive.LinearAnimationInstance(animation)
+                }));
             }
+
+            for (var a of self._animations) {
+                console.log(a.animation + ' ' + a.instance + ' ' + a._name());
+            }
+
+            return result;
         },
 
         /*
@@ -440,15 +498,15 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             self._lastTime = time;
 
             // Advance the animation by the elapsed number of seconds
-            for (const i in self._instances) {
-                self._instances[i].advance(elapsedTime);
-                if (self._instances[i].didLoop) {
-                    self._loopCounts[i] += 1;
+            for (const i in self._animations) {
+                self._animations[i].instance.advance(elapsedTime);
+                if (self._animations[i].instance.didLoop) {
+                    self._animations[i].loopCount += 1;
                 }
                 // Apply the animation to the artboard. The reason of this is that
                 // multiple animations may be applied to an artboard, which will
                 // then mix those animations together.
-                self._instances[i].apply(self._artboard, 1.0);
+                self._animations[i].instance.apply(self._artboard, 1.0);
             }
 
             // Once the animations have been applied to the artboard, advance it
@@ -480,24 +538,24 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                         // Do nothing; this never loops
                         break;
                     case 1:
-                        if (self._loopCounts[i]) {
+                        if (self._animations[i].loopCount) {
                             self._emit('loop', new LoopEvent({
                                 animationName: self._animations[i].name,
                                 loopValue: self._animations[i].loopValue
                             }));
-                            self._loopCounts[i] = 0;
+                            self._animations[i].loopCount = 0;
                         }
                         break;
                     case 2:
                         // Wasm indicates a loop at each time the animation
                         // changes direction, so a full loop/lap occurs every
                         // two didLoops
-                        if (self._loopCounts[i] > 1) {
+                        if (sself._animations[i].loopCount > 1) {
                             self._emit('loop', new LoopEvent({
                                 animationName: self._animations[i].name,
                                 loopValue: self._animations[i].loopValue
                             }));
-                            self._loopCounts[i] = 0;
+                            self._animations[i].loopCount = 0;
                         }
                         break;
                 }
@@ -558,7 +616,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             requestAnimationFrame(self._draw.bind(self));
 
             // Emits a play event
-            const msg = 'Playing: ' + self._animationNames.join(', ');
+            const msg = 'Playing: ' + self._startingAnimationNames.join(', ');
             self._emit('play', msg);
         },
 
@@ -569,7 +627,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             const self = this;
             self._playback = playbackStates.pause;
             // Emits a pause event
-            const msg = 'Pausing: ' + self._animationNames.join(', ');
+            const msg = 'Pausing: ' + self._startingAnimationNames.join(', ');
             self._emit('pause', msg);
         },
 
@@ -582,7 +640,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
 
             self._playback = playbackStates.stop;
             // Emits a pause event
-            const msg = 'Stopping: ' + self._animationNames.join(', ');
+            const msg = 'Stopping: ' + self._startingAnimationNames.join(', ');
             self._emit('stop', msg);
         },
 
