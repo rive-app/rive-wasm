@@ -13,7 +13,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas"></canvas>
-<script src="https://unpkg.com/rive-js/rive.js"></script>
+<script src="https://unpkg.com/rive-js/dist/rive.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new RiveAnimation({
@@ -76,7 +76,15 @@ If you want to pause animations, while still have others playing, ```pause``` ca
 animation.pause(['windshield_wipers', 'bouncing']);
 ```
 
-If Rive data's being loaded by other means, you can pass in an ArrayBuffer:
+Same goes for stopping animations:
+
+```js
+animation.stop(['idle']);
+```
+
+It's important to note that unless you specifically pause or stop *looping* animations, they'll play forever. *one-shot* animations will automatically stop when they reach the end of the animation, so you can repeatedly call ```play([<one-shot>])``` and it will replay the animation so long at it has finished its animation.
+
+If Rive's data is being loaded by other means, you can pass in an ArrayBuffer:
 
 ```js
 const reader = new FileReader();

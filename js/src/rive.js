@@ -169,7 +169,15 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         name: function () {
             const self = this;
             return self.animation.name;
-        }
+        },
+
+        /*
+         * Loop type of the animation
+         */
+        loopValue: function () {
+            const self = this;
+            return self.animation.loopValue;
+        },
     };
 
     /*
@@ -577,9 +585,13 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
 
             for (var i in self._animations) {
                 // Emit if the animation looped
-                switch (self._animations[i].loopValue) {
+                switch (self._animations[i].loopValue()) {
                     case 0:
-                        // Do nothing; this never loops
+                        if (self._animations[i].loopCount) {
+                            self._animations[i].loopCount = 0;
+                            // This is a one-shot; if it has ended, delete the instance
+                            self.stop([self._animations[i].name()]);
+                        }
                         break;
                     case 1:
                         if (self._animations[i].loopCount) {
@@ -594,7 +606,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                         // Wasm indicates a loop at each time the animation
                         // changes direction, so a full loop/lap occurs every
                         // two didLoops
-                        if (sself._animations[i].loopCount > 1) {
+                        if (self._animations[i].loopCount > 1) {
                             self._emit('loop', new LoopEvent({
                                 animationName: self._animations[i].name,
                                 loopValue: self._animations[i].loopValue
@@ -691,16 +703,20 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-        * Stops playback; this will restart the animation states to the first
-        * frame
+        * Stops playback;
         */
-        stop: function() {
+        stop: function(animationNames) {
             const self = this;
+            animationNames = ensureArray(animationNames);
 
-            self._playback = playbackStates.stop;
-            // Emits a pause event
-            const msg = 'Stopping: ' + self._startingAnimationNames.join(', ');
-            self._emit('stop', msg);
+            self._removeAnimations(animationNames);
+
+            if (!self._hasActiveAnimations() || animationNames.length === 0) {
+                self._playback = playbackStates.stop;
+            }
+
+            // Emits a stop event
+            self._emit('stop', animationNames);
         },
 
         /*

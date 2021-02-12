@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.0.1-alpha.3",
+  "version": "0.0.1-alpha.4",
   "description": "Rive's web api.",
   "main": "dist/rive.js",
   "homepage": "https://beta.rive.app",
@@ -9,7 +9,7 @@
     "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
   },
   "scripts": {
-    "minify": "terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js"
+    "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js"
   },
   "keywords": [
     "rive",
