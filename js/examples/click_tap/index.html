@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Manually Control Rive Animations</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="content">
+        <div id="button">
+            <canvas id="canvas" width="500" height="500"></canvas>
+            <div id="message">Click the circle</div>
+        </div>
+
+        <script src="/src/rive.js"></script>
+        <script>
+            const animation = new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/color_flash_button_0_6.riv',
+                canvas: document.getElementById('canvas'),
+                autoplay: true,
+            });
+
+            const button = document.getElementById('button');
+            const message = document.getElementById('message');
+
+            animation.on('load', function() {
+
+                // Get a list of the animation names once the file has loaded
+                const names = animation.animationNames();
+                var clickCounter = 0;
+
+                // Register click events on the button
+                button.onclick = function() {
+                    if (animation.isPlaying()) {
+                        message.innerHTML = 'Animation still playing';
+                    } else {
+                        const name = names[++clickCounter % names.length];
+                        animation.play([name]);
+                        message.innerHTML = 'Playing ' + name + ' animation';
+                    }
+                };
+            });
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,13 @@
+html, body {
+    margin: 0;
+    height: 100%;
+  }
+      
+  .content {
+    display: grid;
+    place-items: center;
+  }
+
+  #message {
+    text-align: center;
+  }
