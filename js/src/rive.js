@@ -682,7 +682,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
 
             self._removeAnimations(animationNames);
 
-            if (!self._hasActiveAnimations()) {
+            if (!self._hasActiveAnimations() || animationNames.length === 0) {
                 self._playback = playbackStates.pause;
             }
             
