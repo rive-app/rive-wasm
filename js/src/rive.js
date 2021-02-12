@@ -419,14 +419,12 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             const instancedAnimationNames = self._animations.map(a => a.name());
 
             // Get the animation and instance them
-            console.log('instanced: ' + JSON.stringify(instancedAnimationNames));
             for (const i in animationNames) {
                 // Ignore animations already in the list
                 if(instancedAnimationNames.indexOf(animationNames[i]) >= 0) {
                     result = false;
                     continue;
                 }
-                console.log('Adding animation ' + animationNames[i]);
                 const a = self._artboard.animation(animationNames[i]);
                 if (!a) {
                     result = false;
@@ -466,20 +464,12 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                 result = false;
             }
 
-            for (const animation of animationsToRemove) {
-                console.log('Removing ' + animation.name());
-            }
-
             // Remove the animations
             for(const i in animationsToRemove) {
                 const index = self._animations.indexOf(animationsToRemove[i]);
                 if (index > -1) {
                     self._animations.splice(index, 1);
                 }
-            }
-
-            for (const animation of self._animations) {
-                console.log('Animations left after removal ' + animation.name());
             }
 
             return result;
