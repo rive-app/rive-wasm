@@ -64,6 +64,18 @@ animation.pause();
 animation.isPlaying();
 ```
 
+If you want to play, or mix in, more animations, ```play``` can take an array of animation names:
+
+```js
+animation.play(['windshield_wipers']);
+```
+
+If you want to pause animations, while still have others playing, ```pause``` can also take an array of animation names:
+
+```js
+animation.pause(['windshield_wipers', 'bouncing']);
+```
+
 If Rive data's being loaded by other means, you can pass in an ArrayBuffer:
 
 ```js
