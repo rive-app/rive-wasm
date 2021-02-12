@@ -126,19 +126,19 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                 case 'topLeft':
                     return rive.Alignment.topLeft;
                 case 'topCenter':
-                    return rive.Alignment.toCenter;
+                    return rive.Alignment.topCenter;
                 case 'topRight':
                     return rive.Alignment.topRight;
                 case 'centerLeft':
-                    return rive.alignment.centerLeft;
+                    return rive.Alignment.centerLeft;
                 case 'centerRight':
-                    return rive.alignment.centerRight;
+                    return rive.Alignment.centerRight;
                 case 'bottomLeft':
-                    return rive.alignment.bottomLeft;
+                    return rive.Alignment.bottomLeft;
                 case 'bottomCenter':
-                    return rive.alignment.bottomCenter;
+                    return rive.Alignment.bottomCenter;
                 case 'bottomRight':
-                    return rive.alignment.bottomRight;
+                    return rive.Alignment.bottomRight;
                 case 'center':
                 default:
                     return rive.Alignment.center;
