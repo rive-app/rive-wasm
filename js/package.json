@@ -22,7 +22,9 @@
   ],
   "license": "MIT",
   "files": [
-    "dist/rive.js"
+    "dist/rive.js",
+    "src/rive.d.ts"
+
   ],
   "typings": "./rive.d.ts"
 }
