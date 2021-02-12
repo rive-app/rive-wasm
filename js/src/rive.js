@@ -166,7 +166,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         /*
          * Name of the animation
          */
-        _name: function () {
+        name: function () {
             const self = this;
             return self.animation.name;
         }
@@ -206,7 +206,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         self._artboardName = artboard;
 
         // List of animations that should be played.
-        self._startingAnimationNames = animations;
+        self._startingAnimationNames = ensureArray(animations);
         
         self._canvas = canvas;
         self._alignment = alignment;
@@ -399,7 +399,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             self._renderer = new self._rive.CanvasRenderer(self._ctx);
 
             // Initialize the animations
-            self._updateAnimations(self._startingAnimationNames);
+            self._addAnimations(self._startingAnimationNames);
         },
 
         /*
@@ -409,49 +409,103 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
          * animationNames is not passed, then the default animation will be
          * added.
          */
-        _updateAnimations: function (animationNames) {
+        _addAnimations: function (animationNames) {
             const self = this;
 
             var result = true;
-            var animationList = [];
+            const animationList = [];
+            
+            // List of instanced animations
+            const instancedAnimationNames = self._animations.map(a => a.name());
+
             // Get the animation and instance them
-            if (!animationNames || (animationNames.constructor === Array && animationNames.length === 0)) {
-                // No animations given, use the first one
-                animationList.push(self._artboard.animationAt(0));
-            } else {
-                // If it's a string, then convert to an array
-                if (typeof animationNames === 'string') {
-                    animationNames = [animationNames];
+            console.log('instanced: ' + JSON.stringify(instancedAnimationNames));
+            for (const i in animationNames) {
+                // Ignore animations already in the list
+                if(instancedAnimationNames.indexOf(animationNames[i]) >= 0) {
+                    result = false;
+                    continue;
                 }
-                // animationList = animationNames.map(name => self._artboard.animation(name));
-                for (var i in animationNames) {
-                    var a = self._artboard.animation(animationNames[i]);
-                    if (!a) {
-                        result = false;
-                    } else {
-                        animationList.push(a);
-                    }
+                console.log('Adding animation ' + animationNames[i]);
+                const a = self._artboard.animation(animationNames[i]);
+                if (!a) {
+                    result = false;
+                } else {
+                    animationList.push(a);
                 }
             }
 
-            // Ignore animations already in the list
-            // var existingAnimationNames = self._animations.map(a => a.name);
-            // var namesToAdd = animationList.filter(animation => existingAnimationNames.indexOf(animation.name) === -1);
-
             // Instantiate the animations
-            for (var i in animationList) {
-                var animation = animationList[i];
+            for (const i in animationList) {
+                const animation = animationList[i];
                 self._animations.push(new _Animation({
                     animation: animation,
                     instance: new self._rive.LinearAnimationInstance(animation)
                 }));
             }
 
-            for (var a of self._animations) {
-                console.log(a.animation + ' ' + a.instance + ' ' + a._name());
+            return result;
+        },
+
+        /*
+         * Removes animations from playback. Returns true if all the listed
+         * animations are removed, false if any of the animation names don't
+         * exist or aren't in the playback list.
+         */
+        _removeAnimations: function(animationNames) {
+            const self = this;
+            var result = true;
+
+            // Get the animations to remove from the list
+            const animationsToRemove = self._animations.filter(
+                animation => animationNames.indexOf(animation.name()) >= 0
+            );
+            
+            // See if all the names are gonig to be removed
+            if (animationNames.length !== animationsToRemove.length) {
+                result = false;
+            }
+
+            for (const animation of animationsToRemove) {
+                console.log('Removing ' + animation.name());
+            }
+
+            // Remove the animations
+            for(const i in animationsToRemove) {
+                const index = self._animations.indexOf(animationsToRemove[i]);
+                if (index > -1) {
+                    self._animations.splice(index, 1);
+                }
+            }
+
+            for (const animation of self._animations) {
+                console.log('Animations left after removal ' + animation.name());
             }
 
             return result;
+        },
+
+        /*
+         * Returns true if there are animations for playback, false if there are
+         * none
+         */
+        _hasActiveAnimations: function() {
+            const self = this;
+            return self._animations.length !== 0;
+        },
+
+        /*
+         * Ensure that there's at least one animation for playback
+         */
+        _validateAnimations: function() {
+            const self = this;
+
+            if (self._animations.length === 0 && self._artboard.animationCount() > 0) {
+                // Add the default animation
+                const animation = self._artboard.animationAt(0);
+                const instance = new self._rive.LinearAnimationInstance(animation);
+                self._animations.push(new _Animation({animation: animation, instance: instance}));
+            }
         },
 
         /*
@@ -597,38 +651,53 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         /*
         * Starts/continues playback
         */
-        play: function () {
+        play: function (animationNames) {
             const self = this;
+            animationNames = ensureArray(animationNames);
 
             if (!self._loaded) {
                 self._queue.push({
                     event: 'play',
                     action: () => {
+                        self._addAnimations(animationNames);
                         self.play();
                     }
                 });
                 return;
             }
 
+            // Add any new animations to the list
+            self._addAnimations(animationNames);
+        
+
+            // Ensure there's at least one animation flagged for playback
+            self._validateAnimations();
+
             self._playback = playbackStates.play;
 
             // Starts animating by calling draw on the next refresh cycle.
             requestAnimationFrame(self._draw.bind(self));
 
-            // Emits a play event
-            const msg = 'Playing: ' + self._startingAnimationNames.join(', ');
-            self._emit('play', msg);
+            // Emits a play event, returning an array of animation names being
+            // played
+            self._emit('play', self._animations.map(animation => animation.name()));
         },
 
         /*
         * Pauses playback
         */
-        pause: function() {
+        pause: function(animationNames) {
             const self = this;
-            self._playback = playbackStates.pause;
+            animationNames = ensureArray(animationNames);
+
+            self._removeAnimations(animationNames);
+
+            if (!self._hasActiveAnimations()) {
+                self._playback = playbackStates.pause;
+            }
+            
             // Emits a pause event
-            const msg = 'Pausing: ' + self._startingAnimationNames.join(', ');
-            self._emit('pause', msg);
+            self._emit('pause', animationNames);
         },
 
         /*
@@ -714,6 +783,20 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
     } else if (typeof window !== 'undefined') {  // Define globally in case AMD is not available or unused.
         window.RiveAnimation = RiveAnimation;
         window.CanvasAlignment = CanvasAlignment;
+    }
+
+    /*
+     * Utility function to ensure a parameter is an array
+     */
+    function ensureArray(param) {
+        if (!param) {
+            return [];
+        } else if (typeof param === 'string') {
+            return [param];
+        } else if (param.constructor === Array) {
+            return param;
+        }
+        return [];
     }
 
 })();
