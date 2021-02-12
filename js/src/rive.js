@@ -720,8 +720,20 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-        * Returns the animation source/name
-        */
+         * Updates the fit and alignment of the animation in the canvas
+         */
+        setAlignment: function (alignment) {
+            const self = this;
+
+            if (!alignment.constructor === CanvasAlignment) {
+                return;
+            }
+            self._alignment = alignment;
+        },
+
+        /*
+         * Returns the animation source/name
+         */
         source: function() {
             const self = this;
             return self._src;
