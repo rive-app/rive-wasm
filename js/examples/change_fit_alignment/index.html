@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive Hello World</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="centered">
+        <canvas id="canvas" class="bordered" width="500" height="500"></canvas>
+
+        <div class="button-grid">
+            <button id="top-left">Top Left</button>
+            <button id="top-center">Top Center</button>
+            <button id="top-right">Top Right</button>
+            <button id="center-left">Center Left</button>
+            <button id="center">Center</button>
+            <button id="center-right">Center Right</button>
+            <button id="bottom-left">Bottom Left</button>
+            <button id="bottom-center">Bottom Center</button>
+            <button id="bottom-right">Bottom Right</button>
+        </div>
+
+        <script src="/src/rive.js"></script>
+        <script>
+            const animation = new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/juice063.riv',
+                canvas: document.getElementById('canvas'),
+                autoplay: true,
+                animations: ['idle', 'windshield_wipers', 'bouncing'],
+                alignment: new CanvasAlignment({fit: 'none', alignment: 'center'}),
+            });
+
+            document.getElementById('top-left').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'topLeft'})
+                );
+            });
+            document.getElementById('top-center').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'topCenter'})
+                );
+            });
+            document.getElementById('top-right').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'topRight'})
+                );
+            });
+            document.getElementById('center-left').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'centerLeft'})
+                );
+            });
+            document.getElementById('center').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'center'})
+                );
+            });
+            document.getElementById('center-right').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'centerRight'})
+                );
+            });
+            document.getElementById('bottom-left').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'bottomLeft'})
+                );
+            });
+            document.getElementById('bottom-center').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'bottomCenter'})
+                );
+            });
+            document.getElementById('bottom-right').addEventListener('click', function() {
+                animation.setAlignment(
+                    new CanvasAlignment({fit: 'none', alignment: 'bottomRight'})
+                );
+            });
+        </script>
+
+    </body>
+</html>
