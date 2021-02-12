@@ -131,6 +131,7 @@ Event callbacks currently supported are:
 
  - *source()*: returns the source for the animation
  - *animationNames()*: returns a list of animations on the chosen (or default) artboard
+ - *setAlignment()*: changes the alignment properties of the animation. 
 
 ## Examples
 
