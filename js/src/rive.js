@@ -328,7 +328,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                 self._initializePlayback();
 
                 // Paint the first frame
-                self._paintFrame();
+                self._drawFrame();
 
                 // Emit the load event, which will also kick off processing
                 // the load queue
@@ -507,9 +507,9 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-        * Paints the first frame on the animation
-        */
-        _paintFrame: function () {    
+         * Draws the first frame on the animation
+         */
+        _drawFrame: function () {    
             const self = this;
 
             // Choose how you want the animation to align in the canvas
@@ -533,8 +533,8 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-        * The draw rendering loop
-        */
+         * The draw rendering loop
+         */
         _draw: function(time) {
             const self = this;
 
@@ -631,7 +631,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                 // Reset animation instances, artboard and time
                 // TODO: implement this properly when we have instancing
                 self._initializePlayback();
-                self._paintFrame();
+                self._drawFrame();
                 self._lastTime = 0;
             }
         },
@@ -720,6 +720,21 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
+         * Draws the current artboard state to the canvas Useful if the canvas
+         * has been wiped, and you want to draw the last frame of the animation.
+         * Does nothing if the file isn't loaded, as that draws the initial
+         * frame by default.
+         */
+        draw: function () {
+            const self = this;
+            if (!self._loaded) {
+                return;
+            }
+            console.log('Drawing frame');
+            self._drawFrame();
+        },
+
+        /*
          * Updates the fit and alignment of the animation in the canvas
          */
         setAlignment: function (alignment) {
@@ -729,6 +744,9 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
                 return;
             }
             self._alignment = alignment;
+
+            // If it's not actively playing (i.e. drawing), draw a single frame
+            self._drawFrame();
         },
 
         /*
@@ -751,6 +769,22 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             var animationNames = [];
             for (var i=0; i < self._artboard.animationCount(); i++) {
                 animationNames.push(self._artboard.animationAt(i).name);
+            }
+            return animationNames;
+        },
+
+        /*
+         * Returns a list of playing animation names
+         */
+        playingAnimationNames: function() {
+            const self = this;
+            if (!self._loaded) {
+                return [];
+            }
+
+            var animationNames = [];
+            for (var i in self._animations) {
+                animationNames.push(self._animations[i].name);
             }
             return animationNames;
         },
