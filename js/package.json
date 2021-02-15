@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.0.1-alpha.7",
+  "version": "0.0.1-alpha.8",
   "description": "Rive's web api.",
   "main": "dist/rive.js",
   "homepage": "https://beta.rive.app",
