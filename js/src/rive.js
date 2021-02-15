@@ -301,6 +301,8 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             return fetch(req).then((res) => {
                 return res.arrayBuffer();
             }).then((buffer) => {
+                // Save the buffer in case a reset is needed
+                self._buffer = buffer;
                 self._loadRiveData(buffer);
             }).catch((e) => {
                 self._emit('loaderror', 'Unable to load file ' + self._src);
@@ -332,7 +334,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
 
                 // Emit the load event, which will also kick off processing
                 // the load queue
-                self._emit('load', 'File ' + self._src + ' loaded');
+                self._emit('load', 'File ' + (self._src ? self._src : 'buffer') + ' loaded');
             } else {
                 self._emit('loaderror', 'Unable to load buffer');
                 console.error('Unable to load buffer');
@@ -348,6 +350,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
 
             // Loop through event store and fire all functions.
             for (var i = events.length - 1; i >= 0; i--) {
+                // console.log('Emitting ' + event + ': ' + msg);
                 setTimeout(function (fn) {
                     fn.call(this, msg);
                 }.bind(self, events[i].fn), 0);
@@ -360,10 +363,10 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-            * Actions queued up before the animation was initialized.
-            * Takes an optional event parameter; if the event matches the next
-            * task in the queue, that task is skipped as it's already occurred.
-            */
+         * Actions queued up before the animation was initialized.
+         * Takes an optional event parameter; if the event matches the next
+         * task in the queue, that task is skipped as it's already occurred.
+         */
         _loadQueue: function (event) {
             const self = this;
 
@@ -533,13 +536,11 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
         },
 
         /*
-         * The draw rendering loop
+         * The draw rendering loop. This is the looping function where the
+         * animation frames will be rendered at the correct time interval.
          */
         _draw: function(time) {
             const self = this;
-
-            // This is the looping function where the animation frames will be
-            // rendered at the correct time interval
 
             // On the first pass, make sure lastTime has a valid value
             if (!self._lastTime) {
@@ -623,7 +624,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             // for more details.
             // TODO: move handling state change to event listeners?
             if (self._playback === playbackStates.play) {
-                requestAnimationFrame(self._draw.bind(self));
+                self._animReqId = requestAnimationFrame(self._draw.bind(self));
             } else if (self._playback === playbackStates.pause) {
                 // Reset the end time so on playback it starts at the correct frame
                 self._lastTime = 0;
@@ -678,7 +679,7 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             self._playback = playbackStates.play;
 
             // Starts animating by calling draw on the next refresh cycle.
-            requestAnimationFrame(self._draw.bind(self));
+            self._animReqId = requestAnimationFrame(self._draw.bind(self));
 
             // Emits a play event, returning an array of animation names being
             // played
@@ -712,11 +713,65 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             self._removeAnimations(animationNames);
 
             if (!self._hasActiveAnimations() || animationNames.length === 0) {
+                // Immediately cancel the next frame draw; if we don't do this,
+                // strange things will happen if the Rive file/buffer is
+                // reloaded.
+                cancelAnimationFrame(self._animReqId);
                 self._playback = playbackStates.stop;
             }
 
             // Emits a stop event
             self._emit('stop', animationNames);
+        },
+
+        /*
+         * Loads a new Rive file; this will reset all artboard and animations,
+         * but will keep the event listeners in place.
+         * TODO: better abstract this with the RiveAnimation constructor
+         */
+        load: function({src, buffer, canvas, autoplay}) {
+            const self = this;
+
+            self._src = src;
+            self._buffer = buffer;
+            self._autoplay = autoplay;
+            self._canvas = canvas ? canvas : self._canvas;
+
+            // Stop any current animations
+            self.stop();
+
+            // If no source file url specified, it's a bust
+            if (!src && !buffer) {
+                console.error('Either a Rive source file or a data buffer is required.');
+                return;
+            }
+
+            // Reset internals
+            self._file = null;
+            self._artboard = null;
+            self._artboardName = null;
+            self._animations = [];
+            self._startingAnimations = [];
+            self._loaded = false;
+
+            // Add 'load' task so the queue can be processed correctly on
+            // successful load
+            self._queue.push({
+                event: 'load',
+            });
+
+            // Queue up play if necessary
+            if (self._autoplay) {
+                self._queue.push({
+                    event: 'play',
+                    action: () => {
+                        self.play();
+                    }
+                });
+            }
+
+            // Wait for Wasm to load
+            _onWasmLoaded(self._wasmLoadEvent.bind(self));
         },
 
         /*
@@ -730,7 +785,6 @@ var Rive=function(){var e="undefined"!=typeof document&&document.currentScript?d
             if (!self._loaded) {
                 return;
             }
-            console.log('Drawing frame');
             self._drawFrame();
         },
 
