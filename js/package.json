@@ -9,7 +9,9 @@
     "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
   },
   "scripts": {
-    "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js"
+    "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
+    "build": "npx tsc --strictNullChecks --module commonjs ./src/rive-ts.ts --outDir ./dist",
+    "test": "jest"
   },
   "keywords": [
     "rive",
@@ -24,7 +26,12 @@
   "files": [
     "dist/rive.js",
     "src/rive.d.ts"
-
   ],
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.1",
+    "typescript": "^4.1.5"
+  },
   "typings": "./rive.d.ts"
 }
