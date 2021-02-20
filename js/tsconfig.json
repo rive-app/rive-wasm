@@ -3,7 +3,7 @@
     "module": "amd",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "target": "es5",
+    "target": "es2015",
     "outFile": "./dist/rive-ts.js",
     "strictNullChecks": true,
     "allowJs": true
