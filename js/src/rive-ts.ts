@@ -77,20 +77,65 @@ class CanvasAlignment {
 //#region Wasm loading
 
 // Holds a reference to the Rive runtime
-export let rive: typeof Rive;
+let _runtime: typeof Rive;
+
+// Is the Wasm bundle loaded?
+let _isWasmLoaded = () : boolean => _runtime !== undefined;
+
+// Is the Wasm bundle loading; prevents multiple concurrent Wasm loads
+let _isWasmLoading: boolean = false;
+
+// type definitions
+type OnWasmLoadedCallback = (runtime: typeof Rive) => void;
+
+// Queue of callbacks called when Wasm is loaded
+let _wasmLoadQueue: Array<(cb: OnWasmLoadedCallback) => void> = [];
 
 // Loads the runtime Wasm bundle
-export const loadWasm = async function() : Promise<void> {
- await Rive({
+export const _loadWasm = async () : Promise<void> => {
+  await Rive({
+    // fetches the Wasm bundle
     locateFile: (file) => 'file://../../wasm/publish/' + file
-  }).then((r) => {
-    rive = r;
-
-    console.log('Loaded Rive ' + r);
+  }).then((r: typeof Rive) => {
+    _runtime = r;
+    // Fire all the callbacks
+    while (_wasmLoadQueue.length > 0) {
+      _wasmLoadQueue.shift()?.(_runtime);
+    }
   }).catch((e) => {
     console.error('Unable to load Wasm module');
     throw e;
   });
 };
 
+// Adds a listener for Wasm load
+const _onWasmLoaded = (cb: OnWasmLoadedCallback) : void => {
+  if (!_isWasmLoading) {
+    // Start loading Wasm
+    _isWasmLoading = true;
+    _loadWasm();
+  }
+  if (_runtime !== undefined) {
+    // Wasm already loaded, fire immediately
+    cb(_runtime);
+  } else {
+    // Add to the callback queue
+    _wasmLoadQueue.push(cb);
+  }
+};
+
+// Unloads the Wasm bundle; used in testing
+let _unloadWasm = () : void => {
+  _runtime = undefined;
+  _isWasmLoading = false;
+};
+
 //#endregion
+
+// Exports for testing purposes only
+export const testables = {
+  loadWasm: _loadWasm,
+  isWasmLoaded: _isWasmLoaded,
+  onWasmLoaded: _onWasmLoaded,
+  unloadWasm: _unloadWasm,
+}

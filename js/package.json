@@ -10,7 +10,7 @@
   },
   "scripts": {
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
-    "build": "npx tsc --strictNullChecks --module commonjs ./src/rive-ts.ts --outDir ./dist",
+    "build": "npx tsc",
     "test": "jest"
   },
   "keywords": [

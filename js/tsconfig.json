@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-    "lib": [
-      "es2020"
-    ],
-  "module": "commonjs",
-  "target": "es2020"
-  }
+    "module": "amd",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "target": "es5",
+    "outFile": "./dist/rive-ts.js",
+    "strictNullChecks": true,
+    "allowJs": true
+  },
+  "files": [
+    "../wasm/publish/rive.js",
+    "./src/rive-ts.ts"
+  ]
 }
