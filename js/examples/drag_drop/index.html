@@ -17,6 +17,11 @@
         <!-- Drag and drop script -->
         <script>
             window.onload = function () {
+
+                function buf2hex(buffer) { // buffer is an ArrayBuffer
+                    return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join(", 0x");
+                }
+
                 if (window.File && window.FileReader && window.FileList && window.Blob) {
                     function handleFileSelect(evt) {
                         evt.stopPropagation();
@@ -28,6 +33,8 @@
                         var reader = new FileReader();
                         reader.onload = function() {
                             playBuffer(reader.result);
+                            console.log(buf2hex(reader.result));
+                            
                         };
                         reader.readAsArrayBuffer(file); 
                     }

@@ -73,7 +73,6 @@ const Rive = require('../../wasm/publish/rive');
 
 // #endregion
 
-
 // #region Wasm loading
 
 // Holds a reference to the Rive runtime
@@ -140,24 +139,53 @@ interface Events {
   onload: Array<Event>;
 }
 
+interface Artboard {
+  animationCount: () => number;
+  advance: (number) => void;
+  draw: (CanvasRenderer) => void;
+}
+
+interface CanvasRenderer {
+  animationCount: () => number;
+}
+
+interface RiveFile {
+  defaultArtboard: () => Artboard;
+}
+
+interface RiveAnimationOptions {
+  canvas: HTMLCanvasElement,
+  src?: string,
+  buffer?: ArrayBuffer,
+  autoplay?: boolean,
+  onload?: Event
+}
+
 export class RiveAnimation {
-  #src?: string;
   #canvas: HTMLCanvasElement;
+  #src?: string;
+  #buffer?: ArrayBuffer;
   #autoplay: boolean;
-  #buffer: ArrayBuffer;
   #events: Events = { onload: [] };
+
+  #artboard: Artboard;
+  #ctx: CanvasRenderingContext2D | null;
+  #renderer: CanvasRenderer;
 
   constructor (
     canvas: HTMLCanvasElement,
-    buffer: ArrayBuffer,
+    buffer?: ArrayBuffer,
     src?: string,
-    autoplay = false,
-    onload?: Event
+    onload?: Event,
+    autoplay = false
   ) {
     this.#canvas = canvas;
     this.#buffer = buffer;
     this.#src = src;
     this.#autoplay = autoplay;
+
+    // Initialize canvas
+    this.#ctx = canvas.getContext('2d');
 
     // Set up events
     if (onload) {
@@ -178,6 +206,21 @@ export class RiveAnimation {
     );
   }
 
+  // Getter for autoplay
+  get autoplay (): boolean {
+    return this.#autoplay;
+  }
+
+  public static fromOptions (options: RiveAnimationOptions) : RiveAnimation {
+    return new RiveAnimation(
+      options.canvas,
+      options.buffer,
+      options.src,
+      options.onload,
+      options.autoplay
+    );
+  }
+
   // Loads a Rive file
   private async loadSource (src: string) : Promise<void> {
     const req: Request = new Request(src);
@@ -188,11 +231,28 @@ export class RiveAnimation {
 
   // Loads data from the buffer
   private loadData (buffer: ArrayBuffer) : void {
-    console.log('Loading data');
-    const riveFile = _runtime.load(new Uint8Array(this.#buffer));
+    const riveFile = _runtime.load(new Uint8Array(this.#buffer!));
     if (riveFile) {
-      this.emit('load', `${this.#src}`);
+      this.emit('load', `${this.#src ? this.#src : ''}`);
+      this.initialize(riveFile);
+    } else {
+      throw new Error('Bad Rive data');
     }
+  }
+
+  // Initializes for playback
+  private initialize (riveFile: RiveFile) : void {
+    this.#artboard = riveFile.defaultArtboard();
+    this.#renderer = new _runtime.CanvasRenderer(this.#ctx);
+    this.drawFrame();
+  }
+
+  // Draws a single frame of the artboard
+  private drawFrame () : void {
+    this.#ctx?.save();
+    this.#artboard.advance(0);
+    this.#artboard.draw(this.#renderer);
+    this.#ctx?.restore();
   }
 
   // Emits a new event

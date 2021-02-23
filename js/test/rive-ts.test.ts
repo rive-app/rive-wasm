@@ -1,3 +1,4 @@
+import { isExportDeclaration } from 'typescript';
 import { testables, RiveAnimation } from '../src/rive-ts';
 
 const testFile: Array<any> = [
@@ -40,12 +41,39 @@ test('RiveAnimation waits for Wasm to load', done => {
     document.createElement('canvas'),
     byteArray.buffer,
     undefined,
-    true,
     (msg) => {
       expect(animation).toBeDefined();
+      expect(animation.autoplay).toBe(false);
       done();
     }
   );
+});
+
+test('RiveAnimation fromOptions initializes', done => {
+  const byteArray = new Uint8Array(testFile);
+  const animation = RiveAnimation.fromOptions({
+    canvas: document.createElement('canvas'),
+    buffer: byteArray.buffer,
+    autoplay: true,
+    onload: (msg) => {
+      expect(animation).toBeDefined();
+      expect(animation.autoplay).toBe(true);
+      done();
+    }
+  });
+});
+
+test('RiveAnimation fromOptions autoplay defaults to false', done => {
+  const byteArray = new Uint8Array(testFile);
+  const animation = RiveAnimation.fromOptions({
+    canvas: document.createElement('canvas'),
+    buffer: byteArray.buffer,
+    onload: (msg) => {
+      expect(animation).toBeDefined();
+      expect(animation.autoplay).toBe(false);
+      done();
+    }
+  });
 });
 
 // #endregion

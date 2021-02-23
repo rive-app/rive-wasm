@@ -9,7 +9,6 @@
     "allowJs": true
   },
   "files": [
-    "../wasm/publish/rive.js",
     "./src/rive-ts.ts"
   ]
 }
