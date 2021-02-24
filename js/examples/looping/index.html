@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Manually Control Rive Animations</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+            <button id="button">Play a Single Loop</button>
+        </div>
+
+        <script src="/dist/rive.js"></script>
+        <script>
+            // animation will show the first frame but not start playing
+            const animation = new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+                animations: ['windshield_wipers'],
+                canvas: document.getElementById('canvas'),
+            });
+
+            // Wire up the play button
+            const button = document.getElementById('button');
+            button.onclick = function() {
+                if (!animation.isPlaying()) {
+                    animation.play();
+                    button.disabled = true;
+                }
+            };
+
+            // Stop playing after one loop
+            animation.on('loop', function(event) {
+                animation.pause();
+                button.disabled = false;
+            });
+
+        </script>
+
+    </body>
+</html>
