@@ -50,7 +50,8 @@ fi
 terser --compress --mangle -o ./bin/release/rive.min.js -- ./bin/release/rive-combined.js
 
 # copy to publish folder
-cp ./bin/release/rive.min.js ../publish/rive.js
+cp ./bin/release/rive-combined.js ../publish/rive.js
+cp ./bin/release/rive.min.js ../publish/rive.min.js
 cp ./bin/release/rive.wasm ../publish/rive.wasm
 
 popd &>/dev/null

@@ -50,6 +50,7 @@ if ! command -v terser &>/dev/null; then
 fi
 terser --compress --mangle -o ./bin/release/rive-pure.min.js -- ./bin/release/rive-pure-combined.js
 
-cp ./bin/release/rive-pure.min.js ../publish/rive-pure.js
+cp ./bin/release/rive-pure-combined.js ../publish/rive.pure.js
+cp ./bin/release/rive-pure.min.js ../publish/rive.pure.min.js
 
 popd &>/dev/null
