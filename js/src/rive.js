@@ -3,7 +3,7 @@
 */
 'use strict';
 
-const Rive = require('../../wasm/build/bin/release/rive-pure-combined.js');
+const Rive = require('../../wasm/publish/rive.js');
 const { createLoopEvent } = require('./utils');
 
 (function () {
@@ -19,8 +19,8 @@ const { createLoopEvent } = require('./utils');
   var _loadWasm = function () {
     Rive({
       // Loads Wasm bundle
-      // locateFile: (file) => '/wasm/publish/' + file
-      // locateFile: (file) => 'https://unpkg.com/rive-canvas@0.6.10/' + file
+      // locateFile: (file) => '/examples/' + file
+      locateFile: (file) => 'https://unpkg.com/rive-canvas@0.6.11/' + file
     }).then((rive) => {
       // Wasm successfully loaded
       _rive = rive;
