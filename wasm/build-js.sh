@@ -17,7 +17,6 @@ em++ -Oz --js-opts 0 -g1 \
     -s MODULARIZE=1 \
     -s NO_EXIT_RUNTIME=1 \
     -s STRICT=1 \
-    -s WARN_UNALIGNED=1 \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s DISABLE_EXCEPTION_CATCHING=1 \
     -s WASM=0 \

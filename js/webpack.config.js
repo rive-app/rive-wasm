@@ -2,6 +2,7 @@ const path = require('path');
 
 module.exports = {
   entry: './src/rive.js',
+  target: 'web',
   module: {
     rules: [
       {
@@ -27,6 +28,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.js',
     assetModuleFilename: 'rive.wasm',
+    publicPath: '/dist',
   },
-  mode: 'production'
+  mode: 'production',
 };
