@@ -3,8 +3,9 @@ const utils = require('./utils');
 
 test('Creating loop event accepts valid loop values', () : void => {
   const event = utils.createLoopEvent('name', 0);
-  expect(event.loopType).toBe(0);
-  expect(event.loopName).toBe('oneShot');
+  expect(event).toBeDefined();
+  expect(event.type).toBe(0);
+  expect(event.name).toBe('oneShot');
   expect(event.animation).toBe('name');
 });
 
