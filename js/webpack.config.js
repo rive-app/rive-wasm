@@ -9,6 +9,11 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
+      // Rule for including Wasm file
+      {
+        test: /\.wasm/,
+        type: 'asset/resource',
+      },
     ],
   },
   resolve: {
@@ -21,6 +26,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.js',
+    assetModuleFilename: 'rive.wasm',
   },
   mode: 'production'
 };

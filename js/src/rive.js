@@ -4,6 +4,7 @@
 'use strict';
 
 const Rive = require('../../wasm/publish/rive.js');
+const wasm = require('../../wasm/publish/rive.wasm')
 const { createLoopEvent } = require('./utils');
 
 (function () {
@@ -19,8 +20,7 @@ const { createLoopEvent } = require('./utils');
   var _loadWasm = function () {
     Rive({
       // Loads Wasm bundle
-      // locateFile: (file) => '/examples/' + file
-      locateFile: (file) => 'https://unpkg.com/rive-canvas@0.6.11/' + file
+      locateFile: (file) => 'https://unpkg.com/rive-js@latest/dist/' + file
     }).then((rive) => {
       // Wasm successfully loaded
       _rive = rive;
@@ -410,7 +410,7 @@ const { createLoopEvent } = require('./utils');
       // List of instanced animations
       const instancedAnimationNames = self._animations.map(a => a.name());
 
-      // Get the animation and instance them
+      // Get the animations and instance them
       for (const i in animationNames) {
         // Ignore animations already in the list
         if (instancedAnimationNames.indexOf(animationNames[i]) >= 0) {
@@ -438,23 +438,18 @@ const { createLoopEvent } = require('./utils');
     },
 
     /*
-     * Removes animations from playback. Returns true if all the listed
-     * animations are removed, false if any of the animation names don't
-     * exist or aren't in the playback list.
+     * Removes animations from playback. Returns the list of animations
+     * that are stopped.
      */
     _removeAnimations: function (animationNames) {
       const self = this;
-      var result = true;
 
       // Get the animations to remove from the list
       const animationsToRemove = self._animations.filter(
         animation => animationNames.indexOf(animation.name()) >= 0
       );
 
-      // See if all the names are gonig to be removed
-      if (animationNames.length !== animationsToRemove.length) {
-        result = false;
-      }
+      
 
       // Remove the animations
       for (const i in animationsToRemove) {
@@ -464,7 +459,17 @@ const { createLoopEvent } = require('./utils');
         }
       }
 
-      return result;
+      // Return the list of animations removed
+      return animationsToRemove.map(animation => animation.name());
+    },
+
+    /*
+     * Removes all animations, returning the names of the stopped animations
+     */
+    _removeAllAnimations: function () {
+      const self = this;
+      self._animations.splice(0, self._animations.length);
+      return self._animations.map(animation => animation.name());
     },
 
     /*
@@ -577,7 +582,6 @@ const { createLoopEvent } = require('./utils');
             break;
           case 1:
             if (self._animations[i].loopCount) {
-              console.log('Emiting ' + self._animations[i].name());
               self._emit('loop', createLoopEvent(
                 self._animations[i].name(),
                 self._animations[i].loopValue(),
@@ -691,19 +695,24 @@ const { createLoopEvent } = require('./utils');
     stop: function (animationNames) {
       const self = this;
       animationNames = ensureArray(animationNames);
+      var stoppedAnimationNames = [];
+      // Stop all animations if none passed in
+      if (animationNames.length === 0) {
+        stoppedAnimationNames = self._removeAllAnimations();
+      } else {
+        stoppedAnimationNames = self._removeAnimations(animationNames);
 
-      self._removeAnimations(animationNames);
-
-      if (!self._hasActiveAnimations() || animationNames.length === 0) {
-        // Immediately cancel the next frame draw; if we don't do this,
-        // strange things will happen if the Rive file/buffer is
-        // reloaded.
-        cancelAnimationFrame(self._animReqId);
-        self._playback = playbackStates.stop;
+        if (!self._hasActiveAnimations() || animationNames.length === 0) {
+          // Immediately cancel the next frame draw; if we don't do this,
+          // strange things will happen if the Rive file/buffer is
+          // reloaded.
+          cancelAnimationFrame(self._animReqId);
+          self._playback = playbackStates.stop;
+        }
       }
 
       // Emits a stop event
-      self._emit('stop', animationNames);
+      self._emit('stop', stoppedAnimationNames);
     },
 
     /*

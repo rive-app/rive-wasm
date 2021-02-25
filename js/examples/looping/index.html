@@ -3,36 +3,67 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="user-scalable=no">
-        <title>Manually Control Rive Animations</title>
+        <title>Looping Animations</title>
         <link rel="stylesheet" href="styles.css">
     </head>
     <body class="parent">
         <div>
             <canvas id="canvas" width="500" height="500"></canvas>
-            <button id="button">Play a Single Loop</button>
+            <label for="animationSelect">Animation:</label>
+            <select id="animationSelect"></select>
+            <button id="button" disabled="true">Play</button>
         </div>
 
         <script src="/dist/rive.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const animation = new RiveAnimation({
-                src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
-                animations: ['windshield_wipers'],
+            const rive = new RiveAnimation({
+                src: 'https://cdn.rive.app/animations/web_api_test_file.riv',
                 canvas: document.getElementById('canvas'),
             });
 
-            // Wire up the play button
             const button = document.getElementById('button');
+            const select = document.getElementById('animationSelect');
+
+            // Wire up the play button
             button.onclick = function() {
-                if (!animation.isPlaying()) {
-                    animation.play();
-                    button.disabled = true;
-                }
+                // Stop any playing animations and clear them out
+                console.log('Manually calling stop');
+                rive.stop();
+                // Play the selected animation
+                rive.play(select.value);
+                button.disabled = true;
             };
 
+            // Wire up the select options on load and enable play button
+            rive.on('load', function() {
+                const animations = rive.animationNames();
+                animations.forEach(function(name) {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.innerHTML = name;
+                    select.appendChild(option);
+                });
+                button.disabled = false;
+            });
+
+            rive.on('play', function(names) {
+                console.log('Playing ' + names);
+            });
+
             // Stop playing after one loop
-            animation.on('loop', function(event) {
-                animation.pause();
+            rive.on('loop', function(event) {
+                rive.pause();
+                button.disabled = false;
+            });
+
+            rive.on('stop', function(names) {
+                console.log('Stopped ' + names);
+                button.disabled = false;
+            });
+
+            rive.on('pause', function(names) {
+                console.log('Paused ' + names);
                 button.disabled = false;
             });
 
