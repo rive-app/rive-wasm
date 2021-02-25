@@ -6,8 +6,8 @@ export const loopTypes: Array<string> = ['oneShot', 'loop', 'pingPong'];
 
 interface LoopEvent {
   animation: string;
-  loopType: number;
-  loopName: string;
+  name: string;
+  type: number;
 }
 
 // Creates a new LoopEvent
@@ -17,7 +17,7 @@ export let createLoopEvent = function (animation: string, loopValue: number) : L
   }
   return {
     animation: animation,
-    loopType: loopValue,
-    loopName: loopTypes[loopValue],
+    type: loopValue,
+    name: loopTypes[loopValue],
   }
 }
