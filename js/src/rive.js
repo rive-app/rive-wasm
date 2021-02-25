@@ -3,9 +3,11 @@
 */
 'use strict';
 
-const Rive = require('../../wasm/publish/rive.pure.js');
-// const _ = require('../../wasm/publish/rive.wasm');
+const Rive = require('../../wasm/publish/rive.js');
 const { createLoopEvent } = require('./utils');
+
+// Lets webpack know to copy the Wasm file to the dist folder
+const _ = require('../../wasm/publish/rive.wasm');
 
 
 // Rive Wasm bundle
@@ -19,7 +21,7 @@ var _wasmLoadQueue = [];
 var _loadWasm = function () {
   Rive({
     // Loads Wasm bundle
-    // locateFile: (file) => 'https://unpkg.com/rive-js@latest/dist/' + file
+    locateFile: (file) => 'https://unpkg.com/rive-js@latest/dist/' + file
     // locateFile: (file) => '/dist/' + file
   }).then((rive) => {
     // Wasm successfully loaded
@@ -861,7 +863,6 @@ RiveAnimation.prototype = {
 
 // Exports needed to expose these for some reason as ES2015 export not working
 if (typeof exports !== 'undefined') {
-  console.log('EXPORTS');
   exports.RiveAnimation = RiveAnimation;
   exports.CanvasAlignment = CanvasAlignment;
   // Exporting things to be tested
@@ -872,7 +873,6 @@ if (typeof exports !== 'undefined') {
 
 // Tie these to global/window for use directly in browser
 if (typeof global !== 'undefined') {
-  console.log('GLOBALS');
   global.RiveAnimation = RiveAnimation;
   global.CanvasAlignment = CanvasAlignment;
 } else if (typeof window !== 'undefined') {
@@ -893,5 +893,3 @@ function ensureArray(param) {
   }
   return [];
 }
-
-console.log('bob');

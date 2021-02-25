@@ -20,7 +20,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     fallback: {
-      'path': require.resolve('path-browserify'),
+      'path': false,
       'fs': false
     }
   },
@@ -28,9 +28,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.js',
     assetModuleFilename: 'rive.wasm',
-    // library: 'global',
-    // libraryTarget: 'assign',
-    // publicPath: '/dist',
+    publicPath: '/dist',
   },
-  mode: 'development',
+  mode: 'production',
 };
