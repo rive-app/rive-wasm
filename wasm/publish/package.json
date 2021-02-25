@@ -1,9 +1,9 @@
 {
   "name": "rive-canvas",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "description": "Rive JS WASM runtime.",
   "main": "rive.min.js",
-  "homepage": "https://beta.rive.app",
+  "homepage": "https://rive.app",
   "typings": "./types.d.ts",
   "license": "MIT",
   "repository": {

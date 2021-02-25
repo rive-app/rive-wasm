@@ -231,7 +231,7 @@ Module.onRuntimeInitialized = function () {
                     break;
                 case fill:
                     ctx.fillStyle = _value;
-                    ctx.fill(path._path2D);
+                    ctx.fill(path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
                     break;
             }
         }
@@ -256,7 +256,6 @@ Module.onRuntimeInitialized = function () {
             paint.draw(this._ctx, path);
         },
         clipPath: function (path) {
-            
             this._ctx.clip(path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
         }
     });
