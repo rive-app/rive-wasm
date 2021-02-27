@@ -141,22 +141,24 @@ function _Animation({ animation, instance }) {
   this.instance = instance;
   // Tracks whether the instance has looped
   this.loopCount = 0;
+  // Tracks whether this animation is paused
+  this.paused = false;
 };
 
 // _Animation api; FOR INTERNAL USE ONLY
 _Animation.prototype = {
 
   /*
-      * Name of the animation
-      */
+   * Name of the animation
+   */
   name: function () {
     const self = this;
     return self.animation.name;
   },
 
   /*
-      * Loop type of the animation
-      */
+   * Loop type of the animation
+   */
   loopValue: function () {
     const self = this;
     return self.animation.loopValue;
@@ -333,7 +335,6 @@ RiveAnimation.prototype = {
 
     // Loop through event store and fire all functions.
     for (var i = events.length - 1; i >= 0; i--) {
-      // console.log('Emitting ' + event + ': ' + msg);
       setTimeout(function (fn) {
         fn.call(this, msg);
       }.bind(self, events[i].fn), 0);
@@ -393,11 +394,13 @@ RiveAnimation.prototype = {
     self._renderer = new self._rive.CanvasRenderer(self._ctx);
 
     // Initialize the animations
-    self._addAnimations(self._startingAnimationNames);
+    if (self._startingAnimationNames.length > 0) {
+      self._addAnimations(self._startingAnimationNames);
+    }
   },
 
   /*
-    * Updates which animations will play back This will remove any existing
+    * Updates which animations will play back. This will remove any existing
     * animations, and add the named animations. If any animation is not
     * found, then the function returns false; true otherwise. If
     * animationNames is not passed, then the default animation will be
@@ -405,87 +408,89 @@ RiveAnimation.prototype = {
     */
   _addAnimations: function (animationNames) {
     const self = this;
-
-    var result = true;
-    const animationList = [];
-
-    // List of instanced animations
+    // Go through each of the animation names, first checking to see if it's
+    // already instanced and unpause, and then instance any missing animations.
     const instancedAnimationNames = self._animations.map(a => a.name());
-
-    // Get the animations and instance them
     for (const i in animationNames) {
-      // Ignore animations already in the list
-      if (instancedAnimationNames.indexOf(animationNames[i]) >= 0) {
-        result = false;
-        continue;
-      }
-      const a = self._artboard.animation(animationNames[i]);
-      if (!a) {
-        result = false;
+      const index = instancedAnimationNames.indexOf(animationNames[i]);
+      if (index >= 0) {
+        // Animation is already instanced, unpause it
+        self._animations[index].paused = false;
       } else {
-        animationList.push(a);
+        // Create a new animation instance and add it to the list
+        const anim = self._artboard.animation(animationNames[i]);
+        const inst = new self._rive.LinearAnimationInstance(anim);
+        self._animations.push(new _Animation({animation: anim, instance: inst}));
       }
     }
 
-    // Instantiate the animations
-    for (const i in animationList) {
-      const animation = animationList[i];
-      self._animations.push(new _Animation({
-        animation: animation,
-        instance: new self._rive.LinearAnimationInstance(animation)
-      }));
-    }
+    printAnimationState(self._animations);
 
-    return result;
+    return self._animations.filter(a => !a.paused).map(a => a.name());
   },
 
   /*
-    * Removes animations from playback. Returns the list of animations
-    * that are stopped.
-    */
+   * Removes animations from playback. Returns the list of animations
+   * that are stopped.
+   */
   _removeAnimations: function (animationNames) {
     const self = this;
 
     // Get the animations to remove from the list
     const animationsToRemove = self._animations.filter(
-      animation => animationNames.indexOf(animation.name()) >= 0
+      a => animationNames.indexOf(a.name()) >= 0
     );
 
-    
-
     // Remove the animations
-    for (const i in animationsToRemove) {
-      const index = self._animations.indexOf(animationsToRemove[i]);
-      if (index > -1) {
-        self._animations.splice(index, 1);
-      }
-    }
+    animationsToRemove.forEach(a =>
+      self._animations.splice(self._animations.indexOf(a), 1)
+    );
 
     // Return the list of animations removed
-    return animationsToRemove.map(animation => animation.name());
+    return animationsToRemove.map(a => a.name());
   },
 
   /*
-    * Removes all animations, returning the names of the stopped animations
-    */
+   * Removes all animations, returning the names of the stopped animations
+   */
   _removeAllAnimations: function () {
     const self = this;
+    const names = self._animations.map(animation => animation.name());
     self._animations.splice(0, self._animations.length);
-    return self._animations.map(animation => animation.name());
+    return names;
   },
 
   /*
-    * Returns true if there are animations for playback, false if there are
-    * none
-    */
+   * Pauses animations
+   */
+  _pauseAnimations: function(animationNames) {
+    const self = this;
+    const pausedAnimationNames = [];
+
+    self._animations.forEach((a, i) => {
+      if (animationNames.indexOf(a.name()) >= 0) {
+        a.paused = true;
+        pausedAnimationNames.push(a.name());
+      }
+    });
+
+    printAnimationState(self._animations);
+
+    return pausedAnimationNames;
+  },
+
+  /*
+   * Returns true if there are animations for playback, false if there are
+   * none or if all of them are paused
+   */
   _hasActiveAnimations: function () {
     const self = this;
-    return self._animations.length !== 0;
+    return self._animations.length !== 0 && self._animations.reduce((acc, curr) => acc || !curr.paused, false);
   },
 
   /*
-      * Ensure that there's at least one animation for playback
-      */
+   * Ensure that there's at least one animation for playback
+   */
   _validateAnimations: function () {
     const self = this;
 
@@ -538,16 +543,17 @@ RiveAnimation.prototype = {
     const elapsedTime = (time - self._lastTime) / 1000;
     self._lastTime = time;
 
-    // Advance the animation by the elapsed number of seconds
-    for (const i in self._animations) {
-      self._animations[i].instance.advance(elapsedTime);
-      if (self._animations[i].instance.didLoop) {
-        self._animations[i].loopCount += 1;
+    // Advance non-paused animations by the elapsed number of seconds
+    const activeAnimations = self._animations.filter(a => !a.paused);
+    for (const i in activeAnimations) {
+      activeAnimations[i].instance.advance(elapsedTime);
+      if (activeAnimations[i].instance.didLoop) {
+        activeAnimations[i].loopCount += 1;
       }
       // Apply the animation to the artboard. The reason of this is that
       // multiple animations may be applied to an artboard, which will
       // then mix those animations together.
-      self._animations[i].instance.apply(self._artboard, 1.0);
+      activeAnimations[i].instance.apply(self._artboard, 1.0);
     }
 
     // Once the animations have been applied to the artboard, advance it
@@ -658,8 +664,7 @@ RiveAnimation.prototype = {
     }
 
     // Add any new animations to the list
-    self._addAnimations(animationNames);
-
+    const playingAnimations = self._addAnimations(animationNames);
 
     // Ensure there's at least one animation flagged for playback
     self._validateAnimations();
@@ -671,7 +676,7 @@ RiveAnimation.prototype = {
 
     // Emits a play event, returning an array of animation names being
     // played
-    self._emit('play', self._animations.map(animation => animation.name()));
+    self._emit('play', playingAnimations);
   },
 
   /*
@@ -681,7 +686,7 @@ RiveAnimation.prototype = {
     const self = this;
     animationNames = ensureArray(animationNames);
 
-    self._removeAnimations(animationNames);
+    self._pauseAnimations(animationNames);
 
     if (!self._hasActiveAnimations() || animationNames.length === 0) {
       self._playback = playbackStates.pause;
@@ -782,8 +787,8 @@ RiveAnimation.prototype = {
   },
 
   /*
-      * Updates the fit and alignment of the animation in the canvas
-      */
+   * Updates the fit and alignment of the animation in the canvas
+   */
   setAlignment: function (alignment) {
     const self = this;
 
@@ -797,16 +802,16 @@ RiveAnimation.prototype = {
   },
 
   /*
-    * Returns the animation source/name
-    */
+   * Returns the animation source/name
+   */
   source: function () {
     const self = this;
     return self._src;
   },
 
   /*
-      * Returns a list of the names of animations on the chosen artboard
-      */
+   * Returns a list of the names of animations on the chosen artboard
+   */
   animationNames: function () {
     const self = this;
     if (!self._loaded) {
@@ -821,8 +826,8 @@ RiveAnimation.prototype = {
   },
 
   /*
-      * Returns a list of playing animation names
-      */
+   * Returns a list of playing animation names
+   */
   playingAnimationNames: function () {
     const self = this;
     if (!self._loaded) {
@@ -830,31 +835,33 @@ RiveAnimation.prototype = {
     }
 
     var animationNames = [];
-    for (var i in self._animations) {
-      animationNames.push(self._animations[i].name);
+    for (const i in self._animations) {
+      if (!self._animations[i].paused) {
+        animationNames.push(self._animations[i].name());
+      }
     }
     return animationNames;
   },
 
   /*
-  * Returns true if playback is playing
-  */
+   * Returns true if playback is playing
+   */
   isPlaying: function () {
     const self = this;
     return self._playback === playbackStates.play;
   },
 
   /*
-  * Returns true if playback is paused
-  */
+   * Returns true if playback is paused
+   */
   isPaused: function () {
     const self = this;
     return self._playback === playbackStates.pause;
   },
 
   /*
-  * Returns true if playback state is stopped
-  */
+   * Returns true if playback state is stopped
+   */
   isStopped: function () {
     const self = this;
     return self._playback === playbackStates.stop;
@@ -881,8 +888,8 @@ if (typeof global !== 'undefined') {
 }
 
 /*
-  * Utility function to ensure a parameter is an array
-  */
+ * Utility function to ensure a parameter is an array
+ */
 function ensureArray(param) {
   if (!param) {
     return [];
@@ -892,4 +899,12 @@ function ensureArray(param) {
     return param;
   }
   return [];
+}
+
+function printAnimationState(animations) {
+  console.log(' ------------- ');
+  for (const i in animations) {
+    console.log(' -------- ' + animations[i].name() + ' ' + i.toString() + ' ' + (animations[i].paused ? 'paused' : 'playing'));
+  }
+  console.log(' ------------- ');
 }

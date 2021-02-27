@@ -21,13 +21,12 @@
             <button id="bottom-right">Bottom Right</button>
         </div>
 
-        <script src="/src/rive.js"></script>
+        <script src="/dist/rive.js"></script>
         <script>
             const animation = new RiveAnimation({
                 src: 'https://cdn.rive.app/animations/juice063.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
-                animations: ['idle', 'windshield_wipers', 'bouncing'],
                 alignment: new CanvasAlignment({fit: 'none', alignment: 'center'}),
             });
 
