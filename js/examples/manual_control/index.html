@@ -9,30 +9,67 @@
     <body class="parent">
         <div>
             <canvas id="canvas" width="500" height="500"></canvas>
-            <button id="button">Play</button>
+        </div>
+        <div>
+            <button id="idle">Start Truck</button>
+            <button id="wipers">Start Wipers</button>
+            <button id="bounce">Rough Road</button>
         </div>
 
-        <script src="/src/rive.js"></script>
+        <script src="/dist/rive.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const animation = new RiveAnimation({
+            const rive = new RiveAnimation({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: document.getElementById('canvas'),
+                alignment: new CanvasAlignment({fit: 'cover'}),
             });
 
-            const button = document.getElementById('button');
-            button.addEventListener('click', function() {
-                // isPlaying() returns a boolean
-                if (animation.isPlaying()) {
-                    // pause() the animation
-                    animation.pause();
-                    button.innerHTML = 'Play';
+            const idleButton = document.getElementById('idle');
+            const wipersButton = document.getElementById('wipers');
+            const bounceButton = document.getElementById('bounce');
 
-                } else {
-                    // play() the animation
-                    animation.play();
-                    button.innerHTML = 'Pause';
-                }
+            let wipersState = bounceState = 0;
+
+            idleButton.onclick = _ => 
+                rive.playingAnimationNames().includes('idle') ?
+                    rive.pause('idle') :
+                    rive.play('idle');
+
+            wipersButton.onclick = _ =>
+                rive.playingAnimationNames().includes('windshield_wipers') ?
+                    rive.pause('windshield_wipers') :
+                    rive.play('windshield_wipers');
+
+            bounceButton.onclick = _ =>
+                rive.playingAnimationNames().includes('bouncing') ?
+                    rive.pause('bouncing') :
+                    rive.play('bouncing');
+
+            // Listen for play events to update button text
+            rive.on('play', (names) => {
+                names.forEach((name) => {
+                    if (name === 'idle') {
+                        idleButton.innerHTML = 'Stop Truck';
+                    } else if (name === 'windshield_wipers') {
+                        wipersButton.innerHTML = 'Stop Wipers';
+                    } else if (name === 'bouncing') {
+                        bounceButton.innerHTML = 'Smooth Road';
+                    } 
+                });
+            });
+
+            // Listen for pause events to update button text
+            rive.on('pause', (names) => {
+                names.forEach((name) => {
+                    if (name === 'idle') {
+                        idleButton.innerHTML = 'Start Truck';
+                    } else if (name === 'windshield_wipers') {
+                        wipersButton.innerHTML = 'Start Wipers';
+                    } else if (name === 'bouncing') {
+                        bounceButton.innerHTML = 'Smooth Road';
+                    } 
+                });
             });
 
         </script>

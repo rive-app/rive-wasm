@@ -787,8 +787,8 @@ RiveAnimation.prototype = {
   },
 
   /*
-      * Updates the fit and alignment of the animation in the canvas
-      */
+   * Updates the fit and alignment of the animation in the canvas
+   */
   setAlignment: function (alignment) {
     const self = this;
 
@@ -844,24 +844,24 @@ RiveAnimation.prototype = {
   },
 
   /*
-  * Returns true if playback is playing
-  */
+   * Returns true if playback is playing
+   */
   isPlaying: function () {
     const self = this;
     return self._playback === playbackStates.play;
   },
 
   /*
-  * Returns true if playback is paused
-  */
+   * Returns true if playback is paused
+   */
   isPaused: function () {
     const self = this;
     return self._playback === playbackStates.pause;
   },
 
   /*
-  * Returns true if playback state is stopped
-  */
+   * Returns true if playback state is stopped
+   */
   isStopped: function () {
     const self = this;
     return self._playback === playbackStates.stop;
@@ -888,8 +888,8 @@ if (typeof global !== 'undefined') {
 }
 
 /*
-  * Utility function to ensure a parameter is an array
-  */
+ * Utility function to ensure a parameter is an array
+ */
 function ensureArray(param) {
   if (!param) {
     return [];
