@@ -802,16 +802,16 @@ RiveAnimation.prototype = {
   },
 
   /*
-    * Returns the animation source/name
-    */
+   * Returns the animation source/name
+   */
   source: function () {
     const self = this;
     return self._src;
   },
 
   /*
-      * Returns a list of the names of animations on the chosen artboard
-      */
+   * Returns a list of the names of animations on the chosen artboard
+   */
   animationNames: function () {
     const self = this;
     if (!self._loaded) {
@@ -826,8 +826,8 @@ RiveAnimation.prototype = {
   },
 
   /*
-      * Returns a list of playing animation names
-      */
+   * Returns a list of playing animation names
+   */
   playingAnimationNames: function () {
     const self = this;
     if (!self._loaded) {
@@ -835,8 +835,10 @@ RiveAnimation.prototype = {
     }
 
     var animationNames = [];
-    for (var i in self._animations) {
-      animationNames.push(self._animations[i].name);
+    for (const i in self._animations) {
+      if (!self._animations[i].paused) {
+        animationNames.push(self._animations[i].name());
+      }
     }
     return animationNames;
   },
