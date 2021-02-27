@@ -29,8 +29,6 @@
             const wipersButton = document.getElementById('wipers');
             const bounceButton = document.getElementById('bounce');
 
-            let wipersState = bounceState = 0;
-
             idleButton.onclick = _ => 
                 rive.playingAnimationNames().includes('idle') ?
                     rive.pause('idle') :

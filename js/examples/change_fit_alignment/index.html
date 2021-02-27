@@ -27,52 +27,52 @@
                 src: 'https://cdn.rive.app/animations/juice063.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
-                alignment: new CanvasAlignment({fit: 'none', alignment: 'center'}),
+                alignment: new CanvasAlignment('none', 'center'),
             });
 
             document.getElementById('top-left').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topLeft'})
+                    new CanvasAlignment('none', 'topLeft')
                 );
             });
             document.getElementById('top-center').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topCenter'})
+                    new CanvasAlignment('none', 'topCenter')
                 );
             });
             document.getElementById('top-right').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topRight'})
+                    new CanvasAlignment('none', 'topRight')
                 );
             });
             document.getElementById('center-left').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'centerLeft'})
+                    new CanvasAlignment('none', 'centerLeft')
                 );
             });
             document.getElementById('center').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'center'})
+                    new CanvasAlignment('none', 'center')
                 );
             });
             document.getElementById('center-right').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'centerRight'})
+                    new CanvasAlignment('none', 'centerRight')
                 );
             });
             document.getElementById('bottom-left').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomLeft'})
+                    new CanvasAlignment('none', 'bottomLeft')
                 );
             });
             document.getElementById('bottom-center').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomCenter'})
+                    new CanvasAlignment('none', 'bottomCenter')
                 );
             });
             document.getElementById('bottom-right').addEventListener('click', function() {
                 animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomRight'})
+                    new CanvasAlignment('none', 'bottomRight')
                 );
             });
         </script>

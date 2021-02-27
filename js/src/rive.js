@@ -4,7 +4,7 @@
 'use strict';
 
 const Rive = require('../../wasm/publish/rive.js');
-const { createLoopEvent } = require('./utils');
+const { createLoopEvent, CanvasAlignment, playbackStates } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
@@ -54,85 +54,9 @@ var _onWasmLoaded = function (cb) {
   }
 }
 
-// Playback states
-const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
-
-// Canvas fit values
-const canvasFitValues = ['cover', 'contain', 'fill', 'fitWidth', 'fitHeight', 'none', 'scaleDown'];
-
-// Canvas alignment values
-const canvasAlignmentValues = ['center', 'topLeft', 'topCenter', 'topRight', 'centerLeft', 'centerRight', 'bottomLeft', 'bottomCenter', 'bottomRight'];
-
-// Canvas alignment object; lets you specify what alignment your animation will have in its canvas
-export function CanvasAlignment({ fit, alignment, minX, minY, maxX, maxY }) {
-  this.fit = fit ? fit : canvasFitValues[0];
-  this.alignment = alignment ? alignment : canvasAlignmentValues[0];
-  this.minX = minX ? minX : 0;
-  this.minY = minY ? minY : 0;
-  this.maxX = maxX; // If this is undefined, then the runtime will use the canvas width
-  this.maxY = maxY; // If this is undefined, then the runtime will use the canvas height
-};
-
-// CanvasAlignment api; FOR INTERNAL USE ONLY
-CanvasAlignment.prototype = {
-
-  /*
-    * Gets the Wasm Fit type from the user-defined type; we do this because the
-    * Wasm types are only available after the Wasm bundle loads
-    */
-  _riveFit: function (rive) {
-    switch (this.fit) {
-      case 'cover':
-        return rive.Fit.cover;
-      case 'contain':
-        return rive.Fit.contain;
-      case 'fill':
-        return rive.Fit.fill;
-      case 'fitWidth':
-        return rive.Fit.fitWidth;
-      case 'fitHeight':
-        return rive.Fit.fitHeight;
-      case 'scaleDown':
-        return rive.Fit.scaleDown;
-      case 'none':
-      default:
-        return rive.Fit.none;
-    }
-  },
-
-  /*
-    * Gets the Wasm alignment type from the user-defined type; we do this because the
-    * Wasm types are only available after the Wasm bundle loads
-    */
-  _riveAlignment: function (rive) {
-    switch (this.alignment) {
-      case 'topLeft':
-        return rive.Alignment.topLeft;
-      case 'topCenter':
-        return rive.Alignment.topCenter;
-      case 'topRight':
-        return rive.Alignment.topRight;
-      case 'centerLeft':
-        return rive.Alignment.centerLeft;
-      case 'centerRight':
-        return rive.Alignment.centerRight;
-      case 'bottomLeft':
-        return rive.Alignment.bottomLeft;
-      case 'bottomCenter':
-        return rive.Alignment.bottomCenter;
-      case 'bottomRight':
-        return rive.Alignment.bottomRight;
-      case 'center':
-      default:
-        return rive.Alignment.center;
-    }
-  }
-};
-
-
 /*
-  * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
-  */
+ * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
+ */
 function _Animation({ animation, instance }) {
   if (!animation || !instance) {
     console.error('_Animation requires both an animation and instance');
@@ -511,8 +435,8 @@ RiveAnimation.prototype = {
     // Choose how you want the animation to align in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment._riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment._riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._alignment ? self._alignment.riveFit(self._rive) : self._rive.Fit.contain,
+      self._alignment ? self._alignment.riveAlignment(self._rive) : self._rive.Alignment.center,
       {
         minX: self._alignment ? self._alignment.minX : 0,
         minY: self._alignment ? self._alignment.minY : 0,
@@ -565,8 +489,8 @@ RiveAnimation.prototype = {
     // Render the frame in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment._riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment._riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._alignment ? self._alignment.riveFit(self._rive) : self._rive.Fit.contain,
+      self._alignment ? self._alignment.riveAlignment(self._rive) : self._rive.Alignment.center,
       {
         minX: self._alignment ? self._alignment.minX : 0,
         minY: self._alignment ? self._alignment.minY : 0,
