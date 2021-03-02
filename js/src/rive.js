@@ -4,7 +4,12 @@
 'use strict';
 
 const Rive = require('../../wasm/publish/rive.js');
-const { createLoopEvent, CanvasAlignment, playbackStates } = require('./utils');
+const {
+  createLoopEvent,
+  Alignment,
+  Fit,
+  Layout,
+  playbackStates } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
@@ -435,8 +440,8 @@ RiveAnimation.prototype = {
     // Choose how you want the animation to align in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment.riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment.riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._alignment ? self._alignment.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._alignment ? self._alignment.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
         minX: self._alignment ? self._alignment.minX : 0,
         minY: self._alignment ? self._alignment.minY : 0,
@@ -489,8 +494,8 @@ RiveAnimation.prototype = {
     // Render the frame in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment.riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment.riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._alignment ? self._alignment.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._alignment ? self._alignment.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
         minX: self._alignment ? self._alignment.minX : 0,
         minY: self._alignment ? self._alignment.minY : 0,
@@ -716,7 +721,7 @@ RiveAnimation.prototype = {
   setAlignment: function (alignment) {
     const self = this;
 
-    if (!alignment.constructor === CanvasAlignment) {
+    if (!alignment.constructor === Alignment) {
       return;
     }
     self._alignment = alignment;
@@ -795,7 +800,9 @@ RiveAnimation.prototype = {
 // Exports needed to expose these for some reason as ES2015 export not working
 if (typeof exports !== 'undefined') {
   exports.RiveAnimation = RiveAnimation;
-  exports.CanvasAlignment = CanvasAlignment;
+  exports.Alignment = Alignment;
+  exports.Fit = Fit;
+  exports.Layout = Layout;
   // Exporting things to be tested
   // exports.testables = {
   //   createLoopEvent: LoopEvent
@@ -804,11 +811,17 @@ if (typeof exports !== 'undefined') {
 
 // Tie these to global/window for use directly in browser
 if (typeof global !== 'undefined') {
-  global.RiveAnimation = RiveAnimation;
-  global.CanvasAlignment = CanvasAlignment;
+  global.Rive = {};
+  global.Rive.RiveAnimation = RiveAnimation;
+  global.Rive.Alignment = Alignment;
+  global.Rive.Fit = Fit;
+  global.Rive.Layout = Layout;
 } else if (typeof window !== 'undefined') {
-  window.RiveAnimation = RiveAnimation;
-  window.CanvasAlignment = CanvasAlignment;
+  window.Rive = {};
+  window.Rive.RiveAnimation = RiveAnimation;
+  window.Rive.Alignment = Alignment;
+  window.Rive.Fit = Fit;
+  window.Rive.Layout = Layout;
 }
 
 /*

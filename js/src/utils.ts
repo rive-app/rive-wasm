@@ -1,5 +1,11 @@
 // Slowly moving functionality over to Typescript
 
+// import { RiveAnimation } from "../dist/rive";
+
+const Rive = require('../../wasm/publish/rive.js');
+
+// #region LoopEvent
+
 // Loop types. The index of the type is the value that comes from Wasm
 export const loopTypes: Array<string> = ['oneShot', 'loop', 'pingPong'];
 
@@ -22,43 +28,54 @@ export let createLoopEvent = function (animation: string, loopValue: number) : L
   }
 }
 
+// #endregion
+
 // Maps the playback state to the Wasm enum values
 export const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
 
-// Canvas fit values used in Wasm runtime
-const canvasFitValues: Array<string> = [
-  'cover',
-  'contain',
-  'fill',
-  'fitWidth',
-  'fitHeight',
-  'none',
-  'scaleDown'
-];
+// #region CanvasAlignment
 
-// Canvas alignment values used in Wasm runtime
-const canvasAlignmentValues: Array<string> = [
-  'center',
-  'topLeft',
-  'topCenter',
-  'topRight',
-  'centerLeft',
-  'centerRight',
-  'bottomLeft',
-  'bottomCenter',
-  'bottomRight'
-];
+// Fit options for the canvas
+export enum Fit {
+  Cover     = 'cover',
+  Contain   = 'contain',
+  Fill      = 'fill',
+  FitWidth  = 'fitWidth',
+  FitHeight = 'fitHeight',
+  None      = 'none',
+  ScaleDown = 'scaleDown'
+}
+
+// Alignment options for the canvas
+export enum Alignment {
+  Center       = 'center',
+  TopLeft      = 'topLeft',
+  TopCenter    = 'topCenter',
+  TopRight     = 'topRight',
+  CenterLeft   = 'centerLeft',
+  CenterRight  = 'centerRight',
+  BottomLeft   = 'bottomLeft',
+  BottomCenter = 'bottomCenter',
+  BottomRight  = 'bottomRight'
+}
 
 // Alignment options for Rive animations in a HTML canvas
-export class CanvasAlignment {
-  public fit: string;
-  public alignment: string;
+export class Layout {
+  public fit: Fit;
+  public alignment: Alignment;
   public minX: number;
   public minY: number;
   public maxX: number;
   public maxY: number;
 
-  constructor(fit: string = 'none', alignment: string = 'center', minX: number = 0, minY: number = 0, maxX: number = 0, maxY: number = 0) {
+  constructor(
+    fit: Fit = Fit.None,
+    alignment: Alignment = Alignment.Center,
+    minX: number = 0,
+    minY: number = 0,
+    maxX: number = 0,
+    maxY: number = 0
+  ) {
     this.fit = fit;
     this.alignment = alignment;
     this.minX = minX;
@@ -68,49 +85,50 @@ export class CanvasAlignment {
   }
 
   // Returns fit for the Wasm runtime format
-  public riveFit(rive: any): any {
+  public runtimeFit(rive: typeof Rive): any {
     switch (this.fit) {
-      case 'cover':
+      case Fit.Cover:
         return rive.Fit.cover;
-      case 'contain':
+      case Fit.Contain:
         return rive.Fit.contain;
-      case 'fill':
+      case Fit.Fill:
         return rive.Fit.fill;
-      case 'fitWidth':
+      case Fit.FitWidth:
         return rive.Fit.fitWidth;
-      case 'fitHeight':
+      case Fit.FitHeight:
         return rive.Fit.fitHeight;
-      case 'scaleDown':
+      case Fit.ScaleDown:
         return rive.Fit.scaleDown;
-      case 'none':
+      case Fit.None:
       default:
         return rive.Fit.none;
     }
   }
 
   // Returns alignment for the Wasm runtime format
-  public riveAlignment(rive: any): any {
+  public runtimeAlignment(rive: typeof Rive): any {
     switch (this.alignment) {
-      case 'topLeft':
+      case Alignment.TopLeft:
         return rive.Alignment.topLeft;
-      case 'topCenter':
+      case Alignment.TopCenter:
         return rive.Alignment.topCenter;
-      case 'topRight':
+      case Alignment.TopRight:
         return rive.Alignment.topRight;
-      case 'centerLeft':
+      case Alignment.CenterLeft:
         return rive.Alignment.centerLeft;
-      case 'centerRight':
+      case Alignment.CenterRight:
         return rive.Alignment.centerRight;
-      case 'bottomLeft':
+      case Alignment.BottomLeft:
         return rive.Alignment.bottomLeft;
-      case 'bottomCenter':
+      case Alignment.BottomCenter:
         return rive.Alignment.bottomCenter;
-      case 'bottomRight':
+      case Alignment.BottomRight:
         return rive.Alignment.bottomRight;
-      case 'center':
+      case Alignment.Center:
       default:
         return rive.Alignment.center;
     }
   }
-
 }
+
+// #endregion
