@@ -59,14 +59,24 @@ export enum Alignment {
   BottomRight  = 'bottomRight'
 }
 
+// Interface for the Layout static method contructor
+export interface LayoutParameters {
+  fit: Fit,
+  alignment: Alignment,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+}
+
 // Alignment options for Rive animations in a HTML canvas
 export class Layout {
-  public fit: Fit;
-  public alignment: Alignment;
-  public minX: number;
-  public minY: number;
-  public maxX: number;
-  public maxY: number;
+  public fit?: Fit;
+  public alignment?: Alignment;
+  public minX?: number;
+  public minY?: number;
+  public maxX?: number;
+  public maxY?: number;
 
   constructor(
     fit: Fit = Fit.None,
@@ -82,6 +92,18 @@ export class Layout {
     this.minY = minY;
     this.maxX = maxX;
     this.maxY = maxY;
+  }
+
+  // Alternative constructor to build a Layout from an interface/object
+  static new({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
+    return new Layout(
+      fit,
+      alignment,
+      minX,
+      minY,
+      maxX,
+      maxY
+    );
   }
 
   // Returns fit for the Wasm runtime format

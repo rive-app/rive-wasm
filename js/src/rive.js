@@ -812,13 +812,13 @@ if (typeof exports !== 'undefined') {
 // Tie these to global/window for use directly in browser
 if (typeof global !== 'undefined') {
   global.Rive = {};
-  global.Rive.RiveAnimation = RiveAnimation;
+  global.Rive.Animation = RiveAnimation;
   global.Rive.Alignment = Alignment;
   global.Rive.Fit = Fit;
   global.Rive.Layout = Layout;
 } else if (typeof window !== 'undefined') {
   window.Rive = {};
-  window.Rive.RiveAnimation = RiveAnimation;
+  window.Rive.Animation = RiveAnimation;
   window.Rive.Alignment = Alignment;
   window.Rive.Fit = Fit;
   window.Rive.Layout = Layout;

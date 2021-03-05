@@ -23,11 +23,11 @@
 
         <script src="/dist/rive.js"></script>
         <script>
-            const animation = new Rive.RiveAnimation({
+            const animation = new Rive.Animation({
                 src: 'https://cdn.rive.app/animations/juice063.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
-                alignment: new Rive.Layout(Rive.Fit.None, Rive.Alignment.Center),
+                alignment: new Rive.Layout.new({fit: Rive.Fit.None, alignment: Rive.Alignment.Center}),
             });
 
             document.getElementById('top-left').addEventListener('click', function() {
@@ -62,7 +62,7 @@
             });
             document.getElementById('bottom-left').addEventListener('click', function() {
                 animation.setAlignment(
-                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.BottomLeft)
+                    new Rive.Layout.new({fit: 'none', alignment: 'bottomLeft'})
                 );
             });
             document.getElementById('bottom-center').addEventListener('click', function() {
@@ -72,7 +72,8 @@
             });
             document.getElementById('bottom-right').addEventListener('click', function() {
                 animation.setAlignment(
-                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.BottomRight)
+                    // You can still use plain old strings
+                    new Rive.Layout('none', 'bottomRight')
                 );
             });
         </script>

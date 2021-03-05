@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, FunctionComponent } from 'react';
-import { RiveAnimation } from 'rive-js';
+import React, { useRef, useEffect } from 'react';
+import { RiveAnimation, Layout } from 'rive-js';
 import styles from './App.css';
 
 const Animation = ({ asset, animation, fit, alignment }) => {
@@ -19,7 +19,8 @@ const Animation = ({ asset, animation, fit, alignment }) => {
         riveAnimation = new RiveAnimation({
             src: asset,
             canvas: canvas.current,
-            // alignment: new CanvasAlignment({ fit: fit, alignment: alignment }),
+            animation: animation,
+            alignment: new Layout(fit, alignment),
             autoplay: true,
         });
 
