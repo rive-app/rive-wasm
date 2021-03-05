@@ -103,7 +103,7 @@ export var RiveAnimation = function ({
   artboard,
   animations,
   canvas,
-  alignment,
+  layout,
   autoplay,
   onload,
   onloaderror,
@@ -131,7 +131,7 @@ export var RiveAnimation = function ({
   self._startingAnimationNames = ensureArray(animations);
 
   self._canvas = canvas;
-  self._alignment = alignment;
+  self._layout = layout;
   self._autoplay = autoplay;
 
   // The Rive Wasm runtime
@@ -440,13 +440,13 @@ RiveAnimation.prototype = {
     // Choose how you want the animation to align in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment.runtimeFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment.runtimeAlignment(self._rive) : self._rive.Alignment.center,
+      self._layout ? self._layout.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._layout ? self._layout.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
-        minX: self._alignment ? self._alignment.minX : 0,
-        minY: self._alignment ? self._alignment.minY : 0,
-        maxX: (self._alignment && self._alignment.maxX) ? self._alignment.maxX : self._canvas.width,
-        maxY: (self._alignment && self._alignment.maxY) ? self._alignment.maxY : self._canvas.height
+        minX: self._layout ? self._layout.minX : 0,
+        minY: self._layout ? self._layout.minY : 0,
+        maxX: (self._layout && self._layout.maxX) ? self._layout.maxX : self._canvas.width,
+        maxY: (self._layout && self._layout.maxY) ? self._layout.maxY : self._canvas.height
       },
       self._artboard.bounds
     );
@@ -494,13 +494,13 @@ RiveAnimation.prototype = {
     // Render the frame in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment.runtimeFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment.runtimeAlignment(self._rive) : self._rive.Alignment.center,
+      self._layout ? self._layout.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._layout ? self._layout.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
-        minX: self._alignment ? self._alignment.minX : 0,
-        minY: self._alignment ? self._alignment.minY : 0,
-        maxX: (self._alignment && self._alignment.maxX) ? self._alignment.maxX : self._canvas.width,
-        maxY: (self._alignment && self._alignment.maxY) ? self._alignment.maxY : self._canvas.height
+        minX: self._layout ? self._layout.minX : 0,
+        minY: self._layout ? self._layout.minY : 0,
+        maxX: (self._layout && self._layout.maxX) ? self._layout.maxX : self._canvas.width,
+        maxY: (self._layout && self._layout.maxY) ? self._layout.maxY : self._canvas.height
       },
       self._artboard.bounds
     );
@@ -718,13 +718,13 @@ RiveAnimation.prototype = {
   /*
    * Updates the fit and alignment of the animation in the canvas
    */
-  setAlignment: function (alignment) {
+  setLayout: function (layout) {
     const self = this;
 
-    if (!alignment.constructor === Alignment) {
+    if (!layout.constructor === Layout) {
       return;
     }
-    self._alignment = alignment;
+    self._layout = layout;
 
     // If it's not actively playing (i.e. drawing), draw a single frame
     self._drawFrame();

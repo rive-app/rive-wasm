@@ -20,7 +20,7 @@ const Animation = ({ asset, animation, fit, alignment }) => {
             src: asset,
             canvas: canvas.current,
             animation: animation,
-            alignment: new Layout(fit, alignment),
+            layout: new Layout(fit, alignment),
             autoplay: true,
         });
 
