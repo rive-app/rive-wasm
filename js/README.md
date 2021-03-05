@@ -1,11 +1,28 @@
 # Rive.js -- Rive's Web API
 
-## ALPHA RELEASE!
+## ALPHA RELEASE! (latest 0.0.2)
 
 Rive.js is fresh off the presses and in an alpha state; the api is subject to change as we try to make it fit for purpose. Please file issues and PRs for anything busted, missing, or just plain wrong.
 
+The api surface is highly likely to change with each release, so please make sure to specify which version you're using when importing the script:
+
+```javascript
+<script src="https://unpkg.com/rive-js@0.0.2/dist/rive.js"></script>
+```
+
+```json
+{
+  "name": "my-app",
+  "dependencies": {
+    "rive-js": "0.0.2"
+  }
+}
+```
+
+Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on changes.
+
 ## Installing
-The simplest way to get this running is copy ```src/rive.js``` into your project.
+The simplest way to get this running is copy ```dist/rive.js``` into your project.
 
 ## Quick Start
 
@@ -13,7 +30,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas"></canvas>
-<script src="https://unpkg.com/rive-js/dist/rive.js"></script>
+<script src="https://unpkg.com/rive-js@0.0.2/dist/rive.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new RiveAnimation({
@@ -88,7 +105,7 @@ If Rive's data is being loaded by other means, you can pass in an ArrayBuffer:
 
 ```js
 const reader = new FileReader();
-reader.onload = function() {
+reader.onload = () => {
     const riveArrayBuffer = reader.result;
     new RiveAnimation({
         buffer: riveArrayBuffer,
@@ -109,12 +126,12 @@ const animation = new RiveAnimation({
 });
 
 // See what animations are on the artboard once the Rive file loads
-animation.on('load', function() {
+animation.on('load', () => {
     console.log('Animations ' + animation.animationNames());
 });
 
 // onloop will pass the name of the looped animation and loop type; useful when mixing multiple animations together
-animation.on('loop', function(event) {
+animation.on('loop', (event) => {
     console.log(event.animationName + ' has looped as a ' + event.loopName);
 });
 ```
