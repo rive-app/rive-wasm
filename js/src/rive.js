@@ -9,55 +9,11 @@ const {
   Alignment,
   Fit,
   Layout,
-  playbackStates } = require('./utils');
+  playbackStates,
+  RuntimeLoader } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
-
-
-// Rive Wasm bundle
-var _rive;
-// Tracks whether Wasm has started loading
-var _wasmLoading = false;
-// Queued callbacks waiting for Wasm load to complete
-var _wasmLoadQueue = [];
-
-// Loads the Wasm bundle
-var _loadWasm = function () {
-  Rive({
-    // Loads Wasm bundle
-    locateFile: (file) => 'https://unpkg.com/rive-js@latest/dist/' + file
-    // locateFile: (file) => '/dist/' + file
-  }).then((rive) => {
-    // Wasm successfully loaded
-    _rive = rive;
-    // Fire all the callbacks
-    while (_wasmLoadQueue.length > 0) {
-      _wasmLoadQueue.shift()(_rive);
-    }
-  }).catch((e) => {
-    console.error('Unable to load Wasm module');
-    throw e;
-  });
-};
-
-// Adds a listener for Wasm load
-var _onWasmLoaded = function (cb) {
-  if (!_wasmLoading) {
-    // Start loading Wasm
-    _wasmLoading = true;
-    _loadWasm();
-  }
-  if (_rive !== undefined) {
-    // Wasm already loaded, fire immediately
-    // console.log('Wasm loaded, fire immediately');
-    cb(_rive);
-  } else {
-    // console.log('Waiting for Wasm to load');
-    // Add to the load queue
-    _wasmLoadQueue.push(cb);
-  }
-}
 
 /*
  * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
@@ -181,8 +137,9 @@ export var RiveAnimation = function ({
     });
   }
 
-  // Wait for Wasm to load
-  _onWasmLoaded(self._wasmLoadEvent.bind(self));
+  // Wait for runtime to load
+  // _onWasmLoaded(self._wasmLoadEvent.bind(self));
+  RuntimeLoader.getInstance(self._wasmLoadEvent.bind(self));
 };
 
 /*
@@ -698,7 +655,8 @@ RiveAnimation.prototype = {
     }
 
     // Wait for Wasm to load
-    _onWasmLoaded(self._wasmLoadEvent.bind(self));
+    // _onWasmLoaded(self._wasmLoadEvent.bind(self));
+    RuntimeLoader.getInstance(self._wasmLoadEvent.bind(self));
   },
 
   /*

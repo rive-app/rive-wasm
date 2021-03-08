@@ -2,7 +2,7 @@
 
 // import { RiveAnimation } from "../dist/rive";
 
-const Rive = require('../../wasm/publish/rive.js');
+const Rive = require('../../wasm/publish/rive.pure.js');
 
 // #region LoopEvent
 
@@ -33,7 +33,7 @@ export let createLoopEvent = function (animation: string, loopValue: number) : L
 // Maps the playback state to the Wasm enum values
 export const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
 
-// #region CanvasAlignment
+// #region Layout
 
 // Fit options for the canvas
 export enum Fit {
@@ -108,6 +108,7 @@ export class Layout {
 
   // Returns fit for the Wasm runtime format
   public runtimeFit(rive: typeof Rive): any {
+    console.log('Rive' + rive);
     switch (this.fit) {
       case Fit.Cover:
         return rive.Fit.cover;
@@ -123,6 +124,7 @@ export class Layout {
         return rive.Fit.scaleDown;
       case Fit.None:
       default:
+        console.log('DEFAULT ' + rive.Fit);
         return rive.Fit.none;
     }
   }
@@ -150,6 +152,66 @@ export class Layout {
       default:
         return rive.Alignment.center;
     }
+  }
+}
+
+// #endregion
+
+// #region runtime
+
+// Callback type when looking for a runtime instance
+export type RuntimeCallback = (rive: typeof Rive) => void;
+
+// Runtime singleton; use getInstance to provide a callback that returns the
+// Rive runtime
+export class RuntimeLoader {
+  
+  // Singleton helpers
+  private static runtime: typeof Rive;
+  // Flag to indicate that loading has started/completed
+  private static isLoading: boolean = false;
+  // List of callbacks for the runtime that come in while loading
+  private static callBackQueue = Array<RuntimeCallback>();
+  // Instance of the Rive runtime
+  private static rive: typeof Rive;
+
+  // Class is never instantiated
+  private constructor() {}
+
+  // Loads the runtime
+  private static loadRuntime() : void {
+    Rive({
+      // Loads Wasm bundle
+      locateFile: (file: string) => 'https://unpkg.com/rive-js@latest/dist/' + file
+      // locateFile: (file: string) => '/dist/' + file
+    }).then((rive: typeof Rive) => {
+      RuntimeLoader.runtime = rive;
+      // Fire all the callbacks
+      while (RuntimeLoader.callBackQueue.length > 0) {
+        RuntimeLoader.callBackQueue.shift()(RuntimeLoader.runtime);
+      }
+    });
+  }
+
+  // Provides a runtime instance via a callback
+  public static getInstance(callback: RuntimeCallback): void {
+    // If it's not loading, start loading runtime
+    if (!RuntimeLoader.isLoading) {
+      RuntimeLoader.isLoading = true;
+      RuntimeLoader.loadRuntime();
+    }
+    if (!RuntimeLoader.runtime) {
+      RuntimeLoader.callBackQueue.push(callback);
+    } else {
+      callback(RuntimeLoader.runtime);
+    }
+  }
+
+  // Provides a runtime instance via a promise
+  public static awaitInstance(): Promise<typeof Rive> {
+    return new Promise<typeof Rive>((resolve, reject) => 
+      RuntimeLoader.getInstance((rive: typeof Rive): void => resolve(rive))
+    );
   }
 }
 
