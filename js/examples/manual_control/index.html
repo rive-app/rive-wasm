@@ -19,17 +19,15 @@
         <script src="/dist/rive.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const rive = new RiveAnimation({
+            const rive = new Rive({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: document.getElementById('canvas'),
-                alignment: new CanvasAlignment({fit: 'cover'}),
+                layout: new Rive.Layout('fill'),
             });
 
             const idleButton = document.getElementById('idle');
             const wipersButton = document.getElementById('wipers');
             const bounceButton = document.getElementById('bounce');
-
-            let wipersState = bounceState = 0;
 
             idleButton.onclick = _ => 
                 rive.playingAnimationNames().includes('idle') ?

@@ -1,20 +1,20 @@
 # Rive.js -- Rive's Web API
 
-## ALPHA RELEASE! (latest 0.0.2)
+## ALPHA RELEASE! (latest 0.0.3)
 
 Rive.js is fresh off the presses and in an alpha state; the api is subject to change as we try to make it fit for purpose. Please file issues and PRs for anything busted, missing, or just plain wrong.
 
 The api surface is highly likely to change with each release, so please make sure to specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.0.2/dist/rive.js"></script>
+<script src="https://unpkg.com/rive-js@0.0.3/dist/rive.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.0.2"
+    "rive-js": "0.0.3"
   }
 }
 ```
@@ -30,10 +30,10 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas"></canvas>
-<script src="https://unpkg.com/rive-js@0.0.2/dist/rive.js"></script>
+<script src="https://unpkg.com/rive-js@0.0.3/dist/rive.js"></script>
 <script>
     // autoplays the first animation in the default artboard
-    new RiveAnimation({
+    new Rive({
         src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
         canvas: document.getElementById('canvas'),
         autoplay: true,
@@ -48,7 +48,7 @@ Rive.js requires two things: a link to the Rive file, and a canvas element where
 If you want to specify which artboard or animation to play:
 
 ```js
-new RiveAnimation({
+new Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
     artboard: 'New Artboard',
@@ -60,7 +60,7 @@ new RiveAnimation({
 ```animations``` can also take a list of animations, which will be mixed together:
 
 ```js
-new RiveAnimation({
+new Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
     animations: ['idle', 'windshield_wipers', 'bouncing'],
@@ -71,32 +71,32 @@ new RiveAnimation({
 You can manually start and pause playback, and check if playback is active:
 
 ```js
-const animation = new RiveAnimation({
+const rive = new Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
 });
 
-animation.play();
-animation.pause();
-animation.isPlaying();
+rive.play();
+rive.pause();
+rive.isPlaying();
 ```
 
 If you want to play, or mix in, more animations, ```play``` can take an array of animation names:
 
 ```js
-animation.play(['windshield_wipers']);
+rive.play(['windshield_wipers']);
 ```
 
 If you want to pause animations, while still have others playing, ```pause``` can also take an array of animation names:
 
 ```js
-animation.pause(['windshield_wipers', 'bouncing']);
+rive.pause(['windshield_wipers', 'bouncing']);
 ```
 
 Same goes for stopping animations:
 
 ```js
-animation.stop(['idle']);
+rive.stop(['idle']);
 ```
 
 It's important to note that unless you specifically pause or stop *looping* animations, they'll play forever. *one-shot* animations will automatically stop when they reach the end of the animation, so you can repeatedly call ```play([<one-shot>])``` and it will replay the animation so long at it has finished its animation.
@@ -107,7 +107,7 @@ If Rive's data is being loaded by other means, you can pass in an ArrayBuffer:
 const reader = new FileReader();
 reader.onload = () => {
     const riveArrayBuffer = reader.result;
-    new RiveAnimation({
+    new Rive({
         buffer: riveArrayBuffer,
         canvas: document.getElementById('canvas'),
     });
@@ -120,18 +120,18 @@ reader.readAsArrayBuffer(file);
 Rive.js has a number of events that you can listen for:
 
 ```js
-const animation = new RiveAnimation({
+const rive = new Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
     canvas: document.getElementById('canvas'),
 });
 
 // See what animations are on the artboard once the Rive file loads
-animation.on('load', () => {
-    console.log('Animations ' + animation.animationNames());
+rive.on('load', () => {
+    console.log('Animations ' + rive.animationNames());
 });
 
 // onloop will pass the name of the looped animation and loop type; useful when mixing multiple animations together
-animation.on('loop', (event) => {
+rive.on('loop', (event) => {
     console.log(event.animationName + ' has looped as a ' + event.loopName);
 });
 ```

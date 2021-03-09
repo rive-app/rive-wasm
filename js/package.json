@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Rive's web api.",
   "main": "dist/rive.js",
   "homepage": "https://rive.app",
@@ -30,6 +30,7 @@
   ],
   "typings": "./rive.d.ts",
   "devDependencies": {
+    "@types/jest": "^26.0.20",
     "@types/node": "^14.14.31",
     "jest": "^26.6.3",
     "ts-jest": "^26.5.2",

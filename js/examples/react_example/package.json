@@ -9,8 +9,8 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-scripts": "4.0.2",
-    "web-vitals": "^1.1.0",
-    "rive-js": "file:../.."
+    "rive-js": "file:../..",
+    "web-vitals": "^1.1.0"
   },
   "scripts": {
     "start": "react-scripts start",

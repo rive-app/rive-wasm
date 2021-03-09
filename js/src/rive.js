@@ -3,136 +3,20 @@
 */
 'use strict';
 
-const Rive = require('../../wasm/publish/rive.js');
-const { createLoopEvent } = require('./utils');
+const {
+  createLoopEvent,
+  Alignment,
+  Fit,
+  Layout,
+  playbackStates,
+  RuntimeLoader } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
 
-
-// Rive Wasm bundle
-var _rive;
-// Tracks whether Wasm has started loading
-var _wasmLoading = false;
-// Queued callbacks waiting for Wasm load to complete
-var _wasmLoadQueue = [];
-
-// Loads the Wasm bundle
-var _loadWasm = function () {
-  Rive({
-    // Loads Wasm bundle
-    locateFile: (file) => 'https://unpkg.com/rive-js@latest/dist/' + file
-    // locateFile: (file) => '/dist/' + file
-  }).then((rive) => {
-    // Wasm successfully loaded
-    _rive = rive;
-    // Fire all the callbacks
-    while (_wasmLoadQueue.length > 0) {
-      _wasmLoadQueue.shift()(_rive);
-    }
-  }).catch((e) => {
-    console.error('Unable to load Wasm module');
-    throw e;
-  });
-};
-
-// Adds a listener for Wasm load
-var _onWasmLoaded = function (cb) {
-  if (!_wasmLoading) {
-    // Start loading Wasm
-    _wasmLoading = true;
-    _loadWasm();
-  }
-  if (_rive !== undefined) {
-    // Wasm already loaded, fire immediately
-    // console.log('Wasm loaded, fire immediately');
-    cb(_rive);
-  } else {
-    // console.log('Waiting for Wasm to load');
-    // Add to the load queue
-    _wasmLoadQueue.push(cb);
-  }
-}
-
-// Playback states
-const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
-
-// Canvas fit values
-const canvasFitValues = ['cover', 'contain', 'fill', 'fitWidth', 'fitHeight', 'none', 'scaleDown'];
-
-// Canvas alignment values
-const canvasAlignmentValues = ['center', 'topLeft', 'topCenter', 'topRight', 'centerLeft', 'centerRight', 'bottomLeft', 'bottomCenter', 'bottomRight'];
-
-// Canvas alignment object; lets you specify what alignment your animation will have in its canvas
-export function CanvasAlignment({ fit, alignment, minX, minY, maxX, maxY }) {
-  this.fit = fit ? fit : canvasFitValues[0];
-  this.alignment = alignment ? alignment : canvasAlignmentValues[0];
-  this.minX = minX ? minX : 0;
-  this.minY = minY ? minY : 0;
-  this.maxX = maxX; // If this is undefined, then the runtime will use the canvas width
-  this.maxY = maxY; // If this is undefined, then the runtime will use the canvas height
-};
-
-// CanvasAlignment api; FOR INTERNAL USE ONLY
-CanvasAlignment.prototype = {
-
-  /*
-    * Gets the Wasm Fit type from the user-defined type; we do this because the
-    * Wasm types are only available after the Wasm bundle loads
-    */
-  _riveFit: function (rive) {
-    switch (this.fit) {
-      case 'cover':
-        return rive.Fit.cover;
-      case 'contain':
-        return rive.Fit.contain;
-      case 'fill':
-        return rive.Fit.fill;
-      case 'fitWidth':
-        return rive.Fit.fitWidth;
-      case 'fitHeight':
-        return rive.Fit.fitHeight;
-      case 'scaleDown':
-        return rive.Fit.scaleDown;
-      case 'none':
-      default:
-        return rive.Fit.none;
-    }
-  },
-
-  /*
-    * Gets the Wasm alignment type from the user-defined type; we do this because the
-    * Wasm types are only available after the Wasm bundle loads
-    */
-  _riveAlignment: function (rive) {
-    switch (this.alignment) {
-      case 'topLeft':
-        return rive.Alignment.topLeft;
-      case 'topCenter':
-        return rive.Alignment.topCenter;
-      case 'topRight':
-        return rive.Alignment.topRight;
-      case 'centerLeft':
-        return rive.Alignment.centerLeft;
-      case 'centerRight':
-        return rive.Alignment.centerRight;
-      case 'bottomLeft':
-        return rive.Alignment.bottomLeft;
-      case 'bottomCenter':
-        return rive.Alignment.bottomCenter;
-      case 'bottomRight':
-        return rive.Alignment.bottomRight;
-      case 'center':
-      default:
-        return rive.Alignment.center;
-    }
-  }
-};
-
-
 /*
-  * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
-  */
+ * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
+ */
 function _Animation({ animation, instance }) {
   if (!animation || !instance) {
     console.error('_Animation requires both an animation and instance');
@@ -166,15 +50,15 @@ _Animation.prototype = {
 };
 
 /*
-* RiveAnimation constructor
+* Rive constructor
 */
-export var RiveAnimation = function ({
+export var Rive = function ({
   src, // uri for a Rive file (.riv)
   buffer, // ArrayBuffer containing Rive data
   artboard,
   animations,
   canvas,
-  alignment,
+  layout,
   autoplay,
   onload,
   onloaderror,
@@ -194,15 +78,15 @@ export var RiveAnimation = function ({
   self._src = src;
   self._buffer = buffer;
 
-  // Name of the artboard. RiveAnimation operates on only one artboard. If
-  // you want to have multiple artboards, use multiple RiveAnimations.
+  // Name of the artboard. Rive operates on only one artboard. If
+  // you want to have multiple artboards, use multiple Rive instances.
   self._artboardName = artboard;
 
   // List of animations that should be played.
   self._startingAnimationNames = ensureArray(animations);
 
   self._canvas = canvas;
-  self._alignment = alignment;
+  self._layout = layout;
   self._autoplay = autoplay;
 
   // The Rive Wasm runtime
@@ -224,7 +108,7 @@ export var RiveAnimation = function ({
   self._playback = playbackStates.stop;
 
   // Queue of actions to take. Actions are queued if they're called before
-  // RiveAnimation is initialized.
+  // Rive is initialized.
   self._queue = [];
 
   // Set up the event listeners
@@ -252,15 +136,16 @@ export var RiveAnimation = function ({
     });
   }
 
-  // Wait for Wasm to load
-  _onWasmLoaded(self._wasmLoadEvent.bind(self));
+  // Wait for runtime to load
+  // _onWasmLoaded(self._wasmLoadEvent.bind(self));
+  RuntimeLoader.getInstance(self._wasmLoadEvent.bind(self));
 };
 
 /*
-* RiveAnimation api
+* Rive api
 */
 
-RiveAnimation.prototype = {
+Rive.prototype = {
 
   /* 
   * Callback when Wasm bundle is loaded
@@ -424,8 +309,6 @@ RiveAnimation.prototype = {
       }
     }
 
-    printAnimationState(self._animations);
-
     return self._animations.filter(a => !a.paused).map(a => a.name());
   },
 
@@ -474,8 +357,6 @@ RiveAnimation.prototype = {
       }
     });
 
-    printAnimationState(self._animations);
-
     return pausedAnimationNames;
   },
 
@@ -511,13 +392,13 @@ RiveAnimation.prototype = {
     // Choose how you want the animation to align in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment._riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment._riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._layout ? self._layout.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._layout ? self._layout.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
-        minX: self._alignment ? self._alignment.minX : 0,
-        minY: self._alignment ? self._alignment.minY : 0,
-        maxX: (self._alignment && self._alignment.maxX) ? self._alignment.maxX : self._canvas.width,
-        maxY: (self._alignment && self._alignment.maxY) ? self._alignment.maxY : self._canvas.height
+        minX: self._layout ? self._layout.minX : 0,
+        minY: self._layout ? self._layout.minY : 0,
+        maxX: (self._layout && self._layout.maxX) ? self._layout.maxX : self._canvas.width,
+        maxY: (self._layout && self._layout.maxY) ? self._layout.maxY : self._canvas.height
       },
       self._artboard.bounds
     );
@@ -565,13 +446,13 @@ RiveAnimation.prototype = {
     // Render the frame in the canvas
     self._ctx.save();
     self._renderer.align(
-      self._alignment ? self._alignment._riveFit(self._rive) : self._rive.Fit.contain,
-      self._alignment ? self._alignment._riveAlignment(self._rive) : self._rive.Alignment.center,
+      self._layout ? self._layout.runtimeFit(self._rive) : self._rive.Fit.contain,
+      self._layout ? self._layout.runtimeAlignment(self._rive) : self._rive.Alignment.center,
       {
-        minX: self._alignment ? self._alignment.minX : 0,
-        minY: self._alignment ? self._alignment.minY : 0,
-        maxX: (self._alignment && self._alignment.maxX) ? self._alignment.maxX : self._canvas.width,
-        maxY: (self._alignment && self._alignment.maxY) ? self._alignment.maxY : self._canvas.height
+        minX: self._layout ? self._layout.minX : 0,
+        minY: self._layout ? self._layout.minY : 0,
+        maxX: (self._layout && self._layout.maxX) ? self._layout.maxX : self._canvas.width,
+        maxY: (self._layout && self._layout.maxY) ? self._layout.maxY : self._canvas.height
       },
       self._artboard.bounds
     );
@@ -725,7 +606,7 @@ RiveAnimation.prototype = {
   /*
       * Loads a new Rive file; this will reset all artboard and animations,
       * but will keep the event listeners in place.
-      * TODO: better abstract this with the RiveAnimation constructor
+      * TODO: better abstract this with the Rive constructor
       */
   load: function ({ src, buffer, canvas, autoplay }) {
     const self = this;
@@ -769,7 +650,8 @@ RiveAnimation.prototype = {
     }
 
     // Wait for Wasm to load
-    _onWasmLoaded(self._wasmLoadEvent.bind(self));
+    // _onWasmLoaded(self._wasmLoadEvent.bind(self));
+    RuntimeLoader.getInstance(self._wasmLoadEvent.bind(self));
   },
 
   /*
@@ -789,13 +671,13 @@ RiveAnimation.prototype = {
   /*
    * Updates the fit and alignment of the animation in the canvas
    */
-  setAlignment: function (alignment) {
+  setLayout: function (layout) {
     const self = this;
 
-    if (!alignment.constructor === CanvasAlignment) {
+    if (!layout.constructor === Layout) {
       return;
     }
-    self._alignment = alignment;
+    self._layout = layout;
 
     // If it's not actively playing (i.e. drawing), draw a single frame
     self._drawFrame();
@@ -870,8 +752,10 @@ RiveAnimation.prototype = {
 
 // Exports needed to expose these for some reason as ES2015 export not working
 if (typeof exports !== 'undefined') {
-  exports.RiveAnimation = RiveAnimation;
-  exports.CanvasAlignment = CanvasAlignment;
+  exports.Rive = Rive;
+  exports.Alignment = Alignment;
+  exports.Fit = Fit;
+  exports.Layout = Layout;
   // Exporting things to be tested
   // exports.testables = {
   //   createLoopEvent: LoopEvent
@@ -880,11 +764,15 @@ if (typeof exports !== 'undefined') {
 
 // Tie these to global/window for use directly in browser
 if (typeof global !== 'undefined') {
-  global.RiveAnimation = RiveAnimation;
-  global.CanvasAlignment = CanvasAlignment;
+  global.Rive = Rive;
+  global.Rive.Alignment = Alignment;
+  global.Rive.Fit = Fit;
+  global.Rive.Layout = Layout;
 } else if (typeof window !== 'undefined') {
-  window.RiveAnimation = RiveAnimation;
-  window.CanvasAlignment = CanvasAlignment;
+  window.Rive = Rive;
+  window.Rive.Alignment = Alignment;
+  window.Rive.Fit = Fit;
+  window.Rive.Layout = Layout;
 }
 
 /*

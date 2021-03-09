@@ -23,56 +23,57 @@
 
         <script src="/dist/rive.js"></script>
         <script>
-            const animation = new RiveAnimation({
+            const rive = new Rive({
                 src: 'https://cdn.rive.app/animations/juice063.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
-                alignment: new CanvasAlignment({fit: 'none', alignment: 'center'}),
+                layout: new Rive.Layout.new({fit: Rive.Fit.None, alignment: Rive.Alignment.Center}),
             });
 
             document.getElementById('top-left').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topLeft'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopLeft)
                 );
             });
             document.getElementById('top-center').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topCenter'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopCenter)
                 );
             });
             document.getElementById('top-right').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'topRight'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopRight)
                 );
             });
             document.getElementById('center-left').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'centerLeft'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.CenterLeft)
                 );
             });
             document.getElementById('center').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'center'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.Center)
                 );
             });
             document.getElementById('center-right').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'centerRight'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.CenterRight)
                 );
             });
             document.getElementById('bottom-left').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomLeft'})
+                rive.setLayout(
+                    new Rive.Layout.new({fit: 'none', alignment: 'bottomLeft'})
                 );
             });
             document.getElementById('bottom-center').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomCenter'})
+                rive.setLayout(
+                    new Rive.Layout(Rive.Fit.None, Rive.Alignment.BottomCenter)
                 );
             });
             document.getElementById('bottom-right').addEventListener('click', function() {
-                animation.setAlignment(
-                    new CanvasAlignment({fit: 'none', alignment: 'bottomRight'})
+                rive.setLayout(
+                    // You can still use plain old strings
+                    new Rive.Layout('none', 'bottomRight')
                 );
             });
         </script>

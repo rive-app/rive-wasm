@@ -5,7 +5,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <Animation asset="https://cdn.rive.app/animations/off_road_car_blog_0_6.riv" />
+        <Animation asset="https://cdn.rive.app/animations/off_road_car_blog_0_6.riv" fit="contain" />
         <p>
           Edit the <code>src/Animation.js</code> Rive React component.
         </p>
