@@ -2,7 +2,7 @@
 
 // import { RiveAnimation } from "../dist/rive";
 
-const Rive = require('../../wasm/publish/rive.pure.js');
+const Rive = require('../../wasm/publish/rive.js');
 
 // #region LoopEvent
 
@@ -108,7 +108,6 @@ export class Layout {
 
   // Returns fit for the Wasm runtime format
   public runtimeFit(rive: typeof Rive): any {
-    console.log('Rive' + rive);
     switch (this.fit) {
       case Fit.Cover:
         return rive.Fit.cover;
@@ -124,7 +123,6 @@ export class Layout {
         return rive.Fit.scaleDown;
       case Fit.None:
       default:
-        console.log('DEFAULT ' + rive.Fit);
         return rive.Fit.none;
     }
   }
@@ -174,6 +172,12 @@ export class RuntimeLoader {
   private static callBackQueue = Array<RuntimeCallback>();
   // Instance of the Rive runtime
   private static rive: typeof Rive;
+  // The url for the Wasm file
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@latest/dist/';
+  // Local oath to the Wasm file; for testing purposes
+  private static wasmFilePath: string = 'dist/';
+  // Are we in test mode?
+  private static testMode: boolean = false;
 
   // Class is never instantiated
   private constructor() {}
@@ -182,8 +186,11 @@ export class RuntimeLoader {
   private static loadRuntime() : void {
     Rive({
       // Loads Wasm bundle
-      locateFile: (file: string) => 'https://unpkg.com/rive-js@latest/dist/' + file
-      // locateFile: (file: string) => '/dist/' + file
+      locateFile: (file: string) =>
+        // if in test mode, attempts to load file locally 
+        (RuntimeLoader.testMode ?
+          RuntimeLoader.wasmFilePath :
+          RuntimeLoader.wasmWebPath) + file
     }).then((rive: typeof Rive) => {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
@@ -212,6 +219,11 @@ export class RuntimeLoader {
     return new Promise<typeof Rive>((resolve, reject) => 
       RuntimeLoader.getInstance((rive: typeof Rive): void => resolve(rive))
     );
+  }
+
+  // Places the loader in test mode
+  public static setTestMode(mode: boolean): void {
+    RuntimeLoader.testMode = mode;
   }
 }
 

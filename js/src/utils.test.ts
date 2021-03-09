@@ -1,8 +1,16 @@
 const utils = require('./utils');
-const Rive = require('../../wasm/publish/rive.js')
-
-import { doesNotMatch } from 'node:assert';
+const Rive = require('../../wasm/publish/rive.js');
 import { RuntimeCallback, RuntimeLoader } from './utils';
+
+// #region setup and teardown
+
+beforeEach(() => {
+  RuntimeLoader.setTestMode(true);
+});
+
+afterEach(() => {});
+
+// #endregion
 
 // #region loop event tests
 
@@ -47,9 +55,12 @@ test('Layouts have sensible defaults', () : void => {
 });
 
 test('Layouts provide runtime fit and alignment values', async () => {
-  const rive = await Rive({});
-  let layout = new utils.Layout();
+  let rive = await utils.RuntimeLoader.awaitInstance();
+  let layout = new utils.Layout(utils.Fit.FitWidth, utils.Alignment.BottomLeft);
   expect(layout).toBeDefined();
+  expect(layout.runtimeFit(rive)).toBe(rive.Fit.fitWidth);
+  expect(layout.runtimeAlignment(rive).x).toBe(rive.Alignment.bottomLeft.x);
+  expect(layout.runtimeAlignment(rive).y).toBe(rive.Alignment.bottomLeft.y);
 });
 
 // #endregion
@@ -77,7 +88,7 @@ test('Runtime can be loaded using callbacks', async done => {
   utils.RuntimeLoader.getInstance(callback1);
   utils.RuntimeLoader.getInstance(callback2);
   // Delay 1 second to let library load
-  setTimeout(() => utils.RuntimeLoader.getInstance(callback3), 1000);
+  setTimeout(() => utils.RuntimeLoader.getInstance(callback3), 500);
 });
 
 test('Runtime can be loaded using promises', async done => {
@@ -96,7 +107,7 @@ test('Runtime can be loaded using promises', async done => {
     expect(rive3).toBeDefined;
     expect(rive3).toBe(rive2);
     done();
-  });
+  }, 500);
 });
 
 // #endregion 

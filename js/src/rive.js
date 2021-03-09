@@ -310,8 +310,6 @@ RiveAnimation.prototype = {
       }
     }
 
-    printAnimationState(self._animations);
-
     return self._animations.filter(a => !a.paused).map(a => a.name());
   },
 
@@ -359,8 +357,6 @@ RiveAnimation.prototype = {
         pausedAnimationNames.push(a.name());
       }
     });
-
-    printAnimationState(self._animations);
 
     return pausedAnimationNames;
   },
