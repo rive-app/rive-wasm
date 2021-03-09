@@ -3,7 +3,6 @@
 */
 'use strict';
 
-const Rive = require('../../wasm/publish/rive.js');
 const {
   createLoopEvent,
   Alignment,
@@ -51,9 +50,9 @@ _Animation.prototype = {
 };
 
 /*
-* RiveAnimation constructor
+* Rive constructor
 */
-export var RiveAnimation = function ({
+export var Rive = function ({
   src, // uri for a Rive file (.riv)
   buffer, // ArrayBuffer containing Rive data
   artboard,
@@ -79,8 +78,8 @@ export var RiveAnimation = function ({
   self._src = src;
   self._buffer = buffer;
 
-  // Name of the artboard. RiveAnimation operates on only one artboard. If
-  // you want to have multiple artboards, use multiple RiveAnimations.
+  // Name of the artboard. Rive operates on only one artboard. If
+  // you want to have multiple artboards, use multiple Rive instances.
   self._artboardName = artboard;
 
   // List of animations that should be played.
@@ -109,7 +108,7 @@ export var RiveAnimation = function ({
   self._playback = playbackStates.stop;
 
   // Queue of actions to take. Actions are queued if they're called before
-  // RiveAnimation is initialized.
+  // Rive is initialized.
   self._queue = [];
 
   // Set up the event listeners
@@ -143,10 +142,10 @@ export var RiveAnimation = function ({
 };
 
 /*
-* RiveAnimation api
+* Rive api
 */
 
-RiveAnimation.prototype = {
+Rive.prototype = {
 
   /* 
   * Callback when Wasm bundle is loaded
@@ -607,7 +606,7 @@ RiveAnimation.prototype = {
   /*
       * Loads a new Rive file; this will reset all artboard and animations,
       * but will keep the event listeners in place.
-      * TODO: better abstract this with the RiveAnimation constructor
+      * TODO: better abstract this with the Rive constructor
       */
   load: function ({ src, buffer, canvas, autoplay }) {
     const self = this;
@@ -753,7 +752,7 @@ RiveAnimation.prototype = {
 
 // Exports needed to expose these for some reason as ES2015 export not working
 if (typeof exports !== 'undefined') {
-  exports.RiveAnimation = RiveAnimation;
+  exports.Rive = Rive;
   exports.Alignment = Alignment;
   exports.Fit = Fit;
   exports.Layout = Layout;
@@ -765,14 +764,12 @@ if (typeof exports !== 'undefined') {
 
 // Tie these to global/window for use directly in browser
 if (typeof global !== 'undefined') {
-  global.Rive = {};
-  global.Rive.Animation = RiveAnimation;
+  global.Rive = Rive;
   global.Rive.Alignment = Alignment;
   global.Rive.Fit = Fit;
   global.Rive.Layout = Layout;
 } else if (typeof window !== 'undefined') {
-  window.Rive = {};
-  window.Rive.Animation = RiveAnimation;
+  window.Rive = Rive;
   window.Rive.Alignment = Alignment;
   window.Rive.Fit = Fit;
   window.Rive.Layout = Layout;

@@ -11,9 +11,9 @@
     
         <script src="/dist/rive.js"></script>
         <script>
-            var canvas = document.getElementById('rive_canvas');
+            const canvas = document.getElementById('rive_canvas');
             
-            var animation = new Rive.Animation({
+            new Rive({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: canvas,
                 autoplay: true,
@@ -25,7 +25,7 @@
                 // placed in the canvas; try experimenting with: 'cover',
                 // 'contain', 'fill', 'fitWidth', 'fitHeight', 'none' and
                 // 'scaleDown'
-                layout: new Rive.Layout({fit: 'cover', alignment: 'topLeft'}),
+                layout: new Rive.Layout('cover', 'center'),
             });
 
             // When the window resizes, resize the canvas

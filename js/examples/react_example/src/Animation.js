@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { RiveAnimation, Layout } from 'rive-js';
+import { Rive, Layout } from 'rive-js';
 import styles from './App.css';
 
 const Animation = ({ asset, animation, fit, alignment }) => {
     const canvas = useRef(null);
     const animationContainer = useRef(null);
-    let riveAnimation;
+    let rive;
 
     // Resizes the canvas to match the parent element
     useEffect(() => {
@@ -16,7 +16,7 @@ const Animation = ({ asset, animation, fit, alignment }) => {
 
     // Start the animation
     useEffect(() => {
-        riveAnimation = new RiveAnimation({
+        rive = new Rive({
             src: asset,
             canvas: canvas.current,
             animation: animation,
@@ -24,7 +24,7 @@ const Animation = ({ asset, animation, fit, alignment }) => {
             autoplay: true,
         });
 
-        return () => riveAnimation?.stop();
+        return () => rive?.stop();
     }, []);
 
     return (

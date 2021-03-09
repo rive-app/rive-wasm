@@ -23,7 +23,7 @@
 
         <script src="/dist/rive.js"></script>
         <script>
-            const animation = new Rive.Animation({
+            const rive = new Rive({
                 src: 'https://cdn.rive.app/animations/juice063.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
@@ -31,47 +31,47 @@
             });
 
             document.getElementById('top-left').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopLeft)
                 );
             });
             document.getElementById('top-center').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopCenter)
                 );
             });
             document.getElementById('top-right').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.TopRight)
                 );
             });
             document.getElementById('center-left').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.CenterLeft)
                 );
             });
             document.getElementById('center').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.Center)
                 );
             });
             document.getElementById('center-right').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.CenterRight)
                 );
             });
             document.getElementById('bottom-left').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout.new({fit: 'none', alignment: 'bottomLeft'})
                 );
             });
             document.getElementById('bottom-center').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     new Rive.Layout(Rive.Fit.None, Rive.Alignment.BottomCenter)
                 );
             });
             document.getElementById('bottom-right').addEventListener('click', function() {
-                animation.setLayout(
+                rive.setLayout(
                     // You can still use plain old strings
                     new Rive.Layout('none', 'bottomRight')
                 );
