@@ -9,45 +9,11 @@ const {
   Fit,
   Layout,
   playbackStates,
-  RuntimeLoader } = require('./utils');
+  RuntimeLoader,
+  Animation } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
-
-/*
- * Animation object; holds both an animation and its instance; FOR INTERNAL USE ONLY
- */
-function _Animation({ animation, instance }) {
-  if (!animation || !instance) {
-    console.error('_Animation requires both an animation and instance');
-  }
-  this.animation = animation;
-  this.instance = instance;
-  // Tracks whether the instance has looped
-  this.loopCount = 0;
-  // Tracks whether this animation is paused
-  this.paused = false;
-};
-
-// _Animation api; FOR INTERNAL USE ONLY
-_Animation.prototype = {
-
-  /*
-   * Name of the animation
-   */
-  name: function () {
-    const self = this;
-    return self.animation.name;
-  },
-
-  /*
-   * Loop type of the animation
-   */
-  loopValue: function () {
-    const self = this;
-    return self.animation.loopValue;
-  },
-};
 
 /*
 * Rive constructor
@@ -295,7 +261,7 @@ Rive.prototype = {
     const self = this;
     // Go through each of the animation names, first checking to see if it's
     // already instanced and unpause, and then instance any missing animations.
-    const instancedAnimationNames = self._animations.map(a => a.name());
+    const instancedAnimationNames = self._animations.map(a => a.name);
     for (const i in animationNames) {
       const index = instancedAnimationNames.indexOf(animationNames[i]);
       if (index >= 0) {
@@ -305,11 +271,11 @@ Rive.prototype = {
         // Create a new animation instance and add it to the list
         const anim = self._artboard.animation(animationNames[i]);
         const inst = new self._rive.LinearAnimationInstance(anim);
-        self._animations.push(new _Animation({animation: anim, instance: inst}));
+        self._animations.push(new Animation(anim, inst));
       }
     }
 
-    return self._animations.filter(a => !a.paused).map(a => a.name());
+    return self._animations.filter(a => !a.paused).map(a => a.name);
   },
 
   /*
@@ -321,7 +287,7 @@ Rive.prototype = {
 
     // Get the animations to remove from the list
     const animationsToRemove = self._animations.filter(
-      a => animationNames.indexOf(a.name()) >= 0
+      a => animationNames.indexOf(a.name) >= 0
     );
 
     // Remove the animations
@@ -330,7 +296,7 @@ Rive.prototype = {
     );
 
     // Return the list of animations removed
-    return animationsToRemove.map(a => a.name());
+    return animationsToRemove.map(a => a.name);
   },
 
   /*
@@ -338,7 +304,7 @@ Rive.prototype = {
    */
   _removeAllAnimations: function () {
     const self = this;
-    const names = self._animations.map(animation => animation.name());
+    const names = self._animations.map(animation => animation.name);
     self._animations.splice(0, self._animations.length);
     return names;
   },
@@ -351,9 +317,9 @@ Rive.prototype = {
     const pausedAnimationNames = [];
 
     self._animations.forEach((a, i) => {
-      if (animationNames.indexOf(a.name()) >= 0) {
+      if (animationNames.indexOf(a.name) >= 0) {
         a.paused = true;
-        pausedAnimationNames.push(a.name());
+        pausedAnimationNames.push(a.name);
       }
     });
 
@@ -379,7 +345,7 @@ Rive.prototype = {
       // Add the default animation
       const animation = self._artboard.animationAt(0);
       const instance = new self._rive.LinearAnimationInstance(animation);
-      self._animations.push(new _Animation({ animation: animation, instance: instance }));
+      self._animations.push(new Animation(animation, instance));
     }
   },
 
@@ -461,19 +427,19 @@ Rive.prototype = {
 
     for (var i in self._animations) {
       // Emit if the animation looped
-      switch (self._animations[i].loopValue()) {
+      switch (self._animations[i].loopValue) {
         case 0:
           if (self._animations[i].loopCount) {
             self._animations[i].loopCount = 0;
             // This is a one-shot; if it has ended, delete the instance
-            self.stop([self._animations[i].name()]);
+            self.stop([self._animations[i].name]);
           }
           break;
         case 1:
           if (self._animations[i].loopCount) {
             self._emit('loop', createLoopEvent(
-              self._animations[i].name(),
-              self._animations[i].loopValue(),
+              self._animations[i].name,
+              self._animations[i].loopValue,
             ));
             self._animations[i].loopCount = 0;
           }
@@ -484,8 +450,8 @@ Rive.prototype = {
           // two didLoops
           if (self._animations[i].loopCount > 1) {
             self._emit('loop', new createLoopEvent(
-              self._animations[i].name(),
-              self._animations[i].loopValue(),
+              self._animations[i].name,
+              self._animations[i].loopValue,
             ));
             self._animations[i].loopCount = 0;
           }
@@ -719,7 +685,7 @@ Rive.prototype = {
     var animationNames = [];
     for (const i in self._animations) {
       if (!self._animations[i].paused) {
-        animationNames.push(self._animations[i].name());
+        animationNames.push(self._animations[i].name);
       }
     }
     return animationNames;
@@ -792,7 +758,7 @@ function ensureArray(param) {
 function printAnimationState(animations) {
   console.log(' ------------- ');
   for (const i in animations) {
-    console.log(' -------- ' + animations[i].name() + ' ' + i.toString() + ' ' + (animations[i].paused ? 'paused' : 'playing'));
+    console.log(' -------- ' + animations[i].name + ' ' + i.toString() + ' ' + (animations[i].paused ? 'paused' : 'playing'));
   }
   console.log(' ------------- ');
 }

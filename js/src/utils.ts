@@ -228,3 +228,26 @@ export class RuntimeLoader {
 }
 
 // #endregion
+
+// #region animations
+
+// Wraps animations and instances from the runtime and keeps track of playback
+// state
+export class Animation {
+  loopCount: number = 0;
+  paused: boolean = false;
+
+  constructor(private animation: any, private instance: any) {}
+
+  // Returns the animation's name
+  public get name(): string {
+    return this.animation.name;
+  }
+
+  // Returns the animation's loop type
+  public get loopValue(): number {
+    return this.animation.loopValue;
+  } 
+}
+
+// #endregion
