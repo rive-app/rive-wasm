@@ -10,7 +10,7 @@ const Rive = require('../../wasm/publish/rive.js');
 export const loopTypes: Array<string> = ['oneShot', 'loop', 'pingPong'];
 
 /// Loop events are returned through onloop callbacks
-interface LoopEvent {
+export interface LoopEvent {
   animation: string;
   name: string;
   type: number;
