@@ -6,6 +6,7 @@ import {
   playbackStates,
   RuntimeLoader,
   LoopEvent,
+  Animation
 } from './utils';
 
 // Lets webpack know to copy the Wasm file to the dist folder
@@ -24,8 +25,12 @@ interface AnimationEvents {
 type EventNames = keyof AnimationEvents;
 const eventsNames: EventNames[] = ['load', 'loaderror', 'play', 'pause', 'stop', 'playerror', 'loop'];
 
-interface EventCallback {
-  fn: (message: string | LoopEvent) => void;
+interface EventCallback<Event extends EventNames> {
+  fn: (message: AnimationEvents[Event]) => void;
+}
+
+type EventCallbacksRecord = {
+  [key in keyof AnimationEvents]: EventCallback<key>[]
 }
 
 interface Queue {
@@ -53,23 +58,23 @@ interface RiveOptions {
 }
 
 class Rive {
-  private _rive = null;
+  private _rive: any | null = null;     // TODO: change any to Rive
   /** uri for a Rive file (.riv) */
   private _src?: string;
   /** ArrayBuffer containing Rive data */
   private _buffer?: ArrayBuffer;
-  private _file; // RiveFile
+  private _file?: any;                  // TODO: change any to RiveFile
   private _layout?: Layout;
   private _autoplay?: boolean;
-  private _artboard = null; // Artboard
+  private _artboard: any | null = null; // TODO: change any to Artboard
   private _artboardName: string;
-  private _canvas?: any;
+  private _canvas?: HTMLCanvasElement;
   private _startingAnimationNames?: any;
   private _startingAnimations?: any[]
   /** List of animation instances that will be played */
-  private _animations = []; // @question: LinearAnimation or Animation
+  private _animations: Animation[] = [];
   /** Rive renderer */
-  private _renderer?: any;
+  private _renderer?: any;              // TODO: change any to Renderer
   /** The canvas context */
   private _ctx: CanvasRenderingContext2D = null;
   /** Tracks when the Rive file is successfully loaded and the Wasm runtime is initialized. */
@@ -81,42 +86,43 @@ class Rive {
   private _lastTime?: number;
   private _animReqId?: number;
 
-  private _onload: EventCallback[] = [];
-  private _onloaderror: EventCallback[] = [];
-  private _onplay: EventCallback[] = [];
-  private _onpause: EventCallback[] = [];
-  private _onstop: EventCallback[] = [];
-  private _onplayerror: EventCallback[] = [];
-  private _onloop: EventCallback[] = [];
+  private _events: EventCallbacksRecord = {
+    load: [],
+    loaderror: [],
+    play: [],
+    pause: [],
+    stop: [],
+    playerror: [],
+    loop: [],
+  };
   
-  constructor(private options: RiveOptions) {
+  constructor(options: RiveOptions) {
     if (!options.src && !options.buffer) {
       throw new Error('Either a Rive source file or a data buffer is required.');
     }
-    this._src = this.options.src;
-    this._buffer = this.options.buffer;
-    this._canvas = this.options.canvas;
-    this._layout = this.options.layout;
-    this._autoplay = this.options.autoplay;
+    this._src = options.src;
+    this._buffer = options.buffer;
+    this._canvas = options.canvas;
+    this._layout = options.layout;
+    this._autoplay = options.autoplay;
     
     // Name of the artboard. Rive operates on only one artboard. If
     // you want to have multiple artboards, use multiple Rive instances.
-    this._artboard = this.options.artboard;
-    this._startingAnimationNames = ensureArray(this.options.animations);
+    this._artboard = options.artboard;
+    this._startingAnimationNames = ensureArray(options.animations);
 
 
     // Set up the event listeners
     for (const key of eventsNames) {
-      if (typeof this.options[`on${key}`] === 'function') {
-        this[`_on${key}`].push({ fn: this.options[`on${key}`] })
+      const fn = options[`on${key}` as const];
+      if (typeof fn === 'function') {
+        this.getEvents(key).push({ fn });
       }
     }
 
     // Add 'load' task so the queue can be processed correctly on
     // successful load
-    this._queue.push({
-      event: 'load',
-    });
+    this._queue.push({ event: 'load' });
 
     // Queue up play if necessary
     if (this._autoplay) {
@@ -135,7 +141,7 @@ class Rive {
 
   
   /** Callback when Wasm bundle is loaded */
-  private _wasmLoadEvent(rive) {
+  private _wasmLoadEvent(rive: any) {
     this._rive = rive;
     if (this._src) {
       this._loadRiveFile();
@@ -164,7 +170,6 @@ class Rive {
       * Loads and initializes Rive data from an ArrayBuffer
       */
   private _loadRiveData(buffer: ArrayBuffer) {
-  
     // The raw bytes of the animation are in the buffer, load them into a
     // Rive file
     this._file = this._rive.load(new Uint8Array(buffer));
@@ -191,8 +196,7 @@ class Rive {
 
   /** Emits events of specified type */
   private _emit<K extends keyof AnimationEvents>(event: K, msg: AnimationEvents[K]) {
-    
-    const events = this[`_on${key}`];
+    const events = this.getEvents(event);
 
     // Loop through event store and fire all functions.
     for (let i = events.length - 1; i >= 0; i--) {
@@ -265,7 +269,7 @@ class Rive {
     
     // Go through each of the animation names, first checking to see if it's
     // already instanced and unpause, and then instance any missing animations.
-    const instancedAnimationNames = this._animations.map(a => a.name());
+    const instancedAnimationNames = this._animations.map(a => a.name);
     for (const i in animationNames) {
       const index = instancedAnimationNames.indexOf(animationNames[i]);
       if (index >= 0) {
@@ -275,11 +279,11 @@ class Rive {
         // Create a new animation instance and add it to the list
         const anim = this._artboard.animation(animationNames[i]);
         const inst = new this._rive.LinearAnimationInstance(anim);
-        this._animations.push(new _Animation({animation: anim, instance: inst}));
+        this._animations.push(new Animation(anim, inst));
       }
     }
 
-    return this._animations.filter(a => !a.paused).map(a => a.name());
+    return this._animations.filter(a => !a.paused).map(a => a.name);
   }
 
   /**
@@ -289,7 +293,7 @@ class Rive {
   private _removeAnimations(animationNames: string[]): string[] {
     // Get the animations to remove from the list
     const animationsToRemove = this._animations.filter(
-      a => animationNames.indexOf(a.name()) >= 0
+      a => animationNames.indexOf(a.name) >= 0
     );
 
     // Remove the animations
@@ -298,7 +302,7 @@ class Rive {
     );
 
     // Return the list of animations removed
-    return animationsToRemove.map(a => a.name());
+    return animationsToRemove.map(a => a.name);
   }
 
   /**
@@ -306,7 +310,7 @@ class Rive {
    */
   private _removeAllAnimations() {
     
-    const names = this._animations.map(animation => animation.name());
+    const names = this._animations.map(animation => animation.name);
     this._animations.splice(0, this._animations.length);
     return names;
   }
@@ -316,9 +320,9 @@ class Rive {
     const pausedAnimationNames: string[] = [];
 
     this._animations.forEach((a, i) => {
-      if (animationNames.indexOf(a.name()) >= 0) {
+      if (animationNames.indexOf(a.name) >= 0) {
         a.paused = true;
-        pausedAnimationNames.push(a.name());
+        pausedAnimationNames.push(a.name);
       }
     });
 
@@ -341,7 +345,7 @@ class Rive {
       // Add the default animation
       const animation = this._artboard.animationAt(0);
       const instance = new this._rive.LinearAnimationInstance(animation);
-      this._animations.push(new _Animation({ animation: animation, instance: instance }));
+      this._animations.push(new Animation(animation, instance));
     }
   }
 
@@ -421,19 +425,19 @@ class Rive {
 
     for (var i in this._animations) {
       // Emit if the animation looped
-      switch (this._animations[i].loopValue()) {
+      switch (this._animations[i].loopValue) {
         case 0:
           if (this._animations[i].loopCount) {
             this._animations[i].loopCount = 0;
             // This is a one-shot; if it has ended, delete the instance
-            this.stop([this._animations[i].name()]);
+            this.stop([this._animations[i].name]);
           }
           break;
         case 1:
           if (this._animations[i].loopCount) {
             this._emit('loop', createLoopEvent(
-              this._animations[i].name(),
-              this._animations[i].loopValue(),
+              this._animations[i].name,
+              this._animations[i].loopValue,
             ));
             this._animations[i].loopCount = 0;
           }
@@ -444,8 +448,8 @@ class Rive {
           // two didLoops
           if (this._animations[i].loopCount > 1) {
             this._emit('loop', createLoopEvent(
-              this._animations[i].name(),
-              this._animations[i].loopValue(),
+              this._animations[i].name,
+              this._animations[i].loopValue,
             ));
             this._animations[i].loopCount = 0;
           }
@@ -472,12 +476,16 @@ class Rive {
     }
   }
 
+  private getEvents<K extends EventNames>(event: K): EventCallbacksRecord[K] {
+    return this._events[event];
+  }
+
   /** Registers a callback for a named event */
-  on<K extends keyof AnimationEvents>(event: K, fn: (event: AnimationEvents[K]) => void) {
-    const events = this[`_on${event}`];
+  on<K extends EventNames>(event: K, fn: (event: AnimationEvents[K]) => void) {
+    const events = this.getEvents(event);
 
     if (typeof fn === 'function') {
-      events.push({ fn: fn });
+      events.push({ fn } as any); // TODO: see if we can avoid cast to any
     }
 
     return this;
@@ -623,7 +631,7 @@ class Rive {
    * Updates the fit and alignment of the animation in the canvas
    */
   setLayout(layout: Layout) {
-    if (!layout.constructor === Layout) {
+    if (!(layout instanceof Layout)) {
       return;
     }
     this._layout = layout;
@@ -634,7 +642,6 @@ class Rive {
 
   /** Returns the animation source/name */
   source() {
-    
     return this._src;
   }
 
@@ -660,7 +667,7 @@ class Rive {
     const animationNames = [];
     for (const i in this._animations) {
       if (!this._animations[i].paused) {
-        animationNames.push(this._animations[i].name());
+        animationNames.push(this._animations[i].name);
       }
     }
     return animationNames;
@@ -727,10 +734,10 @@ function ensureArray<T>(param?: T | T[]): T[] {
   return [];
 }
 
-function printAnimationState(animations) {
+function printAnimationState(animations: Animation[]) {
   console.log(' ------------- ');
   for (const i in animations) {
-    console.log(' -------- ' + animations[i].name() + ' ' + i.toString() + ' ' + (animations[i].paused ? 'paused' : 'playing'));
+    console.log(' -------- ' + animations[i].name + ' ' + i.toString() + ' ' + (animations[i].paused ? 'paused' : 'playing'));
   }
   console.log(' ------------- ');
 }

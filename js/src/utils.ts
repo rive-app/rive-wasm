@@ -237,7 +237,7 @@ export class Animation {
   loopCount: number = 0;
   paused: boolean = false;
 
-  constructor(private animation: any, private instance: any) {}
+  constructor(public animation: any, public instance: any) {}
 
   // Returns the animation's name
   public get name(): string {
