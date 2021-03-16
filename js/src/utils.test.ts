@@ -1,5 +1,5 @@
 const utils = require('./utils');
-const Rive = require('../../wasm/publish/rive.js');
+const Runtime = require('../../wasm/publish/rive.js');
 import { RuntimeCallback, RuntimeLoader } from './utils';
 
 // #region setup and teardown
@@ -68,19 +68,19 @@ test('Layouts provide runtime fit and alignment values', async () => {
 // #region runtime loading tests
 
 test('Runtime can be loaded using callbacks', async done => {
-  let rive : typeof Rive;
+  let rive : typeof Runtime;
 
-  let callback1 : RuntimeCallback = (rive: typeof Rive) : void => {
+  let callback1 : RuntimeCallback = (rive: typeof Runtime) : void => {
     expect(rive).toBeDefined();
     expect(rive.Fit.none).toBeDefined();
     expect(rive.Fit.cover).toBeDefined();
     expect(rive.Fit.none).not.toBe(rive.Fit.cover);
   };
 
-  let callback2 : RuntimeCallback = (rive: typeof Rive) : void => 
+  let callback2 : RuntimeCallback = (rive: typeof Runtime) : void => 
     expect(rive).toBeDefined();
 
-  let callback3 : RuntimeCallback = (rive: typeof Rive) : void => {
+  let callback3 : RuntimeCallback = (rive: typeof Runtime) : void => {
     expect(rive).toBeDefined();
     done();
   };

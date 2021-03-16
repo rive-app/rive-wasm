@@ -7,13 +7,13 @@
         <link rel="stylesheet" href="styles.css">
     </head>
     <body>
-        <canvas id="rive_canvas"></canvas>
+        <canvas id="canvas"></canvas>
     
         <script src="/dist/rive.js"></script>
         <script>
-            const canvas = document.getElementById('rive_canvas');
+            const canvas = document.getElementById('canvas');
             
-            new Rive({
+            Rive.new({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: canvas,
                 autoplay: true,

@@ -30,5 +30,6 @@ module.exports = {
     assetModuleFilename: 'rive.wasm',
     publicPath: '/dist',
   },
-  mode: 'production',
+  mode: 'development',
+  // mode: 'production',
 };
