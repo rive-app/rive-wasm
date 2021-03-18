@@ -14,7 +14,7 @@
 
         <script src="/dist/rive.js"></script>
         <script>
-            const rive = new Rive({
+            const rive = Rive.new({
                 src: 'https://cdn.rive.app/animations/color_flash_button_0_6.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
@@ -23,15 +23,14 @@
             const button = document.getElementById('button');
             const message = document.getElementById('message');
 
-            rive.on('load', function() {
-
+            rive.on('load', () => {
                 // Get a list of the animation names once the file has loaded
-                const names = rive.animationNames();
-                var clickCounter = 0;
+                const names = rive.animationNames;
+                let clickCounter = 0;
 
                 // Register click events on the button
-                button.onclick = function() {
-                    if (rive.isPlaying()) {
+                button.onclick = () => {
+                    if (rive.isPlaying) {
                         message.innerHTML = 'Animation still playing';
                     } else {
                         const name = names[++clickCounter % names.length];

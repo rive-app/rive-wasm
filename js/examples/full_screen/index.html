@@ -21,11 +21,7 @@
                 artboard: 'New Artboard',
                 // which animations should be played and mixed together
                 animations: ['idle', 'windshield_wipers', 'bouncing'],
-                // Rive has different fit parameters for how the content is
-                // placed in the canvas; try experimenting with: 'cover',
-                // 'contain', 'fill', 'fitWidth', 'fitHeight', 'none' and
-                // 'scaleDown'
-                layout: new Rive.Layout('cover', 'center'),
+                layout: new Rive.Layout(Rive.Fit.Cover, Rive.Alignment.Center),
             });
 
             // When the window resizes, resize the canvas
@@ -35,7 +31,6 @@
                 canvas.height = window.innerHeight;
             }
             resizeCanvas();
-
         </script>
     </body>
 </html>

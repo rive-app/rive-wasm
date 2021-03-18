@@ -33,7 +33,7 @@ export let createLoopEvent = (animation: string, loopValue: number): LoopEvent =
 // Maps the playback state to the Wasm enum values
 export const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
 
-// #region Layout
+// #region layout
 
 // Fit options for the canvas
 export enum Fit {
@@ -260,7 +260,7 @@ export enum EventType {
 // Event fired by Rive
 export interface Event {
   type: EventType,
-  message?: string,
+  data?: string | string[],
 }
 
 // Callback type for event listeners
@@ -278,19 +278,19 @@ class EventManager {
   constructor(private listeners: EventListener[] = []) {}
 
   // Gets listeners of specified type
-  public getListeners(type: EventType): EventListener[] {
+  private getListeners(type: EventType): EventListener[] {
     return this.listeners.filter(e => e.type === type);
   }
 
   // Adds a listener
-  public addListener(listener: EventListener): void {
+  public add(listener: EventListener): void {
     if (!this.listeners.includes(listener)) {
       this.listeners.push(listener);
     }
   }
 
   // Removes listener
-  public removeListener(listener: EventListener): void {
+  public remove(listener: EventListener): void {
     const index = this.listeners.indexOf(listener, 0);
     if (index > -1) {
       this.listeners.splice(index, 1);
@@ -298,7 +298,7 @@ class EventManager {
   }
 
   // Fires an event
-  public fireEvent(event: Event): void {
+  public fire(event: Event, ignoreDuplicate = false): void {
     const eventListeners = this.getListeners(event.type);
     eventListeners.forEach(
       listener => listener.callback(event)
@@ -312,10 +312,13 @@ class EventManager {
 
 // A task in the queue; will fire the action when the queue is processed; will
 // also optionally fire an event.
-interface Task {
-  action: () => void,
+export interface Task {
+  action: ActionCallback,
   event?: Event,
 }
+
+// Callback type for task actions
+export type ActionCallback = () => void;
 
 // Manages a queue of tasks
 class TaskQueueManager {
@@ -334,8 +337,7 @@ class TaskQueueManager {
       const task = this.queue.shift();
       task.action();
       if (task.event) {
-        // TODO: fix this up
-        this.eventManager.fireEvent(task.event);
+        this.eventManager.fire(task.event);
       }
     }
   }
@@ -464,10 +466,7 @@ export class Rive {
     
     // Queue up play action and event if necessary
     if (this._autoplay) {
-      this.taskQueue.add({
-        action: () => this.play(),
-        event: {type: EventType.Play, message: 'Playing'},
-      });
+      this.taskQueue.add({ action: () => this.play() });
     }
 
     // Wait for runtime to load
@@ -514,9 +513,9 @@ export class Rive {
         this.initializeArtboard();
         this.drawFrame();
         // Everything's set up, emit a load event
-        this.eventManager.fireEvent({
+        this.eventManager.fire({
           type: EventType.Load,
-          message: this.src ?? 'buffer'
+          data: this.src ?? 'buffer'
         });
         // Clear the task queue
         this.taskQueue.process();
@@ -525,7 +524,7 @@ export class Rive {
       }
     } catch (e) {
       const msg = `Unable to load ${this.src ?? 'buffer'}`;
-      this.eventManager.fireEvent({type: EventType.LoadError, message:msg});
+      this.eventManager.fire({type: EventType.LoadError, data:msg});
       console.error(msg);
       throw e ?? msg;
     }
@@ -540,7 +539,7 @@ export class Rive {
     // Check that the artboard has at least 1 animation
     if (this._artboard.animationCount() < 1) {
       const msg = 'Artboard has no animations';
-      this.eventManager.fireEvent({type: EventType.LoadError, message: msg});
+      this.eventManager.fire({type: EventType.LoadError, data: msg});
       throw msg;
     }
 
@@ -714,9 +713,9 @@ export class Rive {
         case 1:
           if (animation.loopCount) {
             // TODO: Fix this to return more info
-            this.eventManager.fireEvent({
+            this.eventManager.fire({
               type: EventType.Loop,
-              message: `${animation.name} looped`
+              data: `${animation.name} looped`
             });
             // this._emit('loop', createLoopEvent(
             //   animation.name,
@@ -731,9 +730,9 @@ export class Rive {
           // two didLoops
           if (animation.loopCount > 1) {
             // TODO: Fix this to return more info
-            this.eventManager.fireEvent({
+            this.eventManager.fire({
               type: EventType.Loop,
-              message: `${animation.name} looped`
+              data: `${animation.name} looped`
             });
             // this._emit('loop', createLoopEvent(
             //   animation.name,
@@ -770,7 +769,6 @@ export class Rive {
     if (!this._loaded) {
       this.taskQueue.add({
         action: () => this.play(animationNames),
-        event: { type: EventType.Play }
       });
       return;
     }
@@ -779,7 +777,10 @@ export class Rive {
     this.atLeastOneAnimationForPlayback();
     this._playback = playbackStates.play;
     this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
-    this.eventManager.fireEvent({ type: EventType.Play });
+    this.eventManager.fire({
+      type: EventType.Play,
+      data: this.playingAnimationNames
+    });
   }
 
   // Pauses specified animations; if none specified, pauses all.
@@ -790,7 +791,10 @@ export class Rive {
     if (!this.hasPlayingAnimations() || animationNames.length === 0) {
       this._playback = playbackStates.pause;
     }
-    this.eventManager.fireEvent({ type: EventType.Pause });
+    this.eventManager.fire({
+      type: EventType.Pause,
+      data: this.pausedAnimationNames,
+    });
   }
 
   // Stops specified animations; if none specifies, stops them all.
@@ -808,7 +812,10 @@ export class Rive {
       cancelAnimationFrame(this.frameRequestId);
       this._playback = playbackStates.stop;
     }
-    this.eventManager.fireEvent({ type: EventType.Stop });
+    this.eventManager.fire({
+      type: EventType.Stop,
+      data: stoppedAnimationNames,
+    });
   }
 
   // Loads a new Rive file, keeping listeners in place.
@@ -839,10 +846,7 @@ export class Rive {
 
     // Queue up play action and event if necessary
     if (this._autoplay) {
-      this.taskQueue.add({
-        action: () => this.play(),
-        event: { type: EventType.Play }
-      });
+      this.taskQueue.add({ action: () => this.play() });
     }
   
     // Wait for runtime to load
@@ -887,7 +891,18 @@ export class Rive {
     }
     return this._animations
       .filter(a => !a.paused)
-      .map(a => afterEach.name);
+      .map(a => a.name);
+  }
+
+  // Returns a list of paused animation names
+  public get pausedAnimationNames(): string[] {
+    // If the file's not loaded, we got nothing to return
+    if (!this._loaded) {
+      return [];
+    }
+    return this._animations
+      .filter(a => a.paused)
+      .map(a => a.name);
   }
 
   // Returns true if playing
@@ -896,7 +911,7 @@ export class Rive {
   }
 
   // Returns trus if all animations are paused
-  public isPaused(): boolean {
+  public get isPaused(): boolean {
     return this._playback === playbackStates.pause;
   }
 
@@ -907,7 +922,7 @@ export class Rive {
 
   // Register a new listener
   public on(type: EventType, callback: EventCallback) {
-    this.eventManager.addListener({
+    this.eventManager.add({
       type: type,
       callback: callback, 
     });
@@ -945,8 +960,10 @@ let mapToStringArray = (obj?: string[] | string): string[] => {
 
 // #region exports for testing
 
+// Exports to only be used for tests
 export const Testing = {
   EventManager: EventManager,
+  TaskQueueManager: TaskQueueManager,
 } 
 
 // #endregion

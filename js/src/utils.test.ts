@@ -1,6 +1,13 @@
 const utils = require('./utils');
 const Runtime = require('../../wasm/publish/rive.js');
-import { EventType, EventListener, Event, RuntimeCallback } from './utils';
+import {
+   RuntimeCallback,
+  EventType,
+  EventListener,
+  Event,
+  EventCallback,
+  Task,
+  ActionCallback } from './utils';
 
 // #region setup and teardown
 
@@ -121,22 +128,57 @@ test('Events can be listened for and fired', () => {
     type: EventType.Load,
     callback: (e: Event) => {
       expect(e.type).toBe(EventType.Load);
-      expect(e.message).toBe('fired');
+      expect(e.data).toBe('fired');
       mockFired();
     }
   };
   
-  manager.addListener(listener);
-  manager.fireEvent({type: EventType.Load, message: 'fired'});
+  manager.add(listener);
+  manager.fire({type: EventType.Load, data: 'fired'});
   expect(mockFired).toBeCalledTimes(1);
   
-  manager.removeListener(listener);
-  manager.fireEvent(EventType.Load, 'fired');
+  manager.remove(listener);
+  manager.fire(EventType.Load, 'fired');
   expect(mockFired).toBeCalledTimes(1);
 
-  manager.addListener(listener);
-  manager.fireEvent({type: EventType.Load, message: 'fired'});
+  manager.add(listener);
+  manager.fire({type: EventType.Load, data: 'fired'});
   expect(mockFired).toBeCalledTimes(2);
+});
+
+// #endregion
+
+// #region task queue tests
+
+test('Tasks are queued and run when processed', () => {
+  const eventManager = new utils.Testing.EventManager();
+  const taskManager = new utils.Testing.TaskQueueManager(eventManager);
+
+  const mockFired = jest.fn();
+  const listener: EventListener = {
+    type: EventType.Play,
+    callback: (e: Event) => {
+      expect(e.type).toBe(EventType.Play);
+      expect(e.data).toBe('play');
+      mockFired();
+    }
+  };
+  eventManager.add(listener);
+  const event: Event = {type: EventType.Play, data: 'play'};
+
+  const mockAction: ActionCallback = jest.fn();
+  const task: Task = {event: event, action: mockAction};
+  taskManager.add(task);
+
+  taskManager.process();
+  expect(mockAction).toBeCalledTimes(1);
+  expect(mockFired).toBeCalledTimes(1);
+
+  taskManager.add(task);
+  taskManager.add(task);
+  taskManager.process();
+  expect(mockAction).toBeCalledTimes(3);
+  expect(mockFired).toBeCalledTimes(3);
 });
 
 // #endregion

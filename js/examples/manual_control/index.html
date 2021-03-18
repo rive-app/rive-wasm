@@ -30,22 +30,25 @@
             const bounceButton = document.getElementById('bounce');
 
             idleButton.onclick = _ => 
-                rive.playingAnimationNames().includes('idle') ?
+                rive.playingAnimationNames.includes('idle') ?
                     rive.pause('idle') :
                     rive.play('idle');
 
             wipersButton.onclick = _ =>
-                rive.playingAnimationNames().includes('windshield_wipers') ?
+                rive.playingAnimationNames.includes('windshield_wipers') ?
                     rive.pause('windshield_wipers') :
                     rive.play('windshield_wipers');
 
             bounceButton.onclick = _ =>
-                rive.playingAnimationNames().includes('bouncing') ?
+                rive.playingAnimationNames.includes('bouncing') ?
                     rive.pause('bouncing') :
                     rive.play('bouncing');
 
             // Listen for play events to update button text
-            rive.on('play', (names) => {
+            rive.on(Rive.EventType.Play, (event) => {
+                const names = event.data;
+                console.log(`type: ${event.type}`);
+                console.log(`data: ${event.data}`);
                 names.forEach((name) => {
                     if (name === 'idle') {
                         idleButton.innerHTML = 'Stop Truck';
@@ -58,7 +61,8 @@
             });
 
             // Listen for pause events to update button text
-            rive.on('pause', (names) => {
+            rive.on(Rive.EventType.Pause, (event) => {
+                const names = event.data;
                 names.forEach((name) => {
                     if (name === 'idle') {
                         idleButton.innerHTML = 'Start Truck';

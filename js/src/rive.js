@@ -7,7 +7,8 @@ const {
   Alignment,
   Fit,
   Layout,
-  Rive } = require('./utils');
+  Rive,
+  EventType } = require('./utils');
 
 // Lets webpack know to copy the Wasm file to the dist folder
 const _ = require('../../wasm/publish/rive.wasm');
@@ -18,6 +19,7 @@ if (typeof exports !== 'undefined') {
   exports.Alignment = Alignment;
   exports.Fit = Fit;
   exports.Layout = Layout;
+  exports.EventType = EventType;
   // Exporting things to be tested
   // exports.testables = {
   //   createLoopEvent: LoopEvent
@@ -30,9 +32,11 @@ if (typeof global !== 'undefined') {
   global.Rive.Alignment = Alignment;
   global.Rive.Fit = Fit;
   global.Rive.Layout = Layout;
+  global.Rive.EventType = EventType;
 } else if (typeof window !== 'undefined') {
   window.Rive = Rive;
   window.Rive.Alignment = Alignment;
   window.Rive.Fit = Fit;
   window.Rive.Layout = Layout;
+  window.Rive.EventType = EventType;
 }
