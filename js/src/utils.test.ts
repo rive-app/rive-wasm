@@ -1,11 +1,11 @@
 const utils = require('./utils');
 const Runtime = require('../../wasm/publish/rive.js');
-import { RuntimeCallback, RuntimeLoader } from './utils';
+import { EventType, EventListener, Event, RuntimeCallback } from './utils';
 
 // #region setup and teardown
 
 beforeEach(() => {
-  RuntimeLoader.setTestMode(true);
+  utils.RuntimeLoader.setTestMode(true);
 });
 
 afterEach(() => {});
@@ -111,6 +111,38 @@ test('Runtime can be loaded using promises', async done => {
 });
 
 // #endregion 
+
+// #region event tests
+
+test('Events can be listened for and fired', () => {
+  const manager = new utils.Testing.EventManager();
+  expect(manager).toBeDefined();
+
+  const mockFired = jest.fn();
+
+  const listener: EventListener = {
+    type: EventType.Load,
+    callback: (e: Event) => {
+      expect(e.type).toBe(EventType.Load);
+      expect(e.message).toBe('fired');
+      mockFired();
+    }
+  };
+  
+  manager.addListener(listener);
+  manager.fireEvent(EventType.Load, 'fired');
+  expect(mockFired).toBeCalledTimes(1);
+  
+  manager.removeListener(listener);
+  manager.fireEvent(EventType.Load, 'fired');
+  expect(mockFired).toBeCalledTimes(1);
+
+  manager.addListener(listener);
+  manager.fireEvent(EventType.Load, 'fired');
+  expect(mockFired).toBeCalledTimes(2);
+});
+
+// #endregion
 
 // #region helper functions
 

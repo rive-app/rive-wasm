@@ -18,6 +18,9 @@
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
+                onload: (e) => console.log(`Loaded ${e.type}: ${e.message}`),
+                onplay: (e) => console.log(`Playing`),
+                onloop: (e) => console.log('Looped'),
             });
         </script>
     </body>
