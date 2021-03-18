@@ -17,7 +17,7 @@
         <script src="/dist/rive.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const rive = Rive.new({
+            const looper = rive.Rive.new({
                 src: 'https://cdn.rive.app/animations/web_api_test_file.riv',
                 canvas: document.getElementById('canvas'),
             });
@@ -29,15 +29,15 @@
             button.onclick = function() {
                 // Stop any playing animations and clear them out
                 console.log('Manually calling stop');
-                rive.stop();
+                looper.stop();
                 // Play the selected animation
-                rive.play(select.value);
+                looper.play(select.value);
                 button.disabled = true;
             };
 
             // Wire up the select options on load and enable play button
-            rive.on('load', function() {
-                const animations = rive.animationNames();
+            looper.on('load', function() {
+                const animations = looper.animationNames;
                 animations.forEach(function(name) {
                     const option = document.createElement('option');
                     option.value = name;
@@ -47,22 +47,22 @@
                 button.disabled = false;
             });
 
-            rive.on('play', function(names) {
+            looper.on('play', function(names) {
                 console.log('Playing ' + names);
             });
 
             // Stop playing after one loop
-            rive.on('loop', function(event) {
-                rive.pause();
+            looper.on('loop', function(event) {
+                looper.pause();
                 button.disabled = false;
             });
 
-            rive.on('stop', function(names) {
+            looper.on('stop', function(names) {
                 console.log('Stopped ' + names);
                 button.disabled = false;
             });
 
-            rive.on('pause', function(names) {
+            looper.on('pause', function(names) {
                 console.log('Paused ' + names);
                 button.disabled = false;
             });

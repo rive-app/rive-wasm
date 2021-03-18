@@ -1,8 +1,6 @@
-// Slowly moving functionality over to Typescript
+//const Runtime = require('../../wasm/publish/rive.js');
 
-// import { RiveAnimation } from "../dist/rive";
-
-const Runtime = require('../../wasm/publish/rive.js');
+import Runtime from '../../wasm/publish/rive.js';
 
 // #region LoopEvent
 
@@ -71,12 +69,12 @@ export interface LayoutParameters {
 
 // Alignment options for Rive animations in a HTML canvas
 export class Layout {
-  public fit?: Fit;
-  public alignment?: Alignment;
-  public minX?: number;
-  public minY?: number;
-  public maxX?: number;
-  public maxY?: number;
+  public fit: Fit;
+  public alignment: Alignment;
+  public minX: number;
+  public minY: number;
+  public maxX: number;
+  public maxY: number;
 
   constructor(
     fit: Fit = Fit.None,
@@ -100,7 +98,7 @@ export class Layout {
   }
 
   // Returns fit for the Wasm runtime format
-  public runtimeFit(rive: typeof Runtime): any {
+  public runtimeFit(rive: any): any {
     switch (this.fit) {
       case Fit.Cover:
         return rive.Fit.cover;
@@ -121,7 +119,7 @@ export class Layout {
   }
 
   // Returns alignment for the Wasm runtime format
-  public runtimeAlignment(rive: typeof Runtime): any {
+  public runtimeAlignment(rive: any): any {
     switch (this.alignment) {
       case Alignment.TopLeft:
         return rive.Alignment.topLeft;
@@ -383,7 +381,7 @@ export class Rive {
   private _startingAnimationNames: string[];
   private _canvas: HTMLCanvasElement;
   private _autoplay: boolean;
-  private _rive: typeof Runtime;
+  private _rive: any;
   private _artboard: any;
   private _animations: Animation[];
   private _loaded: boolean = false;

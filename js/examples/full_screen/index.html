@@ -13,7 +13,7 @@
         <script>
             const canvas = document.getElementById('canvas');
             
-            Rive.new({
+            rive.Rive.new({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: canvas,
                 autoplay: true,
@@ -21,7 +21,7 @@
                 artboard: 'New Artboard',
                 // which animations should be played and mixed together
                 animations: ['idle', 'windshield_wipers', 'bouncing'],
-                layout: new Rive.Layout(Rive.Fit.Cover, Rive.Alignment.Center),
+                layout: new rive.Layout(rive.Fit.Cover, rive.Alignment.Center),
             });
 
             // When the window resizes, resize the canvas
