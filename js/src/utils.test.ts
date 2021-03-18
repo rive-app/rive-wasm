@@ -4,9 +4,7 @@ import { EventType, EventListener, Event, RuntimeCallback } from './utils';
 
 // #region setup and teardown
 
-beforeEach(() => {
-  utils.RuntimeLoader.setTestMode(true);
-});
+beforeEach(() => utils.RuntimeLoader.setTestMode(true));
 
 afterEach(() => {});
 
@@ -119,7 +117,6 @@ test('Events can be listened for and fired', () => {
   expect(manager).toBeDefined();
 
   const mockFired = jest.fn();
-
   const listener: EventListener = {
     type: EventType.Load,
     callback: (e: Event) => {
@@ -130,7 +127,7 @@ test('Events can be listened for and fired', () => {
   };
   
   manager.addListener(listener);
-  manager.fireEvent(EventType.Load, 'fired');
+  manager.fireEvent({type: EventType.Load, message: 'fired'});
   expect(mockFired).toBeCalledTimes(1);
   
   manager.removeListener(listener);
@@ -138,7 +135,7 @@ test('Events can be listened for and fired', () => {
   expect(mockFired).toBeCalledTimes(1);
 
   manager.addListener(listener);
-  manager.fireEvent(EventType.Load, 'fired');
+  manager.fireEvent({type: EventType.Load, message: 'fired'});
   expect(mockFired).toBeCalledTimes(2);
 });
 
