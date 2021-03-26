@@ -36,7 +36,6 @@ const webConfig = {
     libraryTarget: "var",
     library: "rive"
   },
-  // mode: 'none',
   mode: 'production',
 };
 
@@ -72,8 +71,8 @@ const reactConfig = {
     libraryTarget: 'umd',
     library: 'rive',
   },
-  mode: 'none',
-  // mode: 'production',
+  mode: 'production',
+  // mode: 'none',
 };
 
 module.exports = [reactConfig, webConfig];

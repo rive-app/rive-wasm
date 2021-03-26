@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { Rive, Layout } from 'rive-js';
-// import styles from './App.css';
 
 const Animation = ({ asset, animation, fit, alignment }) => {
     const canvas = useRef(null);
@@ -9,9 +8,13 @@ const Animation = ({ asset, animation, fit, alignment }) => {
 
     // Resizes the canvas to match the parent element
     useEffect(() => {
-        const { width: w, height: h } = animationContainer.current.getBoundingClientRect();
-        canvas.current.width = w;
-        canvas.current.height = h;
+        
+        let resizer = () => {
+            const { width: w, height: h } = animationContainer.current.getBoundingClientRect();
+            canvas.current.width = w;
+            canvas.current.height = h;
+        };
+        resizer();
     });
 
     // Start the animation

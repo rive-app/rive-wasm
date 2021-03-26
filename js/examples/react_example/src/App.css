@@ -3,9 +3,12 @@
 }
 
 .App-logo {
-  height: 40vmin;
+  height: 150px;
+  width: 150px;
   pointer-events: none;
-  clip-path: circle(100px at center);
+  clip-path: circle(75px at center);
+  display: grid;
+  place-items: center;
 }
 
 @media (prefers-reduced-motion: no-preference) {
