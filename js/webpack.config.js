@@ -1,11 +1,8 @@
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 const webConfig = {
-  entry: [
-    './src/rive.ts',
-    // This is here solely to include the wasm file for packing
-    './src/pack_wasm.ts'
-  ],
+  entry: './src/rive.ts',
   target: 'web',
   module: {
     rules: [
@@ -13,12 +10,7 @@ const webConfig = {
         test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
-      },
-      // Rule for including Wasm file
-      {
-        test: /\.wasm/,
-        type: 'asset/resource',
-      },
+      }
     ],
   },
   resolve: {
@@ -31,13 +23,19 @@ const webConfig = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.min.js',
-    assetModuleFilename: 'rive.wasm',
-    publicPath: '/dist',
-    libraryTarget: "var",
-    library: "rive"
+    libraryTarget: 'var',
+    library: 'rive'
   },
   devtool: 'source-map',
   mode: 'production',
+  // Copy the Wasm file to dist
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: '../wasm/publish/rive.wasm', to: 'rive.wasm' },
+      ],
+    }),
+  ],
 };
 
 const reactConfig = {
@@ -49,11 +47,6 @@ const reactConfig = {
         test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/,
-      },
-      // Rule for including Wasm file
-      {
-        test: /\.wasm/,
-        type: 'asset/resource',
       },
     ],
   },
@@ -67,8 +60,6 @@ const reactConfig = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.dev.js',
-    assetModuleFilename: 'rive.wasm',
-    publicPath: '/dist',
     libraryTarget: 'umd',
     library: 'rive',
     globalObject: 'this',
