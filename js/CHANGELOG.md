@@ -1,5 +1,14 @@
 # Rive.js Changelog
 
+## 0.1.0-beta.2 (Mar 26, 2021)
+- Code rewritten in Typescript
+- Code now packaged with Webpack
+- Two flavours are available: `/dist/rive.min.js` for embedding directly with a `<script>` tag, and `dist/rive.dev.js` exposes ES6 modules and suitable for use through npm with React, Next, etc.
+- When using `dist/rive.min.js`, the api is accessible through the `rive` object, e.g. `rive.Rive.new({})`. With the ES6 module version, the API is directly accessible.
+- Constructor for `Rive` objects uses standard parameters; for named parameters, use `Rive.new({})`.
+- Constructor for `Layout` objects uses standard parameters; for named parameters, use `Layout.new({})`.
+- `Layout` parameters `fit` and `alignment` are now string enums; either a string (e.g. "contain") or the enum (e.g. `Fit.Contain`) can be used.
+
 ## 0.0.4 (Mar 9, 2021)
 - Moved internal Animation class to Typescript and tidied up getters
 
