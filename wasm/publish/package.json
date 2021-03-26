@@ -15,7 +15,8 @@
     "rive.min.js",
     "rive.pure.js",
     "rive.pure.min.js",
-    "rive.wasm"
+    "rive.wasm",
+    "types.d.ts"
   ],
   "keywords": [
     "rive",
