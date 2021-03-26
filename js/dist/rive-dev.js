@@ -7,7 +7,7 @@
 		exports["rive"] = factory();
 	else
 		root["rive"] = factory();
-})(self, function() {
+})(this, function() {
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ([
 /* 0 */,

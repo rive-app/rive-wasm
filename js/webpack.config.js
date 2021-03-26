@@ -70,9 +70,9 @@ const reactConfig = {
     publicPath: '/dist',
     libraryTarget: 'umd',
     library: 'rive',
+    globalObject: 'this',
   },
-  mode: 'production',
-  // mode: 'none',
+  mode: 'none',
 };
 
 module.exports = [reactConfig, webConfig];
