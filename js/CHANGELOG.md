@@ -1,6 +1,6 @@
 # Rive.js Changelog
 
-## 0.1.0-beta.2 (Mar 26, 2021)
+## 0.1.0-beta.3 (Mar 26, 2021)
 - Code rewritten in Typescript
 - Code now packaged with Webpack
 - Two flavours are available: `/dist/rive.min.js` for embedding directly with a `<script>` tag, and `dist/rive.dev.js` exposes ES6 modules and suitable for use through npm with React, Next, etc.
