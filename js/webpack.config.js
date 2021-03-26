@@ -36,6 +36,7 @@ const webConfig = {
     libraryTarget: "var",
     library: "rive"
   },
+  devtool: 'source-map',
   mode: 'production',
 };
 
@@ -65,13 +66,14 @@ const reactConfig = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'rive-dev.js',
+    filename: 'rive.dev.js',
     assetModuleFilename: 'rive.wasm',
     publicPath: '/dist',
     libraryTarget: 'umd',
     library: 'rive',
     globalObject: 'this',
   },
+  devtool: 'source-map',
   mode: 'none',
 };
 

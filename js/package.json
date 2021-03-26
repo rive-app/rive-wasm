@@ -1,8 +1,8 @@
 {
   "name": "rive-js",
-  "version": "0.0.5",
+  "version": "0.1.0-beta.2",
   "description": "Rive's web api.",
-  "main": "dist/rive-dev.js",
+  "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",
   "homepage": "https://rive.app",
   "repository": {
@@ -25,7 +25,10 @@
   ],
   "license": "MIT",
   "files": [
-    "dist/rive.js",
+    "dist/rive.min.js",
+    "dist/rive.min.js.map",
+    "dist/rive.dev.js",
+    "dist/rive.dev.js.map",
     "dist/rive.wasm",
     "src/rive.ts"
   ],
