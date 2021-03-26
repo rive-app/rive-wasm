@@ -3,7 +3,8 @@
 }
 
 .App-logo {
-  height: 20vmin;
+  height: 200px;
+  width: 200px;
   pointer-events: none;
   clip-path: circle(100px at center);
 }
