@@ -16,7 +16,7 @@
             <button id="bounce">Rough Road</button>
         </div>
 
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
             // animation will show the first frame but not start playing
             const truck = rive.Rive.new({
@@ -47,8 +47,6 @@
             // Listen for play events to update button text
             truck.on(rive.EventType.Play, (event) => {
                 const names = event.data;
-                console.log(`type: ${event.type}`);
-                console.log(`data: ${event.data}`);
                 names.forEach((name) => {
                     if (name === 'idle') {
                         idleButton.innerHTML = 'Stop Truck';

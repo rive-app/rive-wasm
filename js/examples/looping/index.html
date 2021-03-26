@@ -14,7 +14,7 @@
             <button id="button" disabled="true">Play</button>
         </div>
 
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
             // animation will show the first frame but not start playing
             const looper = rive.Rive.new({
@@ -28,7 +28,6 @@
             // Wire up the play button
             button.onclick = function() {
                 // Stop any playing animations and clear them out
-                console.log('Manually calling stop');
                 looper.stop();
                 // Play the selected animation
                 looper.play(select.value);
@@ -48,7 +47,6 @@
             });
 
             looper.on('play', function(names) {
-                console.log('Playing ' + names);
             });
 
             // Stop playing after one loop
@@ -58,12 +56,10 @@
             });
 
             looper.on('stop', function(names) {
-                console.log('Stopped ' + names);
                 button.disabled = false;
             });
 
             looper.on('pause', function(names) {
-                console.log('Paused ' + names);
                 button.disabled = false;
             });
 

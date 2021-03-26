@@ -1,5 +1,3 @@
-//const Runtime = require('../../wasm/publish/rive.js');
-
 import Runtime from '../../wasm/publish/rive.js';
 
 // #region LoopEvent

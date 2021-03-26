@@ -2,7 +2,8 @@
   "name": "rive-js",
   "version": "0.0.5",
   "description": "Rive's web api.",
-  "main": "dist/rive.js",
+  "main": "dist/rive-dev.js",
+  "unpkg": "dist/rive.min.js",
   "homepage": "https://rive.app",
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
   "files": [
     "dist/rive.js",
     "dist/rive.wasm",
-    "src/rive.d.ts"
+    "src/rive.ts"
   ],
   "typings": "./rive.d.ts",
   "devDependencies": {

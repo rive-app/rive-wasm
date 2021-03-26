@@ -1,5 +1,14 @@
-var rive;
-/******/ (() => { // webpackBootstrap
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define([], factory);
+	else if(typeof exports === 'object')
+		exports["rive"] = factory();
+	else
+		root["rive"] = factory();
+})(self, function() {
+return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ([
 /* 0 */,
 /* 1 */
@@ -3406,7 +3415,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _wasm_publish_rive_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _wasm_publish_rive_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wasm_publish_rive_js__WEBPACK_IMPORTED_MODULE_0__);
-//const Runtime = require('../../wasm/publish/rive.js');
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -4266,6 +4274,7 @@ var Testing = {
 
 })();
 
-rive = __webpack_exports__;
+/******/ 	return __webpack_exports__;
 /******/ })()
 ;
+});
