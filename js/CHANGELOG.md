@@ -1,5 +1,10 @@
 # Rive.js Changelog
 
+## 0.1.0-beta.4 (Mar 29, 2021)
+- Exposes drawFrame function
+- Fixes bug when loading Rive files via the buffer
+- Remove more legacy JS code
+
 ## 0.1.0-beta.3 (Mar 26, 2021)
 - Code rewritten in Typescript
 - Code now packaged with Webpack

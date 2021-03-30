@@ -339,6 +339,8 @@ class TaskQueueManager {
   }
 }
 
+// #endregion
+
 // #region Rive
 
 // Interface for the Rive static method contructor
@@ -370,17 +372,26 @@ export interface RiveLoadParameters {
   autoplay?: boolean,
 }
 
+// Interface for typing a runtime Artboard
+interface RuntimeArtboard {
+  animationCount: () => number,
+  bounds: any,
+  advance: (elapsedTime: number) => void
+  draw: (renderer: any) => void,
+  animation: (name: string) => any,
+  animationAt: (index: number) => any,
+}
+
 export class Rive {
 
+  private artboard: RuntimeArtboard;
+  private artboardName: string;
+
   // Temporary variables while code is ported from js
-  private _src: string;
-  private _buffer: ArrayBuffer;
-  private _artboardName: string;
   private _startingAnimationNames: string[];
   private _canvas: HTMLCanvasElement;
   private _autoplay: boolean;
   private _rive: any;
-  private _artboard: any;
   private _animations: Animation[];
   private _loaded: boolean = false;
   private _playback: number;
@@ -403,7 +414,7 @@ export class Rive {
   constructor(
     private src: string, // uri for a (.riv) Rive file
     private buffer: ArrayBuffer, // ArrayBuffer containing Rive data
-    private artboard: string, // name of the artboard to use
+    artboard: string, // name of the artboard to use
     private animations: string[] = [], // list of names of animations to queue for playback
     private canvas: HTMLCanvasElement, // canvas in which to render the artboard
     private _layout: Layout = new Layout(Fit.Contain, Alignment.Center), // rendering layout inside the canvas
@@ -416,16 +427,13 @@ export class Rive {
     private onloop: EventCallback = () => {}, // callback triggered when a loop event occurs
   ) {
     // If no source file url specified, it's a bust
-    if (!src && !buffer) {
+    if (!this.src && !this.buffer) {
       console.error(Rive.missingErrorMessage);
       throw Rive.missingErrorMessage;
-    }
-    this._src = src;
-    this._buffer = buffer;
-  
+    }  
     // Name of the artboard. Rive operates on only one artboard. If
     // you want to have multiple artboards, use multiple Rive instances.
-    this._artboardName = artboard;
+    this.artboardName = artboard;
   
     // List of animations that should be played.
     this._startingAnimationNames = animations;
@@ -435,8 +443,7 @@ export class Rive {
   
     // The Rive Wasm runtime
     this._rive = null;
-    // The instantiated artboard
-    this._artboard = null;
+
     // List of animation instances that will be played
     this._animations = [];
   
@@ -528,12 +535,12 @@ export class Rive {
 
   // Initialize for playback
   private initializeArtboard(): void {
-    this._artboard = this._artboardName ?
-      this._file.artboard(this._artboardName) :
+    this.artboard = this.artboardName ?
+      this._file.artboard(this.artboardName) :
       this._file.defaultArtboard();
 
     // Check that the artboard has at least 1 animation
-    if (this._artboard.animationCount() < 1) {
+    if (this.artboard.animationCount() < 1) {
       const msg = 'Artboard has no animations';
       this.eventManager.fire({type: EventType.LoadError, data: msg});
       throw msg;
@@ -550,7 +557,7 @@ export class Rive {
   }
 
   // Draws the current artboard frame
-  private drawFrame() {
+  public drawFrame() {
     // Choose how you want the animation to align in the canvas
     this.ctx.save();
     this.renderer.align(
@@ -562,12 +569,12 @@ export class Rive {
         maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this._canvas.width,
         maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this._canvas.height
       },
-      this._artboard.bounds
+      this.artboard.bounds
     );
 
     // Advance to the first frame and draw the artboard
-    this._artboard.advance(0);
-    this._artboard.draw(this.renderer);
+    this.artboard.advance(0);
+    this.artboard.draw(this.renderer);
     this.ctx.restore();
   }
 
@@ -582,7 +589,7 @@ export class Rive {
         this._animations[index].paused = false;
       } else {
         // Create a new animation instance and add it to the list
-        const anim = this._artboard.animation(animationNames[i]);
+        const anim = this.artboard.animation(animationNames[i]);
         const inst = new this._rive.LinearAnimationInstance(anim);
         this._animations.push(new Animation(anim, inst));
       }
@@ -628,16 +635,16 @@ export class Rive {
   }
 
   // Returns true if at least one animation is active
-  private hasPlayingAnimations(): boolean {
+  private get hasPlayingAnimations(): boolean {
     return this._animations.reduce((acc, curr) => acc || !curr.paused, false);
   }
 
   // Ensure there's at least one animation for playback; if there are none
   // marked for playback, then ad the first animation in the artboard.
   private atLeastOneAnimationForPlayback(): void {
-    if (this._animations.length === 0 && this._artboard.animationCount() > 0) {
+    if (this._animations.length === 0 && this.artboard.animationCount() > 0) {
       // Add the default animation
-      const animation = this._artboard.animationAt(0);
+      const animation = this.artboard.animationAt(0);
       const instance = new this._rive.LinearAnimationInstance(animation);
       this._animations.push(new Animation(animation, instance));
     }
@@ -671,12 +678,12 @@ export class Rive {
       // Apply the animation to the artboard. The reason of this is that
       // multiple animations may be applied to an artboard, which will
       // then mix those animations together.
-      animation.instance.apply(this._artboard, 1.0);
+      animation.instance.apply(this.artboard, 1.0);
     }
   
     // Once the animations have been applied to the artboard, advance it
     // by the elapsed time.
-    this._artboard.advance(elapsedTime);
+    this.artboard.advance(elapsedTime);
   
     // Clear the current frame of the canvas
     this.ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -691,9 +698,9 @@ export class Rive {
         maxX: this._layout.maxX ? this._layout.maxX : this._canvas.width,
         maxY: this._layout.maxY ? this._layout.maxY : this._canvas.height
       },
-      this._artboard.bounds
+      this.artboard.bounds
     );
-    this._artboard.draw(this.renderer);
+    this.artboard.draw(this.renderer);
     this.ctx.restore();
   
     for (const animation of this._animations) {
@@ -768,7 +775,7 @@ export class Rive {
       });
       return;
     }
-  
+
     const playingAnimations = this.playAnimations(animationNames);
     this.atLeastOneAnimationForPlayback();
     this._playback = playbackStates.play;
@@ -784,7 +791,7 @@ export class Rive {
     animationNames = mapToStringArray(animationNames);
 
     this.pauseAnimations(animationNames);
-    if (!this.hasPlayingAnimations() || animationNames.length === 0) {
+    if (!this.hasPlayingAnimations || animationNames.length === 0) {
       this._playback = playbackStates.pause;
     }
     this.eventManager.fire({
@@ -794,14 +801,14 @@ export class Rive {
   }
 
   // Stops specified animations; if none specifies, stops them all.
-  public stop(animationNames?:string | string[]):void {
+  public stop(animationNames?:string | string[] | undefined):void {
     animationNames = mapToStringArray(animationNames);
     
     const stoppedAnimationNames: string[] = animationNames.length === 0 ?
         this.removeAllAnimations() :
         this.removeAnimations(animationNames);
   
-    if (!this.hasPlayingAnimations() || animationNames.length === 0) {
+    if (!this.hasPlayingAnimations || animationNames.length === 0) {
       // Immediately cancel the next frame draw; if we don't do this,
       // strange things will happen if the Rive file/buffer is
       // reloaded.
@@ -817,29 +824,27 @@ export class Rive {
   // Loads a new Rive file, keeping listeners in place.
   // TODO: remove duplication with constructor
   public load({src, buffer, autoplay = false}: RiveLoadParameters): void {
-    this._src = src;
-    this._buffer = buffer;
+    this.src = src;
+    this.buffer = buffer;
     this._autoplay = autoplay;
 
     // Stop all animations
-    self.stop();
+    this.stop();
   
     // If no source file url specified, it's a bust
     if (!src && !buffer) {
       console.error(Rive.missingErrorMessage);
       return;
     }
-  
+
     // Reset internals
     this._file = null;
-    this._artboard = null;
-    this._artboardName = null;
+    this.artboard = null;
+    this.artboardName = null;
     this._animations = [];
     this._startingAnimationNames = [];
     this._loaded = false;
     
-
-
     // Queue up play action and event if necessary
     if (this._autoplay) {
       this.taskQueue.add({ action: () => this.play() });
@@ -856,14 +861,14 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
-    if(!this.hasPlayingAnimations()) {
+    if(!this.hasPlayingAnimations) {
       this.drawFrame();
     }
   }
 
   // Returns the animation source, which may be undefined
   public get source(): string {
-    return this._src;
+    return this.src;
   }
 
   // Returns a list of animation names on the chosen artboard
@@ -873,8 +878,8 @@ export class Rive {
       return [];
     }
     const animationNames: string[] = [];
-    for (let i = 0; i < this._artboard.animationCount(); i++) {
-      animationNames.push(this._artboard.animationAt(i).name);
+    for (let i = 0; i < this.artboard.animationCount(); i++) {
+      animationNames.push(this.artboard.animationAt(i).name);
     }
     return animationNames;
   }
@@ -942,7 +947,7 @@ let loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
 /*
  * Utility function to ensure an object is a string array
  */
-let mapToStringArray = (obj?: string[] | string): string[] => {
+let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
   if (typeof obj === 'string') {
     return [obj];
   } else if (obj instanceof Array) {

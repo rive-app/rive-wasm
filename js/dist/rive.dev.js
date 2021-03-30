@@ -3745,7 +3745,6 @@ var Rive = /** @class */ (function () {
         if (onloop === void 0) { onloop = function () { }; }
         this.src = src;
         this.buffer = buffer;
-        this.artboard = artboard;
         this.animations = animations;
         this.canvas = canvas;
         this._layout = _layout;
@@ -3758,23 +3757,19 @@ var Rive = /** @class */ (function () {
         this.onloop = onloop;
         this._loaded = false;
         // If no source file url specified, it's a bust
-        if (!src && !buffer) {
+        if (!this.src && !this.buffer) {
             console.error(Rive.missingErrorMessage);
             throw Rive.missingErrorMessage;
         }
-        this._src = src;
-        this._buffer = buffer;
         // Name of the artboard. Rive operates on only one artboard. If
         // you want to have multiple artboards, use multiple Rive instances.
-        this._artboardName = artboard;
+        this.artboardName = artboard;
         // List of animations that should be played.
         this._startingAnimationNames = animations;
         this._canvas = canvas;
         this._autoplay = autoplay;
         // The Rive Wasm runtime
         this._rive = null;
-        // The instantiated artboard
-        this._artboard = null;
         // List of animation instances that will be played
         this._animations = [];
         // Tracks when the Rive file is successfully loaded and the Wasm
@@ -3857,11 +3852,11 @@ var Rive = /** @class */ (function () {
     };
     // Initialize for playback
     Rive.prototype.initializeArtboard = function () {
-        this._artboard = this._artboardName ?
-            this._file.artboard(this._artboardName) :
+        this.artboard = this.artboardName ?
+            this._file.artboard(this.artboardName) :
             this._file.defaultArtboard();
         // Check that the artboard has at least 1 animation
-        if (this._artboard.animationCount() < 1) {
+        if (this.artboard.animationCount() < 1) {
             var msg = 'Artboard has no animations';
             this.eventManager.fire({ type: EventType.LoadError, data: msg });
             throw msg;
@@ -3883,10 +3878,10 @@ var Rive = /** @class */ (function () {
             minY: this._layout ? this._layout.minY : 0,
             maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this._canvas.width,
             maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this._canvas.height
-        }, this._artboard.bounds);
+        }, this.artboard.bounds);
         // Advance to the first frame and draw the artboard
-        this._artboard.advance(0);
-        this._artboard.draw(this.renderer);
+        this.artboard.advance(0);
+        this.artboard.draw(this.renderer);
         this.ctx.restore();
     };
     // Adds animations contained in the artboard for playback
@@ -3901,7 +3896,7 @@ var Rive = /** @class */ (function () {
             }
             else {
                 // Create a new animation instance and add it to the list
-                var anim = this._artboard.animation(animationNames[i]);
+                var anim = this.artboard.animation(animationNames[i]);
                 var inst = new this._rive.LinearAnimationInstance(anim);
                 this._animations.push(new Animation(anim, inst));
             }
@@ -3937,16 +3932,20 @@ var Rive = /** @class */ (function () {
         });
         return pausedAnimationNames;
     };
-    // Returns true if at least one animation is active
-    Rive.prototype.hasPlayingAnimations = function () {
-        return this._animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
-    };
+    Object.defineProperty(Rive.prototype, "hasPlayingAnimations", {
+        // Returns true if at least one animation is active
+        get: function () {
+            return this._animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
+        },
+        enumerable: false,
+        configurable: true
+    });
     // Ensure there's at least one animation for playback; if there are none
     // marked for playback, then ad the first animation in the artboard.
     Rive.prototype.atLeastOneAnimationForPlayback = function () {
-        if (this._animations.length === 0 && this._artboard.animationCount() > 0) {
+        if (this._animations.length === 0 && this.artboard.animationCount() > 0) {
             // Add the default animation
-            var animation = this._artboard.animationAt(0);
+            var animation = this.artboard.animationAt(0);
             var instance = new this._rive.LinearAnimationInstance(animation);
             this._animations.push(new Animation(animation, instance));
         }
@@ -3971,11 +3970,11 @@ var Rive = /** @class */ (function () {
             // Apply the animation to the artboard. The reason of this is that
             // multiple animations may be applied to an artboard, which will
             // then mix those animations together.
-            animation.instance.apply(this._artboard, 1.0);
+            animation.instance.apply(this.artboard, 1.0);
         }
         // Once the animations have been applied to the artboard, advance it
         // by the elapsed time.
-        this._artboard.advance(elapsedTime);
+        this.artboard.advance(elapsedTime);
         // Clear the current frame of the canvas
         this.ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
         // Render the frame in the canvas
@@ -3985,8 +3984,8 @@ var Rive = /** @class */ (function () {
             minY: this._layout.minY,
             maxX: this._layout.maxX ? this._layout.maxX : this._canvas.width,
             maxY: this._layout.maxY ? this._layout.maxY : this._canvas.height
-        }, this._artboard.bounds);
-        this._artboard.draw(this.renderer);
+        }, this.artboard.bounds);
+        this.artboard.draw(this.renderer);
         this.ctx.restore();
         for (var _a = 0, _b = this._animations; _a < _b.length; _a++) {
             var animation = _b[_a];
@@ -4074,7 +4073,7 @@ var Rive = /** @class */ (function () {
     Rive.prototype.pause = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
         this.pauseAnimations(animationNames);
-        if (!this.hasPlayingAnimations() || animationNames.length === 0) {
+        if (!this.hasPlayingAnimations || animationNames.length === 0) {
             this._playback = playbackStates.pause;
         }
         this.eventManager.fire({
@@ -4088,7 +4087,7 @@ var Rive = /** @class */ (function () {
         var stoppedAnimationNames = animationNames.length === 0 ?
             this.removeAllAnimations() :
             this.removeAnimations(animationNames);
-        if (!this.hasPlayingAnimations() || animationNames.length === 0) {
+        if (!this.hasPlayingAnimations || animationNames.length === 0) {
             // Immediately cancel the next frame draw; if we don't do this,
             // strange things will happen if the Rive file/buffer is
             // reloaded.
@@ -4105,11 +4104,11 @@ var Rive = /** @class */ (function () {
     Rive.prototype.load = function (_a) {
         var _this = this;
         var src = _a.src, buffer = _a.buffer, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
-        this._src = src;
-        this._buffer = buffer;
+        this.src = src;
+        this.buffer = buffer;
         this._autoplay = autoplay;
         // Stop all animations
-        self.stop();
+        this.stop();
         // If no source file url specified, it's a bust
         if (!src && !buffer) {
             console.error(Rive.missingErrorMessage);
@@ -4117,8 +4116,8 @@ var Rive = /** @class */ (function () {
         }
         // Reset internals
         this._file = null;
-        this._artboard = null;
-        this._artboardName = null;
+        this.artboard = null;
+        this.artboardName = null;
         this._animations = [];
         this._startingAnimationNames = [];
         this._loaded = false;
@@ -4137,7 +4136,7 @@ var Rive = /** @class */ (function () {
         // Sets a new layout
         set: function (layout) {
             this._layout = layout;
-            if (!this.hasPlayingAnimations()) {
+            if (!this.hasPlayingAnimations) {
                 this.drawFrame();
             }
         },
@@ -4147,7 +4146,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "source", {
         // Returns the animation source, which may be undefined
         get: function () {
-            return this._src;
+            return this.src;
         },
         enumerable: false,
         configurable: true
@@ -4160,8 +4159,8 @@ var Rive = /** @class */ (function () {
                 return [];
             }
             var animationNames = [];
-            for (var i = 0; i < this._artboard.animationCount(); i++) {
-                animationNames.push(this._artboard.animationAt(i).name);
+            for (var i = 0; i < this.artboard.animationCount(); i++) {
+                animationNames.push(this.artboard.animationAt(i).name);
             }
             return animationNames;
         },
