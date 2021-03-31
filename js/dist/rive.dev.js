@@ -239,8 +239,8 @@ if (typeof WebAssembly !== "object") {
 var wasmMemory;
 
 var wasmTable = new WebAssembly.Table({
- "initial": 773,
- "maximum": 773 + 0,
+ "initial": 900,
+ "maximum": 900 + 0,
  "element": "anyfunc"
 });
 
@@ -458,7 +458,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var DYNAMIC_BASE = 5263232, DYNAMICTOP_PTR = 20192;
+var DYNAMIC_BASE = 5265408, DYNAMICTOP_PTR = 22368;
 
 var INITIAL_INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 16777216;
 
@@ -3899,7 +3899,7 @@ var Rive = /** @class */ (function () {
             }
             else {
                 // Create a new animation instance and add it to the list
-                var anim = this.artboard.animation(animationNames[i]);
+                var anim = this.artboard.animationByName(animationNames[i]);
                 var inst = new this._rive.LinearAnimationInstance(anim);
                 this._animations.push(new Animation(anim, inst));
             }
@@ -3948,7 +3948,7 @@ var Rive = /** @class */ (function () {
     Rive.prototype.atLeastOneAnimationForPlayback = function () {
         if (this._animations.length === 0 && this.artboard.animationCount() > 0) {
             // Add the default animation
-            var animation = this.artboard.animationAt(0);
+            var animation = this.artboard.animationByIndex(0);
             var instance = new this._rive.LinearAnimationInstance(animation);
             this._animations.push(new Animation(animation, instance));
         }
@@ -4163,7 +4163,7 @@ var Rive = /** @class */ (function () {
             }
             var animationNames = [];
             for (var i = 0; i < this.artboard.animationCount(); i++) {
-                animationNames.push(this.artboard.animationAt(i).name);
+                animationNames.push(this.artboard.animationByIndex(i).name);
             }
             return animationNames;
         },

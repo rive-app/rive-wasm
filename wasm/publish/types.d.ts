@@ -95,10 +95,10 @@ export declare class File {
 }
 export declare class Artboard {
   get bounds(): AABB;
-  animation(name: string): LinearAnimation;
   advance(sec: number): any;
   draw(renderer: CanvasRenderer): void;
-  animationAt(index: number): LinearAnimation;
+  animationByName(name: string): LinearAnimation;
+  animationByIndex(index: number): LinearAnimation;
   animationCount(): number;
   bone(name: string): Bone;
   node(name: string): Node;

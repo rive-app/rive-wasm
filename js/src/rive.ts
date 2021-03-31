@@ -3,7 +3,7 @@ import Runtime from '../../wasm/publish/rive.js';
 // #region LoopEvent
 
 // Loop types. The index of the type is the value that comes from Wasm
-export const loopTypes: string[] = ['oneShot', 'loop', 'pingPong'];
+export const loopTypes: ReadonlyArray<string> = ['oneShot', 'loop', 'pingPong'];
 
 /// Loop events are returned through onloop callbacks
 interface LoopEvent {
@@ -149,7 +149,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@latest/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.0/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -365,8 +365,8 @@ interface RuntimeArtboard {
   bounds: any,
   advance: (elapsedTime: number) => void
   draw: (renderer: any) => void,
-  animation: (name: string) => any,
-  animationAt: (index: number) => any,
+  animationByName: (name: string) => any,
+  animationByIndex: (index: number) => any,
 }
 
 export class Rive {
@@ -579,7 +579,7 @@ export class Rive {
         this._animations[index].paused = false;
       } else {
         // Create a new animation instance and add it to the list
-        const anim = this.artboard.animation(animationNames[i]);
+        const anim = this.artboard.animationByName(animationNames[i]);
         const inst = new this._rive.LinearAnimationInstance(anim);
         this._animations.push(new Animation(anim, inst));
       }
@@ -634,7 +634,7 @@ export class Rive {
   private atLeastOneAnimationForPlayback(): void {
     if (this._animations.length === 0 && this.artboard.animationCount() > 0) {
       // Add the default animation
-      const animation = this.artboard.animationAt(0);
+      const animation = this.artboard.animationByIndex(0);
       const instance = new this._rive.LinearAnimationInstance(animation);
       this._animations.push(new Animation(animation, instance));
     }
@@ -869,7 +869,7 @@ export class Rive {
     }
     const animationNames: string[] = [];
     for (let i = 0; i < this.artboard.animationCount(); i++) {
-      animationNames.push(this.artboard.animationAt(i).name);
+      animationNames.push(this.artboard.animationByIndex(i).name);
     }
     return animationNames;
   }

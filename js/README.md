@@ -1,20 +1,20 @@
 # Rive.js -- Rive's Web API
 
-## BETA RELEASE! (latest 0.6.0)
+## BETA RELEASE! (latest 0.7.0)
 
 Rive.js is fresh off the presses and in beta; the api is subject to change as we try to make it fit for purpose. Please file issues and PRs for anything busted, missing, or just plain wrong.
 
 The api surface is highly likely to change with each release, so please make sure to specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.6.0/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.0/dist/rive.min.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.6.0"
+    "rive-js": "0.7.0"
   }
 }
 ```
@@ -30,11 +30,11 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas"></canvas>
-<script src="https://unpkg.com/rive-js@0.6.0/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.0/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     rive.Rive.new({
-        src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+        src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
         canvas: document.getElementById('canvas'),
         autoplay: true,
     });
@@ -49,7 +49,7 @@ These can be set when a Rive object is first created:
 
 ```js
 rive.Rive.new({
-    src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+    src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
     layout: rive.Layout.new({fit: 'contain', alignment: 'topRight'}),
     autoplay: true,
@@ -60,7 +60,7 @@ The layout can be updated at any time with the ```layout``` setter:
 
 ```js
     const r = rive.Rive.new({
-        src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+        src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
         canvas: document.getElementById('canvas'),
         autoplay: true,
     });
@@ -78,7 +78,7 @@ If you want to specify which artboard or animation to play:
 
 ```js
 rive.Rive.new({
-    src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+    src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
     artboard: 'New Artboard',
     animations: 'idle',
@@ -90,7 +90,7 @@ rive.Rive.new({
 
 ```js
 rive.Rive.new({
-    src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+    src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
     animations: ['idle', 'windshield_wipers', 'bouncing'],
     autoplay: true,
@@ -101,7 +101,7 @@ You can manually start and pause playback, and check if playback is active:
 
 ```js
 const r = rive.Rive.new({
-    src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+    src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
 });
 
@@ -150,7 +150,7 @@ Rive.js has a number of events that you can listen for:
 
 ```js
 const r = rive.Rive.new({
-    src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
+    src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
 });
 
