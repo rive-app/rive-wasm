@@ -1,5 +1,7 @@
 # Rive.js Changelog
 
+## 0.6.1
+- Fixes issue where wrong wasm file is downloaded
 ## 0.6.0
 - Bumps version to 0.6.0 to match the runtime version it supports (v6)
 ## 0.1.0-beta.4 (Mar 29, 2021)
