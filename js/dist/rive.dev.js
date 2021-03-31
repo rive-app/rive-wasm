@@ -3580,10 +3580,11 @@ var RuntimeLoader = /** @class */ (function () {
                     RuntimeLoader.wasmWebPath) + file;
             }
         }).then(function (rive) {
+            var _a;
             RuntimeLoader.runtime = rive;
             // Fire all the callbacks
             while (RuntimeLoader.callBackQueue.length > 0) {
-                RuntimeLoader.callBackQueue.shift()(RuntimeLoader.runtime);
+                (_a = RuntimeLoader.callBackQueue.shift()) === null || _a === void 0 ? void 0 : _a(RuntimeLoader.runtime);
             }
         });
     };
@@ -3711,8 +3712,8 @@ var TaskQueueManager = /** @class */ (function () {
     TaskQueueManager.prototype.process = function () {
         while (this.queue.length > 0) {
             var task = this.queue.shift();
-            task.action();
-            if (task.event) {
+            task === null || task === void 0 ? void 0 : task.action();
+            if (task === null || task === void 0 ? void 0 : task.event) {
                 this.eventManager.fire(task.event);
             }
         }
@@ -3755,6 +3756,7 @@ var Rive = /** @class */ (function () {
         this.onpause = onpause;
         this.onstop = onstop;
         this.onloop = onloop;
+        this.artboard = null;
         this._loaded = false;
         // If no source file url specified, it's a bust
         if (!this.src && !this.buffer) {
@@ -3767,6 +3769,8 @@ var Rive = /** @class */ (function () {
         // List of animations that should be played.
         this._startingAnimationNames = animations;
         this._canvas = canvas;
+        // Fetch the 2d context from the canvas
+        this.ctx = this._canvas.getContext('2d');
         this._autoplay = autoplay;
         // The Rive Wasm runtime
         this._rive = null;
@@ -3862,7 +3866,6 @@ var Rive = /** @class */ (function () {
             throw msg;
         }
         // Get the canvas where you want to render the animation and create a renderer
-        this.ctx = this._canvas.getContext('2d');
         this.renderer = new this._rive.CanvasRenderer(this.ctx);
         // Initialize the animations
         if (this._startingAnimationNames.length > 0) {

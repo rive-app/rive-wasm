@@ -13,7 +13,7 @@ interface LoopEvent {
 }
 
 // Creates a new LoopEvent
-export let createLoopEvent = (animation: string, loopValue: number): LoopEvent => {
+export const createLoopEvent = (animation: string, loopValue: number): LoopEvent => {
   if (loopValue < 0 || loopValue >= loopTypes.length) {
     throw 'Invalid loop value';
   }
@@ -67,28 +67,15 @@ export interface LayoutParameters {
 
 // Alignment options for Rive animations in a HTML canvas
 export class Layout {
-  public fit: Fit;
-  public alignment: Alignment;
-  public minX: number;
-  public minY: number;
-  public maxX: number;
-  public maxY: number;
 
   constructor(
-    fit: Fit = Fit.None,
-    alignment: Alignment = Alignment.Center,
-    minX: number = 0,
-    minY: number = 0,
-    maxX: number = 0,
-    maxY: number = 0
-  ) {
-    this.fit = fit;
-    this.alignment = alignment;
-    this.minX = minX;
-    this.minY = minY;
-    this.maxX = maxX;
-    this.maxY = maxY;
-  }
+    public fit: Fit = Fit.None,
+    public alignment: Alignment = Alignment.Center,
+    public minX: number = 0,
+    public minY: number = 0,
+    public maxX: number = 0,
+    public maxY: number = 0
+  ) {}
 
   // Alternative constructor to build a Layout from an interface/object
   static new({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
@@ -184,7 +171,7 @@ export class RuntimeLoader {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
       while (RuntimeLoader.callBackQueue.length > 0) {
-        RuntimeLoader.callBackQueue.shift()(RuntimeLoader.runtime);
+        RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
       }
     });
   }
@@ -331,8 +318,8 @@ class TaskQueueManager {
   public process(): void {
     while (this.queue.length > 0) {
       const task = this.queue.shift();
-      task.action();
-      if (task.event) {
+      task?.action();
+      if (task?.event) {
         this.eventManager.fire(task.event);
       }
     }
@@ -345,7 +332,7 @@ class TaskQueueManager {
 
 // Interface for the Rive static method contructor
 export interface RiveParameters {
-  canvas: HTMLCanvasElement, // canvas is required
+  canvas: HTMLCanvasElement | OffscreenCanvas, // canvas is required
   src?: string, // one of src or buffer is required
   buffer?: ArrayBuffer, // one of src or buffer is required
   artboard?: string,
@@ -384,12 +371,12 @@ interface RuntimeArtboard {
 
 export class Rive {
 
-  private artboard: RuntimeArtboard;
+  private artboard: RuntimeArtboard | null = null;
   private artboardName: string;
 
   // Temporary variables while code is ported from js
   private _startingAnimationNames: string[];
-  private _canvas: HTMLCanvasElement;
+  private _canvas: HTMLCanvasElement | OffscreenCanvas;
   private _autoplay: boolean;
   private _rive: any;
   private _animations: Animation[];
@@ -398,7 +385,7 @@ export class Rive {
   private _file: any;
 
   // Converted variables
-  private ctx: CanvasRenderingContext2D;
+  private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   private renderer: any;
 
   // Holds event listeners
@@ -416,7 +403,7 @@ export class Rive {
     private buffer: ArrayBuffer, // ArrayBuffer containing Rive data
     artboard: string, // name of the artboard to use
     private animations: string[] = [], // list of names of animations to queue for playback
-    private canvas: HTMLCanvasElement, // canvas in which to render the artboard
+    private canvas: HTMLCanvasElement | OffscreenCanvas, // canvas in which to render the artboard
     private _layout: Layout = new Layout(Fit.Contain, Alignment.Center), // rendering layout inside the canvas
     private autoplay: boolean = false, // should playback begin immediately?
     private onload: EventCallback = () => {}, // callback triggered when Rive file is loaded
@@ -439,6 +426,10 @@ export class Rive {
     this._startingAnimationNames = animations;
   
     this._canvas = canvas;
+    // Fetch the 2d context from the canvas
+    this.ctx = this._canvas.getContext('2d');
+
+
     this._autoplay = autoplay;
   
     // The Rive Wasm runtime
@@ -547,7 +538,6 @@ export class Rive {
     }
 
     // Get the canvas where you want to render the animation and create a renderer
-    this.ctx = this._canvas.getContext('2d');
     this.renderer = new this._rive.CanvasRenderer(this.ctx);
 
     // Initialize the animations
@@ -933,7 +923,7 @@ export class Rive {
 
 
 // Loads Rive data from a URI via fetch.
-let loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
+const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
     const req = new Request(src);
     const res = await fetch(req);
     const buffer = await res.arrayBuffer();
