@@ -304,20 +304,23 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	    .function("rootBone",
 	              &rive::Artboard::find<rive::RootBone>,
 	              allow_raw_pointers())
-	    .function(
-	        "animation",
-	        optional_override([](rive::Artboard& artboard,
-	                             std::string name) -> rive::LinearAnimation* {
-		        return artboard.animation<rive::LinearAnimation>(name);
-	        }),
-	        allow_raw_pointers())
-	    .function("animationAt",
-	              optional_override([](rive::Artboard& artboard,
-	                                   size_t index) -> rive::LinearAnimation* {
-		              return artboard.animation<rive::LinearAnimation>(index);
-	              }),
-	              allow_raw_pointers())
+		// Animations
+		.function("animationByIndex",
+						select_overload<rive::LinearAnimation*(size_t)>(&rive::Artboard::animation),
+						allow_raw_pointers())
+		.function("animationByName",
+						select_overload<rive::LinearAnimation*(std::string)>(&rive::Artboard::animation),
+						allow_raw_pointers())
 	    .function("animationCount", &rive::Artboard::animationCount)
+		// State machines
+		.function("stateMachineByIndex",
+						select_overload<rive::StateMachine*(size_t)>(&rive::Artboard::stateMachine),
+						allow_raw_pointers())
+		.function("stateMachineByName",
+						select_overload<rive::StateMachine*(std::string)>(&rive::Artboard::stateMachine),
+						allow_raw_pointers())
+	    .function("stateMachineCount", &rive::Artboard::stateMachineCount)
+
 	    .property("bounds", &rive::Artboard::bounds);
 
 	class_<rive::TransformComponent>
