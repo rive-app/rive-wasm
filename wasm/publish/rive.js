@@ -221,8 +221,8 @@ if (typeof WebAssembly !== "object") {
 var wasmMemory;
 
 var wasmTable = new WebAssembly.Table({
- "initial": 773,
- "maximum": 773 + 0,
+ "initial": 900,
+ "maximum": 900 + 0,
  "element": "anyfunc"
 });
 
@@ -440,7 +440,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var DYNAMIC_BASE = 5263232, DYNAMICTOP_PTR = 20192;
+var DYNAMIC_BASE = 5265408, DYNAMICTOP_PTR = 22368;
 
 var INITIAL_INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 16777216;
 
