@@ -1,5 +1,7 @@
 # Rive.js Changelog
 
+## 0.7.1
+- Fixes issue where the wrong wasm version could get downloaded
 ## 0.7.0
 - Works with new v7 runtime; older Rive files should be re-exported from the editor
 ## 0.6.0
