@@ -50,10 +50,10 @@
         </script>
 
         <!-- Rive animation scripts -->
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
             function playBuffer(buffer) {
-                new Rive({
+                rive.Rive.new({
                     // An ArrayBuffer containing Rive data can be used to
                     // initialize an animation
                     buffer: buffer,

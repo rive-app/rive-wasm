@@ -1,8 +1,9 @@
 {
   "name": "rive-js",
-  "version": "0.0.4",
+  "version": "0.6.0",
   "description": "Rive's web api.",
-  "main": "dist/rive.js",
+  "main": "dist/rive.dev.js",
+  "unpkg": "dist/rive.min.js",
   "homepage": "https://rive.app",
   "repository": {
     "type": "git",
@@ -24,14 +25,18 @@
   ],
   "license": "MIT",
   "files": [
-    "dist/rive.js",
+    "dist/rive.min.js",
+    "dist/rive.min.js.map",
+    "dist/rive.dev.js",
+    "dist/rive.dev.js.map",
     "dist/rive.wasm",
-    "src/rive.d.ts"
+    "src/rive.ts"
   ],
   "typings": "./rive.d.ts",
   "devDependencies": {
     "@types/jest": "^26.0.20",
     "@types/node": "^14.14.31",
+    "copy-webpack-plugin": "^8.1.0",
     "jest": "^26.6.3",
     "ts-jest": "^26.5.2",
     "ts-loader": "^8.0.17",

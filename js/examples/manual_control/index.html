@@ -16,13 +16,13 @@
             <button id="bounce">Rough Road</button>
         </div>
 
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const rive = new Rive({
+            const truck = rive.Rive.new({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: document.getElementById('canvas'),
-                layout: new Rive.Layout('fill'),
+                layout: new rive.Layout('fill'),
             });
 
             const idleButton = document.getElementById('idle');
@@ -30,22 +30,23 @@
             const bounceButton = document.getElementById('bounce');
 
             idleButton.onclick = _ => 
-                rive.playingAnimationNames().includes('idle') ?
-                    rive.pause('idle') :
-                    rive.play('idle');
+            truck.playingAnimationNames.includes('idle') ?
+                    truck.pause('idle') :
+                    truck.play('idle');
 
             wipersButton.onclick = _ =>
-                rive.playingAnimationNames().includes('windshield_wipers') ?
-                    rive.pause('windshield_wipers') :
-                    rive.play('windshield_wipers');
+                truck.playingAnimationNames.includes('windshield_wipers') ?
+                    truck.pause('windshield_wipers') :
+                    truck.play('windshield_wipers');
 
             bounceButton.onclick = _ =>
-                rive.playingAnimationNames().includes('bouncing') ?
-                    rive.pause('bouncing') :
-                    rive.play('bouncing');
+                truck.playingAnimationNames.includes('bouncing') ?
+                    truck.pause('bouncing') :
+                    truck.play('bouncing');
 
             // Listen for play events to update button text
-            rive.on('play', (names) => {
+            truck.on(rive.EventType.Play, (event) => {
+                const names = event.data;
                 names.forEach((name) => {
                     if (name === 'idle') {
                         idleButton.innerHTML = 'Stop Truck';
@@ -58,7 +59,8 @@
             });
 
             // Listen for pause events to update button text
-            rive.on('pause', (names) => {
+            truck.on(rive.EventType.Pause, (event) => {
+                const names = event.data;
                 names.forEach((name) => {
                     if (name === 'idle') {
                         idleButton.innerHTML = 'Start Truck';

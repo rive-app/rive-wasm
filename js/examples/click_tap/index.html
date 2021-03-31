@@ -12,9 +12,9 @@
             <div id="message">Click the circle</div>
         </div>
 
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
-            const rive = new Rive({
+            const circle = rive.Rive.new({
                 src: 'https://cdn.rive.app/animations/color_flash_button_0_6.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
@@ -23,19 +23,18 @@
             const button = document.getElementById('button');
             const message = document.getElementById('message');
 
-            rive.on('load', function() {
-
+            circle.on('load', () => {
                 // Get a list of the animation names once the file has loaded
-                const names = rive.animationNames();
-                var clickCounter = 0;
+                const names = circle.animationNames;
+                let clickCounter = 0;
 
                 // Register click events on the button
-                button.onclick = function() {
-                    if (rive.isPlaying()) {
+                button.onclick = () => {
+                    if (circle.isPlaying) {
                         message.innerHTML = 'Animation still playing';
                     } else {
                         const name = names[++clickCounter % names.length];
-                        rive.play([name]);
+                        circle.play(name);
                         message.innerHTML = 'Playing ' + name + ' animation';
                     }
                 };

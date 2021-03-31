@@ -1,22 +1,25 @@
 import React, { useRef, useEffect } from 'react';
 import { Rive, Layout } from 'rive-js';
-import styles from './App.css';
 
 const Animation = ({ asset, animation, fit, alignment }) => {
     const canvas = useRef(null);
     const animationContainer = useRef(null);
-    let rive;
+    let rive = useRef(null);
 
     // Resizes the canvas to match the parent element
     useEffect(() => {
-        const { width: w, height: h } = animationContainer.current.getBoundingClientRect();
-        canvas.current.width = w;
-        canvas.current.height = h;
+        
+        let resizer = () => {
+            const { width: w, height: h } = animationContainer.current.getBoundingClientRect();
+            canvas.current.width = w;
+            canvas.current.height = h;
+        };
+        resizer();
     });
 
     // Start the animation
     useEffect(() => {
-        rive = new Rive({
+        rive.current = Rive.new({
             src: asset,
             canvas: canvas.current,
             animation: animation,
@@ -24,8 +27,8 @@ const Animation = ({ asset, animation, fit, alignment }) => {
             autoplay: true,
         });
 
-        return () => rive?.stop();
-    }, []);
+        return () => rive.current.stop();
+    });
 
     return (
         <div ref={animationContainer} className="App-logo">

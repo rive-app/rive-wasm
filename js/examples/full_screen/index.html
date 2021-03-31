@@ -7,13 +7,13 @@
         <link rel="stylesheet" href="styles.css">
     </head>
     <body>
-        <canvas id="rive_canvas"></canvas>
+        <canvas id="canvas"></canvas>
     
-        <script src="/dist/rive.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
-            const canvas = document.getElementById('rive_canvas');
+            const canvas = document.getElementById('canvas');
             
-            new Rive({
+            rive.Rive.new({
                 src: 'https://cdn.rive.app/animations/off_road_car_blog_0_6.riv',
                 canvas: canvas,
                 autoplay: true,
@@ -21,11 +21,7 @@
                 artboard: 'New Artboard',
                 // which animations should be played and mixed together
                 animations: ['idle', 'windshield_wipers', 'bouncing'],
-                // Rive has different fit parameters for how the content is
-                // placed in the canvas; try experimenting with: 'cover',
-                // 'contain', 'fill', 'fitWidth', 'fitHeight', 'none' and
-                // 'scaleDown'
-                layout: new Rive.Layout('cover', 'center'),
+                layout: new rive.Layout(rive.Fit.Cover, rive.Alignment.Center),
             });
 
             // When the window resizes, resize the canvas
@@ -35,7 +31,6 @@
                 canvas.height = window.innerHeight;
             }
             resizeCanvas();
-
         </script>
     </body>
 </html>
