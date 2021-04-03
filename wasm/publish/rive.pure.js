@@ -11283,6 +11283,37 @@ function ms(a, b, c) {
  }
  return l;
 }
+function lq(a, b) {
+ a = a | 0;
+ b = b | 0;
+ var c = 0, d = 0, e = 0;
+ c = sa - 16 | 0;
+ sa = c;
+ a : {
+  if (m[p[p[b >> 2] >> 2]](b, p[a + 4 >> 2]) | 0) {
+   a = a + 8 | 0;
+   d = c, e = Oa(a), p[d + 8 >> 2] = e;
+   d = c, e = Qa(a), p[d >> 2] = e;
+   while (1) {
+    if (!Sa(c + 8 | 0, c)) {
+     a = 0;
+     break a;
+    }
+    a = p[p[c + 8 >> 2] >> 2];
+    a = m[p[p[a >> 2] + 20 >> 2]](a, b) | 0;
+    if (a) {
+     break a;
+    }
+    Ra(c + 8 | 0);
+    continue;
+   }
+  }
+  sa = c + 16 | 0;
+  return 1;
+ }
+ sa = c + 16 | 0;
+ return a | 0;
+}
 function Oc(a, b, c) {
  var d = 0, e = 0, f = 0;
  a : {
@@ -11440,35 +11471,6 @@ function Gl(a) {
   Ua(d);
  }
  sa = b + 48 | 0;
- return a | 0;
-}
-function lq(a, b) {
- a = a | 0;
- b = b | 0;
- var c = 0, d = 0, e = 0, f = 0;
- c = sa - 16 | 0;
- sa = c;
- d = 1;
- a : {
-  if (!(m[p[p[b >> 2] >> 2]](b, p[a + 4 >> 2]) | 0)) {
-   break a;
-  }
-  a = a + 8 | 0;
-  e = c, f = Oa(a), p[e + 8 >> 2] = f;
-  e = c, f = Qa(a), p[e >> 2] = f;
-  while (1) {
-   if (Sa(c + 8 | 0, c)) {
-    a = p[p[c + 8 >> 2] >> 2];
-    m[p[p[a >> 2] + 20 >> 2]](a, b) | 0;
-    Ra(c + 8 | 0);
-    continue;
-   }
-   break;
-  }
-  d = 0;
- }
- a = d;
- sa = c + 16 | 0;
  return a | 0;
 }
 function ho(a, b) {
@@ -13324,19 +13326,18 @@ function Ik(a, b) {
  a = a | 0;
  b = b | 0;
  var c = 0;
+ c = 1;
  a : {
-  if (!p[a + 12 >> 2]) {
-   break a;
+  if (p[a + 12 >> 2] >= 1) {
+   b = m[p[p[b >> 2] >> 2]](b, p[a + 12 >> 2]) | 0;
+   if (!b) {
+    break a;
+   }
+   if (!(m[p[p[b >> 2] + 12 >> 2]](b, 28) | 0)) {
+    break a;
+   }
+   p[a + 16 >> 2] = b;
   }
-  c = 1;
-  b = m[p[p[b >> 2] >> 2]](b, p[a + 12 >> 2]) | 0;
-  if (!b) {
-   break a;
-  }
-  if (!(m[p[p[b >> 2] + 12 >> 2]](b, 28) | 0)) {
-   break a;
-  }
-  p[a + 16 >> 2] = b;
   c = 0;
  }
  return c | 0;

@@ -41,7 +41,7 @@ You can use the `rive-canvas` inside a WebWorker to dissociate it from the main 
 ### OffscreenCanvas
 In your main thread get the canvas element and transfer its control to an `OffscreenCanvas` :
 ```typescript
-const el = document.getElemetById('rive');
+const el = document.getElementById('rive');
 if ('OffscreenCanvas' in window) {
     const canvas = el.transferControlToOffscreen();
     const ctx = this.canvas.getContext('2d');
