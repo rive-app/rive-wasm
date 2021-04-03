@@ -1,11 +1,17 @@
 # Rive.js Changelog
 
+## 0.7.2
+- Updates Wasm package
+
 ## 0.7.1
 - Fixes issue where the wrong wasm version could get downloaded
+
 ## 0.7.0
 - Works with new v7 runtime; older Rive files should be re-exported from the editor
+
 ## 0.6.0
 - Bumps version to 0.6.0 to match the runtime version it supports (v6)
+
 ## 0.1.0-beta.4 (Mar 29, 2021)
 - Exposes drawFrame function
 - Fixes bug when loading Rive files via the buffer

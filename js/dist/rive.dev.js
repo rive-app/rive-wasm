@@ -3617,7 +3617,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.1/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.2/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -3721,11 +3721,11 @@ var TaskQueueManager = /** @class */ (function () {
     return TaskQueueManager;
 }());
 var Rive = /** @class */ (function () {
-    function Rive(src, // uri for a (.riv) Rive file
+    function Rive(canvas, // canvas in which to render the artboard
+    src, // uri for a (.riv) Rive file
     buffer, // ArrayBuffer containing Rive data
     artboard, // name of the artboard to use
     animations, // list of names of animations to queue for playback
-    canvas, // canvas in which to render the artboard
     _layout, // rendering layout inside the canvas
     autoplay, // should playback begin immediately?
     onload, // callback triggered when Rive file is loaded
@@ -3744,10 +3744,9 @@ var Rive = /** @class */ (function () {
         if (onpause === void 0) { onpause = function () { }; }
         if (onstop === void 0) { onstop = function () { }; }
         if (onloop === void 0) { onloop = function () { }; }
+        this.canvas = canvas;
         this.src = src;
         this.buffer = buffer;
-        this.animations = animations;
-        this.canvas = canvas;
         this._layout = _layout;
         this.autoplay = autoplay;
         this.onload = onload;
@@ -3756,31 +3755,30 @@ var Rive = /** @class */ (function () {
         this.onpause = onpause;
         this.onstop = onstop;
         this.onloop = onloop;
+        // Tracks if a Rive file is loaded
+        this.loaded = false;
+        // Runtime artboard
         this.artboard = null;
-        this._loaded = false;
         // If no source file url specified, it's a bust
         if (!this.src && !this.buffer) {
-            console.error(Rive.missingErrorMessage);
-            throw Rive.missingErrorMessage;
+            throw new Error(Rive.missingErrorMessage);
         }
         // Name of the artboard. Rive operates on only one artboard. If
         // you want to have multiple artboards, use multiple Rive instances.
         this.artboardName = artboard;
         // List of animations that should be played.
-        this._startingAnimationNames = animations;
-        this._canvas = canvas;
+        this.startingAnimationNames = mapToStringArray(animations);
         // Fetch the 2d context from the canvas
-        this.ctx = this._canvas.getContext('2d');
-        this._autoplay = autoplay;
+        this.ctx = this.canvas.getContext('2d');
         // The Rive Wasm runtime
-        this._rive = null;
+        this.runtime = null;
         // List of animation instances that will be played
-        this._animations = [];
+        this.animations = [];
         // Tracks when the Rive file is successfully loaded and the Wasm
         // runtime is initialized.
-        this._loaded = false;
+        this.loaded = false;
         // Tracks the playback state
-        this._playback = playbackStates.stop;
+        this.playState = playbackStates.stop;
         // New event management system
         this.eventManager = new EventManager([
             { type: EventType.Load, callback: onload },
@@ -3793,41 +3791,48 @@ var Rive = /** @class */ (function () {
         // Hook up the task queue
         this.taskQueue = new TaskQueueManager(this.eventManager);
         // Queue up play action and event if necessary
-        if (this._autoplay) {
+        if (this.autoplay) {
             this.taskQueue.add({ action: function () { return _this.play(); } });
         }
         // Wait for runtime to load
         RuntimeLoader.awaitInstance().then(function (runtime) {
-            _this._rive = runtime;
+            _this.runtime = runtime;
             // Load from a source uri or a data buffer
-            _this.initialize();
+            _this.initialize().catch(function (e) {
+                console.error(e);
+            });
+        }).catch(function (e) {
+            console.error(e);
         });
     }
     // Alternative constructor to build a Rive instance from an interface/object
     Rive.new = function (_a) {
         var src = _a.src, buffer = _a.buffer, artboard = _a.artboard, animations = _a.animations, canvas = _a.canvas, layout = _a.layout, autoplay = _a.autoplay, onload = _a.onload, onloaderror = _a.onloaderror, onplay = _a.onplay, onpause = _a.onpause, onstop = _a.onstop, onloop = _a.onloop;
-        return new Rive(src, buffer, artboard, animations, canvas, layout, autoplay, onload, onloaderror, onplay, onpause, onstop, onloop);
+        return new Rive(canvas, src, buffer, artboard, animations, layout, autoplay, onload, onloaderror, onplay, onpause, onstop, onloop);
     };
     // Initializes runtime with Rive data and preps for playing
     Rive.prototype.initialize = function () {
-        var _a, _b;
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            var _c, e_1, msg;
+            var _b, _c, msg;
             return __generator(this, function (_d) {
                 switch (_d.label) {
                     case 0:
-                        _d.trys.push([0, 3, , 4]);
                         if (!this.src) return [3 /*break*/, 2];
-                        _c = this;
+                        _b = this;
                         return [4 /*yield*/, loadRiveFile(this.src)];
                     case 1:
-                        _c.buffer = _d.sent();
+                        _b.buffer = _d.sent();
                         _d.label = 2;
                     case 2:
                         // Load the Rive file
-                        this._file = this._rive.load(new Uint8Array(this.buffer));
-                        if (this._file) {
-                            this._loaded = true;
+                        _c = this;
+                        return [4 /*yield*/, this.runtime.load(new Uint8Array(this.buffer))];
+                    case 3:
+                        // Load the Rive file
+                        _c.file = _d.sent();
+                        if (this.file) {
+                            this.loaded = true;
                             // Initialize and draw frame
                             this.initializeArtboard();
                             this.drawFrame();
@@ -3838,18 +3843,14 @@ var Rive = /** @class */ (function () {
                             });
                             // Clear the task queue
                             this.taskQueue.process();
+                            return [2 /*return*/, Promise.resolve()];
                         }
                         else {
-                            throw '';
+                            msg = 'Problem loading file; may be corrupt!';
+                            this.eventManager.fire({ type: EventType.LoadError, data: msg });
+                            return [2 /*return*/, Promise.reject(msg)];
                         }
-                        return [3 /*break*/, 4];
-                    case 3:
-                        e_1 = _d.sent();
-                        msg = "Unable to load " + ((_b = this.src) !== null && _b !== void 0 ? _b : 'buffer');
-                        this.eventManager.fire({ type: EventType.LoadError, data: msg });
-                        console.error(msg);
-                        throw e_1 !== null && e_1 !== void 0 ? e_1 : msg;
-                    case 4: return [2 /*return*/];
+                        return [2 /*return*/];
                 }
             });
         });
@@ -3857,8 +3858,8 @@ var Rive = /** @class */ (function () {
     // Initialize for playback
     Rive.prototype.initializeArtboard = function () {
         this.artboard = this.artboardName ?
-            this._file.artboard(this.artboardName) :
-            this._file.defaultArtboard();
+            this.file.artboard(this.artboardName) :
+            this.file.defaultArtboard();
         // Check that the artboard has at least 1 animation
         if (this.artboard.animationCount() < 1) {
             var msg = 'Artboard has no animations';
@@ -3866,21 +3867,21 @@ var Rive = /** @class */ (function () {
             throw msg;
         }
         // Get the canvas where you want to render the animation and create a renderer
-        this.renderer = new this._rive.CanvasRenderer(this.ctx);
+        this.renderer = new this.runtime.CanvasRenderer(this.ctx);
         // Initialize the animations
-        if (this._startingAnimationNames.length > 0) {
-            this.playAnimations(this._startingAnimationNames);
+        if (this.startingAnimationNames.length > 0) {
+            this.playAnimations(this.startingAnimationNames);
         }
     };
     // Draws the current artboard frame
     Rive.prototype.drawFrame = function () {
         // Choose how you want the animation to align in the canvas
         this.ctx.save();
-        this.renderer.align(this._layout.runtimeFit(this._rive), this._layout.runtimeAlignment(this._rive), {
+        this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
             minX: this._layout ? this._layout.minX : 0,
             minY: this._layout ? this._layout.minY : 0,
-            maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this._canvas.width,
-            maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this._canvas.height
+            maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this.canvas.width,
+            maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this.canvas.height
         }, this.artboard.bounds);
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
@@ -3890,44 +3891,44 @@ var Rive = /** @class */ (function () {
     // Adds animations contained in the artboard for playback
     Rive.prototype.playAnimations = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
-        var instancedAnimationNames = this._animations.map(function (a) { return a.name; });
+        var instancedAnimationNames = this.animations.map(function (a) { return a.name; });
         for (var i in animationNames) {
             var index = instancedAnimationNames.indexOf(animationNames[i]);
             if (index >= 0) {
                 // Animation is already instanced, unpause it
-                this._animations[index].paused = false;
+                this.animations[index].paused = false;
             }
             else {
                 // Create a new animation instance and add it to the list
                 var anim = this.artboard.animationByName(animationNames[i]);
-                var inst = new this._rive.LinearAnimationInstance(anim);
-                this._animations.push(new Animation(anim, inst));
+                var inst = new this.runtime.LinearAnimationInstance(anim);
+                this.animations.push(new Animation(anim, inst));
             }
         }
-        return this._animations.filter(function (a) { return !a.paused; }).map(function (a) { return a.name; });
+        return this.animations.filter(function (a) { return !a.paused; }).map(function (a) { return a.name; });
     };
     // Removes animations from playback
     Rive.prototype.removeAnimations = function (animationNames) {
         var _this = this;
         // Determine which animations need to be removed
-        var animationsToRemove = this._animations.filter(function (a) { return animationNames.indexOf(a.name) >= 0; });
+        var animationsToRemove = this.animations.filter(function (a) { return animationNames.indexOf(a.name) >= 0; });
         // Remove the animations
         animationsToRemove.forEach(function (a) {
-            return _this._animations.splice(_this._animations.indexOf(a), 1);
+            return _this.animations.splice(_this.animations.indexOf(a), 1);
         });
         // Return the list of animations removed
         return animationsToRemove.map(function (a) { return a.name; });
     };
     // Removes all animations from playback
     Rive.prototype.removeAllAnimations = function () {
-        var names = this._animations.map(function (animation) { return animation.name; });
-        this._animations.splice(0, this._animations.length);
+        var names = this.animations.map(function (a) { return a.name; });
+        this.animations.splice(0, this.animations.length);
         return names;
     };
     // Pauses animations
     Rive.prototype.pauseAnimations = function (animationNames) {
         var pausedAnimationNames = [];
-        this._animations.forEach(function (a, i) {
+        this.animations.forEach(function (a, i) {
             if (animationNames.indexOf(a.name) >= 0) {
                 a.paused = true;
                 pausedAnimationNames.push(a.name);
@@ -3938,7 +3939,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "hasPlayingAnimations", {
         // Returns true if at least one animation is active
         get: function () {
-            return this._animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
+            return this.animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
         },
         enumerable: false,
         configurable: true
@@ -3946,11 +3947,11 @@ var Rive = /** @class */ (function () {
     // Ensure there's at least one animation for playback; if there are none
     // marked for playback, then ad the first animation in the artboard.
     Rive.prototype.atLeastOneAnimationForPlayback = function () {
-        if (this._animations.length === 0 && this.artboard.animationCount() > 0) {
+        if (this.animations.length === 0 && this.artboard.animationCount() > 0) {
             // Add the default animation
             var animation = this.artboard.animationByIndex(0);
-            var instance = new this._rive.LinearAnimationInstance(animation);
-            this._animations.push(new Animation(animation, instance));
+            var instance = new this.runtime.LinearAnimationInstance(animation);
+            this.animations.push(new Animation(animation, instance));
         }
     };
     // Draw rendering loop; renders animation frames at the correct time interval.
@@ -3963,7 +3964,7 @@ var Rive = /** @class */ (function () {
         var elapsedTime = (time - this.lastRenderTime) / 1000;
         this.lastRenderTime = time;
         // Advance non-paused animations by the elapsed number of seconds
-        var activeAnimations = this._animations.filter(function (a) { return !a.paused; });
+        var activeAnimations = this.animations.filter(function (a) { return !a.paused; });
         for (var _i = 0, activeAnimations_1 = activeAnimations; _i < activeAnimations_1.length; _i++) {
             var animation = activeAnimations_1[_i];
             animation.instance.advance(elapsedTime);
@@ -3979,18 +3980,18 @@ var Rive = /** @class */ (function () {
         // by the elapsed time.
         this.artboard.advance(elapsedTime);
         // Clear the current frame of the canvas
-        this.ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // Render the frame in the canvas
         this.ctx.save();
-        this.renderer.align(this._layout.runtimeFit(this._rive), this._layout.runtimeAlignment(this._rive), {
+        this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
             minX: this._layout.minX,
             minY: this._layout.minY,
-            maxX: this._layout.maxX ? this._layout.maxX : this._canvas.width,
-            maxY: this._layout.maxY ? this._layout.maxY : this._canvas.height
+            maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
+            maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
         }, this.artboard.bounds);
         this.artboard.draw(this.renderer);
         this.ctx.restore();
-        for (var _a = 0, _b = this._animations; _a < _b.length; _a++) {
+        for (var _a = 0, _b = this.animations; _a < _b.length; _a++) {
             var animation = _b[_a];
             // Emit if the animation looped
             switch (animation.loopValue) {
@@ -4037,14 +4038,14 @@ var Rive = /** @class */ (function () {
         // Calling requestAnimationFrame will rerun draw() at the correct rate:
         // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
         // TODO: move handling state change to event listeners?
-        if (this._playback === playbackStates.play) {
+        if (this.playState === playbackStates.play) {
             this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         }
-        else if (this._playback === playbackStates.pause) {
+        else if (this.playState === playbackStates.pause) {
             // Reset the end time so on playback it starts at the correct frame
             this.lastRenderTime = 0;
         }
-        else if (this._playback === playbackStates.stop) {
+        else if (this.playState === playbackStates.stop) {
             // Reset animation instances, artboard and time
             // TODO: implement this properly when we have instancing
             this.initializeArtboard();
@@ -4057,7 +4058,7 @@ var Rive = /** @class */ (function () {
         var _this = this;
         animationNames = mapToStringArray(animationNames);
         // If the file's not loaded, queue up the play
-        if (!this._loaded) {
+        if (!this.loaded) {
             this.taskQueue.add({
                 action: function () { return _this.play(animationNames); },
             });
@@ -4065,7 +4066,7 @@ var Rive = /** @class */ (function () {
         }
         var playingAnimations = this.playAnimations(animationNames);
         this.atLeastOneAnimationForPlayback();
-        this._playback = playbackStates.play;
+        this.playState = playbackStates.play;
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         this.eventManager.fire({
             type: EventType.Play,
@@ -4077,7 +4078,7 @@ var Rive = /** @class */ (function () {
         animationNames = mapToStringArray(animationNames);
         this.pauseAnimations(animationNames);
         if (!this.hasPlayingAnimations || animationNames.length === 0) {
-            this._playback = playbackStates.pause;
+            this.playState = playbackStates.pause;
         }
         this.eventManager.fire({
             type: EventType.Pause,
@@ -4095,7 +4096,7 @@ var Rive = /** @class */ (function () {
             // strange things will happen if the Rive file/buffer is
             // reloaded.
             cancelAnimationFrame(this.frameRequestId);
-            this._playback = playbackStates.stop;
+            this.playState = playbackStates.stop;
         }
         this.eventManager.fire({
             type: EventType.Stop,
@@ -4109,7 +4110,7 @@ var Rive = /** @class */ (function () {
         var src = _a.src, buffer = _a.buffer, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
         this.src = src;
         this.buffer = buffer;
-        this._autoplay = autoplay;
+        this.autoplay = autoplay;
         // Stop all animations
         this.stop();
         // If no source file url specified, it's a bust
@@ -4118,19 +4119,19 @@ var Rive = /** @class */ (function () {
             return;
         }
         // Reset internals
-        this._file = null;
+        this.file = null;
         this.artboard = null;
         this.artboardName = null;
-        this._animations = [];
-        this._startingAnimationNames = [];
-        this._loaded = false;
+        this.animations = [];
+        this.startingAnimationNames = [];
+        this.loaded = false;
         // Queue up play action and event if necessary
-        if (this._autoplay) {
+        if (this.autoplay) {
             this.taskQueue.add({ action: function () { return _this.play(); } });
         }
         // Wait for runtime to load
         RuntimeLoader.awaitInstance().then(function (runtime) {
-            _this._rive = runtime;
+            _this.runtime = runtime;
             // Load from a source uri or a data buffer
             _this.initialize();
         });
@@ -4158,7 +4159,7 @@ var Rive = /** @class */ (function () {
         // Returns a list of animation names on the chosen artboard
         get: function () {
             // If the file's not loaded, we got nothing to return
-            if (!this._loaded) {
+            if (!this.loaded) {
                 return [];
             }
             var animationNames = [];
@@ -4174,10 +4175,10 @@ var Rive = /** @class */ (function () {
         // Returns a list of playing animation names
         get: function () {
             // If the file's not loaded, we got nothing to return
-            if (!this._loaded) {
+            if (!this.loaded) {
                 return [];
             }
-            return this._animations
+            return this.animations
                 .filter(function (a) { return !a.paused; })
                 .map(function (a) { return a.name; });
         },
@@ -4188,10 +4189,10 @@ var Rive = /** @class */ (function () {
         // Returns a list of paused animation names
         get: function () {
             // If the file's not loaded, we got nothing to return
-            if (!this._loaded) {
+            if (!this.loaded) {
                 return [];
             }
-            return this._animations
+            return this.animations
                 .filter(function (a) { return a.paused; })
                 .map(function (a) { return a.name; });
         },
@@ -4201,7 +4202,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isPlaying", {
         // Returns true if playing
         get: function () {
-            return this._playback === playbackStates.play;
+            return this.playState === playbackStates.play;
         },
         enumerable: false,
         configurable: true
@@ -4209,7 +4210,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isPaused", {
         // Returns trus if all animations are paused
         get: function () {
-            return this._playback === playbackStates.pause;
+            return this.playState === playbackStates.pause;
         },
         enumerable: false,
         configurable: true
@@ -4217,7 +4218,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isStopped", {
         // Returns true if all animations are stopped
         get: function () {
-            return this._playback === playbackStates.stop;
+            return this.playState === playbackStates.stop;
         },
         enumerable: false,
         configurable: true
