@@ -1,15 +1,69 @@
 import * as rive from './rive';
 
+// #region helper functions
+
+/**
+ * Convert string to array buffer.
+ *
+ * @param {Array.<int>} array
+ * @returns {ArrayBuffer}
+ */
+ const arrayToArrayBuffer = ( array: number[] ): ArrayBuffer => {
+  const length = array.length;
+  const buffer = new ArrayBuffer( length );
+  const view = new Uint8Array(buffer);
+  for ( let i = 0; i < length; i++) {
+      view[i] = array[i];
+  }
+  return buffer;
+}
+
+const printProperties = (obj: any): void => {
+  let propValue;
+  for(let propName in obj) {
+      propValue = obj[propName]
+
+      console.log(propName, propValue);
+  }
+}
+
+// #endregion
+
+// #region test data
+
+const corruptRiveFileBytes = [0x43, 0x67, 0xAC, 0x00, 0xFF, 0x2E];
+const corruptRiveFileBuffer = arrayToArrayBuffer(corruptRiveFileBytes);
+
+const simpleRiveFileBytes = [
+  0x52, 0x49, 0x56, 0x45, 0x07, 0x00, 0x8B, 0x94, 0x02, 0x00, 0x17, 0x00, 0x01, 0x07, 0x00, 0x00, 
+  0xFA, 0x43, 0x08, 0x00, 0x00, 0xFA, 0x43, 0x04, 0x0C, 0x4E, 0x65, 0x77, 0x20, 0x41, 0x72, 0x74, 
+  0x62, 0x6F, 0x61, 0x72, 0x64, 0x00, 0x03, 0x05, 0x00, 0x0D, 0x00, 0x00, 0x7A, 0x43, 0x0E, 0x00, 
+  0x00, 0x7A, 0x43, 0x00, 0x07, 0x05, 0x01, 0x14, 0xEA, 0xA3, 0xC7, 0x42, 0x15, 0xEA, 0xA3, 0xC7, 
+  0x42, 0x00, 0x14, 0x05, 0x01, 0x00, 0x12, 0x05, 0x03, 0x00, 0x14, 0x05, 0x00, 0x00, 0x12, 0x05, 
+  0x05, 0x25, 0x31, 0x31, 0x31, 0xFF, 0x00, 0x1F, 0x37, 0x0B, 0x41, 0x6E, 0x69, 0x6D, 0x61, 0x74, 
+  0x69, 0x6F, 0x6E, 0x20, 0x31, 0x3B, 0x02, 0x00, 0x19, 0x33, 0x01, 0x00, 0x1A, 0x35, 0x0D, 0x00, 
+  0x1E, 0x44, 0x01, 0x46, 0xE8, 0xA3, 0x47, 0x42, 0x00, 0x1E, 0x43, 0x3C, 0x44, 0x01, 0x46, 0x83, 
+  0x0B, 0xE1, 0x43, 0x00, 0x1A, 0x35, 0x0E, 0x00, 0x1E, 0x44, 0x01, 0x46, 0x00, 0x00, 0x7A, 0x43, 
+  0x00, 0x1E, 0x43, 0x3C, 0x44, 0x01, 0x46, 0x00, 0x00, 0x7A, 0x43, 0x00
+];
+const simpleRiveFileBuffer = arrayToArrayBuffer(simpleRiveFileBytes);
+
+// #endregion
+
 // #region setup and teardown
 
-beforeEach(() => rive.RuntimeLoader.setTestMode(true));
+beforeEach(() => {
+  // Suppress console.warn and console.error
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  rive.RuntimeLoader.setTestMode(true);
+});
 
 afterEach(() => {});
 
 // #endregion
 
 // #region loop event tests
-
 
 test('Creating loop event accepts valid loop values', () : void => {
   const event = rive.createLoopEvent('name', 0);
@@ -30,6 +84,20 @@ test('Creating loop event throws on invalid loop values', () : void => {
 
 test('Layouts can be created with different fits and alignments', () : void => {
   let layout = new rive.Layout(rive.Fit.Contain, rive.Alignment.TopRight, 1, 2, 100, 101);
+  expect(layout).toBeDefined();
+  expect(layout.fit).toBe(rive.Fit.Contain);
+  expect(layout.alignment).toBe(rive.Alignment.TopRight);
+  expect(layout.minX).toBe(1);
+  expect(layout.minY).toBe(2);
+  expect(layout.maxX).toBe(100);
+  expect(layout.maxY).toBe(101);
+});
+
+test('Layouts can be created with named parameters', () : void => {
+  let layout = rive.Layout.new({
+    minX: 1, alignment: rive.Alignment.TopRight,
+    minY: 2, fit: rive.Fit.Contain, maxX: 100, maxY: 101
+  });
   expect(layout).toBeDefined();
   expect(layout.fit).toBe(rive.Fit.Contain);
   expect(layout.alignment).toBe(rive.Alignment.TopRight);
@@ -179,15 +247,37 @@ test('Tasks are queued and run when processed', () => {
 
 // #endregion
 
-// #region helper functions
+// #region creating Rive objects
 
-function printProperties(obj: any) {
-  let propValue;
-  for(let propName in obj) {
-      propValue = obj[propName]
+test('Rive objects require a src url or byte buffer', () => {
+  const canvas = document.createElement('canvas');
+  const badConstructor = () => {
+    new rive.Rive(canvas);
+  };
+  expect(badConstructor).toThrow(Error);
+});
 
-      console.log(propName, propValue);
-  }
-}
+test('Rive objects initialize correctly', done => {
+  const canvas = document.createElement('canvas');
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: simpleRiveFileBuffer,
+    onload: () => {
+      expect(r).toBeDefined();
+      done();
+    },
+    onloaderror: () => expect(true).toBeTruthy(),
+  });
+});
+
+test('Corrupt Rive file cause explosions',  done => {
+  const canvas = document.createElement('canvas');
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: corruptRiveFileBuffer,
+    onloaderror: () => done(),
+    onload: () => expect(true).toBeTruthy()
+  });
+});
 
 // #endregion
