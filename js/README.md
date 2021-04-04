@@ -29,7 +29,7 @@ The simplest way to get this running is copy ```dist/rive.min.js``` into your pr
 Play the first animation in the default artboard:
 
 ```html
-<canvas id="canvas"></canvas>
+<canvas id="canvas" width="400" height="300"></canvas>
 <script src="https://unpkg.com/rive-js@0.7.1/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
