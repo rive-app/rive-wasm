@@ -65,17 +65,12 @@ afterEach(() => {});
 
 // #region loop event tests
 
-test('Creating loop event accepts valid loop values', () : void => {
-  const event = rive.createLoopEvent('name', 0);
-  expect(event).toBeDefined();
-  expect(event.type).toBe(0);
-  expect(event.name).toBe('oneShot');
-  expect(event.animation).toBe('name');
-});
+test('Creating loop event accepts enum and string values', () : void => {
+  let loopEvent: rive.LoopEvent = {animation: 'test animation', type: rive.LoopType.PingPong}; 
+  expect(loopEvent.type).toBe('pingpong');
 
-test('Creating loop event throws on invalid loop values', () : void => {
-    expect(() => rive.createLoopEvent('name', 4))
-      .toThrow('Invalid loop value');
+  loopEvent = {animation: 'test animation', type: rive.LoopType.OneShot}; 
+  expect(loopEvent.type).toBe('oneshot');
 });
 
 // #endregion
