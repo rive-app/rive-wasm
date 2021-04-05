@@ -2,26 +2,16 @@ import Runtime from '../../wasm/publish/rive.js';
 
 // #region LoopEvent
 
-// Loop types. The index of the type is the value that comes from Wasm
-export const loopTypes: ReadonlyArray<string> = ['oneShot', 'loop', 'pingPong'];
-
-/// Loop events are returned through onloop callbacks
-interface LoopEvent {
-  animation: string;
-  name: string;
-  type: number;
+export enum LoopType {
+  OneShot = 'oneshot',  // has value 0 in runtime
+  Loop = 'loop',        // has value 1 in runtime
+  PingPong = 'pingpong' // has value 2 in runtime
 }
 
-// Creates a new LoopEvent
-export const createLoopEvent = (animation: string, loopValue: number): LoopEvent => {
-  if (loopValue < 0 || loopValue >= loopTypes.length) {
-    throw 'Invalid loop value';
-  }
-  return {
-    animation: animation,
-    type: loopValue,
-    name: loopTypes[loopValue],
-  }
+/// Loop events are returned through onloop callbacks
+export interface LoopEvent {
+  animation: string;
+  type: LoopType;
 }
 
 // #endregion
@@ -248,7 +238,7 @@ export enum EventType {
 // Event fired by Rive
 export interface Event {
   type: EventType,
-  data?: string | string[],
+  data?: string | string[] | LoopEvent,
 }
 
 // Callback type for event listeners
@@ -711,15 +701,10 @@ export class Rive {
           break;
         case 1:
           if (animation.loopCount) {
-            // TODO: Fix this to return more info
             this.eventManager.fire({
               type: EventType.Loop,
-              data: `${animation.name} looped`
+              data: {animation: animation.name, type: LoopType.Loop}
             });
-            // this._emit('loop', createLoopEvent(
-            //   animation.name,
-            //   animation.loopValue,
-            // ));
             animation.loopCount = 0;
           }
           break;
@@ -728,15 +713,10 @@ export class Rive {
           // changes direction, so a full loop/lap occurs every
           // two didLoops
           if (animation.loopCount > 1) {
-            // TODO: Fix this to return more info
             this.eventManager.fire({
               type: EventType.Loop,
-              data: `${animation.name} looped`
+              data: {animation: animation.name, type: LoopType.PingPong}
             });
-            // this._emit('loop', createLoopEvent(
-            //   animation.name,
-            //   animation.loopValue,
-            // ));
             animation.loopCount = 0;
           }
           break;
