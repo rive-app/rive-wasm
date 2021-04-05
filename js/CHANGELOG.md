@@ -1,5 +1,7 @@
 # Rive.js Changelog
 
+## 0.7.3 (pre-release)
+- Refactored how internal play states are being tracked
 ## 0.7.2
 - Updates Wasm package
 
@@ -7,7 +9,7 @@
 - Fixes issue where the wrong wasm version could get downloaded
 
 ## 0.7.0
-- Works with new v7 runtime; older Rive files should be re-exported from the editor
+- Works only new v7 runtime; older Rive files should be re-exported to v7 from the editor.
 
 ## 0.6.0
 - Bumps version to 0.6.0 to match the runtime version it supports (v6)
