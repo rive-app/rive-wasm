@@ -375,6 +375,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 	              select_overload<int() const>(&rive::LinearAnimationBase::workStart))
 		.property("workEnd",
 	              select_overload<int() const>(&rive::LinearAnimationBase::workEnd))
+		.property("enableWorkArea",
+	              select_overload<bool() const>(&rive::LinearAnimationBase::enableWorkArea))
 		.property("loopValue",
 	              select_overload<int() const>(&rive::LinearAnimationBase::loopValue))
 		.property("speed",
