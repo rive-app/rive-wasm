@@ -1,7 +1,8 @@
 # Rive.js Changelog
 
-## 0.7.3 (pre-release)
+## 0.7.3 (Apr 5, 2021)
 - Refactored how internal play states are being tracked
+- Refactored loop events; loop events return the type of loop in the event
 - Updated Wasm
 ## 0.7.2 (Apr 2, 2021)
 - Updates Wasm package

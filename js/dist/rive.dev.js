@@ -3402,8 +3402,7 @@ var __webpack_exports__ = {};
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "loopTypes": () => (/* binding */ loopTypes),
-/* harmony export */   "createLoopEvent": () => (/* binding */ createLoopEvent),
+/* harmony export */   "LoopType": () => (/* binding */ LoopType),
 /* harmony export */   "Fit": () => (/* binding */ Fit),
 /* harmony export */   "Alignment": () => (/* binding */ Alignment),
 /* harmony export */   "Layout": () => (/* binding */ Layout),
@@ -3453,19 +3452,12 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
 };
 
 // #region LoopEvent
-// Loop types. The index of the type is the value that comes from Wasm
-var loopTypes = ['oneShot', 'loop', 'pingPong'];
-// Creates a new LoopEvent
-var createLoopEvent = function (animation, loopValue) {
-    if (loopValue < 0 || loopValue >= loopTypes.length) {
-        throw 'Invalid loop value';
-    }
-    return {
-        animation: animation,
-        type: loopValue,
-        name: loopTypes[loopValue],
-    };
-};
+var LoopType;
+(function (LoopType) {
+    LoopType["OneShot"] = "oneshot";
+    LoopType["Loop"] = "loop";
+    LoopType["PingPong"] = "pingpong"; // has value 2 in runtime
+})(LoopType || (LoopType = {}));
 // #endregion
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
@@ -3622,7 +3614,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.2/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.3/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -4009,15 +4001,10 @@ var Rive = /** @class */ (function () {
                     break;
                 case 1:
                     if (animation.loopCount) {
-                        // TODO: Fix this to return more info
                         this.eventManager.fire({
                             type: EventType.Loop,
-                            data: animation.name + " looped"
+                            data: { animation: animation.name, type: LoopType.Loop }
                         });
-                        // this._emit('loop', createLoopEvent(
-                        //   animation.name,
-                        //   animation.loopValue,
-                        // ));
                         animation.loopCount = 0;
                     }
                     break;
@@ -4026,15 +4013,10 @@ var Rive = /** @class */ (function () {
                     // changes direction, so a full loop/lap occurs every
                     // two didLoops
                     if (animation.loopCount > 1) {
-                        // TODO: Fix this to return more info
                         this.eventManager.fire({
                             type: EventType.Loop,
-                            data: animation.name + " looped"
+                            data: { animation: animation.name, type: LoopType.PingPong }
                         });
-                        // this._emit('loop', createLoopEvent(
-                        //   animation.name,
-                        //   animation.loopValue,
-                        // ));
                         animation.loopCount = 0;
                     }
                     break;
