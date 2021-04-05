@@ -2,7 +2,8 @@
 
 ## 0.7.3 (pre-release)
 - Refactored how internal play states are being tracked
-## 0.7.2
+- Updated Wasm
+## 0.7.2 (Apr 2, 2021)
 - Updates Wasm package
 
 ## 0.7.1
