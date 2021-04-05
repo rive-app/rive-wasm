@@ -1,25 +1,28 @@
 # Rive.js -- Rive's Web API
 
-## BETA RELEASE! (latest 0.7.1)
+## BETA RELEASE! (latest 0.7.3)
 
 Rive.js is fresh off the presses and in beta; the api is subject to change as we try to make it fit for purpose. Please file issues and PRs for anything busted, missing, or just plain wrong.
 
 The api surface is highly likely to change with each release, so please make sure to specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.1/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.3/dist/rive.min.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.1"
+    "rive-js": "0.7.3"
   }
 }
 ```
 
 Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on changes.
+
+## v6 Users
+If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
 
 ## Installing
 The simplest way to get this running is copy ```dist/rive.min.js``` into your project.
@@ -30,7 +33,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.1/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.3/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     rive.Rive.new({
