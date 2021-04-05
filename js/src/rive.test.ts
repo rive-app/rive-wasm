@@ -266,7 +266,7 @@ test('Rive objects initialize correctly', done => {
       expect(r).toBeDefined();
       done();
     },
-    onloaderror: () => expect(true).toBeTruthy(),
+    onloaderror: () => expect(false).toBeTruthy(),
   });
 });
 
@@ -276,7 +276,47 @@ test('Corrupt Rive file cause explosions',  done => {
     canvas: canvas,
     buffer: corruptRiveFileBuffer,
     onloaderror: () => done(),
-    onload: () => expect(true).toBeTruthy()
+    onload: () => expect(false).toBeTruthy()
+  });
+});
+
+// #endregion
+
+// #region playbackstates
+
+test('Playback state for new Rive objects is stop',  done => {
+  const canvas = document.createElement('canvas');
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: simpleRiveFileBuffer,
+    onload: () => {
+      expect(r.isStopped).toBeTruthy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+      done();
+    }
+  });
+});
+
+test('Playback state for auto-playing new Rive objects is play',  done => {
+  const canvas = document.createElement('canvas');
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: simpleRiveFileBuffer,
+    autoplay: true,
+    onload: () => {
+      // We expect things to be stopped right after loading
+      expect(r.isStopped).toBeTruthy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+    },
+    onplay: () => {
+      // We expect things to start playing shortly after load
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeTruthy();
+      done();
+    }
   });
 });
 

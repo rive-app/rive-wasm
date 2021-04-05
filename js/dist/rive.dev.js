@@ -3404,7 +3404,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "loopTypes": () => (/* binding */ loopTypes),
 /* harmony export */   "createLoopEvent": () => (/* binding */ createLoopEvent),
-/* harmony export */   "playbackStates": () => (/* binding */ playbackStates),
 /* harmony export */   "Fit": () => (/* binding */ Fit),
 /* harmony export */   "Alignment": () => (/* binding */ Alignment),
 /* harmony export */   "Layout": () => (/* binding */ Layout),
@@ -3468,8 +3467,14 @@ var createLoopEvent = function (animation, loopValue) {
     };
 };
 // #endregion
-// Maps the playback state to the Wasm enum values
-var playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
+// Tracks playback states; numbers map to the runtime's numerica values
+// i.e. play: 0, pause: 1, stop: 2
+var PlaybackState;
+(function (PlaybackState) {
+    PlaybackState[PlaybackState["Play"] = 0] = "Play";
+    PlaybackState[PlaybackState["Pause"] = 1] = "Pause";
+    PlaybackState[PlaybackState["Stop"] = 2] = "Stop";
+})(PlaybackState || (PlaybackState = {}));
 // #region layout
 // Fit options for the canvas
 var Fit;
@@ -3778,7 +3783,7 @@ var Rive = /** @class */ (function () {
         // runtime is initialized.
         this.loaded = false;
         // Tracks the playback state
-        this.playState = playbackStates.stop;
+        this.playState = PlaybackState.Stop;
         // New event management system
         this.eventManager = new EventManager([
             { type: EventType.Load, callback: onload },
@@ -4038,14 +4043,14 @@ var Rive = /** @class */ (function () {
         // Calling requestAnimationFrame will rerun draw() at the correct rate:
         // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
         // TODO: move handling state change to event listeners?
-        if (this.playState === playbackStates.play) {
+        if (this.playState === PlaybackState.Play) {
             this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         }
-        else if (this.playState === playbackStates.pause) {
+        else if (this.playState === PlaybackState.Pause) {
             // Reset the end time so on playback it starts at the correct frame
             this.lastRenderTime = 0;
         }
-        else if (this.playState === playbackStates.stop) {
+        else if (this.playState === PlaybackState.Stop) {
             // Reset animation instances, artboard and time
             // TODO: implement this properly when we have instancing
             this.initializeArtboard();
@@ -4066,7 +4071,7 @@ var Rive = /** @class */ (function () {
         }
         var playingAnimations = this.playAnimations(animationNames);
         this.atLeastOneAnimationForPlayback();
-        this.playState = playbackStates.play;
+        this.playState = PlaybackState.Play;
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         this.eventManager.fire({
             type: EventType.Play,
@@ -4078,7 +4083,7 @@ var Rive = /** @class */ (function () {
         animationNames = mapToStringArray(animationNames);
         this.pauseAnimations(animationNames);
         if (!this.hasPlayingAnimations || animationNames.length === 0) {
-            this.playState = playbackStates.pause;
+            this.playState = PlaybackState.Pause;
         }
         this.eventManager.fire({
             type: EventType.Pause,
@@ -4096,7 +4101,7 @@ var Rive = /** @class */ (function () {
             // strange things will happen if the Rive file/buffer is
             // reloaded.
             cancelAnimationFrame(this.frameRequestId);
-            this.playState = playbackStates.stop;
+            this.playState = PlaybackState.Stop;
         }
         this.eventManager.fire({
             type: EventType.Stop,
@@ -4202,7 +4207,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isPlaying", {
         // Returns true if playing
         get: function () {
-            return this.playState === playbackStates.play;
+            return this.playState === PlaybackState.Play;
         },
         enumerable: false,
         configurable: true
@@ -4210,7 +4215,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isPaused", {
         // Returns trus if all animations are paused
         get: function () {
-            return this.playState === playbackStates.pause;
+            return this.playState === PlaybackState.Pause;
         },
         enumerable: false,
         configurable: true
@@ -4218,7 +4223,7 @@ var Rive = /** @class */ (function () {
     Object.defineProperty(Rive.prototype, "isStopped", {
         // Returns true if all animations are stopped
         get: function () {
-            return this.playState === playbackStates.stop;
+            return this.playState === PlaybackState.Stop;
         },
         enumerable: false,
         configurable: true

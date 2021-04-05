@@ -26,8 +26,13 @@ export const createLoopEvent = (animation: string, loopValue: number): LoopEvent
 
 // #endregion
 
-// Maps the playback state to the Wasm enum values
-export const playbackStates = { 'play': 0, 'pause': 1, 'stop': 2 };
+// Tracks playback states; numbers map to the runtime's numerica values
+// i.e. play: 0, pause: 1, stop: 2
+enum PlaybackState {
+  Play = 0,
+  Pause,
+  Stop
+}
 
 // #region layout
 
@@ -380,7 +385,7 @@ export class Rive {
   private renderer: any;
 
   // Tracks the playback state
-  private playState: number;
+  private playState: PlaybackState;
 
   // Tracks if a Rive file is loaded
   private loaded: boolean = false;
@@ -444,7 +449,7 @@ export class Rive {
     this.loaded = false;
   
     // Tracks the playback state
-    this.playState = playbackStates.stop;
+    this.playState = PlaybackState.Stop;
   
     // New event management system
     this.eventManager = new EventManager([
@@ -741,12 +746,12 @@ export class Rive {
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
     // TODO: move handling state change to event listeners?
-    if (this.playState === playbackStates.play) {
+    if (this.playState === PlaybackState.Play) {
       this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
-    } else if (this.playState === playbackStates.pause) {
+    } else if (this.playState === PlaybackState.Pause) {
       // Reset the end time so on playback it starts at the correct frame
       this.lastRenderTime = 0;
-    } else if (this.playState === playbackStates.stop) {
+    } else if (this.playState === PlaybackState.Stop) {
       // Reset animation instances, artboard and time
       // TODO: implement this properly when we have instancing
       this.initializeArtboard();
@@ -769,7 +774,7 @@ export class Rive {
 
     const playingAnimations = this.playAnimations(animationNames);
     this.atLeastOneAnimationForPlayback();
-    this.playState = playbackStates.play;
+    this.playState = PlaybackState.Play;
     this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
     this.eventManager.fire({
       type: EventType.Play,
@@ -783,7 +788,7 @@ export class Rive {
 
     this.pauseAnimations(animationNames);
     if (!this.hasPlayingAnimations || animationNames.length === 0) {
-      this.playState = playbackStates.pause;
+      this.playState = PlaybackState.Pause;
     }
     this.eventManager.fire({
       type: EventType.Pause,
@@ -804,7 +809,7 @@ export class Rive {
       // strange things will happen if the Rive file/buffer is
       // reloaded.
       cancelAnimationFrame(this.frameRequestId);
-      this.playState = playbackStates.stop;
+      this.playState = PlaybackState.Stop;
     }
     this.eventManager.fire({
       type: EventType.Stop,
@@ -899,17 +904,17 @@ export class Rive {
 
   // Returns true if playing
   public get isPlaying(): boolean {
-    return this.playState === playbackStates.play;
+    return this.playState === PlaybackState.Play;
   }
 
   // Returns trus if all animations are paused
   public get isPaused(): boolean {
-    return this.playState === playbackStates.pause;
+    return this.playState === PlaybackState.Pause;
   }
 
   // Returns true if all animations are stopped
   public get isStopped(): boolean {
-    return this.playState === playbackStates.stop;
+    return this.playState === PlaybackState.Stop;
   }
 
   // Register a new listener
