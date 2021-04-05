@@ -6,12 +6,17 @@
         <title>Looping Animations</title>
         <link rel="stylesheet" href="styles.css">
     </head>
-    <body class="parent">
+    <body class="grid">
         <div>
-            <canvas id="canvas" width="500" height="500"></canvas>
-            <label for="animationSelect">Animation:</label>
-            <select id="animationSelect"></select>
-            <button id="button" disabled="true">Play</button>
+            <div><canvas id="canvas" width="500" height="500"></canvas></div>
+            <div class="spacer"></div>
+            <div>
+                <label for="animationSelect">Animation:</label>
+                <select id="animationSelect"></select>
+                <button id="button" disabled="true">Play</button>
+            </div>
+            <div class="spacer"></div>
+            <div id="message"></div>
         </div>
 
         <script src="/dist/rive.min.js"></script>
@@ -51,6 +56,9 @@
 
             // Stop playing after one loop
             looper.on('loop', function(event) {
+                const messageArea = document.getElementById('message');
+                const data = event.data;
+                message.innerHTML = ('Animation ' + data.animation + ' looped as ' + data.type);
                 looper.pause();
                 button.disabled = false;
             });

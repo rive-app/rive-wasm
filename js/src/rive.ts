@@ -3,8 +3,8 @@ import Runtime from '../../wasm/publish/rive.js';
 // #region LoopEvent
 
 export enum LoopType {
-  OneShot = 'oneshot',  // has value 0 in runtime
-  Loop = 'loop',        // has value 1 in runtime
+  OneShot  = 'oneshot',  // has value 0 in runtime
+  Loop     = 'loop',        // has value 1 in runtime
   PingPong = 'pingpong' // has value 2 in runtime
 }
 
@@ -144,7 +144,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.2/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.3/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?

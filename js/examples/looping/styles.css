@@ -3,7 +3,11 @@ html, body {
     height: 100%;
   }
       
-  .parent {
+  .grid {
     display: grid;
     place-items: center;
+  }
+
+  .spacer {
+    margin-top: 20px;
   }
