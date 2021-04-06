@@ -128,7 +128,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.3/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.4/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?

@@ -3605,7 +3605,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.3/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.4/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
