@@ -1,21 +1,5 @@
 import Runtime from '../../wasm/publish/rive.js';
 
-// #region LoopEvent
-
-export enum LoopType {
-  OneShot  = 'oneshot',  // has value 0 in runtime
-  Loop     = 'loop',        // has value 1 in runtime
-  PingPong = 'pingpong' // has value 2 in runtime
-}
-
-/// Loop events are returned through onloop callbacks
-export interface LoopEvent {
-  animation: string;
-  type: LoopType;
-}
-
-// #endregion
-
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
 enum PlaybackState {
@@ -52,19 +36,19 @@ export enum Alignment {
 
 // Interface for the Layout static method contructor
 export interface LayoutParameters {
-  fit: Fit,
-  alignment: Alignment,
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number
+  fit?: Fit,
+  alignment?: Alignment,
+  minX?: number,
+  minY?: number,
+  maxX?: number,
+  maxY?: number
 }
 
 // Alignment options for Rive animations in a HTML canvas
 export class Layout {
 
   constructor(
-    public fit: Fit = Fit.None,
+    public fit: Fit = Fit.Contain,
     public alignment: Alignment = Alignment.Center,
     public minX: number = 0,
     public minY: number = 0,
@@ -204,10 +188,16 @@ export class RuntimeLoader {
 
 // Wraps animations and instances from the runtime and keeps track of playback
 // state
-export class Animation {  
+class Animation {  
   public loopCount: number = 0;
   public paused: boolean = false;
 
+/**
+ * Constructs a new animation
+ * @constructor
+ * @param {any} animation: runtime animation object
+ * @param {any} instance: runtime animation instance object
+ */
   constructor(private animation: any, public readonly instance: any) {}
 
   // Returns the animation's name
@@ -225,7 +215,9 @@ export class Animation {
 
 // #region events
 
-// Events that Rive fires
+/**
+ * Supported event types triggered in Rive
+ */
 export enum EventType {
   Load      = 'load',
   LoadError = 'loaderror',
@@ -241,10 +233,31 @@ export interface Event {
   data?: string | string[] | LoopEvent,
 }
 
-// Callback type for event listeners
+/**
+ * Looping types: one-shot, loop, and ping-pong
+ */
+export enum LoopType {
+  OneShot  = 'oneshot',  // has value 0 in runtime
+  Loop     = 'loop',        // has value 1 in runtime
+  PingPong = 'pingpong' // has value 2 in runtime
+}
+
+/**
+ * Loop events are returned through onloop callbacks
+ */
+export interface LoopEvent {
+  animation: string;
+  type: LoopType;
+}
+
+/**
+ * Loop events are returned through onloop callbacks
+ */
 export type EventCallback = (event: Event) => void;
 
-// An event listener
+/**
+ * Event listeners registered with the event manager
+ */
 export interface EventListener {
   type: EventType,
   callback: EventCallback, 
@@ -334,17 +347,12 @@ export interface RiveParameters {
   animations?: string[],
   layout?: Layout,
   autoplay?: boolean,
-  onload?: () => void,
-  onloaderror?: () => void,
-  onplay?: () => void,
-  onpause?: () => void,
-  onstop?: () => void,
-  onloop?: () => void,
-}
-
-// Interface for storing playback callbacks
-interface RiveCallback {
-  fn: () => void,
+  onload?: EventCallback,
+  onloaderror?: EventCallback,
+  onplay?: EventCallback,
+  onpause?: EventCallback,
+  onstop?: EventCallback,
+  onloop?: EventCallback,
 }
 
 // Interface to Rive.load function
@@ -352,6 +360,8 @@ export interface RiveLoadParameters {
   src?: string,
   buffer?: ArrayBuffer,
   autoplay?: boolean,
+  artboard?: string,
+  animations?: string | string[],
 }
 
 // Interface for typing a runtime Artboard
@@ -366,16 +376,22 @@ interface RuntimeArtboard {
 
 export class Rive {
 
+  // Used to track artboard and starting animation names passed into the
+  // constructor
   private artboardName: string;
-
-  // Converted variables
-  private animations: Animation[];
   private startingAnimationNames: string[];
+  
+  // Holds instantiated animations
+  private animations: Animation[] = [];
+  
+  // The canvas 2D context
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+  
+  // The runtime renderer
   private renderer: any;
 
   // Tracks the playback state
-  private playState: PlaybackState;
+  private playState: PlaybackState = PlaybackState.Stop;
 
   // Tracks if a Rive file is loaded
   private loaded: boolean = false;
@@ -395,79 +411,47 @@ export class Rive {
   // Manages the loading task queue
   private taskQueue: TaskQueueManager;
 
-  // Error message for missingh source or buffer
+  // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
-    'Either a Rive source file or a data buffer is required.';
+    'Rive source file or data buffer required';
 
   constructor(
     private canvas: HTMLCanvasElement | OffscreenCanvas, // canvas in which to render the artboard
     private src?: string, // uri for a (.riv) Rive file
     private buffer?: ArrayBuffer, // ArrayBuffer containing Rive data
     artboard?: string, // name of the artboard to use
-    animations: string | string[] = [], // list of names of animations to queue for playback
-    private _layout: Layout = new Layout(Fit.Contain, Alignment.Center), // rendering layout inside the canvas
+    animations?: string | string[], // list of names of animations to queue for playback
+    private _layout: Layout = new Layout(), // rendering layout inside the canvas
     private autoplay: boolean = false, // should playback begin immediately?
-    private onload: EventCallback = () => {}, // callback triggered when Rive file is loaded
-    private onloaderror: EventCallback = () => {}, // callback triggered if loading fails
-    private onplay: EventCallback = () => {}, // callback triggered when a play event occurs
-    private onpause: EventCallback = () => {}, // callback triggered when a pause event occurs
-    private onstop: EventCallback = () => {}, // callback triggered when a stop event occurs
-    private onloop: EventCallback = () => {}, // callback triggered when a loop event occurs
+    onload?: EventCallback, // callback triggered when Rive file is loaded
+    onloaderror?: EventCallback, // callback triggered if loading fails
+    onplay?: EventCallback, // callback triggered when a play event occurs
+    onpause?: EventCallback, // callback triggered when a pause event occurs
+    onstop?: EventCallback, // callback triggered when a stop event occurs
+    onloop?: EventCallback, // callback triggered when a loop event occurs
   ) {
-    // If no source file url specified, it's a bust
-    if (!this.src && !this.buffer) {
-      throw new Error(Rive.missingErrorMessage);
-    }  
-    // Name of the artboard. Rive operates on only one artboard. If
-    // you want to have multiple artboards, use multiple Rive instances.
-    this.artboardName = artboard;
-  
-    // List of animations that should be played.
-    this.startingAnimationNames = mapToStringArray(animations);
-  
+
     // Fetch the 2d context from the canvas
     this.ctx = this.canvas.getContext('2d');
-  
-    // The Rive Wasm runtime
-    this.runtime = null;
-
-    // List of animation instances that will be played
-    this.animations = [];
-  
-    // Tracks when the Rive file is successfully loaded and the Wasm
-    // runtime is initialized.
-    this.loaded = false;
-  
-    // Tracks the playback state
-    this.playState = PlaybackState.Stop;
-  
+    
     // New event management system
-    this.eventManager = new EventManager([
-      {type: EventType.Load, callback: onload},
-      {type: EventType.LoadError, callback: onloaderror},
-      {type: EventType.Play, callback: onplay},
-      {type: EventType.Pause, callback: onpause},
-      {type: EventType.Stop, callback: onstop},
-      {type: EventType.Loop, callback: onloop},
-    ]);
+    this.eventManager = new EventManager();
+    if (onload) this.on(EventType.Load, onload);
+    if (onloaderror) this.on(EventType.LoadError, onloaderror);
+    if (onplay) this.on(EventType.Play, onplay);
+    if (onpause) this.on(EventType.Pause, onpause);
+    if (onstop) this.on(EventType.Stop, onstop);
+    if (onloop) this.on(EventType.Loop, onloop);
 
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
-    
-    // Queue up play action and event if necessary
-    if (this.autoplay) {
-      this.taskQueue.add({ action: () => this.play() });
-    }
 
-    // Wait for runtime to load
-    RuntimeLoader.awaitInstance().then((runtime) => {
-      this.runtime = runtime;
-      // Load from a source uri or a data buffer
-      this.initialize().catch(e => {
-        console.error(e);
-      });
-    }).catch(e => {
-      console.error(e);
+    this.init({
+      src: this.src,
+      buffer: this.buffer,
+      autoplay: this.autoplay,
+      animations: animations,
+      artboard: artboard
     });
   }
 
@@ -492,8 +476,54 @@ export class Rive {
     );
   }
 
+  // Initializes the Rive object either from constructor or load()
+  private init({src, buffer, animations, artboard, autoplay = false}: RiveLoadParameters): void {
+    this.src = src;
+    this.buffer = buffer;
+    this.autoplay = autoplay;
+  
+    // If no source file url specified, it's a bust
+    if (!this.src && !this.buffer) {
+      throw new Error(Rive.missingErrorMessage);
+    }
+
+    // Name of the artboard. Rive operates on only one artboard. If
+    // you want to have multiple artboards, use multiple Rive instances.
+    this.artboardName = artboard;
+
+    // List of animations that should be played.
+    this.startingAnimationNames = mapToStringArray(animations);
+
+    // Queue up play action and event if necessary
+    if (this.autoplay) {
+      this.taskQueue.add({ action: () => this.play() });
+    }
+
+    // Reset the animations list if loading new file
+    this.animations = [];
+
+    // Ensure loaded is marked as false if loading new file
+    this.loaded = false;
+    
+    // Queue up play action and event if necessary
+    if (this.autoplay) {
+      this.taskQueue.add({ action: () => this.play() });
+    }
+  
+    // Ensure the runtime is loaded
+    RuntimeLoader.awaitInstance().then((runtime) => {
+      this.runtime = runtime;
+      // Load Rive data from a source uri or a data buffer
+      this.initData().catch(e => {
+        console.error(e);
+      });
+    }).catch(e => {
+      console.error(e);
+    });
+  }
+
   // Initializes runtime with Rive data and preps for playing
-  private async initialize() : Promise<void> {
+  private async initData() : Promise<void> {
     // Load the buffer from the src if provided
     if (this.src) {
       this.buffer = await loadRiveFile(this.src);
@@ -503,7 +533,7 @@ export class Rive {
     if (this.file) {
       this.loaded = true;
       // Initialize and draw frame
-      this.initializeArtboard();
+      this.initArtboard();
       this.drawFrame();
       // Everything's set up, emit a load event
       this.eventManager.fire({
@@ -521,7 +551,7 @@ export class Rive {
   }
 
   // Initialize for playback
-  private initializeArtboard(): void {
+  private initArtboard(): void {
     this.artboard = this.artboardName ?
       this.file.artboard(this.artboardName) :
       this.file.defaultArtboard();
@@ -550,10 +580,11 @@ export class Rive {
       this._layout.runtimeFit(this.runtime),
       this._layout.runtimeAlignment(this.runtime),
       {
-        minX: this._layout ? this._layout.minX : 0,
-        minY: this._layout ? this._layout.minY : 0,
-        maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this.canvas.width,
-        maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this.canvas.height
+        minX: this._layout.minX,
+        minY: this._layout.minY,
+        // if the max x & y are 0, make them the canvas width and height
+        maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
+        maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
       },
       this.artboard.bounds
     );
@@ -734,7 +765,7 @@ export class Rive {
     } else if (this.playState === PlaybackState.Stop) {
       // Reset animation instances, artboard and time
       // TODO: implement this properly when we have instancing
-      this.initializeArtboard();
+      this.initArtboard();
       this.drawFrame();
       this.lastRenderTime = 0;
     }
@@ -797,41 +828,12 @@ export class Rive {
     });
   }
 
-  // Loads a new Rive file, keeping listeners in place.
-  // TODO: remove duplication with constructor
-  public load({src, buffer, autoplay = false}: RiveLoadParameters): void {
-    this.src = src;
-    this.buffer = buffer;
-    this.autoplay = autoplay;
-
+  // Loads a new Rive file, keeping listeners in place
+  public load(params: RiveLoadParameters): void {
     // Stop all animations
     this.stop();
-  
-    // If no source file url specified, it's a bust
-    if (!src && !buffer) {
-      console.error(Rive.missingErrorMessage);
-      return;
-    }
-
-    // Reset internals
-    this.file = null;
-    this.artboard = null;
-    this.artboardName = null;
-    this.animations = [];
-    this.startingAnimationNames = [];
-    this.loaded = false;
-    
-    // Queue up play action and event if necessary
-    if (this.autoplay) {
-      this.taskQueue.add({ action: () => this.play() });
-    }
-  
-    // Wait for runtime to load
-    RuntimeLoader.awaitInstance().then((runtime) => {
-      this.runtime = runtime;
-      // Load from a source uri or a data buffer
-      this.initialize();
-    });
+    // Reinitialize
+    this.init(params);
   }
 
   // Sets a new layout
