@@ -1,5 +1,9 @@
 # Rive.js Changelog
 
+## 0.7.4 (Apr 6, 2021)
+- Refactored how Rive files are loaded
+- Added tests for playing, looping and stopping animations
+
 ## 0.7.3 (Apr 5, 2021)
 - Refactored how internal play states are being tracked
 - Refactored loop events; loop events return the type of loop in the event
@@ -7,13 +11,16 @@
 ## 0.7.2 (Apr 2, 2021)
 - Updates Wasm package
 
-## 0.7.1
+## 0.7.1 (Mar 31, 2021)
 - Fixes issue where the wrong wasm version could get downloaded
 
-## 0.7.0
+## 0.7.0 (Mar 31, 2021)
 - Works only new v7 runtime; older Rive files should be re-exported to v7 from the editor.
 
-## 0.6.0
+## 0.6.1 (Mar 31, 2021)
+- Fixes issue where the wrong wasm version could get downloaded
+
+## 0.6.0 (Mar 31, 2021)
 - Bumps version to 0.6.0 to match the runtime version it supports (v6)
 
 ## 0.1.0-beta.4 (Mar 29, 2021)
