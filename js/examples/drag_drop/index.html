@@ -52,14 +52,20 @@
         <!-- Rive animation scripts -->
         <script src="/dist/rive.min.js"></script>
         <script>
+            // Holds a reference to the Rive object
+            let r;
             function playBuffer(buffer) {
-                rive.Rive.new({
-                    // An ArrayBuffer containing Rive data can be used to
-                    // initialize an animation
-                    buffer: buffer,
-                    canvas: document.getElementById('canvas'),
-                    autoplay: true,
-                });
+                if (!r) {
+                    r = rive.Rive.new({
+                        // An ArrayBuffer containing Rive data can be used to
+                        // initialize an animation
+                        buffer: buffer,
+                        canvas: document.getElementById('canvas'),
+                        autoplay: true,
+                    });
+                } else {
+                    r.load({buffer: buffer, autoplay: true});
+                }
             };
         </script>
 

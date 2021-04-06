@@ -3402,13 +3402,12 @@ var __webpack_exports__ = {};
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LoopType": () => (/* binding */ LoopType),
 /* harmony export */   "Fit": () => (/* binding */ Fit),
 /* harmony export */   "Alignment": () => (/* binding */ Alignment),
 /* harmony export */   "Layout": () => (/* binding */ Layout),
 /* harmony export */   "RuntimeLoader": () => (/* binding */ RuntimeLoader),
-/* harmony export */   "Animation": () => (/* binding */ Animation),
 /* harmony export */   "EventType": () => (/* binding */ EventType),
+/* harmony export */   "LoopType": () => (/* binding */ LoopType),
 /* harmony export */   "Rive": () => (/* binding */ Rive),
 /* harmony export */   "Testing": () => (/* binding */ Testing)
 /* harmony export */ });
@@ -3451,14 +3450,6 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
     }
 };
 
-// #region LoopEvent
-var LoopType;
-(function (LoopType) {
-    LoopType["OneShot"] = "oneshot";
-    LoopType["Loop"] = "loop";
-    LoopType["PingPong"] = "pingpong"; // has value 2 in runtime
-})(LoopType || (LoopType = {}));
-// #endregion
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
 var PlaybackState;
@@ -3495,7 +3486,7 @@ var Alignment;
 // Alignment options for Rive animations in a HTML canvas
 var Layout = /** @class */ (function () {
     function Layout(fit, alignment, minX, minY, maxX, maxY) {
-        if (fit === void 0) { fit = Fit.None; }
+        if (fit === void 0) { fit = Fit.Contain; }
         if (alignment === void 0) { alignment = Alignment.Center; }
         if (minX === void 0) { minX = 0; }
         if (minY === void 0) { minY = 0; }
@@ -3627,6 +3618,12 @@ var RuntimeLoader = /** @class */ (function () {
 // Wraps animations and instances from the runtime and keeps track of playback
 // state
 var Animation = /** @class */ (function () {
+    /**
+     * Constructs a new animation
+     * @constructor
+     * @param {any} animation: runtime animation object
+     * @param {any} instance: runtime animation instance object
+     */
     function Animation(animation, instance) {
         this.animation = animation;
         this.instance = instance;
@@ -3651,10 +3648,11 @@ var Animation = /** @class */ (function () {
     });
     return Animation;
 }());
-
 // #endregion
 // #region events
-// Events that Rive fires
+/**
+ * Supported event types triggered in Rive
+ */
 var EventType;
 (function (EventType) {
     EventType["Load"] = "load";
@@ -3664,6 +3662,15 @@ var EventType;
     EventType["Stop"] = "stop";
     EventType["Loop"] = "loop";
 })(EventType || (EventType = {}));
+/**
+ * Looping types: one-shot, loop, and ping-pong
+ */
+var LoopType;
+(function (LoopType) {
+    LoopType["OneShot"] = "oneshot";
+    LoopType["Loop"] = "loop";
+    LoopType["PingPong"] = "pingpong"; // has value 2 in runtime
+})(LoopType || (LoopType = {}));
 // Manages Rive events and listeners
 var EventManager = /** @class */ (function () {
     function EventManager(listeners) {
@@ -3731,31 +3738,59 @@ var Rive = /** @class */ (function () {
     onpause, // callback triggered when a pause event occurs
     onstop, // callback triggered when a stop event occurs
     onloop) {
-        var _this = this;
-        if (animations === void 0) { animations = []; }
-        if (_layout === void 0) { _layout = new Layout(Fit.Contain, Alignment.Center); }
+        if (_layout === void 0) { _layout = new Layout(); }
         if (autoplay === void 0) { autoplay = false; }
-        if (onload === void 0) { onload = function () { }; }
-        if (onloaderror === void 0) { onloaderror = function () { }; }
-        if (onplay === void 0) { onplay = function () { }; }
-        if (onpause === void 0) { onpause = function () { }; }
-        if (onstop === void 0) { onstop = function () { }; }
-        if (onloop === void 0) { onloop = function () { }; }
         this.canvas = canvas;
         this.src = src;
         this.buffer = buffer;
         this._layout = _layout;
         this.autoplay = autoplay;
-        this.onload = onload;
-        this.onloaderror = onloaderror;
-        this.onplay = onplay;
-        this.onpause = onpause;
-        this.onstop = onstop;
-        this.onloop = onloop;
+        // Holds instantiated animations
+        this.animations = [];
+        // Tracks the playback state
+        this.playState = PlaybackState.Stop;
         // Tracks if a Rive file is loaded
         this.loaded = false;
         // Runtime artboard
         this.artboard = null;
+        // Fetch the 2d context from the canvas
+        this.ctx = this.canvas.getContext('2d');
+        // New event management system
+        this.eventManager = new EventManager();
+        if (onload)
+            this.on(EventType.Load, onload);
+        if (onloaderror)
+            this.on(EventType.LoadError, onloaderror);
+        if (onplay)
+            this.on(EventType.Play, onplay);
+        if (onpause)
+            this.on(EventType.Pause, onpause);
+        if (onstop)
+            this.on(EventType.Stop, onstop);
+        if (onloop)
+            this.on(EventType.Loop, onloop);
+        // Hook up the task queue
+        this.taskQueue = new TaskQueueManager(this.eventManager);
+        this.init({
+            src: this.src,
+            buffer: this.buffer,
+            autoplay: this.autoplay,
+            animations: animations,
+            artboard: artboard
+        });
+    }
+    // Alternative constructor to build a Rive instance from an interface/object
+    Rive.new = function (_a) {
+        var src = _a.src, buffer = _a.buffer, artboard = _a.artboard, animations = _a.animations, canvas = _a.canvas, layout = _a.layout, autoplay = _a.autoplay, onload = _a.onload, onloaderror = _a.onloaderror, onplay = _a.onplay, onpause = _a.onpause, onstop = _a.onstop, onloop = _a.onloop;
+        return new Rive(canvas, src, buffer, artboard, animations, layout, autoplay, onload, onloaderror, onplay, onpause, onstop, onloop);
+    };
+    // Initializes the Rive object either from constructor or load()
+    Rive.prototype.init = function (_a) {
+        var _this = this;
+        var src = _a.src, buffer = _a.buffer, animations = _a.animations, artboard = _a.artboard, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
+        this.src = src;
+        this.buffer = buffer;
+        this.autoplay = autoplay;
         // If no source file url specified, it's a bust
         if (!this.src && !this.buffer) {
             throw new Error(Rive.missingErrorMessage);
@@ -3765,50 +3800,31 @@ var Rive = /** @class */ (function () {
         this.artboardName = artboard;
         // List of animations that should be played.
         this.startingAnimationNames = mapToStringArray(animations);
-        // Fetch the 2d context from the canvas
-        this.ctx = this.canvas.getContext('2d');
-        // The Rive Wasm runtime
-        this.runtime = null;
-        // List of animation instances that will be played
-        this.animations = [];
-        // Tracks when the Rive file is successfully loaded and the Wasm
-        // runtime is initialized.
-        this.loaded = false;
-        // Tracks the playback state
-        this.playState = PlaybackState.Stop;
-        // New event management system
-        this.eventManager = new EventManager([
-            { type: EventType.Load, callback: onload },
-            { type: EventType.LoadError, callback: onloaderror },
-            { type: EventType.Play, callback: onplay },
-            { type: EventType.Pause, callback: onpause },
-            { type: EventType.Stop, callback: onstop },
-            { type: EventType.Loop, callback: onloop },
-        ]);
-        // Hook up the task queue
-        this.taskQueue = new TaskQueueManager(this.eventManager);
         // Queue up play action and event if necessary
         if (this.autoplay) {
             this.taskQueue.add({ action: function () { return _this.play(); } });
         }
-        // Wait for runtime to load
+        // Reset the animations list if loading new file
+        this.animations = [];
+        // Ensure loaded is marked as false if loading new file
+        this.loaded = false;
+        // Queue up play action and event if necessary
+        if (this.autoplay) {
+            this.taskQueue.add({ action: function () { return _this.play(); } });
+        }
+        // Ensure the runtime is loaded
         RuntimeLoader.awaitInstance().then(function (runtime) {
             _this.runtime = runtime;
-            // Load from a source uri or a data buffer
-            _this.initialize().catch(function (e) {
+            // Load Rive data from a source uri or a data buffer
+            _this.initData().catch(function (e) {
                 console.error(e);
             });
         }).catch(function (e) {
             console.error(e);
         });
-    }
-    // Alternative constructor to build a Rive instance from an interface/object
-    Rive.new = function (_a) {
-        var src = _a.src, buffer = _a.buffer, artboard = _a.artboard, animations = _a.animations, canvas = _a.canvas, layout = _a.layout, autoplay = _a.autoplay, onload = _a.onload, onloaderror = _a.onloaderror, onplay = _a.onplay, onpause = _a.onpause, onstop = _a.onstop, onloop = _a.onloop;
-        return new Rive(canvas, src, buffer, artboard, animations, layout, autoplay, onload, onloaderror, onplay, onpause, onstop, onloop);
     };
     // Initializes runtime with Rive data and preps for playing
-    Rive.prototype.initialize = function () {
+    Rive.prototype.initData = function () {
         var _a;
         return __awaiter(this, void 0, void 0, function () {
             var _b, _c, msg;
@@ -3831,7 +3847,7 @@ var Rive = /** @class */ (function () {
                         if (this.file) {
                             this.loaded = true;
                             // Initialize and draw frame
-                            this.initializeArtboard();
+                            this.initArtboard();
                             this.drawFrame();
                             // Everything's set up, emit a load event
                             this.eventManager.fire({
@@ -3853,7 +3869,7 @@ var Rive = /** @class */ (function () {
         });
     };
     // Initialize for playback
-    Rive.prototype.initializeArtboard = function () {
+    Rive.prototype.initArtboard = function () {
         this.artboard = this.artboardName ?
             this.file.artboard(this.artboardName) :
             this.file.defaultArtboard();
@@ -3875,10 +3891,11 @@ var Rive = /** @class */ (function () {
         // Choose how you want the animation to align in the canvas
         this.ctx.save();
         this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
-            minX: this._layout ? this._layout.minX : 0,
-            minY: this._layout ? this._layout.minY : 0,
-            maxX: (this._layout && this._layout.maxX) ? this._layout.maxX : this.canvas.width,
-            maxY: (this._layout && this._layout.maxY) ? this._layout.maxY : this.canvas.height
+            minX: this._layout.minX,
+            minY: this._layout.minY,
+            // if the max x & y are 0, make them the canvas width and height
+            maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
+            maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
         }, this.artboard.bounds);
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
@@ -4035,7 +4052,7 @@ var Rive = /** @class */ (function () {
         else if (this.playState === PlaybackState.Stop) {
             // Reset animation instances, artboard and time
             // TODO: implement this properly when we have instancing
-            this.initializeArtboard();
+            this.initArtboard();
             this.drawFrame();
             this.lastRenderTime = 0;
         }
@@ -4090,38 +4107,12 @@ var Rive = /** @class */ (function () {
             data: stoppedAnimationNames,
         });
     };
-    // Loads a new Rive file, keeping listeners in place.
-    // TODO: remove duplication with constructor
-    Rive.prototype.load = function (_a) {
-        var _this = this;
-        var src = _a.src, buffer = _a.buffer, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
-        this.src = src;
-        this.buffer = buffer;
-        this.autoplay = autoplay;
+    // Loads a new Rive file, keeping listeners in place
+    Rive.prototype.load = function (params) {
         // Stop all animations
         this.stop();
-        // If no source file url specified, it's a bust
-        if (!src && !buffer) {
-            console.error(Rive.missingErrorMessage);
-            return;
-        }
-        // Reset internals
-        this.file = null;
-        this.artboard = null;
-        this.artboardName = null;
-        this.animations = [];
-        this.startingAnimationNames = [];
-        this.loaded = false;
-        // Queue up play action and event if necessary
-        if (this.autoplay) {
-            this.taskQueue.add({ action: function () { return _this.play(); } });
-        }
-        // Wait for runtime to load
-        RuntimeLoader.awaitInstance().then(function (runtime) {
-            _this.runtime = runtime;
-            // Load from a source uri or a data buffer
-            _this.initialize();
-        });
+        // Reinitialize
+        this.init(params);
     };
     Object.defineProperty(Rive.prototype, "layout", {
         // Sets a new layout
@@ -4217,8 +4208,8 @@ var Rive = /** @class */ (function () {
             callback: callback,
         });
     };
-    // Error message for missingh source or buffer
-    Rive.missingErrorMessage = 'Either a Rive source file or a data buffer is required.';
+    // Error message for missing source or buffer
+    Rive.missingErrorMessage = 'Rive source file or data buffer required';
     return Rive;
 }());
 
