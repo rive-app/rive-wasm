@@ -9,7 +9,7 @@
     <body>
         <canvas id="canvas"></canvas>
     
-        <script src="/dist/rive.min.js"></script>
+        <script src="https://unpkg.com/rive-js@0.7.4/dist/rive.min.js"></script>
         <script>
             const canvas = document.getElementById('canvas');
             
@@ -21,7 +21,7 @@
                 artboard: 'New Artboard',
                 // which animations should be played and mixed together
                 animations: ['idle', 'windshield_wipers', 'bouncing'],
-                layout: new rive.Layout(rive.Fit.Cover, rive.Alignment.Center),
+                layout: rive.Layout.new({fit: rive.Fit.Cover, alignment: rive.Alignment.Center}),
             });
 
             // When the window resizes, resize the canvas

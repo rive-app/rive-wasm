@@ -22,7 +22,7 @@
         <script src="/dist/rive.min.js"></script>
         <script>
             // animation will show the first frame but not start playing
-            const looper = rive.Rive.new({
+            const looper = new rive.Rive({
                 src: 'https://cdn.rive.app/animations/web_api_test_file_v7.riv',
                 canvas: document.getElementById('canvas'),
             });

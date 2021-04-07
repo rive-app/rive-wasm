@@ -56,7 +56,7 @@
             let r;
             function playBuffer(buffer) {
                 if (!r) {
-                    r = rive.Rive.new({
+                    r = new rive.Rive({
                         // An ArrayBuffer containing Rive data can be used to
                         // initialize an animation
                         buffer: buffer,

@@ -23,39 +23,39 @@
 
         <script src="/dist/rive.min.js"></script>
         <script>
-            const juice = rive.Rive.new({
+            const juice = new rive.Rive({
                 src: 'https://cdn.rive.app/animations/juice_v7.riv',
                 canvas: document.getElementById('canvas'),
                 autoplay: true,
-                layout: rive.Layout.new({fit: rive.Fit.None, alignment: rive.Alignment.Center}),
+                layout: new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.Center}),
             });
 
             document.getElementById('top-left').addEventListener('click', () =>
-                juice.layout = new rive.Layout(rive.Fit.None, rive.Alignment.TopLeft)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.TopLeft})
             );
             document.getElementById('top-center').addEventListener('click', () =>
-                juice.layout = new rive.Layout(rive.Fit.None, rive.Alignment.TopCenter)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.TopCenter})
             );
             document.getElementById('top-right').addEventListener('click', () =>
-                juice.layout = new rive.Layout(rive.Fit.None, rive.Alignment.TopRight)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.TopRight})
             );
             document.getElementById('center-left').addEventListener('click', () =>
-                juice.layout =new rive.Layout(rive.Fit.None, rive.Alignment.CenterLeft)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.CenterLeft})
             );
             document.getElementById('center').addEventListener('click', () =>
-                juice.layout =new rive.Layout(rive.Fit.None, rive.Alignment.Center)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.Center})
             );
             document.getElementById('center-right').addEventListener('click', () =>
-                juice.layout = new rive.Layout(rive.Fit.None, rive.Alignment.CenterRight)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.CenterRight})
             );
             document.getElementById('bottom-left').addEventListener('click', () =>
-                juice.layout = new rive.Layout.new({fit: 'none', alignment: 'bottomLeft'})
+                juice.layout = new rive.Layout({fit: 'none', alignment: 'bottomLeft'})
             );
             document.getElementById('bottom-center').addEventListener('click', () =>
-                juice.layout = new rive.Layout(rive.Fit.None, rive.Alignment.BottomCenter)
+                juice.layout = new rive.Layout({fit: rive.Fit.None, alignment: rive.Alignment.BottomCenter})
             );
             document.getElementById('bottom-right').addEventListener('click', () =>
-                juice.layout = new rive.Layout('none', 'bottomRight')
+                juice.layout = new rive.Layout({fit: 'none', alignment: 'bottomRight'})
             );
         </script>
 

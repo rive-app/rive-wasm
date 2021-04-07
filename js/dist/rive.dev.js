@@ -3485,24 +3485,20 @@ var Alignment;
 })(Alignment || (Alignment = {}));
 // Alignment options for Rive animations in a HTML canvas
 var Layout = /** @class */ (function () {
-    function Layout(fit, alignment, minX, minY, maxX, maxY) {
-        if (fit === void 0) { fit = Fit.Contain; }
-        if (alignment === void 0) { alignment = Alignment.Center; }
-        if (minX === void 0) { minX = 0; }
-        if (minY === void 0) { minY = 0; }
-        if (maxX === void 0) { maxX = 0; }
-        if (maxY === void 0) { maxY = 0; }
-        this.fit = fit;
-        this.alignment = alignment;
-        this.minX = minX;
-        this.minY = minY;
-        this.maxX = maxX;
-        this.maxY = maxY;
+    function Layout(params) {
+        var _a, _b, _c, _d, _e, _f;
+        this.fit = (_a = params === null || params === void 0 ? void 0 : params.fit) !== null && _a !== void 0 ? _a : Fit.Contain;
+        this.alignment = (_b = params === null || params === void 0 ? void 0 : params.alignment) !== null && _b !== void 0 ? _b : Alignment.Center;
+        this.minX = (_c = params === null || params === void 0 ? void 0 : params.minX) !== null && _c !== void 0 ? _c : 0;
+        this.minY = (_d = params === null || params === void 0 ? void 0 : params.minY) !== null && _d !== void 0 ? _d : 0;
+        this.maxX = (_e = params === null || params === void 0 ? void 0 : params.maxX) !== null && _e !== void 0 ? _e : 0;
+        this.maxY = (_f = params === null || params === void 0 ? void 0 : params.maxY) !== null && _f !== void 0 ? _f : 0;
     }
     // Alternative constructor to build a Layout from an interface/object
     Layout.new = function (_a) {
         var fit = _a.fit, alignment = _a.alignment, minX = _a.minX, minY = _a.minY, maxX = _a.maxX, maxY = _a.maxY;
-        return new Layout(fit, alignment, minX, minY, maxX, maxY);
+        console.warn('This function is deprecated: please use `new Layout({})` instead');
+        return new Layout({ fit: fit, alignment: alignment, minX: minX, minY: minY, maxX: maxX, maxY: maxY });
     };
     // Returns fit for the Wasm runtime format
     Layout.prototype.runtimeFit = function (rive) {
@@ -3609,7 +3605,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.4/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.5/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -3729,26 +3725,11 @@ var TaskQueueManager = /** @class */ (function () {
     return TaskQueueManager;
 }());
 var Rive = /** @class */ (function () {
-    function Rive(canvas, // canvas in which to render the artboard
-    src, // uri for a (.riv) Rive file
-    buffer, // ArrayBuffer containing Rive data
-    artboard, // name of the artboard to use
-    animations, // list of names of animations to queue for playback
-    _layout, // rendering layout inside the canvas
-    autoplay, // should playback begin immediately?
-    onload, // callback triggered when Rive file is loaded
-    onloaderror, // callback triggered if loading fails
-    onplay, // callback triggered when a play event occurs
-    onpause, // callback triggered when a pause event occurs
-    onstop, // callback triggered when a stop event occurs
-    onloop) {
-        if (_layout === void 0) { _layout = new Layout(); }
-        if (autoplay === void 0) { autoplay = false; }
-        this.canvas = canvas;
-        this.src = src;
-        this.buffer = buffer;
-        this._layout = _layout;
-        this.autoplay = autoplay;
+    function Rive(params) {
+        var _a, _b;
+        // Flag to indicate if the layout has changed; used by the renderer to know
+        // when to align
+        this.layoutUpdated = true;
         // Holds instantiated animations
         this.animations = [];
         // Tracks the playback state
@@ -3757,36 +3738,42 @@ var Rive = /** @class */ (function () {
         this.loaded = false;
         // Runtime artboard
         this.artboard = null;
+        this.canvas = params.canvas;
+        this.autoplay = (_a = params.autoplay) !== null && _a !== void 0 ? _a : false;
+        this.src = params.src;
+        this.buffer = params.buffer;
+        this._layout = (_b = params.layout) !== null && _b !== void 0 ? _b : new Layout();
+        this.layoutUpdated = true;
         // Fetch the 2d context from the canvas
         this.ctx = this.canvas.getContext('2d');
         // New event management system
         this.eventManager = new EventManager();
-        if (onload)
-            this.on(EventType.Load, onload);
-        if (onloaderror)
-            this.on(EventType.LoadError, onloaderror);
-        if (onplay)
-            this.on(EventType.Play, onplay);
-        if (onpause)
-            this.on(EventType.Pause, onpause);
-        if (onstop)
-            this.on(EventType.Stop, onstop);
-        if (onloop)
-            this.on(EventType.Loop, onloop);
+        if (params.onload)
+            this.on(EventType.Load, params.onload);
+        if (params.onloaderror)
+            this.on(EventType.LoadError, params.onloaderror);
+        if (params.onplay)
+            this.on(EventType.Play, params.onplay);
+        if (params.onpause)
+            this.on(EventType.Pause, params.onpause);
+        if (params.onstop)
+            this.on(EventType.Stop, params.onstop);
+        if (params.onloop)
+            this.on(EventType.Loop, params.onloop);
         // Hook up the task queue
         this.taskQueue = new TaskQueueManager(this.eventManager);
         this.init({
             src: this.src,
             buffer: this.buffer,
             autoplay: this.autoplay,
-            animations: animations,
-            artboard: artboard
+            animations: params.animations,
+            artboard: params.artboard
         });
     }
     // Alternative constructor to build a Rive instance from an interface/object
-    Rive.new = function (_a) {
-        var src = _a.src, buffer = _a.buffer, artboard = _a.artboard, animations = _a.animations, canvas = _a.canvas, layout = _a.layout, autoplay = _a.autoplay, onload = _a.onload, onloaderror = _a.onloaderror, onplay = _a.onplay, onpause = _a.onpause, onstop = _a.onstop, onloop = _a.onloop;
-        return new Rive(canvas, src, buffer, artboard, animations, layout, autoplay, onload, onloaderror, onplay, onpause, onstop, onloop);
+    Rive.new = function (params) {
+        console.warn('This function is deprecated: please use `new Rive({})` instead');
+        return new Rive(params);
     };
     // Initializes the Rive object either from constructor or load()
     Rive.prototype.init = function (_a) {
@@ -3892,17 +3879,12 @@ var Rive = /** @class */ (function () {
     };
     // Draws the current artboard frame
     Rive.prototype.drawFrame = function () {
-        // Choose how you want the animation to align in the canvas
-        this.ctx.save();
-        this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
-            minX: this._layout.minX,
-            minY: this._layout.minY,
-            // if the max x & y are 0, make them the canvas width and height
-            maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-            maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
-        }, this.artboard.bounds);
+        // Update the renderer's alignment if necessary
+        this.alignRenderer();
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
+        // Choose how you want the animation to align in the canvas
+        this.ctx.save();
         this.artboard.draw(this.renderer);
         this.ctx.restore();
     };
@@ -3999,14 +3981,10 @@ var Rive = /** @class */ (function () {
         this.artboard.advance(elapsedTime);
         // Clear the current frame of the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Update the renderer alignment if necessary
+        this.alignRenderer();
         // Render the frame in the canvas
         this.ctx.save();
-        this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
-            minX: this._layout.minX,
-            minY: this._layout.minY,
-            maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-            maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
-        }, this.artboard.bounds);
         this.artboard.draw(this.renderer);
         this.ctx.restore();
         for (var _a = 0, _b = this.animations; _a < _b.length; _a++) {
@@ -4037,7 +4015,6 @@ var Rive = /** @class */ (function () {
         }
         // Calling requestAnimationFrame will rerun draw() at the correct rate:
         // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
-        // TODO: move handling state change to event listeners?
         if (this.playState === PlaybackState.Play) {
             this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         }
@@ -4051,6 +4028,26 @@ var Rive = /** @class */ (function () {
             this.initArtboard();
             this.drawFrame();
             this.lastRenderTime = 0;
+        }
+    };
+    /**
+     * Align the renderer
+     */
+    Rive.prototype.alignRenderer = function () {
+        // Update the renderer alignment if necessary
+        if (this.layoutUpdated) {
+            // Restore from previous save in case a previous align occurred
+            this.ctx.restore();
+            // Now save so that future changes to align can restore
+            this.ctx.save();
+            // Align things up safe in the knowledge we can restore if changed
+            this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
+                minX: this._layout.minX,
+                minY: this._layout.minY,
+                maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
+                maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
+            }, this.artboard.bounds);
+            this.layoutUpdated = false;
         }
     };
     // Plays specified animations; if none specified, it plays paused ones.
@@ -4114,6 +4111,7 @@ var Rive = /** @class */ (function () {
         // Sets a new layout
         set: function (layout) {
             this._layout = layout;
+            this.layoutUpdated = true;
             if (!this.hasPlayingAnimations) {
                 this.drawFrame();
             }

@@ -1,3 +1,4 @@
+import { runInThisContext } from 'node:vm';
 import Runtime from '../../wasm/publish/rive.js';
 
 // Tracks playback states; numbers map to the runtime's numerica values
@@ -52,18 +53,26 @@ export class Layout {
   private cachedRuntimeFit: any;
   private cachedRuntimeAlignment: any;
 
-  constructor(
-    public readonly fit: Fit = Fit.Contain,
-    public readonly alignment: Alignment = Alignment.Center,
-    public readonly minX: number = 0,
-    public readonly minY: number = 0,
-    public readonly maxX: number = 0,
-    public readonly maxY: number = 0
-  ) {}
+  public readonly fit: Fit;
+  public readonly alignment: Alignment;
+  public readonly minX: number;
+  public readonly minY: number;
+  public readonly maxX: number;
+  public readonly maxY: number;
+
+  constructor(params?: LayoutParameters) {
+    this.fit = params?.fit ?? Fit.Contain;
+    this.alignment = params?.alignment ?? Alignment.Center;
+    this.minX = params?.minX ?? 0;
+    this.minY = params?.minY ?? 0;
+    this.maxX = params?.maxX ?? 0;
+    this.maxY = params?.maxY ?? 0;
+  }
 
   // Alternative constructor to build a Layout from an interface/object
   static new({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
-    return new Layout(fit, alignment, minX, minY, maxX, maxY);
+    console.warn('This function is deprecated: please use `new Layout({})` instead');
+    return new Layout({fit, alignment, minX, minY, maxX, maxY});
   }
 
   // Returns fit for the Wasm runtime format
@@ -123,7 +132,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.4/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.5/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -371,9 +380,29 @@ interface RuntimeArtboard {
 
 export class Rive {
 
+  // Canvas in which to render the artboard
+  private readonly canvas: HTMLCanvasElement | OffscreenCanvas;
+  
+  // Should the animations autoplay?
+  private autoplay: boolean;
+
+  // A url to a Rive file; may be undefined if a buffer is specified
+  private src: string;
+
+  // Raw Rive file data; may be undefined if a src is specified
+  private buffer: ArrayBuffer;
+
+  // The layout for rendering in the canvas
+  private _layout: Layout;
+
+  // Flag to indicate if the layout has changed; used by the renderer to know
+  // when to align
+  private layoutUpdated: boolean = true;
+
   // Used to track artboard and starting animation names passed into the
   // constructor
   private artboardName: string;
+
   private startingAnimationNames: string[];
   
   // Holds instantiated animations
@@ -410,33 +439,26 @@ export class Rive {
   private static readonly missingErrorMessage: string =
     'Rive source file or data buffer required';
 
-  constructor(
-    private canvas: HTMLCanvasElement | OffscreenCanvas, // canvas in which to render the artboard
-    private src?: string, // uri for a (.riv) Rive file
-    private buffer?: ArrayBuffer, // ArrayBuffer containing Rive data
-    artboard?: string, // name of the artboard to use
-    animations?: string | string[], // list of names of animations to queue for playback
-    private _layout: Layout = new Layout(), // rendering layout inside the canvas
-    private autoplay: boolean = false, // should playback begin immediately?
-    onload?: EventCallback, // callback triggered when Rive file is loaded
-    onloaderror?: EventCallback, // callback triggered if loading fails
-    onplay?: EventCallback, // callback triggered when a play event occurs
-    onpause?: EventCallback, // callback triggered when a pause event occurs
-    onstop?: EventCallback, // callback triggered when a stop event occurs
-    onloop?: EventCallback, // callback triggered when a loop event occurs
-  ) {
+  constructor(params: RiveParameters) {
+
+    this.canvas = params.canvas;
+    this.autoplay = params.autoplay ?? false;
+    this.src = params.src;
+    this.buffer = params.buffer;
+    this._layout = params.layout ?? new Layout();
+    this.layoutUpdated = true;
 
     // Fetch the 2d context from the canvas
     this.ctx = this.canvas.getContext('2d');
     
     // New event management system
     this.eventManager = new EventManager();
-    if (onload) this.on(EventType.Load, onload);
-    if (onloaderror) this.on(EventType.LoadError, onloaderror);
-    if (onplay) this.on(EventType.Play, onplay);
-    if (onpause) this.on(EventType.Pause, onpause);
-    if (onstop) this.on(EventType.Stop, onstop);
-    if (onloop) this.on(EventType.Loop, onloop);
+    if (params.onload) this.on(EventType.Load, params.onload);
+    if (params.onloaderror) this.on(EventType.LoadError, params.onloaderror);
+    if (params.onplay) this.on(EventType.Play, params.onplay);
+    if (params.onpause) this.on(EventType.Pause, params.onpause);
+    if (params.onstop) this.on(EventType.Stop, params.onstop);
+    if (params.onloop) this.on(EventType.Loop, params.onloop);
 
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
@@ -445,30 +467,15 @@ export class Rive {
       src: this.src,
       buffer: this.buffer,
       autoplay: this.autoplay,
-      animations: animations,
-      artboard: artboard
+      animations: params.animations,
+      artboard: params.artboard
     });
   }
 
   // Alternative constructor to build a Rive instance from an interface/object
-  public static new({
-    src,
-    buffer,
-    artboard,
-    animations,
-    canvas,
-    layout,
-    autoplay,
-    onload,
-    onloaderror,
-    onplay,
-    onpause,
-    onstop,
-    onloop }: RiveParameters) : Rive {
-    return new Rive(
-      canvas, src, buffer, artboard, animations, layout, autoplay,
-      onload, onloaderror, onplay, onpause, onstop, onloop,
-    );
+  public static new(params: RiveParameters) : Rive {
+      console.warn('This function is deprecated: please use `new Rive({})` instead');
+    return new Rive(params);
   }
 
   // Initializes the Rive object either from constructor or load()
@@ -569,23 +576,14 @@ export class Rive {
 
   // Draws the current artboard frame
   public drawFrame() {
-    // Choose how you want the animation to align in the canvas
-    this.ctx.save();
-    this.renderer.align(
-      this._layout.runtimeFit(this.runtime),
-      this._layout.runtimeAlignment(this.runtime),
-      {
-        minX: this._layout.minX,
-        minY: this._layout.minY,
-        // if the max x & y are 0, make them the canvas width and height
-        maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-        maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
-      },
-      this.artboard.bounds
-    );
+    // Update the renderer's alignment if necessary
+    this.alignRenderer();
 
     // Advance to the first frame and draw the artboard
     this.artboard.advance(0);
+
+    // Choose how you want the animation to align in the canvas
+    this.ctx.save();
     this.artboard.draw(this.renderer);
     this.ctx.restore();
   }
@@ -699,19 +697,12 @@ export class Rive {
   
     // Clear the current frame of the canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Update the renderer alignment if necessary
+    this.alignRenderer();
+
     // Render the frame in the canvas
     this.ctx.save();
-    this.renderer.align(
-      this._layout.runtimeFit(this.runtime),
-      this._layout.runtimeAlignment(this.runtime),
-      {
-        minX: this._layout.minX,
-        minY: this._layout.minY,
-        maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-        maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
-      },
-      this.artboard.bounds
-    );
     this.artboard.draw(this.renderer);
     this.ctx.restore();
   
@@ -743,7 +734,6 @@ export class Rive {
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
-    // TODO: move handling state change to event listeners?
     if (this.playState === PlaybackState.Play) {
       this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
     } else if (this.playState === PlaybackState.Pause) {
@@ -755,6 +745,32 @@ export class Rive {
       this.initArtboard();
       this.drawFrame();
       this.lastRenderTime = 0;
+    }
+  }
+
+  /**
+   * Align the renderer
+   */
+  private alignRenderer(): void {
+    // Update the renderer alignment if necessary
+    if (this.layoutUpdated) {
+      // Restore from previous save in case a previous align occurred
+      this.ctx.restore();
+      // Now save so that future changes to align can restore
+      this.ctx.save();
+      // Align things up safe in the knowledge we can restore if changed
+      this.renderer.align(
+        this._layout.runtimeFit(this.runtime),
+        this._layout.runtimeAlignment(this.runtime),
+        {
+          minX: this._layout.minX,
+          minY: this._layout.minY,
+          maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
+          maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
+        },
+        this.artboard.bounds
+      );
+      this.layoutUpdated = false;
     }
   }
 
@@ -826,6 +842,7 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
+    this.layoutUpdated = true;
     if(!this.hasPlayingAnimations) {
       this.drawFrame();
     }

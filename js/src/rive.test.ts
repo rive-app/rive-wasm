@@ -94,7 +94,8 @@ afterEach(() => {});
 // #region layout
 
 test('Layouts can be created with different fits and alignments', () : void => {
-  let layout = new rive.Layout(rive.Fit.Contain, rive.Alignment.TopRight, 1, 2, 100, 101);
+  let layout = new rive.Layout({fit: rive.Fit.Contain, alignment: rive.Alignment.TopRight,
+    minX: 1, minY: 2, maxX: 100, maxY: 101});
   expect(layout).toBeDefined();
   expect(layout.fit).toBe(rive.Fit.Contain);
   expect(layout.alignment).toBe(rive.Alignment.TopRight);
@@ -105,7 +106,7 @@ test('Layouts can be created with different fits and alignments', () : void => {
 });
 
 test('Layouts can be created with named parameters', () : void => {
-  let layout = rive.Layout.new({
+  let layout = new rive.Layout({
     minX: 1, alignment: rive.Alignment.TopRight,
     minY: 2, fit: rive.Fit.Contain, maxX: 100, maxY: 101
   });
@@ -131,13 +132,13 @@ test('Layouts have sensible defaults', () : void => {
 
 test('Layouts provide runtime fit and alignment values', async () => {
   const runtime: any = await rive.RuntimeLoader.awaitInstance();
-  let layout = new rive.Layout(rive.Fit.FitWidth, rive.Alignment.BottomLeft);
+  let layout = new rive.Layout({fit: rive.Fit.FitWidth, alignment: rive.Alignment.BottomLeft});
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fitWidth);
   expect(layout.runtimeAlignment(runtime).x).toBe(-1);
   expect(layout.runtimeAlignment(runtime).y).toBe(1);
 
-  layout = new rive.Layout(rive.Fit.Fill, rive.Alignment.TopRight);
+  layout = new rive.Layout({fit: rive.Fit.Fill, alignment: rive.Alignment.TopRight});
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fill);
   expect(layout.runtimeAlignment(runtime).x).toBe(1);
@@ -271,14 +272,14 @@ test('Tasks are queued and run when processed', () => {
 test('Rive objects require a src url or byte buffer', () => {
   const canvas = document.createElement('canvas');
   const badConstructor = () => {
-    new rive.Rive(canvas);
+    new rive.Rive({canvas: canvas});
   };
   expect(badConstructor).toThrow(Error);
 });
 
 test('Rive objects initialize correctly', done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     onload: () => {
@@ -291,7 +292,7 @@ test('Rive objects initialize correctly', done => {
 
 test('Corrupt Rive file cause explosions',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: corruptRiveFileBuffer,
     onloaderror: () => done(),
@@ -305,7 +306,7 @@ test('Corrupt Rive file cause explosions',  done => {
 
 test('Playback state for new Rive objects is stop',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     onload: () => {
@@ -319,7 +320,7 @@ test('Playback state for new Rive objects is stop',  done => {
 
 test('Playback state for auto-playing new Rive objects is play',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
@@ -345,7 +346,7 @@ test('Playback state for auto-playing new Rive objects is play',  done => {
 
 test('Playing a ping-pong animation will fire a loop event',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
@@ -367,7 +368,7 @@ test('Playing a ping-pong animation will fire a loop event',  done => {
 
 test('Playing a loop animation will fire a loop event',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
@@ -389,7 +390,7 @@ test('Playing a loop animation will fire a loop event',  done => {
 
 test('Playing a one-shot animation will fire a stop event',  done => {
   const canvas = document.createElement('canvas');
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
@@ -414,7 +415,7 @@ test('Playing a one-shot animation will fire a stop event',  done => {
 test('Playing animations can be manually started and stopped',  done => {
   const canvas = document.createElement('canvas');
 
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     onload: () => {
@@ -446,7 +447,7 @@ test('Playing animations can be manually started, paused, and restarted',  done 
   const canvas = document.createElement('canvas');
   let hasLooped = false;
 
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     onload: () => {
@@ -489,7 +490,7 @@ test('Multiple files can be loaded and played',  done => {
   const canvas = document.createElement('canvas');
   let loopOccurred = false;
 
-  const r = rive.Rive.new({
+  const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
