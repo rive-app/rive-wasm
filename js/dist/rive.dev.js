@@ -3506,47 +3506,51 @@ var Layout = /** @class */ (function () {
     };
     // Returns fit for the Wasm runtime format
     Layout.prototype.runtimeFit = function (rive) {
-        switch (this.fit) {
-            case Fit.Cover:
-                return rive.Fit.cover;
-            case Fit.Contain:
-                return rive.Fit.contain;
-            case Fit.Fill:
-                return rive.Fit.fill;
-            case Fit.FitWidth:
-                return rive.Fit.fitWidth;
-            case Fit.FitHeight:
-                return rive.Fit.fitHeight;
-            case Fit.ScaleDown:
-                return rive.Fit.scaleDown;
-            case Fit.None:
-            default:
-                return rive.Fit.none;
-        }
+        if (this.cachedRuntimeFit)
+            return this.cachedRuntimeFit;
+        var fit;
+        if (this.fit === Fit.Cover)
+            fit = rive.Fit.cover;
+        else if (this.fit === Fit.Contain)
+            fit = rive.Fit.contain;
+        else if (this.fit === Fit.Fill)
+            fit = rive.Fit.fill;
+        else if (this.fit === Fit.FitWidth)
+            fit = rive.Fit.fitWidth;
+        else if (this.fit === Fit.FitHeight)
+            fit = rive.Fit.fitHeight;
+        else if (this.fit === Fit.ScaleDown)
+            fit = rive.Fit.scaleDown;
+        else
+            fit = rive.Fit.none;
+        this.cachedRuntimeFit = fit;
+        return fit;
     };
     // Returns alignment for the Wasm runtime format
     Layout.prototype.runtimeAlignment = function (rive) {
-        switch (this.alignment) {
-            case Alignment.TopLeft:
-                return rive.Alignment.topLeft;
-            case Alignment.TopCenter:
-                return rive.Alignment.topCenter;
-            case Alignment.TopRight:
-                return rive.Alignment.topRight;
-            case Alignment.CenterLeft:
-                return rive.Alignment.centerLeft;
-            case Alignment.CenterRight:
-                return rive.Alignment.centerRight;
-            case Alignment.BottomLeft:
-                return rive.Alignment.bottomLeft;
-            case Alignment.BottomCenter:
-                return rive.Alignment.bottomCenter;
-            case Alignment.BottomRight:
-                return rive.Alignment.bottomRight;
-            case Alignment.Center:
-            default:
-                return rive.Alignment.center;
-        }
+        if (this.cachedRuntimeAlignment)
+            return this.cachedRuntimeAlignment;
+        var alignment;
+        if (this.alignment === Alignment.TopLeft)
+            alignment = rive.Alignment.topLeft;
+        else if (this.alignment === Alignment.TopCenter)
+            alignment = rive.Alignment.topCenter;
+        else if (this.alignment === Alignment.TopRight)
+            alignment = rive.Alignment.topRight;
+        else if (this.alignment === Alignment.CenterLeft)
+            alignment = rive.Alignment.centerLeft;
+        else if (this.alignment === Alignment.CenterRight)
+            alignment = rive.Alignment.centerRight;
+        else if (this.alignment === Alignment.BottomLeft)
+            alignment = rive.Alignment.bottomLeft;
+        else if (this.alignment === Alignment.BottomCenter)
+            alignment = rive.Alignment.bottomCenter;
+        else if (this.alignment === Alignment.BottomRight)
+            alignment = rive.Alignment.bottomRight;
+        else
+            alignment = rive.Alignment.center;
+        this.cachedRuntimeAlignment = alignment;
+        return alignment;
     };
     return Layout;
 }());
@@ -4008,35 +4012,27 @@ var Rive = /** @class */ (function () {
         for (var _a = 0, _b = this.animations; _a < _b.length; _a++) {
             var animation = _b[_a];
             // Emit if the animation looped
-            switch (animation.loopValue) {
-                case 0:
-                    if (animation.loopCount) {
-                        animation.loopCount = 0;
-                        // This is a one-shot; if it has ended, delete the instance
-                        this.stop(animation.name);
-                    }
-                    break;
-                case 1:
-                    if (animation.loopCount) {
-                        this.eventManager.fire({
-                            type: EventType.Loop,
-                            data: { animation: animation.name, type: LoopType.Loop }
-                        });
-                        animation.loopCount = 0;
-                    }
-                    break;
-                case 2:
-                    // Wasm indicates a loop at each time the animation
-                    // changes direction, so a full loop/lap occurs every
-                    // two didLoops
-                    if (animation.loopCount > 1) {
-                        this.eventManager.fire({
-                            type: EventType.Loop,
-                            data: { animation: animation.name, type: LoopType.PingPong }
-                        });
-                        animation.loopCount = 0;
-                    }
-                    break;
+            if (animation.loopValue === 0 && animation.loopCount) {
+                animation.loopCount = 0;
+                // This is a one-shot; if it has ended, delete the instance
+                this.stop(animation.name);
+            }
+            else if (animation.loopValue === 1 && animation.loopCount) {
+                this.eventManager.fire({
+                    type: EventType.Loop,
+                    data: { animation: animation.name, type: LoopType.Loop }
+                });
+                animation.loopCount = 0;
+            }
+            // Wasm indicates a loop at each time the animation
+            // changes direction, so a full loop/lap occurs every
+            // two loop counts
+            else if (animation.loopValue === 2 && animation.loopCount > 1) {
+                this.eventManager.fire({
+                    type: EventType.Loop,
+                    data: { animation: animation.name, type: LoopType.PingPong }
+                });
+                animation.loopCount = 0;
             }
         }
         // Calling requestAnimationFrame will rerun draw() at the correct rate:
