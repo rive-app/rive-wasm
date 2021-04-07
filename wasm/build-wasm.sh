@@ -48,9 +48,13 @@ if ! command -v terser &>/dev/null; then
 fi
 terser --compress --mangle -o ./bin/release/rive.min.js -- ./bin/release/rive-combined.js
 
+# Encode the wasm binary into string and wrap in js
+node ../scripts/wasm2str.js ./bin/release/rive.wasm ./bin/release/rive_wasm.js
+
 # copy to publish folder
 cp ./bin/release/rive-combined.js ../publish/rive.js
 cp ./bin/release/rive.min.js ../publish/rive.min.js
 cp ./bin/release/rive.wasm ../publish/rive.wasm
+cp ./bin/release/rive_wasm.js ../publish/rive_wasm.js
 
 popd &>/dev/null
