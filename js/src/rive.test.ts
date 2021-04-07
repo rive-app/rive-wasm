@@ -91,19 +91,7 @@ afterEach(() => {});
 
 // #endregion
 
-// #region loop event tests
-
-test('Creating loop event accepts enum and string values', () : void => {
-  let loopEvent: rive.LoopEvent = {animation: 'test animation', type: rive.LoopType.PingPong}; 
-  expect(loopEvent.type).toBe('pingpong');
-
-  loopEvent = {animation: 'test animation', type: rive.LoopType.OneShot}; 
-  expect(loopEvent.type).toBe('oneshot');
-});
-
-// #endregion
-
-// #region layout tests
+// #region layout
 
 test('Layouts can be created with different fits and alignments', () : void => {
   let layout = new rive.Layout(rive.Fit.Contain, rive.Alignment.TopRight, 1, 2, 100, 101);
@@ -158,7 +146,7 @@ test('Layouts provide runtime fit and alignment values', async () => {
 
 // #endregion
 
-// #region runtime loading tests
+// #region runtime loading
 
 test('Runtime can be loaded using callbacks', async done => {
 
@@ -204,7 +192,7 @@ test('Runtime can be loaded using promises', async done => {
 
 // #endregion 
 
-// #region event tests
+// #region event
 
 test('Events can be listened for and fired', () => {
   const manager = new rive.Testing.EventManager();
@@ -233,9 +221,17 @@ test('Events can be listened for and fired', () => {
   expect(mockFired).toBeCalledTimes(2);
 });
 
+test('Creating loop event accepts enum and string values', () : void => {
+  let loopEvent: rive.LoopEvent = {animation: 'test animation', type: rive.LoopType.PingPong}; 
+  expect(loopEvent.type).toBe('pingpong');
+
+  loopEvent = {animation: 'test animation', type: rive.LoopType.OneShot}; 
+  expect(loopEvent.type).toBe('oneshot');
+});
+
 // #endregion
 
-// #region task queue tests
+// #region task queue
 
 test('Tasks are queued and run when processed', () => {
   const eventManager = new rive.Testing.EventManager();
@@ -413,6 +409,80 @@ test('Playing a one-shot animation will fire a stop event',  done => {
 
 // #endregion
 
+// #region playback control
+
+test('Playing animations can be manually started and stopped',  done => {
+  const canvas = document.createElement('canvas');
+
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: loopRiveFileBuffer,
+    onload: () => {
+      // Nothing should be playing whenever a file is loaded
+      expect(r.isStopped).toBeTruthy();
+      // Start playback
+      r.play();
+    },
+    onplay: () => {
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeTruthy();
+    },
+    onloop: (event: rive.Event) => {
+      // Once it's looped, attempt to stop
+      r.stop();
+    },
+    onstop: (event: rive.Event) => {
+      expect(r.isStopped).toBeTruthy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+      expect(event.type).toBe(rive.EventType.Stop);
+      done();
+    },
+  });
+});
+
+test('Playing animations can be manually started, paused, and restarted',  done => {
+  const canvas = document.createElement('canvas');
+  let hasLooped = false;
+
+  const r = rive.Rive.new({
+    canvas: canvas,
+    buffer: loopRiveFileBuffer,
+    onload: () => {
+      // Nothing should be playing whenever a file is loaded
+      expect(r.isStopped).toBeTruthy();
+      // Start playback
+      r.play();
+    },
+    onplay: () => {
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeTruthy();
+    },
+    onloop: (event: rive.Event) => {
+      hasLooped ? r.stop() : r.pause();
+      hasLooped = true;
+    },
+    onpause: (event: rive.Event) => {
+      expect(r.isPaused).toBeTruthy();
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+      r.play();
+    },
+    onstop: (event: rive.Event) => {
+      expect(hasLooped).toBeTruthy();
+      expect(r.isStopped).toBeTruthy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+      done();
+    },
+  });
+});
+
+// #endregion
+
+
 // #region loading files
 
 test('Multiple files can be loaded and played',  done => {
@@ -449,4 +519,4 @@ test('Multiple files can be loaded and played',  done => {
   });
 });
 
-// @endregion
+// #endregion
