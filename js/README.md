@@ -2,9 +2,9 @@
 
 ## Beta Release
 
-Rive.js is fresh off the presses and in beta; the api is subject to change as we try to make it fit for purpose. Please file issues and PRs for anything busted, missing, or just plain wrong.
+Rive.js is in beta; the api is subject to change as we continue to improve it. Please file issues and PRs for anything busted, missing, or just wrong.
 
-The api surface is highly likely to change with each release, so please make sure to specify which version you're using when importing the script:
+The api may change with each release, so please specify which version you're using when importing the script:
 
 ```javascript
 <script src="https://unpkg.com/rive-js@0.7.4/dist/rive.min.js"></script>
@@ -59,6 +59,28 @@ rive.Rive.new({
 });
 ```
 
+Options for ```fit``` are:
+- 'cover'
+- 'contain'
+- 'Fill'
+- 'fitWidth'
+- 'fitHeight'
+- 'none'
+- 'scaleDown'
+
+Options for ```alignment``` are:
+- 'center'
+- 'topLeft'
+- 'topCenter'
+- 'topRight'
+- 'centerLeft'
+- 'centerRight'
+- 'bottomLeft'
+- 'bottomCenter'
+- 'bottomRight'
+
+Depending on the size of your artboard and the size of the canvas into which it's rendering, some of the fit and alignment values may produce the same layout.
+
 The layout can be updated at any time with the ```layout``` setter:
 
 ```js
@@ -71,7 +93,7 @@ The layout can be updated at any time with the ```layout``` setter:
     r.layout = rive.Layout.new({fit: rive.Fit.Cover, alignment: rive.Alignment.BottomCenter});
 ```
 
-Note that either strings or the enum type can be used for the fit and alignment parameters.
+Note that either strings or enums can be used for the fit and alignment parameters.
 
 ## Playing and Mixing Animations
 
@@ -99,6 +121,8 @@ rive.Rive.new({
     autoplay: true,
 });
 ```
+
+```animations``` can take either a string for a single animation, or a list of strings for multiple animations.
 
 You can manually start and pause playback, and check if playback is active:
 
@@ -164,7 +188,7 @@ r.on('load', () => {
 
 // onloop will pass the name of the looped animation and loop type; useful when mixing multiple animations together
 r.on('loop', (event) => {
-    console.log(event.animationName + ' has looped as a ' + event.loopName);
+    console.log(event.data.animation + ' has looped as a ' + event.data.type);
 });
 ```
 
@@ -176,11 +200,16 @@ Event callbacks currently supported are:
   - *onloop*: one of the playing animations has looped (```LoopEvent```)
   - *onstop*: playback has stopped (when the animation completes if not a looping animation)
 
-## Other Functions
+## Other Properties
 
  - *source*: returns the source for the animation
- - *animationNames*: returns a list of animations on the chosen (or default) artboard
-
+ - *animationNames*: returns a list of animation names on the chosen (or default) artboard
+ - *playingAnimationNames*: returns a list of animation names currently playing
+ - *pausedAnimationNames*: returns a lists of paused animation names
+ - *isPlaying*: are there any animations playing?
+ - *isPaused*: are all animations paused?
+ - *isStopped*: are all animation stopped?
+ 
 ## Examples
 
 To run the examples in the ```examples``` folder, run a HTTP server at the root of the ```js``` directory. If you have Python installed, the following works nicely:
