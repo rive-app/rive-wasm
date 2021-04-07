@@ -1,5 +1,12 @@
 # Rive.js Changelog
 
+## 0.7.5 (Apr 7, 2021)
+- BREAKING CHANGE: Layout constructor now takes a parameterized object instead of individual parameters
+- BREAKING CHANGE: Rive constructor now takes a parameterized object instead of individual parameters
+- `Layout.new` is deprecated; use `new Layout` with the same `LayoutParameters` object instead
+- `Rive.new` is deprecated; use `new Rive` with the same `RiveParameters` object instead
+- Render loop optimizations
+
 ## 0.7.4 (Apr 6, 2021)
 - Refactored how Rive files are loaded
 - Added tests for playing, looping and stopping animations

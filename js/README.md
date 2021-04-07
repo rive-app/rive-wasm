@@ -7,14 +7,14 @@ Rive.js is in beta; the api is subject to change as we continue to improve it. P
 The api may change with each release, so please specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.4/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.5/dist/rive.min.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.4"
+    "rive-js": "0.7.5"
   }
 }
 ```
@@ -33,10 +33,10 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.4/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.5/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
-    rive.Rive.new({
+    new rive.Rive({
         src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
         canvas: document.getElementById('canvas'),
         autoplay: true,
@@ -51,10 +51,10 @@ Rive.js lets you decide how your animations will be laid out in the canvas. The 
 These can be set when a Rive object is first created:
 
 ```js
-rive.Rive.new({
+new rive.Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
-    layout: rive.Layout.new({fit: 'contain', alignment: 'topRight'}),
+    layout: new rive.Layout({fit: 'contain', alignment: 'topRight'}),
     autoplay: true,
 });
 ```
@@ -84,13 +84,13 @@ Depending on the size of your artboard and the size of the canvas into which it'
 The layout can be updated at any time with the ```layout``` setter:
 
 ```js
-    const r = rive.Rive.new({
+    const r = new rive.Rive({
         src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
         canvas: document.getElementById('canvas'),
         autoplay: true,
     });
 
-    r.layout = rive.Layout.new({fit: rive.Fit.Cover, alignment: rive.Alignment.BottomCenter});
+    r.layout = new rive.Layout({fit: rive.Fit.Cover, alignment: rive.Alignment.BottomCenter});
 ```
 
 Note that either strings or enums can be used for the fit and alignment parameters.
@@ -102,7 +102,7 @@ Rive.js requires two things: a link to the Rive file, and a canvas element where
 If you want to specify which artboard or animation to play:
 
 ```js
-rive.Rive.new({
+new rive.Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
     artboard: 'New Artboard',
@@ -114,7 +114,7 @@ rive.Rive.new({
 ```animations``` can also take a list of animations, which will be mixed together:
 
 ```js
-rive.Rive.new({
+new rive.Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
     animations: ['idle', 'windshield_wipers', 'bouncing'],
@@ -127,7 +127,7 @@ rive.Rive.new({
 You can manually start and pause playback, and check if playback is active:
 
 ```js
-const r = rive.Rive.new({
+const r = new rive.Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
 });
@@ -163,7 +163,7 @@ If Rive's data is being loaded by other means, you can pass in an ArrayBuffer:
 const reader = new FileReader();
 reader.onload = () => {
     const riveArrayBuffer = reader.result;
-    rive.Rive.new({
+    new rive.Rive({
         buffer: riveArrayBuffer,
         canvas: document.getElementById('canvas'),
     });
@@ -176,7 +176,7 @@ reader.readAsArrayBuffer(file);
 Rive.js has a number of events that you can listen for:
 
 ```js
-const r = rive.Rive.new({
+const r = new rive.Rive({
     src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
     canvas: document.getElementById('canvas'),
 });

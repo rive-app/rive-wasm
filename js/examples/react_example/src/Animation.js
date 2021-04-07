@@ -19,11 +19,11 @@ const Animation = ({ asset, animation, fit, alignment }) => {
 
     // Start the animation
     useEffect(() => {
-        rive.current = Rive.new({
+        rive.current = new Rive({
             src: asset,
             canvas: canvas.current,
             animation: animation,
-            layout: new Layout(fit, alignment),
+            layout: new Layout({fit: fit, alignment: alignment}),
             autoplay: true,
         });
 
