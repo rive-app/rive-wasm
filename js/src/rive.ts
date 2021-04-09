@@ -441,7 +441,6 @@ export class Rive {
     'Rive source file or data buffer required';
 
   constructor(params: RiveParameters) {
-
     this.canvas = params.canvas;
     this.autoplay = params.autoplay ?? false;
     this.src = params.src;
@@ -577,18 +576,15 @@ export class Rive {
 
   // Draws the current artboard frame
   public drawFrame() {
-    console.log('Drawing frame');
     // Update the renderer's alignment if necessary
     this.alignRenderer();
 
     // Advance to the first frame and draw the artboard
     this.artboard.advance(0);
 
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    console.log('SAVE CTX')
     this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.artboard.draw(this.renderer);
-    console.log('RESTORE CTX')
     this.ctx.restore();
   }
 
@@ -760,10 +756,10 @@ export class Rive {
     // Update the renderer alignment if necessary
     if (this._updateLayout) {
       // Restore from previous save in case a previous align occurred
-      console.log('RESTORE CTX')
       this.ctx.restore();
+      // Canvas must be wiped to prevent artifacts
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       // Now save so that future changes to align can restore
-      console.log('SAVE CTX')
       this.ctx.save();
       // Align things up safe in the knowledge we can restore if changed
       this.renderer.align(
@@ -842,6 +838,8 @@ export class Rive {
   public load(params: RiveLoadParameters): void {
     // Stop all animations
     this.stop();
+    // Update the layout to account for new renderer
+    this._updateLayout = true;
     // Reinitialize
     this.init(params);
   }
@@ -849,7 +847,6 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
-    console.log(`maxX ${layout.maxX} maxY: ${layout.maxY}`)
     this._updateLayout = true;
     if(this.loaded && !this.hasPlayingAnimations) {
       this.drawFrame();
