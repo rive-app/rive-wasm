@@ -229,6 +229,7 @@ export enum EventType {
   Pause     = 'pause',
   Stop      = 'stop',
   Loop      = 'loop',
+  Draw      = 'draw',
 }
 
 // Event fired by Rive
@@ -293,7 +294,7 @@ class EventManager {
   }
 
   // Fires an event
-  public fire(event: Event, ignoreDuplicate = false): void {
+  public fire(event: Event): void {
     const eventListeners = this.getListeners(event.type);
     eventListeners.forEach(
       listener => listener.callback(event)
@@ -397,7 +398,7 @@ export class Rive {
 
   // Flag to indicate if the layout has changed; used by the renderer to know
   // when to align
-  private layoutUpdated: boolean = true;
+  private _updateLayout: boolean = true;
 
   // Used to track artboard and starting animation names passed into the
   // constructor
@@ -446,7 +447,7 @@ export class Rive {
     this.src = params.src;
     this.buffer = params.buffer;
     this._layout = params.layout ?? new Layout();
-    this.layoutUpdated = true;
+    this._updateLayout = true;
 
     // Fetch the 2d context from the canvas
     this.ctx = this.canvas.getContext('2d');
@@ -576,15 +577,18 @@ export class Rive {
 
   // Draws the current artboard frame
   public drawFrame() {
+    console.log('Drawing frame');
     // Update the renderer's alignment if necessary
     this.alignRenderer();
 
     // Advance to the first frame and draw the artboard
     this.artboard.advance(0);
 
-    // Choose how you want the animation to align in the canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    console.log('SAVE CTX')
     this.ctx.save();
     this.artboard.draw(this.renderer);
+    console.log('RESTORE CTX')
     this.ctx.restore();
   }
 
@@ -669,7 +673,6 @@ export class Rive {
 
   // Draw rendering loop; renders animation frames at the correct time interval.
   private draw(time: number): void {
-
     // On the first pass, make sure lastTime has a valid value
     if (!this.lastRenderTime) {
       this.lastRenderTime = time;
@@ -696,7 +699,9 @@ export class Rive {
     this.artboard.advance(elapsedTime);
   
     // Clear the current frame of the canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // this.ctx.save();
+    // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // this.ctx.restore();
     
     // Update the renderer alignment if necessary
     this.alignRenderer();
@@ -742,8 +747,8 @@ export class Rive {
     } else if (this.playState === PlaybackState.Stop) {
       // Reset animation instances, artboard and time
       // TODO: implement this properly when we have instancing
-      this.initArtboard();
-      this.drawFrame();
+      // this.initArtboard();
+      // this.drawFrame();
       this.lastRenderTime = 0;
     }
   }
@@ -753,10 +758,12 @@ export class Rive {
    */
   private alignRenderer(): void {
     // Update the renderer alignment if necessary
-    if (this.layoutUpdated) {
+    if (this._updateLayout) {
       // Restore from previous save in case a previous align occurred
+      console.log('RESTORE CTX')
       this.ctx.restore();
       // Now save so that future changes to align can restore
+      console.log('SAVE CTX')
       this.ctx.save();
       // Align things up safe in the knowledge we can restore if changed
       this.renderer.align(
@@ -770,7 +777,7 @@ export class Rive {
         },
         this.artboard.bounds
       );
-      this.layoutUpdated = false;
+      this._updateLayout = false;
     }
   }
 
@@ -842,10 +849,27 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
-    this.layoutUpdated = true;
-    if(!this.hasPlayingAnimations) {
+    console.log(`maxX ${layout.maxX} maxY: ${layout.maxY}`)
+    this._updateLayout = true;
+    if(this.loaded && !this.hasPlayingAnimations) {
       this.drawFrame();
     }
+  }
+
+  /** 
+   * Sets the layout bounds to the current canvas size; this is typically called
+   * when the canvas is resized
+   */
+  public resizeToCanvas() {
+    this._layout = new Layout({
+      fit: this._layout.fit,
+      alignment: this._layout.alignment,
+      minX: 0,
+      minY: 0,
+      maxX: this.canvas.width,
+      maxY: this.canvas.height
+    });
+    this._updateLayout = true;
   }
 
   // Returns the animation source, which may be undefined
@@ -910,7 +934,6 @@ export class Rive {
       callback: callback, 
     });
   }
-
 }
 
 
