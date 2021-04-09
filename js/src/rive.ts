@@ -75,6 +75,20 @@ export class Layout {
     return new Layout({fit, alignment, minX, minY, maxX, maxY});
   }
 
+  /**
+   * Makes a copy of the layout, replacing any specified parameters
+   */
+  public copyWith({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
+    return new Layout({
+      fit: fit ?? this.fit,
+      alignment: alignment ?? this.alignment,
+      minX: minX ?? this.minX,
+      minY: minY ?? this.minY,
+      maxX: maxX ?? this.maxX,
+      maxY: maxY ?? this.maxY
+    });
+  }
+
   // Returns fit for the Wasm runtime format
   public runtimeFit(rive: any): any {
     if (this.cachedRuntimeFit) return this.cachedRuntimeFit;
@@ -132,7 +146,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.5/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.6/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -445,7 +459,7 @@ export class Rive {
     this.autoplay = params.autoplay ?? false;
     this.src = params.src;
     this.buffer = params.buffer;
-    this._layout = params.layout ?? new Layout();
+    this.layout = params.layout ?? new Layout();
     this._updateLayout = true;
 
     // Fetch the 2d context from the canvas
@@ -768,8 +782,8 @@ export class Rive {
         {
           minX: this._layout.minX,
           minY: this._layout.minY,
-          maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-          maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
+          maxX: this._layout.maxX,
+          maxY: this._layout.maxY
         },
         this.artboard.bounds
       );
@@ -848,9 +862,22 @@ export class Rive {
   public set layout(layout: Layout) {
     this._layout = layout;
     this._updateLayout = true;
+    // If the maxX or maxY are 0, then set them to the canvas width and height
+    if (!layout.maxX || !layout.maxY) {
+      this.resizeToCanvas();
+    }
     if(this.loaded && !this.hasPlayingAnimations) {
       this.drawFrame();
     }
+  }
+
+  /**
+   * Returns the current layout. Note that layout should be treated as
+   * immutable. If you want to change the layout, create a new one use the
+   * layout setter
+   */
+  public get layout() {
+    return this._layout;
   }
 
   /** 
@@ -858,9 +885,7 @@ export class Rive {
    * when the canvas is resized
    */
   public resizeToCanvas() {
-    this._layout = new Layout({
-      fit: this._layout.fit,
-      alignment: this._layout.alignment,
+    this._layout = this.layout.copyWith({
       minX: 0,
       minY: 0,
       maxX: this.canvas.width,

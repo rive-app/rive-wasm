@@ -145,6 +145,31 @@ test('Layouts provide runtime fit and alignment values', async () => {
   expect(layout.runtimeAlignment(runtime).y).toBe(-1);
 });
 
+test('Layouts can be copied with overriden values', () : void => {
+  let layout = new rive.Layout({
+    fit: rive.Fit.ScaleDown,
+    alignment: rive.Alignment.BottomRight,
+    minX: 10,
+    minY: 20,
+    maxX: 30,
+    maxY: 40
+  });
+
+  layout = layout.copyWith({
+    alignment: rive.Alignment.CenterLeft,
+    minY: 15,
+    maxX: 60,
+  });
+
+  expect(layout.fit).toBe(rive.Fit.ScaleDown);
+  expect(layout.alignment).toBe(rive.Alignment.CenterLeft);
+  expect(layout.minX).toBe(10);
+  expect(layout.minY).toBe(15);
+  expect(layout.maxX).toBe(60);
+  expect(layout.maxY).toBe(40);
+});
+
+
 // #endregion
 
 // #region runtime loading
@@ -515,6 +540,24 @@ test('Multiple files can be loaded and played',  done => {
       expect(r.isStopped).toBeTruthy();
       expect(loopOccurred).toBeTruthy();
       expect(event.type).toBe(rive.EventType.Stop);
+      done();
+    },
+  });
+});
+
+test('Layout is set to canvas dimensions if not specified',  done => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 300;
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loopRiveFileBuffer,
+    onload: () => {
+      expect(r.layout.minX).toBe(0);
+      expect(r.layout.minY).toBe(0);
+      expect(r.layout.maxX).toBe(400);
+      expect(r.layout.maxY).toBe(300);
       done();
     },
   });
