@@ -3500,6 +3500,20 @@ var Layout = /** @class */ (function () {
         console.warn('This function is deprecated: please use `new Layout({})` instead');
         return new Layout({ fit: fit, alignment: alignment, minX: minX, minY: minY, maxX: maxX, maxY: maxY });
     };
+    /**
+     * Makes a copy of the layout, replacing any specified parameters
+     */
+    Layout.prototype.copyWith = function (_a) {
+        var fit = _a.fit, alignment = _a.alignment, minX = _a.minX, minY = _a.minY, maxX = _a.maxX, maxY = _a.maxY;
+        return new Layout({
+            fit: fit !== null && fit !== void 0 ? fit : this.fit,
+            alignment: alignment !== null && alignment !== void 0 ? alignment : this.alignment,
+            minX: minX !== null && minX !== void 0 ? minX : this.minX,
+            minY: minY !== null && minY !== void 0 ? minY : this.minY,
+            maxX: maxX !== null && maxX !== void 0 ? maxX : this.maxX,
+            maxY: maxY !== null && maxY !== void 0 ? maxY : this.maxY
+        });
+    };
     // Returns fit for the Wasm runtime format
     Layout.prototype.runtimeFit = function (rive) {
         if (this.cachedRuntimeFit)
@@ -3605,7 +3619,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.5/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.6/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -3661,6 +3675,7 @@ var EventType;
     EventType["Pause"] = "pause";
     EventType["Stop"] = "stop";
     EventType["Loop"] = "loop";
+    EventType["Draw"] = "draw";
 })(EventType || (EventType = {}));
 /**
  * Looping types: one-shot, loop, and ping-pong
@@ -3695,8 +3710,7 @@ var EventManager = /** @class */ (function () {
         }
     };
     // Fires an event
-    EventManager.prototype.fire = function (event, ignoreDuplicate) {
-        if (ignoreDuplicate === void 0) { ignoreDuplicate = false; }
+    EventManager.prototype.fire = function (event) {
         var eventListeners = this.getListeners(event.type);
         eventListeners.forEach(function (listener) { return listener.callback(event); });
     };
@@ -3729,7 +3743,7 @@ var Rive = /** @class */ (function () {
         var _a, _b;
         // Flag to indicate if the layout has changed; used by the renderer to know
         // when to align
-        this.layoutUpdated = true;
+        this._updateLayout = true;
         // Holds instantiated animations
         this.animations = [];
         // Tracks the playback state
@@ -3742,8 +3756,8 @@ var Rive = /** @class */ (function () {
         this.autoplay = (_a = params.autoplay) !== null && _a !== void 0 ? _a : false;
         this.src = params.src;
         this.buffer = params.buffer;
-        this._layout = (_b = params.layout) !== null && _b !== void 0 ? _b : new Layout();
-        this.layoutUpdated = true;
+        this.layout = (_b = params.layout) !== null && _b !== void 0 ? _b : new Layout();
+        this._updateLayout = true;
         // Fetch the 2d context from the canvas
         this.ctx = this.canvas.getContext('2d');
         // New event management system
@@ -3883,8 +3897,8 @@ var Rive = /** @class */ (function () {
         this.alignRenderer();
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
-        // Choose how you want the animation to align in the canvas
         this.ctx.save();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.artboard.draw(this.renderer);
         this.ctx.restore();
     };
@@ -3980,7 +3994,9 @@ var Rive = /** @class */ (function () {
         // by the elapsed time.
         this.artboard.advance(elapsedTime);
         // Clear the current frame of the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // this.ctx.save();
+        // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // this.ctx.restore();
         // Update the renderer alignment if necessary
         this.alignRenderer();
         // Render the frame in the canvas
@@ -4025,8 +4041,8 @@ var Rive = /** @class */ (function () {
         else if (this.playState === PlaybackState.Stop) {
             // Reset animation instances, artboard and time
             // TODO: implement this properly when we have instancing
-            this.initArtboard();
-            this.drawFrame();
+            // this.initArtboard();
+            // this.drawFrame();
             this.lastRenderTime = 0;
         }
     };
@@ -4035,19 +4051,21 @@ var Rive = /** @class */ (function () {
      */
     Rive.prototype.alignRenderer = function () {
         // Update the renderer alignment if necessary
-        if (this.layoutUpdated) {
+        if (this._updateLayout) {
             // Restore from previous save in case a previous align occurred
             this.ctx.restore();
+            // Canvas must be wiped to prevent artifacts
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             // Now save so that future changes to align can restore
             this.ctx.save();
             // Align things up safe in the knowledge we can restore if changed
             this.renderer.align(this._layout.runtimeFit(this.runtime), this._layout.runtimeAlignment(this.runtime), {
                 minX: this._layout.minX,
                 minY: this._layout.minY,
-                maxX: this._layout.maxX ? this._layout.maxX : this.canvas.width,
-                maxY: this._layout.maxY ? this._layout.maxY : this.canvas.height
+                maxX: this._layout.maxX,
+                maxY: this._layout.maxY
             }, this.artboard.bounds);
-            this.layoutUpdated = false;
+            this._updateLayout = false;
         }
     };
     // Plays specified animations; if none specified, it plays paused ones.
@@ -4104,21 +4122,48 @@ var Rive = /** @class */ (function () {
     Rive.prototype.load = function (params) {
         // Stop all animations
         this.stop();
+        // Update the layout to account for new renderer
+        this._updateLayout = true;
         // Reinitialize
         this.init(params);
     };
     Object.defineProperty(Rive.prototype, "layout", {
+        /**
+         * Returns the current layout. Note that layout should be treated as
+         * immutable. If you want to change the layout, create a new one use the
+         * layout setter
+         */
+        get: function () {
+            return this._layout;
+        },
         // Sets a new layout
         set: function (layout) {
             this._layout = layout;
-            this.layoutUpdated = true;
-            if (!this.hasPlayingAnimations) {
+            this._updateLayout = true;
+            // If the maxX or maxY are 0, then set them to the canvas width and height
+            if (!layout.maxX || !layout.maxY) {
+                this.resizeToCanvas();
+            }
+            if (this.loaded && !this.hasPlayingAnimations) {
                 this.drawFrame();
             }
         },
         enumerable: false,
         configurable: true
     });
+    /**
+     * Sets the layout bounds to the current canvas size; this is typically called
+     * when the canvas is resized
+     */
+    Rive.prototype.resizeToCanvas = function () {
+        this._layout = this.layout.copyWith({
+            minX: 0,
+            minY: 0,
+            maxX: this.canvas.width,
+            maxY: this.canvas.height
+        });
+        this._updateLayout = true;
+    };
     Object.defineProperty(Rive.prototype, "source", {
         // Returns the animation source, which may be undefined
         get: function () {
