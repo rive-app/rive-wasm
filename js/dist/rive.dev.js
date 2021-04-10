@@ -3619,7 +3619,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.6/dist/';
+    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.7/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -3897,8 +3897,8 @@ var Rive = /** @class */ (function () {
         this.alignRenderer();
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
-        this.ctx.save();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.save();
         this.artboard.draw(this.renderer);
         this.ctx.restore();
     };
@@ -3994,9 +3994,7 @@ var Rive = /** @class */ (function () {
         // by the elapsed time.
         this.artboard.advance(elapsedTime);
         // Clear the current frame of the canvas
-        // this.ctx.save();
-        // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        // this.ctx.restore();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // Update the renderer alignment if necessary
         this.alignRenderer();
         // Render the frame in the canvas

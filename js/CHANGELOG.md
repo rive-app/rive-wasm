@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.7 (Apr 9, 2021)
+- Fixes rendering bug
+
 ## 0.7.6 (Apr 9, 2021)
 - Optimized draw/render loop to lay out animations only when necessary
 - Fixes some layout issues when drawing a single frame

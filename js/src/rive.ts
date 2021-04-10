@@ -146,7 +146,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.6/dist/';
+  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.7/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -596,8 +596,9 @@ export class Rive {
     // Advance to the first frame and draw the artboard
     this.artboard.advance(0);
 
-    this.ctx.save();
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.ctx.save();
     this.artboard.draw(this.renderer);
     this.ctx.restore();
   }
@@ -709,9 +710,7 @@ export class Rive {
     this.artboard.advance(elapsedTime);
   
     // Clear the current frame of the canvas
-    // this.ctx.save();
-    // this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // this.ctx.restore();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     // Update the renderer alignment if necessary
     this.alignRenderer();
