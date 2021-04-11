@@ -1,4 +1,4 @@
-# Rive.js -- Rive's Web API
+# Rive.js -- Rive's JS runtime
 
 ## Beta Release
 
