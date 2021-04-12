@@ -239,8 +239,8 @@ if (typeof WebAssembly !== "object") {
 var wasmMemory;
 
 var wasmTable = new WebAssembly.Table({
- "initial": 902,
- "maximum": 902 + 0,
+ "initial": 1003,
+ "maximum": 1003 + 0,
  "element": "anyfunc"
 });
 
@@ -458,7 +458,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var DYNAMIC_BASE = 5265424, DYNAMICTOP_PTR = 22384;
+var DYNAMIC_BASE = 5266272, DYNAMICTOP_PTR = 23232;
 
 var INITIAL_INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 16777216;
 
@@ -2792,44 +2792,44 @@ UnboundTypeError = Module["UnboundTypeError"] = extendError(Error, "UnboundTypeE
 var asmLibraryArg = {
  "n": __embind_create_inheriting_constructor,
  "I": __embind_finalize_value_object,
- "A": __embind_register_bool,
- "e": __embind_register_class,
+ "B": __embind_register_bool,
+ "c": __embind_register_class,
  "i": __embind_register_class_class_function,
- "g": __embind_register_class_class_property,
- "C": __embind_register_class_constructor,
+ "f": __embind_register_class_class_property,
+ "r": __embind_register_class_constructor,
  "a": __embind_register_class_function,
  "b": __embind_register_class_property,
- "z": __embind_register_emval,
+ "A": __embind_register_emval,
  "k": __embind_register_enum,
  "j": __embind_register_enum_value,
  "p": __embind_register_float,
  "L": __embind_register_function,
  "h": __embind_register_integer,
- "f": __embind_register_memory_view,
+ "g": __embind_register_memory_view,
  "q": __embind_register_std_string,
  "m": __embind_register_std_wstring,
  "K": __embind_register_value_object,
  "J": __embind_register_value_object_field,
- "B": __embind_register_void,
+ "C": __embind_register_void,
  "l": __emval_as,
  "H": __emval_call_method,
- "d": __emval_call_void_method,
+ "e": __emval_call_void_method,
  "E": __emval_decref,
- "c": __emval_get_method_caller,
+ "d": __emval_get_method_caller,
  "M": __emval_get_module_property,
- "t": __emval_get_property,
+ "u": __emval_get_property,
  "D": __emval_incref,
  "F": __emval_new_cstring,
  "G": __emval_run_destructors,
- "s": __emval_take_value,
- "r": _abort,
- "w": _emscripten_memcpy_big,
- "x": _emscripten_resize_heap,
- "y": _fd_close,
- "u": _fd_seek,
+ "t": __emval_take_value,
+ "s": _abort,
+ "x": _emscripten_memcpy_big,
+ "y": _emscripten_resize_heap,
+ "z": _fd_close,
+ "v": _fd_seek,
  "o": _fd_write,
  "memory": wasmMemory,
- "v": _setTempRet0,
+ "w": _setTempRet0,
  "table": wasmTable
 };
 
@@ -3619,7 +3619,7 @@ var RuntimeLoader = /** @class */ (function () {
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
     // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'https://unpkg.com/rive-js@0.7.7/dist/';
+    RuntimeLoader.wasmWebPath = '/dist/'; // 'https://unpkg.com/rive-js@0.7.7/dist/';
     // Local path to the Wasm file; for testing purposes
     RuntimeLoader.wasmFilePath = 'dist/';
     // Are we in test mode?
@@ -3661,6 +3661,13 @@ var Animation = /** @class */ (function () {
         configurable: true
     });
     return Animation;
+}());
+// #endregion
+// #region state machines
+var StateMachine = /** @class */ (function () {
+    function StateMachine() {
+    }
+    return StateMachine;
 }());
 // #endregion
 // #region events
@@ -4245,6 +4252,42 @@ var Rive = /** @class */ (function () {
             callback: callback,
         });
     };
+    Object.defineProperty(Rive.prototype, "contents", {
+        /**
+         * Returns the contents of a Rive file: the artboards, animations, and state machines
+         */
+        get: function () {
+            if (!this.loaded) {
+                return undefined;
+            }
+            var riveContents = {
+                artboards: new Array(),
+            };
+            console.log('1');
+            for (var i = 0; i < this.runtime.artboardCount(); i++) {
+                console.log('2');
+                var artboard = this.runtime.artboardByIndex(i);
+                console.log('3');
+                var artboardContents = {
+                    name: artboard.name(),
+                    animations: new Array(),
+                    stateMachines: new Array(),
+                };
+                // for (let j = 0; j < artboard.animationCount(); j++) {
+                //   const animation = artboard.animationByIndex(j);
+                //   artboardContents.animations.push(animation.name);
+                // }
+                // for (let k = 0; k < artboard.stateMachineCount(); k++) {
+                //   const stateMachine = artboard.stateMachineByIndex(k);
+                //   artboardContents.stateMachines.push(stateMachine.name);
+                // }
+                riveContents.artboards.push(artboardContents);
+            }
+            return riveContents;
+        },
+        enumerable: false,
+        configurable: true
+    });
     // Error message for missing source or buffer
     Rive.missingErrorMessage = 'Rive source file or data buffer required';
     return Rive;

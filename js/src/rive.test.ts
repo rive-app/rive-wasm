@@ -508,7 +508,6 @@ test('Playing animations can be manually started, paused, and restarted',  done 
 
 // #endregion
 
-
 // #region loading files
 
 test('Multiple files can be loaded and played',  done => {
@@ -560,6 +559,31 @@ test('Layout is set to canvas dimensions if not specified',  done => {
       expect(r.layout.maxY).toBe(300);
       done();
     },
+  });
+});
+
+// #endregion
+
+// #region Rive properties
+
+test('Rive file contents can be read',  done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loopRiveFileBuffer,
+    onload: () => {
+      const contents = r.contents;
+      expect(contents).toBeDefined();
+      expect(contents.artboards).toBeDefined();
+      expect(contents.artboards).toHaveLength(1);
+      expect(contents.artboards[0].name).toBe('New Artboard');
+      expect(contents.artboards[0].animations).toBeDefined();
+      expect(contents.artboards[0].animations).toHaveLength(1);
+      expect(contents.artboards[0].animations[0]).toBe('Animation 1');
+      expect(contents.artboards[0].stateMachines).toBeDefined();
+      expect(contents.artboards[0].stateMachines).toHaveLength(0);
+      done();
+    }
   });
 });
 

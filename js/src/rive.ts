@@ -1,5 +1,6 @@
 import { runInThisContext } from 'node:vm';
 import Runtime from '../../wasm/publish/rive.js';
+import { rive } from '../dist/rive.dev.js';
 
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
@@ -146,7 +147,7 @@ export class RuntimeLoader {
   // Instance of the Rive runtime
   private static rive: typeof Runtime;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.7/dist/';
+  private static wasmWebPath: string = '/dist/'; // 'https://unpkg.com/rive-js@0.7.7/dist/';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -227,6 +228,14 @@ class Animation {
   public get loopValue(): number {
     return this.animation.loopValue;
   } 
+}
+
+// #endregion
+
+// #region state machines
+
+class StateMachine {
+  
 }
 
 // #endregion
@@ -955,6 +964,52 @@ export class Rive {
       callback: callback, 
     });
   }
+
+  /**
+   * Returns the contents of a Rive file: the artboards, animations, and state machines
+   */
+  public get contents(): RiveFileContents {
+    if (!this.loaded) {
+      return undefined;
+    }
+    const riveContents: RiveFileContents = {
+      artboards: [],
+    };
+    for (let i = 0; i < this.file.artboardCount(); i++) {
+      const artboard = this.file.artboardByIndex(i);
+      const artboardContents: ArtboardContents = {
+        name: artboard.name,
+        animations: [],
+        stateMachines: [],
+      };
+      for (let j = 0; j < artboard.animationCount(); j++) {
+        const animation = artboard.animationByIndex(j);
+        artboardContents.animations.push(animation.name);
+      }
+      for (let k = 0; k < artboard.stateMachineCount(); k++) {
+        const stateMachine = artboard.stateMachineByIndex(k);
+        artboardContents.stateMachines.push(stateMachine.name);
+      }
+      riveContents.artboards.push(artboardContents);
+    }
+    return riveContents;
+  }
+}
+
+/**
+ * Contents of an artboard
+ */
+interface ArtboardContents {
+  animations: string[];
+  stateMachines: string[];
+  name: string;
+}
+
+/**
+ * contents of a Rive file
+ */
+interface RiveFileContents {
+  artboards?: ArtboardContents[];
 }
 
 
