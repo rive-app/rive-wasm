@@ -1,3 +1,4 @@
+#include "animation/animation.hpp"
 #include "animation/linear_animation.hpp"
 #include "animation/linear_animation_instance.hpp"
 #include "animation/state_machine_bool.hpp"
@@ -240,16 +241,23 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .property("ty", &rive::Mat2D::ty);
 
   class_<rive::File>("File")
-      .function("artboard",
-                select_overload<rive::Artboard *(std::string) const>(
-                    &rive::File::artboard),
-                allow_raw_pointers())
       .function(
           "defaultArtboard",
           select_overload<rive::Artboard *() const>(&rive::File::artboard),
-          allow_raw_pointers());
+          allow_raw_pointers())
+      .function("artboardByName",
+                select_overload<rive::Artboard *(std::string) const>(
+                    &rive::File::artboard),
+                allow_raw_pointers())
+      .function("artboardByIndex",
+                select_overload<rive::Artboard *(size_t) const>(
+                    &rive::File::artboard),
+                allow_raw_pointers())
+      .function("artboardCount", &rive::File::artboardCount);
 
   class_<rive::Artboard>("Artboard")
+      .property("name", select_overload<const std::string &() const>(
+                &rive::Artboard::name))
       .function("advance", &rive::Artboard::advance)
       .function("draw", &rive::Artboard::draw, allow_raw_pointers())
       .function("transformComponent",
@@ -279,7 +287,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                     &rive::Artboard::stateMachine),
                 allow_raw_pointers())
       .function("stateMachineCount", &rive::Artboard::stateMachineCount)
-
       .property("bounds", &rive::Artboard::bounds);
 
   class_<rive::TransformComponent>("TransformComponent")
@@ -316,7 +323,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 select_overload<float() const>(&rive::TransformComponent::y),
                 select_overload<void(float)>(&rive::RootBone::y));
 
-  class_<rive::LinearAnimation>("LinearAnimation")
+  class_<rive::Animation>("Animation")
+      .property("name", select_overload<const std::string &() const>(
+                            &rive::AnimationBase::name));
+
+  class_<rive::LinearAnimation, base<rive::Animation>>("LinearAnimation")
       .property("name", select_overload<const std::string &() const>(
                             &rive::AnimationBase::name))
       .property("duration", select_overload<int() const>(
@@ -405,6 +416,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   // 			break;
   // 	}
   // }
+
+  class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
 
   class_<rive::StateMachineInstance>("StateMachineInstance")
       .constructor<rive::StateMachine *>()
