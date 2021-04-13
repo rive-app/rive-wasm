@@ -239,8 +239,8 @@ if (typeof WebAssembly !== "object") {
 var wasmMemory;
 
 var wasmTable = new WebAssembly.Table({
- "initial": 1003,
- "maximum": 1003 + 0,
+ "initial": 1005,
+ "maximum": 1005 + 0,
  "element": "anyfunc"
 });
 
@@ -3406,6 +3406,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Alignment": () => (/* binding */ Alignment),
 /* harmony export */   "Layout": () => (/* binding */ Layout),
 /* harmony export */   "RuntimeLoader": () => (/* binding */ RuntimeLoader),
+/* harmony export */   "StateMachineInputType": () => (/* binding */ StateMachineInputType),
 /* harmony export */   "EventType": () => (/* binding */ EventType),
 /* harmony export */   "LoopType": () => (/* binding */ LoopType),
 /* harmony export */   "Rive": () => (/* binding */ Rive),
@@ -3664,9 +3665,104 @@ var Animation = /** @class */ (function () {
 }());
 // #endregion
 // #region state machines
-var StateMachine = /** @class */ (function () {
-    function StateMachine() {
+var StateMachineInputType;
+(function (StateMachineInputType) {
+    StateMachineInputType["Trigger"] = "trigger";
+    StateMachineInputType["Boolean"] = "boolean";
+    StateMachineInputType["Number"] = "number";
+})(StateMachineInputType || (StateMachineInputType = {}));
+/**
+ * An input for a state machine
+ */
+var StateMachineInput = /** @class */ (function () {
+    function StateMachineInput(type, runtimeInput) {
+        this.type = type;
+        this.runtimeInput = runtimeInput;
     }
+    Object.defineProperty(StateMachineInput.prototype, "name", {
+        /**
+         * Returns the name of the input
+         */
+        get: function () {
+            return this.runtimeInput.name;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(StateMachineInput.prototype, "value", {
+        /**
+         * Returns the current value of the input
+         */
+        get: function () {
+            return this.runtimeInput.value;
+        },
+        /**
+         * Sets the value of the input
+         */
+        set: function (value) {
+            this.runtimeInput.value = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Fires a trigger; does nothing on Number or Boolean input types
+     */
+    StateMachineInput.prototype.fire = function () {
+        if (this.type === StateMachineInputType.Trigger) {
+            this.runtimeInput.fire();
+        }
+    };
+    return StateMachineInput;
+}());
+var StateMachine = /** @class */ (function () {
+    /**
+     * @constructor
+     * @param stateMachine runtime state machine object
+     * @param instance runtime state machine instance object
+     */
+    function StateMachine(stateMachine, runtime) {
+        this.stateMachine = stateMachine;
+        /**
+         * Caches the inputs from the runtime
+         */
+        this.inputs = [];
+        this.instance = new runtime.StateMachineInstance(stateMachine);
+        this.initInputs(runtime);
+    }
+    Object.defineProperty(StateMachine.prototype, "name", {
+        get: function () {
+            return this.stateMachine.name;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Fetches references to the state amchine's inputs and caches them
+     * @param runtime an instance of the runtime; needed for the SMIInput types
+     */
+    StateMachine.prototype.initInputs = function (runtime) {
+        // Fetch the inputs from the runtime if we don't have them
+        for (var i = 0; i < this.instance.inputCount(); i++) {
+            var input = this.instance.input(i);
+            this.inputs.push(this.mapRuntimeInput(input, runtime));
+        }
+    };
+    /**
+     * Maps a runtime input to it's appropriate type
+     * @param input
+     */
+    StateMachine.prototype.mapRuntimeInput = function (input, runtime) {
+        if (input.type == runtime.SMIInput.bool) {
+            return new StateMachineInput(StateMachineInputType.Boolean, input.asBool());
+        }
+        else if (input.type == runtime.SMIInput.number) {
+            return new StateMachineInput(StateMachineInputType.Number, input.asNumber());
+        }
+        else if (input.type == runtime.SMIInput.trigger) {
+            return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
+        }
+    };
     return StateMachine;
 }());
 // #endregion
@@ -4004,6 +4100,7 @@ var Rive = /** @class */ (function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // Update the renderer alignment if necessary
         this.alignRenderer();
+        // this.ctx.clearRect(artboard.bounds.min[0], artboard.bounds.min[1], artboard.bounds.width, artboard.bounds.height);
         // Render the frame in the canvas
         this.ctx.save();
         this.artboard.draw(this.renderer);
@@ -4193,6 +4290,46 @@ var Rive = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Rive.prototype, "stateMachineNames", {
+        /**
+         * Returns a list of state machine names from the current artboard
+         */
+        get: function () {
+            // If the file's not loaded, we got nothing to return
+            if (!this.loaded) {
+                return [];
+            }
+            var stateMachineNames = [];
+            for (var i = 0; i < this.artboard.stateMachineCount(); i++) {
+                stateMachineNames.push(this.artboard.stateMachineByIndex(i).name);
+            }
+            return stateMachineNames;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Rive.prototype.getRuntimeStateMachine = function (name) {
+        for (var i = 0; i < this.artboard.stateMachineCount(); i++) {
+            var stateMachine = this.artboard.stateMachineByIndex(i);
+            if (stateMachine.name === name) {
+                return stateMachine;
+            }
+        }
+    };
+    /**
+     * Returns the inputs for the specified state machine, or an empty list if the
+     * name is invalid
+     * @param name the state machine name
+     * @returns the inputs for the named state machine
+     */
+    Rive.prototype.stateMachineInputs = function (name) {
+        var runtimeStateMachine = this.getRuntimeStateMachine(name);
+        if (!runtimeStateMachine) {
+            return [];
+        }
+        var stateMachine = new StateMachine(runtimeStateMachine, this.runtime);
+        return stateMachine.inputs;
+    };
     Object.defineProperty(Rive.prototype, "playingAnimationNames", {
         // Returns a list of playing animation names
         get: function () {
@@ -4261,26 +4398,23 @@ var Rive = /** @class */ (function () {
                 return undefined;
             }
             var riveContents = {
-                artboards: new Array(),
+                artboards: [],
             };
-            console.log('1');
-            for (var i = 0; i < this.runtime.artboardCount(); i++) {
-                console.log('2');
-                var artboard = this.runtime.artboardByIndex(i);
-                console.log('3');
+            for (var i = 0; i < this.file.artboardCount(); i++) {
+                var artboard = this.file.artboardByIndex(i);
                 var artboardContents = {
-                    name: artboard.name(),
-                    animations: new Array(),
-                    stateMachines: new Array(),
+                    name: artboard.name,
+                    animations: [],
+                    stateMachines: [],
                 };
-                // for (let j = 0; j < artboard.animationCount(); j++) {
-                //   const animation = artboard.animationByIndex(j);
-                //   artboardContents.animations.push(animation.name);
-                // }
-                // for (let k = 0; k < artboard.stateMachineCount(); k++) {
-                //   const stateMachine = artboard.stateMachineByIndex(k);
-                //   artboardContents.stateMachines.push(stateMachine.name);
-                // }
+                for (var j = 0; j < artboard.animationCount(); j++) {
+                    var animation = artboard.animationByIndex(j);
+                    artboardContents.animations.push(animation.name);
+                }
+                for (var k = 0; k < artboard.stateMachineCount(); k++) {
+                    var stateMachine = artboard.stateMachineByIndex(k);
+                    artboardContents.stateMachines.push(stateMachine.name);
+                }
                 riveContents.artboards.push(artboardContents);
             }
             return riveContents;

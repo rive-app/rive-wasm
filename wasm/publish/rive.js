@@ -221,8 +221,8 @@ if (typeof WebAssembly !== "object") {
 var wasmMemory;
 
 var wasmTable = new WebAssembly.Table({
- "initial": 1003,
- "maximum": 1003 + 0,
+ "initial": 1005,
+ "maximum": 1005 + 0,
  "element": "anyfunc"
 });
 
