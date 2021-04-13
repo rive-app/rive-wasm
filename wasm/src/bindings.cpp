@@ -358,8 +358,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("apply", &rive::LinearAnimationInstance::apply,
                 allow_raw_pointers());
 
+  class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
+
+  class_<rive::StateMachineInstance>("StateMachineInstance")
+      .constructor<rive::StateMachine *>()
+      .function("advance", &rive::StateMachineInstance::advance)
+      .function("apply", &rive::StateMachineInstance::apply,
+                allow_raw_pointers())
+      .function("inputCount", &rive::StateMachineInstance::inputCount)
+      .function("input", &rive::StateMachineInstance::input,
+                allow_raw_pointers()); 
+
   class_<rive::SMIInput>("SMIInput")
       .property("type", &rive::SMIInput::inputCoreType)
+      .property("name",&rive::SMIInput::name)
       .class_property("bool", &stateMachineBoolTypeKey)
       .class_property("number", &stateMachineNumberTypeKey)
       .class_property("trigger", &stateMachineTriggerTypeKey)
@@ -390,9 +402,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
           }),
           allow_raw_pointers());
 
-  class_<rive::SMIBool, base<rive::SMIInput>>("SMIBool").property(
-      "value", select_overload<bool() const>(&rive::SMIBool::value),
-      select_overload<void(bool)>(&rive::SMIBool::value));
+  class_<rive::SMIBool, base<rive::SMIInput>>("SMIBool")
+      .property("value",
+                select_overload<bool() const>(&rive::SMIBool::value),
+                select_overload<void(bool)>(&rive::SMIBool::value));
   class_<rive::SMINumber, base<rive::SMIInput>>("SMINumber")
       .property("value",
                 select_overload<float() const>(&rive::SMINumber::value),
@@ -416,17 +429,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   // 			break;
   // 	}
   // }
-
-  class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
-
-  class_<rive::StateMachineInstance>("StateMachineInstance")
-      .constructor<rive::StateMachine *>()
-      .function("advance", &rive::StateMachineInstance::advance)
-      .function("apply", &rive::StateMachineInstance::apply,
-                allow_raw_pointers())
-      .function("inputCount", &rive::StateMachineInstance::inputCount)
-      .function("input", &rive::StateMachineInstance::input,
-                allow_raw_pointers());
 
   enum_<rive::Fit>("Fit")
       .value("fill", rive::Fit::fill)

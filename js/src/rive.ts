@@ -14,26 +14,26 @@ enum PlaybackState {
 
 // Fit options for the canvas
 export enum Fit {
-  Cover     = 'cover',
-  Contain   = 'contain',
-  Fill      = 'fill',
-  FitWidth  = 'fitWidth',
+  Cover = 'cover',
+  Contain = 'contain',
+  Fill = 'fill',
+  FitWidth = 'fitWidth',
   FitHeight = 'fitHeight',
-  None      = 'none',
+  None = 'none',
   ScaleDown = 'scaleDown'
 }
 
 // Alignment options for the canvas
 export enum Alignment {
-  Center       = 'center',
-  TopLeft      = 'topLeft',
-  TopCenter    = 'topCenter',
-  TopRight     = 'topRight',
-  CenterLeft   = 'centerLeft',
-  CenterRight  = 'centerRight',
-  BottomLeft   = 'bottomLeft',
+  Center = 'center',
+  TopLeft = 'topLeft',
+  TopCenter = 'topCenter',
+  TopRight = 'topRight',
+  CenterLeft = 'centerLeft',
+  CenterRight = 'centerRight',
+  BottomLeft = 'bottomLeft',
   BottomCenter = 'bottomCenter',
-  BottomRight  = 'bottomRight'
+  BottomRight = 'bottomRight'
 }
 
 // Interface for the Layout static method contructor
@@ -71,15 +71,15 @@ export class Layout {
   }
 
   // Alternative constructor to build a Layout from an interface/object
-  static new({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
+  static new({ fit, alignment, minX, minY, maxX, maxY }: LayoutParameters): Layout {
     console.warn('This function is deprecated: please use `new Layout({})` instead');
-    return new Layout({fit, alignment, minX, minY, maxX, maxY});
+    return new Layout({ fit, alignment, minX, minY, maxX, maxY });
   }
 
   /**
    * Makes a copy of the layout, replacing any specified parameters
    */
-  public copyWith({fit, alignment, minX, minY, maxX, maxY}: LayoutParameters) : Layout {
+  public copyWith({ fit, alignment, minX, minY, maxX, maxY }: LayoutParameters): Layout {
     return new Layout({
       fit: fit ?? this.fit,
       alignment: alignment ?? this.alignment,
@@ -93,7 +93,7 @@ export class Layout {
   // Returns fit for the Wasm runtime format
   public runtimeFit(rive: any): any {
     if (this.cachedRuntimeFit) return this.cachedRuntimeFit;
-    
+
     let fit;
     if (this.fit === Fit.Cover) fit = rive.Fit.cover;
     else if (this.fit === Fit.Contain) fit = rive.Fit.contain;
@@ -137,7 +137,7 @@ export type RuntimeCallback = (rive: typeof Runtime) => void;
 // Runtime singleton; use getInstance to provide a callback that returns the
 // Rive runtime
 export class RuntimeLoader {
-  
+
   // Singleton helpers
   private static runtime: typeof Runtime;
   // Flag to indicate that loading has started/completed
@@ -154,10 +154,10 @@ export class RuntimeLoader {
   private static testMode: boolean = false;
 
   // Class is never instantiated
-  private constructor() {}
+  private constructor() { }
 
   // Loads the runtime
-  private static loadRuntime() : void {
+  private static loadRuntime(): void {
     Runtime({
       // Loads Wasm bundle
       locateFile: (file: string) =>
@@ -190,7 +190,7 @@ export class RuntimeLoader {
 
   // Provides a runtime instance via a promise
   public static awaitInstance(): Promise<typeof Runtime> {
-    return new Promise<typeof Runtime>((resolve, reject) => 
+    return new Promise<typeof Runtime>((resolve, reject) =>
       RuntimeLoader.getInstance((rive: typeof Runtime): void => resolve(rive))
     );
   }
@@ -207,17 +207,17 @@ export class RuntimeLoader {
 
 // Wraps animations and instances from the runtime and keeps track of playback
 // state
-class Animation {  
+class Animation {
   public loopCount: number = 0;
   public paused: boolean = false;
 
-/**
- * Constructs a new animation
- * @constructor
- * @param {any} animation: runtime animation object
- * @param {any} instance: runtime animation instance object
- */
-  constructor(private animation: any, public readonly instance: any) {}
+  /**
+   * Constructs a new animation
+   * @constructor
+   * @param {any} animation: runtime animation object
+   * @param {any} instance: runtime animation instance object
+   */
+  constructor(private animation: any, public readonly instance: any) { }
 
   // Returns the animation's name
   public get name(): string {
@@ -227,15 +227,112 @@ class Animation {
   // Returns the animation's loop type
   public get loopValue(): number {
     return this.animation.loopValue;
-  } 
+  }
 }
 
 // #endregion
 
 // #region state machines
 
+export enum StateMachineInputType {
+  Trigger = 'trigger',
+  Boolean = 'boolean',
+  Number = 'number',
+}
+
+/**
+ * An input for a state machine
+ */
+class StateMachineInput {
+
+  constructor(public readonly type: StateMachineInputType, private runtimeInput: any) { }
+
+  /**
+   * Returns the name of the input
+   */
+  public get name(): string {
+    return this.runtimeInput.name;
+  }
+
+  /**
+   * Returns the current value of the input
+   */
+  public get value(): number | boolean {
+    return this.runtimeInput.value;
+  }
+
+  /**
+   * Sets the value of the input
+   */
+  public set value(value: number | boolean) {
+    this.runtimeInput.value = value;
+  }
+
+  /**
+   * Fires a trigger; does nothing on Number or Boolean input types
+   */
+  public fire(): void {
+    if (this.type === StateMachineInputType.Trigger) {
+      this.runtimeInput.fire();
+    }
+  }
+}
+
+
 class StateMachine {
-  
+
+  /**
+   * Caches the inputs from the runtime
+   */
+  public readonly inputs: StateMachineInput[] = [];
+
+  /**
+   * Runtime state machine instance
+   */
+  private instance: any;
+
+  /**
+   * @constructor
+   * @param stateMachine runtime state machine object
+   * @param instance runtime state machine instance object
+   */
+  constructor(private stateMachine: any, runtime: any) {
+    this.instance = new runtime.StateMachineInstance(stateMachine);
+    this.initInputs(runtime);
+  }
+
+  public get name() {
+    return this.stateMachine.name;
+  }
+
+  /**
+   * Fetches references to the state amchine's inputs and caches them
+   * @param runtime an instance of the runtime; needed for the SMIInput types
+   */
+  private initInputs(runtime: any): void {
+    // Fetch the inputs from the runtime if we don't have them
+    for (let i = 0; i < this.instance.inputCount(); i++) {
+      const input = this.instance.input(i);
+      this.inputs.push(this.mapRuntimeInput(input, runtime));
+    }
+  }
+
+  /**
+   * Maps a runtime input to it's appropriate type
+   * @param input 
+   */
+  private mapRuntimeInput(input: any, runtime: any): StateMachineInput {
+    if (input.type == runtime.SMIInput.bool) {
+      return new StateMachineInput(StateMachineInputType.Boolean, input.asBool());
+    }
+    else if (input.type == runtime.SMIInput.number) {
+      return new StateMachineInput(StateMachineInputType.Number, input.asNumber());
+    }
+    else if (input.type == runtime.SMIInput.trigger) {
+      return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
+    }
+  }
+
 }
 
 // #endregion
@@ -246,13 +343,13 @@ class StateMachine {
  * Supported event types triggered in Rive
  */
 export enum EventType {
-  Load      = 'load',
+  Load = 'load',
   LoadError = 'loaderror',
-  Play      = 'play',
-  Pause     = 'pause',
-  Stop      = 'stop',
-  Loop      = 'loop',
-  Draw      = 'draw',
+  Play = 'play',
+  Pause = 'pause',
+  Stop = 'stop',
+  Loop = 'loop',
+  Draw = 'draw',
 }
 
 // Event fired by Rive
@@ -265,8 +362,8 @@ export interface Event {
  * Looping types: one-shot, loop, and ping-pong
  */
 export enum LoopType {
-  OneShot  = 'oneshot',  // has value 0 in runtime
-  Loop     = 'loop',        // has value 1 in runtime
+  OneShot = 'oneshot',  // has value 0 in runtime
+  Loop = 'loop',        // has value 1 in runtime
   PingPong = 'pingpong' // has value 2 in runtime
 }
 
@@ -288,13 +385,13 @@ export type EventCallback = (event: Event) => void;
  */
 export interface EventListener {
   type: EventType,
-  callback: EventCallback, 
+  callback: EventCallback,
 }
 
 // Manages Rive events and listeners
 class EventManager {
 
-  constructor(private listeners: EventListener[] = []) {}
+  constructor(private listeners: EventListener[] = []) { }
 
   // Gets listeners of specified type
   private getListeners(type: EventType): EventListener[] {
@@ -343,7 +440,7 @@ export type ActionCallback = () => void;
 class TaskQueueManager {
   private queue: Task[] = [];
 
-  constructor(private eventManager: EventManager) {}
+  constructor(private eventManager: EventManager) { }
 
   // Adds a task top the queue
   public add(task: Task): void {
@@ -395,18 +492,20 @@ export interface RiveLoadParameters {
 // Interface for typing a runtime Artboard
 interface RuntimeArtboard {
   animationCount: () => number,
+  stateMachineCount: () => number,
   bounds: any,
   advance: (elapsedTime: number) => void
   draw: (renderer: any) => void,
   animationByName: (name: string) => any,
   animationByIndex: (index: number) => any,
+  stateMachineByIndex: (index: number) => any,
 }
 
 export class Rive {
 
   // Canvas in which to render the artboard
   private readonly canvas: HTMLCanvasElement | OffscreenCanvas;
-  
+
   // Should the animations autoplay?
   private autoplay: boolean;
 
@@ -428,13 +527,13 @@ export class Rive {
   private artboardName: string;
 
   private startingAnimationNames: string[];
-  
+
   // Holds instantiated animations
   private animations: Animation[] = [];
-  
+
   // The canvas 2D context
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
-  
+
   // The runtime renderer
   private renderer: any;
 
@@ -473,7 +572,7 @@ export class Rive {
 
     // Fetch the 2d context from the canvas
     this.ctx = this.canvas.getContext('2d');
-    
+
     // New event management system
     this.eventManager = new EventManager();
     if (params.onload) this.on(EventType.Load, params.onload);
@@ -496,17 +595,17 @@ export class Rive {
   }
 
   // Alternative constructor to build a Rive instance from an interface/object
-  public static new(params: RiveParameters) : Rive {
-      console.warn('This function is deprecated: please use `new Rive({})` instead');
+  public static new(params: RiveParameters): Rive {
+    console.warn('This function is deprecated: please use `new Rive({})` instead');
     return new Rive(params);
   }
 
   // Initializes the Rive object either from constructor or load()
-  private init({src, buffer, animations, artboard, autoplay = false}: RiveLoadParameters): void {
+  private init({ src, buffer, animations, artboard, autoplay = false }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
     this.autoplay = autoplay;
-  
+
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer) {
       throw new Error(Rive.missingErrorMessage);
@@ -529,12 +628,12 @@ export class Rive {
 
     // Ensure loaded is marked as false if loading new file
     this.loaded = false;
-    
+
     // Queue up play action and event if necessary
     if (this.autoplay) {
       this.taskQueue.add({ action: () => this.play() });
     }
-  
+
     // Ensure the runtime is loaded
     RuntimeLoader.awaitInstance().then((runtime) => {
       this.runtime = runtime;
@@ -548,7 +647,7 @@ export class Rive {
   }
 
   // Initializes runtime with Rive data and preps for playing
-  private async initData() : Promise<void> {
+  private async initData(): Promise<void> {
     // Load the buffer from the src if provided
     if (this.src) {
       this.buffer = await loadRiveFile(this.src);
@@ -570,7 +669,7 @@ export class Rive {
       return Promise.resolve();
     } else {
       const msg = 'Problem loading file; may be corrupt!';
-      this.eventManager.fire({type: EventType.LoadError, data: msg});
+      this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);
     }
   }
@@ -584,7 +683,7 @@ export class Rive {
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
       const msg = 'Artboard has no animations';
-      this.eventManager.fire({type: EventType.LoadError, data: msg});
+      this.eventManager.fire({ type: EventType.LoadError, data: msg });
       throw msg;
     }
 
@@ -628,7 +727,7 @@ export class Rive {
         this.animations.push(new Animation(anim, inst));
       }
     }
-  
+
     return this.animations.filter(a => !a.paused).map(a => a.name);
   }
 
@@ -700,7 +799,7 @@ export class Rive {
     // Calculate the elapsed time between frames in seconds
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
-  
+
     // Advance non-paused animations by the elapsed number of seconds
     const activeAnimations = this.animations.filter(a => !a.paused);
     for (const animation of activeAnimations) {
@@ -713,22 +812,24 @@ export class Rive {
       // then mix those animations together.
       animation.instance.apply(this.artboard, 1.0);
     }
-  
+
     // Once the animations have been applied to the artboard, advance it
     // by the elapsed time.
     this.artboard.advance(elapsedTime);
-  
+
     // Clear the current frame of the canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    
+
     // Update the renderer alignment if necessary
     this.alignRenderer();
+
+    // this.ctx.clearRect(artboard.bounds.min[0], artboard.bounds.min[1], artboard.bounds.width, artboard.bounds.height);
 
     // Render the frame in the canvas
     this.ctx.save();
     this.artboard.draw(this.renderer);
     this.ctx.restore();
-  
+
     for (const animation of this.animations) {
       // Emit if the animation looped
       if (animation.loopValue === 0 && animation.loopCount) {
@@ -739,17 +840,17 @@ export class Rive {
       else if (animation.loopValue === 1 && animation.loopCount) {
         this.eventManager.fire({
           type: EventType.Loop,
-          data: {animation: animation.name, type: LoopType.Loop}
+          data: { animation: animation.name, type: LoopType.Loop }
         });
         animation.loopCount = 0;
-      } 
+      }
       // Wasm indicates a loop at each time the animation
       // changes direction, so a full loop/lap occurs every
       // two loop counts
       else if (animation.loopValue === 2 && animation.loopCount > 1) {
         this.eventManager.fire({
           type: EventType.Loop,
-          data: {animation: animation.name, type: LoopType.PingPong}
+          data: { animation: animation.name, type: LoopType.PingPong }
         });
         animation.loopCount = 0;
       }
@@ -836,13 +937,13 @@ export class Rive {
   }
 
   // Stops specified animations; if none specifies, stops them all.
-  public stop(animationNames?:string | string[] | undefined):void {
+  public stop(animationNames?: string | string[] | undefined): void {
     animationNames = mapToStringArray(animationNames);
-    
+
     const stoppedAnimationNames: string[] = animationNames.length === 0 ?
-        this.removeAllAnimations() :
-        this.removeAnimations(animationNames);
-  
+      this.removeAllAnimations() :
+      this.removeAnimations(animationNames);
+
     if (!this.hasPlayingAnimations || animationNames.length === 0) {
       // Immediately cancel the next frame draw; if we don't do this,
       // strange things will happen if the Rive file/buffer is
@@ -874,7 +975,7 @@ export class Rive {
     if (!layout.maxX || !layout.maxY) {
       this.resizeToCanvas();
     }
-    if(this.loaded && !this.hasPlayingAnimations) {
+    if (this.loaded && !this.hasPlayingAnimations) {
       this.drawFrame();
     }
   }
@@ -920,6 +1021,45 @@ export class Rive {
     return animationNames;
   }
 
+  /**
+   * Returns a list of state machine names from the current artboard
+   */
+  public get stateMachineNames(): string[] {
+    // If the file's not loaded, we got nothing to return
+    if (!this.loaded) {
+      return [];
+    }
+    const stateMachineNames: string[] = [];
+    for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
+      stateMachineNames.push(this.artboard.stateMachineByIndex(i).name);
+    }
+    return stateMachineNames;
+  }
+
+  private getRuntimeStateMachine(name: string): any {
+    for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
+      const stateMachine = this.artboard.stateMachineByIndex(i);
+      if (stateMachine.name === name) {
+        return stateMachine;
+      }
+    }
+  }
+
+  /**
+   * Returns the inputs for the specified state machine, or an empty list if the
+   * name is invalid
+   * @param name the state machine name
+   * @returns the inputs for the named state machine
+   */
+  public stateMachineInputs(name: string): StateMachineInput[] {
+    const runtimeStateMachine = this.getRuntimeStateMachine(name);
+    if (!runtimeStateMachine) {
+      return [];
+    }
+    const stateMachine = new StateMachine(runtimeStateMachine, this.runtime);
+    return stateMachine.inputs;
+  }
+
   // Returns a list of playing animation names
   public get playingAnimationNames(): string[] {
     // If the file's not loaded, we got nothing to return
@@ -961,7 +1101,7 @@ export class Rive {
   public on(type: EventType, callback: EventCallback) {
     this.eventManager.add({
       type: type,
-      callback: callback, 
+      callback: callback,
     });
   }
 
@@ -1015,10 +1155,10 @@ interface RiveFileContents {
 
 // Loads Rive data from a URI via fetch.
 const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
-    const req = new Request(src);
-    const res = await fetch(req);
-    const buffer = await res.arrayBuffer();
-    return buffer;
+  const req = new Request(src);
+  const res = await fetch(req);
+  const buffer = await res.arrayBuffer();
+  return buffer;
 }
 
 // #endregion
@@ -1046,6 +1186,6 @@ let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
 export const Testing = {
   EventManager: EventManager,
   TaskQueueManager: TaskQueueManager,
-} 
+}
 
 // #endregion
