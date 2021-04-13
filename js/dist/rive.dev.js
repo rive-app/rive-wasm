@@ -3451,6 +3451,7 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
     }
 };
 
+"";
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
 var PlaybackState;
@@ -3667,9 +3668,9 @@ var Animation = /** @class */ (function () {
 // #region state machines
 var StateMachineInputType;
 (function (StateMachineInputType) {
-    StateMachineInputType["Trigger"] = "trigger";
-    StateMachineInputType["Boolean"] = "boolean";
-    StateMachineInputType["Number"] = "number";
+    StateMachineInputType[StateMachineInputType["Number"] = 56] = "Number";
+    StateMachineInputType[StateMachineInputType["Trigger"] = 58] = "Trigger";
+    StateMachineInputType[StateMachineInputType["Boolean"] = 59] = "Boolean";
 })(StateMachineInputType || (StateMachineInputType = {}));
 /**
  * An input for a state machine
@@ -3727,6 +3728,10 @@ var StateMachine = /** @class */ (function () {
          * Caches the inputs from the runtime
          */
         this.inputs = [];
+        /**
+         * Is the state machine paused
+         */
+        this.paused = false;
         this.instance = new runtime.StateMachineInstance(stateMachine);
         this.initInputs(runtime);
     }
@@ -3849,6 +3854,8 @@ var Rive = /** @class */ (function () {
         this._updateLayout = true;
         // Holds instantiated animations
         this.animations = [];
+        // Holds instantiated state machines
+        this.stateMachines = [];
         // Tracks the playback state
         this.playState = PlaybackState.Stop;
         // Tracks if a Rive file is loaded
@@ -3884,6 +3891,7 @@ var Rive = /** @class */ (function () {
             buffer: this.buffer,
             autoplay: this.autoplay,
             animations: params.animations,
+            stateMachines: params.stateMachines,
             artboard: params.artboard
         });
     }
@@ -3895,7 +3903,7 @@ var Rive = /** @class */ (function () {
     // Initializes the Rive object either from constructor or load()
     Rive.prototype.init = function (_a) {
         var _this = this;
-        var src = _a.src, buffer = _a.buffer, animations = _a.animations, artboard = _a.artboard, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
+        var src = _a.src, buffer = _a.buffer, animations = _a.animations, stateMachines = _a.stateMachines, artboard = _a.artboard, _b = _a.autoplay, autoplay = _b === void 0 ? false : _b;
         this.src = src;
         this.buffer = buffer;
         this.autoplay = autoplay;
@@ -3906,8 +3914,10 @@ var Rive = /** @class */ (function () {
         // Name of the artboard. Rive operates on only one artboard. If
         // you want to have multiple artboards, use multiple Rive instances.
         this.artboardName = artboard;
-        // List of animations that should be played.
+        // List of animations that should be initialized.
         this.startingAnimationNames = mapToStringArray(animations);
+        // List of state machines that should be initialized
+        this.startingStateMachineNames = mapToStringArray(stateMachines);
         // Queue up play action and event if necessary
         if (this.autoplay) {
             this.taskQueue.add({ action: function () { return _this.play(); } });
@@ -3991,7 +4001,11 @@ var Rive = /** @class */ (function () {
         this.renderer = new this.runtime.CanvasRenderer(this.ctx);
         // Initialize the animations
         if (this.startingAnimationNames.length > 0) {
-            this.playAnimations(this.startingAnimationNames);
+            this.addAnimations(this.startingAnimationNames);
+        }
+        // Initialize the state machines
+        if (this.startingStateMachineNames.length > 0) {
+            this.addStateMachines(this.startingStateMachineNames);
         }
     };
     // Draws the current artboard frame
@@ -4006,7 +4020,7 @@ var Rive = /** @class */ (function () {
         this.ctx.restore();
     };
     // Adds animations contained in the artboard for playback
-    Rive.prototype.playAnimations = function (animationNames) {
+    Rive.prototype.addAnimations = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
         var instancedAnimationNames = this.animations.map(function (a) { return a.name; });
         for (var i in animationNames) {
@@ -4062,14 +4076,46 @@ var Rive = /** @class */ (function () {
         configurable: true
     });
     // Ensure there's at least one animation for playback; if there are none
-    // marked for playback, then ad the first animation in the artboard.
+    // marked for playback, then add the first animation in the artboard.
     Rive.prototype.atLeastOneAnimationForPlayback = function () {
-        if (this.animations.length === 0 && this.artboard.animationCount() > 0) {
+        if (this.animations.length === 0 && this.stateMachines.length === 0 && this.artboard.animationCount() > 0) {
             // Add the default animation
             var animation = this.artboard.animationByIndex(0);
             var instance = new this.runtime.LinearAnimationInstance(animation);
             this.animations.push(new Animation(animation, instance));
         }
+    };
+    Object.defineProperty(Rive.prototype, "hasPlayingStateMachines", {
+        /**
+         * Returns true if at least one state machine is active
+         */
+        get: function () {
+            return this.stateMachines.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Adds state machines for playback
+     * @param stateMachineNames names of the state machines to
+     * @returns
+     */
+    Rive.prototype.addStateMachines = function (stateMachineNames) {
+        stateMachineNames = mapToStringArray(stateMachineNames);
+        var instancedStateMachineNames = this.stateMachines.map(function (a) { return a.name; });
+        for (var i in stateMachineNames) {
+            var index = instancedStateMachineNames.indexOf(stateMachineNames[i]);
+            if (index >= 0) {
+                // State machine is already instanced, unpause it
+                this.stateMachines[index].paused = false;
+            }
+            else {
+                // Create a new state machine instance and add it to the list
+                var sm = this.artboard.stateMachineByName(stateMachineNames[i]);
+                this.stateMachines.push(new StateMachine(sm, this.runtime));
+            }
+        }
+        return this.stateMachines.filter(function (m) { return !m.paused; }).map(function (m) { return m.name; });
     };
     // Draw rendering loop; renders animation frames at the correct time interval.
     Rive.prototype.draw = function (time) {
@@ -4088,10 +4134,14 @@ var Rive = /** @class */ (function () {
             if (animation.instance.didLoop) {
                 animation.loopCount += 1;
             }
-            // Apply the animation to the artboard. The reason of this is that
-            // multiple animations may be applied to an artboard, which will
-            // then mix those animations together.
             animation.instance.apply(this.artboard, 1.0);
+        }
+        // Advance non-paused state machines by the elapsed number of seconds
+        var activeStateMachines = this.stateMachines.filter(function (a) { return !a.paused; });
+        for (var _a = 0, activeStateMachines_1 = activeStateMachines; _a < activeStateMachines_1.length; _a++) {
+            var stateMachine = activeStateMachines_1[_a];
+            stateMachine.instance.advance(elapsedTime);
+            stateMachine.instance.apply(this.artboard);
         }
         // Once the animations have been applied to the artboard, advance it
         // by the elapsed time.
@@ -4105,8 +4155,8 @@ var Rive = /** @class */ (function () {
         this.ctx.save();
         this.artboard.draw(this.renderer);
         this.ctx.restore();
-        for (var _a = 0, _b = this.animations; _a < _b.length; _a++) {
-            var animation = _b[_a];
+        for (var _b = 0, _c = this.animations; _b < _c.length; _b++) {
+            var animation = _c[_b];
             // Emit if the animation looped
             if (animation.loopValue === 0 && animation.loopCount) {
                 animation.loopCount = 0;
@@ -4181,7 +4231,7 @@ var Rive = /** @class */ (function () {
             });
             return;
         }
-        var playingAnimations = this.playAnimations(animationNames);
+        var playingAnimations = this.addAnimations(animationNames);
         this.atLeastOneAnimationForPlayback();
         this.playState = PlaybackState.Play;
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
@@ -4308,6 +4358,11 @@ var Rive = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    /**
+     * Gets a runtime state machine object by name
+     * @param name the name of the state machine
+     * @returns a runtime state machine
+     */
     Rive.prototype.getRuntimeStateMachine = function (name) {
         for (var i = 0; i < this.artboard.stateMachineCount(); i++) {
             var stateMachine = this.artboard.stateMachineByIndex(i);
@@ -4317,19 +4372,29 @@ var Rive = /** @class */ (function () {
         }
     };
     /**
-     * Returns the inputs for the specified state machine, or an empty list if the
-     * name is invalid
+     * Returns the inputs for the specified instanced state machine, or an empty
+     * list if the name is invalid or the state machine is not instanced
      * @param name the state machine name
      * @returns the inputs for the named state machine
      */
     Rive.prototype.stateMachineInputs = function (name) {
-        var runtimeStateMachine = this.getRuntimeStateMachine(name);
-        if (!runtimeStateMachine) {
-            return [];
-        }
-        var stateMachine = new StateMachine(runtimeStateMachine, this.runtime);
-        return stateMachine.inputs;
+        var stateMachine = this.stateMachines.find(function (m) { return m.name === name; });
+        return stateMachine === null || stateMachine === void 0 ? void 0 : stateMachine.inputs;
     };
+    Object.defineProperty(Rive.prototype, "playingStateMachineNames", {
+        // Returns a list of playing animation names
+        get: function () {
+            // If the file's not loaded, we got nothing to return
+            if (!this.loaded) {
+                return [];
+            }
+            return this.stateMachines
+                .filter(function (m) { return !m.paused; })
+                .map(function (m) { return m.name; });
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(Rive.prototype, "playingAnimationNames", {
         // Returns a list of playing animation names
         get: function () {
@@ -4413,7 +4478,14 @@ var Rive = /** @class */ (function () {
                 }
                 for (var k = 0; k < artboard.stateMachineCount(); k++) {
                     var stateMachine = artboard.stateMachineByIndex(k);
-                    artboardContents.stateMachines.push(stateMachine.name);
+                    var name_1 = stateMachine.name;
+                    var instance = new this.runtime.StateMachineInstance(stateMachine);
+                    var inputContents = [];
+                    for (var l = 0; l < instance.inputCount(); l++) {
+                        var input = instance.input(l);
+                        inputContents.push({ name: input.name, type: input.type });
+                    }
+                    artboardContents.stateMachines.push({ name: name_1, inputs: inputContents });
                 }
                 riveContents.artboards.push(artboardContents);
             }

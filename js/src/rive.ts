@@ -1,6 +1,4 @@
-import { runInThisContext } from 'node:vm';
-import Runtime from '../../wasm/publish/rive.js';
-import { rive } from '../dist/rive.dev.js';
+import Runtime from '../../wasm/publish/rive.js';``
 
 // Tracks playback states; numbers map to the runtime's numerica values
 // i.e. play: 0, pause: 1, stop: 2
@@ -235,9 +233,9 @@ class Animation {
 // #region state machines
 
 export enum StateMachineInputType {
-  Trigger = 'trigger',
-  Boolean = 'boolean',
-  Number = 'number',
+  Number = 56,
+  Trigger = 58,
+  Boolean = 59,
 }
 
 /**
@@ -287,9 +285,14 @@ class StateMachine {
   public readonly inputs: StateMachineInput[] = [];
 
   /**
+   * Is the state machine paused
+   */
+  public paused: boolean = false;
+
+  /**
    * Runtime state machine instance
    */
-  private instance: any;
+  public readonly instance: any;
 
   /**
    * @constructor
@@ -332,7 +335,6 @@ class StateMachine {
       return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
     }
   }
-
 }
 
 // #endregion
@@ -469,7 +471,8 @@ export interface RiveParameters {
   src?: string, // one of src or buffer is required
   buffer?: ArrayBuffer, // one of src or buffer is required
   artboard?: string,
-  animations?: string[],
+  animations?: string | string[],
+  stateMachines?: string | string[],
   layout?: Layout,
   autoplay?: boolean,
   onload?: EventCallback,
@@ -487,6 +490,7 @@ export interface RiveLoadParameters {
   autoplay?: boolean,
   artboard?: string,
   animations?: string | string[],
+  stateMachines?: string | string[],
 }
 
 // Interface for typing a runtime Artboard
@@ -498,6 +502,7 @@ interface RuntimeArtboard {
   draw: (renderer: any) => void,
   animationByName: (name: string) => any,
   animationByIndex: (index: number) => any,
+  stateMachineByName: (name: string) => any,
   stateMachineByIndex: (index: number) => any,
 }
 
@@ -526,10 +531,17 @@ export class Rive {
   // constructor
   private artboardName: string;
 
+  // Initial animations for initialization
   private startingAnimationNames: string[];
+
+  // Initial state machines for initialization
+  private startingStateMachineNames: string[];
 
   // Holds instantiated animations
   private animations: Animation[] = [];
+
+  // Holds instantiated state machines
+  private stateMachines: StateMachine[] = [];
 
   // The canvas 2D context
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
@@ -590,6 +602,7 @@ export class Rive {
       buffer: this.buffer,
       autoplay: this.autoplay,
       animations: params.animations,
+      stateMachines: params.stateMachines,
       artboard: params.artboard
     });
   }
@@ -601,7 +614,7 @@ export class Rive {
   }
 
   // Initializes the Rive object either from constructor or load()
-  private init({ src, buffer, animations, artboard, autoplay = false }: RiveLoadParameters): void {
+  private init({ src, buffer, animations, stateMachines, artboard, autoplay = false }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
     this.autoplay = autoplay;
@@ -615,8 +628,11 @@ export class Rive {
     // you want to have multiple artboards, use multiple Rive instances.
     this.artboardName = artboard;
 
-    // List of animations that should be played.
+    // List of animations that should be initialized.
     this.startingAnimationNames = mapToStringArray(animations);
+
+    // List of state machines that should be initialized
+    this.startingStateMachineNames = mapToStringArray(stateMachines);
 
     // Queue up play action and event if necessary
     if (this.autoplay) {
@@ -692,7 +708,12 @@ export class Rive {
 
     // Initialize the animations
     if (this.startingAnimationNames.length > 0) {
-      this.playAnimations(this.startingAnimationNames);
+      this.addAnimations(this.startingAnimationNames);
+    }
+
+    // Initialize the state machines
+    if (this.startingStateMachineNames.length > 0) {
+      this.addStateMachines(this.startingStateMachineNames);
     }
   }
 
@@ -712,7 +733,7 @@ export class Rive {
   }
 
   // Adds animations contained in the artboard for playback
-  private playAnimations(animationNames?: string | string[]): string[] {
+  private addAnimations(animationNames?: string | string[]): string[] {
     animationNames = mapToStringArray(animationNames);
     const instancedAnimationNames = this.animations.map(a => a.name);
     for (const i in animationNames) {
@@ -773,14 +794,43 @@ export class Rive {
   }
 
   // Ensure there's at least one animation for playback; if there are none
-  // marked for playback, then ad the first animation in the artboard.
+  // marked for playback, then add the first animation in the artboard.
   private atLeastOneAnimationForPlayback(): void {
-    if (this.animations.length === 0 && this.artboard.animationCount() > 0) {
+    if (this.animations.length === 0 && this.stateMachines.length === 0  && this.artboard.animationCount() > 0) {
       // Add the default animation
       const animation = this.artboard.animationByIndex(0);
       const instance = new this.runtime.LinearAnimationInstance(animation);
       this.animations.push(new Animation(animation, instance));
     }
+  }
+
+  /**
+   * Returns true if at least one state machine is active
+   */
+  private get hasPlayingStateMachines(): boolean {
+    return this.stateMachines.reduce((acc, curr) => acc || !curr.paused, false);
+  }
+
+  /**
+   * Adds state machines for playback
+   * @param stateMachineNames names of the state machines to 
+   * @returns 
+   */
+  private addStateMachines(stateMachineNames?: string | string[]): string[] {
+    stateMachineNames = mapToStringArray(stateMachineNames);
+    const instancedStateMachineNames = this.stateMachines.map(a => a.name);
+    for (const i in stateMachineNames) {
+      const index = instancedStateMachineNames.indexOf(stateMachineNames[i]);
+      if (index >= 0) {
+        // State machine is already instanced, unpause it
+        this.stateMachines[index].paused = false;
+      } else {
+        // Create a new state machine instance and add it to the list
+        const sm = this.artboard.stateMachineByName(stateMachineNames[i]);
+        this.stateMachines.push(new StateMachine(sm, this.runtime));
+      }
+    }
+    return this.stateMachines.filter(m => !m.paused).map(m => m.name);
   }
 
   // Tracks the last timestamp at which the animation was rendered. Used only in
@@ -807,10 +857,14 @@ export class Rive {
       if (animation.instance.didLoop) {
         animation.loopCount += 1;
       }
-      // Apply the animation to the artboard. The reason of this is that
-      // multiple animations may be applied to an artboard, which will
-      // then mix those animations together.
       animation.instance.apply(this.artboard, 1.0);
+    }
+
+    // Advance non-paused state machines by the elapsed number of seconds
+    const activeStateMachines = this.stateMachines.filter(a => !a.paused);
+    for (const stateMachine of activeStateMachines) {
+      stateMachine.instance.advance(elapsedTime);
+      stateMachine.instance.apply(this.artboard);
     }
 
     // Once the animations have been applied to the artboard, advance it
@@ -912,7 +966,7 @@ export class Rive {
       return;
     }
 
-    const playingAnimations = this.playAnimations(animationNames);
+    const playingAnimations = this.addAnimations(animationNames);
     this.atLeastOneAnimationForPlayback();
     this.playState = PlaybackState.Play;
     this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
@@ -1036,6 +1090,11 @@ export class Rive {
     return stateMachineNames;
   }
 
+  /**
+   * Gets a runtime state machine object by name
+   * @param name the name of the state machine
+   * @returns a runtime state machine
+   */
   private getRuntimeStateMachine(name: string): any {
     for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
       const stateMachine = this.artboard.stateMachineByIndex(i);
@@ -1046,19 +1105,28 @@ export class Rive {
   }
 
   /**
-   * Returns the inputs for the specified state machine, or an empty list if the
-   * name is invalid
+   * Returns the inputs for the specified instanced state machine, or an empty
+   * list if the name is invalid or the state machine is not instanced
    * @param name the state machine name
    * @returns the inputs for the named state machine
    */
   public stateMachineInputs(name: string): StateMachineInput[] {
-    const runtimeStateMachine = this.getRuntimeStateMachine(name);
-    if (!runtimeStateMachine) {
+    const stateMachine = this.stateMachines.find(m => m.name === name);
+    return stateMachine?.inputs;
+  }
+
+  // Returns a list of playing animation names
+  public get playingStateMachineNames(): string[] {
+    // If the file's not loaded, we got nothing to return
+    if (!this.loaded) {
       return [];
     }
-    const stateMachine = new StateMachine(runtimeStateMachine, this.runtime);
-    return stateMachine.inputs;
+    return this.stateMachines
+      .filter(m => !m.paused)
+      .map(m => m.name);
   }
+
+
 
   // Returns a list of playing animation names
   public get playingAnimationNames(): string[] {
@@ -1070,6 +1138,7 @@ export class Rive {
       .filter(a => !a.paused)
       .map(a => a.name);
   }
+
 
   // Returns a list of paused animation names
   public get pausedAnimationNames(): string[] {
@@ -1128,7 +1197,14 @@ export class Rive {
       }
       for (let k = 0; k < artboard.stateMachineCount(); k++) {
         const stateMachine = artboard.stateMachineByIndex(k);
-        artboardContents.stateMachines.push(stateMachine.name);
+        const name = stateMachine.name;
+        const instance = new this.runtime.StateMachineInstance(stateMachine);
+        const inputContents: StateMachineInputContents[] = [];
+        for (let l = 0; l < instance.inputCount(); l++) {
+          const input = instance.input(l);
+          inputContents.push({name: input.name, type: input.type});
+        }
+        artboardContents.stateMachines.push({name: name, inputs: inputContents});
       }
       riveContents.artboards.push(artboardContents);
     }
@@ -1137,11 +1213,28 @@ export class Rive {
 }
 
 /**
+ * Contents of a state machine input
+ */
+interface StateMachineInputContents {
+  name: string;
+  type: StateMachineInputType;
+  initialValue?: boolean | number;
+}
+
+/**
+ * Contents of a state machine
+ */
+interface StateMachineContents {
+  name: string;
+  inputs: StateMachineInputContents[];
+}
+
+/**
  * Contents of an artboard
  */
 interface ArtboardContents {
   animations: string[];
-  stateMachines: string[];
+  stateMachines: StateMachineContents[];
   name: string;
 }
 

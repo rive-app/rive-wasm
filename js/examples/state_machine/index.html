@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive State Machine</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <div>
+            <canvas id="canvas" width="1000" height="1000"></canvas>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+        <script src="/dist/rive.min.js"></script>
+        <script>
+            // autoplays the first animation in the default artboard
+            const r = new rive.Rive({
+                src: 'https://cdn.rive.app/animations/skills_v7.riv',
+                canvas: document.getElementById('canvas'),
+                autoplay: true,
+                stateMachines: 'Designer\'s Test',
+                onload: (_) => {
+                    const inputs = r.stateMachineInputs('Designer\'s Test');
+                    setupUI(inputs);
+            },
+            });
+
+            function setupUI(inputs) {
+                const gui = new dat.GUI({name: 'State Machine Controls'});
+                const inputsObj = {};
+                inputs.forEach((input) => {
+                    // Trigger
+                    if (input.type === rive.StateMachineInputType.Trigger) {
+                        inputsObj[input.name] = () => {
+                            input.fire(); 
+                        }
+                        gui.add(inputsObj, input.name);
+                    }
+                    // Number
+                    else if (input.type === rive.StateMachineInputType.Number) {
+                        inputsObj[input.name] = input.value;
+                        gui.add(inputsObj, input.name, 0, 2, 1).onChange((value) => {
+                            input.value = value;
+                        });
+                    }
+                    // Boolean
+                    else if (input.type === rive.StateMachineInputType.Boolean) {
+                        inputsObj[input.name] = input.value;
+                        gui.add(inputsObj, input.name).onChange((value) => {
+                            input.value = value;
+                        });
+                    }
+                });
+            }
+
+        </script>
+    </body>
+</html>

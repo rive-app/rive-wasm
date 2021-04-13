@@ -645,7 +645,14 @@ test('Rive file contents can be read', done => {
       expect(contents.artboards[0].animations[0]).toBe('WorkAreaPingPongAnimation');
       expect(contents.artboards[0].stateMachines).toBeDefined();
       expect(contents.artboards[0].stateMachines).toHaveLength(1);
-      expect(contents.artboards[0].stateMachines[0]).toBe('StateMachine');
+      expect(contents.artboards[0].stateMachines[0].name).toBe('StateMachine');
+      expect(contents.artboards[0].stateMachines[0].inputs).toHaveLength(3);
+      expect(contents.artboards[0].stateMachines[0].inputs[0].name).toBe('MyNum');
+      expect(contents.artboards[0].stateMachines[0].inputs[0].type).toBe(rive.StateMachineInputType.Number);
+      expect(contents.artboards[0].stateMachines[0].inputs[1].name).toBe('MyBool');
+      expect(contents.artboards[0].stateMachines[0].inputs[1].type).toBe(rive.StateMachineInputType.Boolean);
+      expect(contents.artboards[0].stateMachines[0].inputs[2].name).toBe('MyTrig');
+      expect(contents.artboards[0].stateMachines[0].inputs[2].type).toBe(rive.StateMachineInputType.Trigger);
       done();
     }
   });
@@ -669,14 +676,29 @@ test('State machine names can be retrieved', done => {
   });
 });
 
-test('State machine inputs can be retrieved', done => {
+test('State machines can be instanced', done => {
   const canvas = document.createElement('canvas');
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
+    stateMachines: 'StateMachine',
+    onload: () => {
+      const stateMachineNames = r.stateMachineNames;
+      expect(r.playingStateMachineNames).toHaveLength(1);
+      done();
+    }
+  });
+});
+
+test('Instanced state machine inputs can be retrieved', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: 'StateMachine',
     onload: () => {
       let stateMachineInputs = r.stateMachineInputs('BadName');
-      expect(stateMachineInputs).toHaveLength(0);
+      expect(stateMachineInputs).toBeUndefined();
       stateMachineInputs = r.stateMachineInputs('StateMachine');
       expect(stateMachineInputs).toHaveLength(3);
 
