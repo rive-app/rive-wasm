@@ -212,7 +212,7 @@ Module.onRuntimeInitialized = function () {
                     _value = ctx.createLinearGradient(sx, sy, ex, ey);
                 }
 
-                for ({
+                for (const {
                         stop,
                         color
                     } of stops) {
