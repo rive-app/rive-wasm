@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.1 (Apr 13, 2021)
+- State machine support
+- Tweaks to rendering loop
 ## 0.7.7 (Apr 9, 2021)
 - Fixes rendering bug
 
