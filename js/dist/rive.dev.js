@@ -3452,7 +3452,7 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
 };
 
 "";
-// Tracks playback states; numbers map to the runtime's numerica values
+// Tracks playback states; numbers map to the runtime's numerical values
 // i.e. play: 0, pause: 1, stop: 2
 var PlaybackState;
 (function (PlaybackState) {
@@ -3640,11 +3640,11 @@ var Animation = /** @class */ (function () {
      * @param {any} animation: runtime animation object
      * @param {any} instance: runtime animation instance object
      */
-    function Animation(animation, instance) {
+    function Animation(animation, runtime) {
         this.animation = animation;
-        this.instance = instance;
         this.loopCount = 0;
         this.paused = false;
+        this.instance = new runtime.LinearAnimationInstance(animation);
     }
     Object.defineProperty(Animation.prototype, "name", {
         // Returns the animation's name
@@ -3771,6 +3771,153 @@ var StateMachine = /** @class */ (function () {
     return StateMachine;
 }());
 // #endregion
+// #region animator
+/**
+ * Manages animation
+ */
+var Animator = /** @class */ (function () {
+    /**
+     * Constructs a new animator
+     * @constructor
+     * @param runtime Rive runtime; needed to instance animations & state machines
+     * @param artboard the artboard that holds all animations and state machines
+     * @param animations optional list of animations
+     * @param stateMachines optional list of state machines
+     */
+    function Animator(runtime, artboard, animations, stateMachines) {
+        if (animations === void 0) { animations = []; }
+        if (stateMachines === void 0) { stateMachines = []; }
+        this.runtime = runtime;
+        this.artboard = artboard;
+        this.animations = animations;
+        this.stateMachines = stateMachines;
+    }
+    /**
+     * Adds animations and state machines by their names. If names are shared
+     * between animations & state machines, then the first one found wiil be
+     * created. Best not to use the same names for these in your Rive file.
+     * @param animatable the name(s) of animations and state machines to add
+     * @returns a list of names of the playing animations and state machines
+     */
+    Animator.prototype.add = function (animatables) {
+        animatables = mapToStringArray(animatables);
+        var instancedAnimationNames = this.animations.map(function (a) { return a.name; });
+        var instancedMachineNames = this.stateMachines.map(function (m) { return m.name; });
+        for (var i in animatables) {
+            var aIndex = instancedAnimationNames.indexOf(animatables[i]);
+            var mIndex = instancedMachineNames.indexOf(animatables[i]);
+            if (aIndex >= 0) {
+                // Animation is instanced, unpause it
+                this.animations[aIndex].paused = false;
+            }
+            if (mIndex >= 0) {
+                // State machine is instanced, unpause it
+                this.stateMachines[mIndex].paused = false;
+            }
+            else {
+                // Try to create a new animation instance
+                var anim = this.artboard.animationByName(animatables[i]);
+                if (anim) {
+                    this.animations.push(new Animation(anim, this.runtime));
+                }
+                else {
+                    var sm = this.artboard.stateMachineByName(animatables[i]);
+                    if (sm) {
+                        this.stateMachines.push(new StateMachine(sm, this.runtime));
+                    }
+                }
+            }
+        }
+        return this.playing;
+    };
+    Object.defineProperty(Animator.prototype, "playing", {
+        /**
+         * Returns a list of names of all animations and state machines currently
+         * playing
+         */
+        get: function () {
+            return this.animations.filter(function (a) { return !a.paused; }).map(function (a) { return a.name; }).concat(this.stateMachines.filter(function (m) { return !m.paused; }).map(function (m) { return m.name; }));
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Removes all named animations and state machines
+     * @param animatables animations and state machines to remove
+     * @returns a list of names of removed items
+     */
+    Animator.prototype.remove = function (animatables) {
+        var _this = this;
+        // If nothing's specified, wipe them out, all of them
+        if (!animatables) {
+            var names = this.animations.map(function (a) { return a.name; }).concat(this.stateMachines.map(function (m) { return m.name; }));
+            this.animations.splice(0, this.animations.length);
+            this.stateMachines.splice(0, this.stateMachines.length);
+            return names;
+        }
+        // Remove only the named animations/state machines
+        var animationsToRemove = this.animations.filter(function (a) { return animatables.includes(a.name); });
+        animationsToRemove.forEach(function (a) {
+            return _this.animations.splice(_this.animations.indexOf(a), 1);
+        });
+        var machinesToRemove = this.stateMachines.filter(function (m) { return animatables.includes(m.name); });
+        machinesToRemove.forEach(function (m) {
+            return _this.stateMachines.splice(_this.stateMachines.indexOf(m), 1);
+        });
+        // Return the list of animations removed
+        return animationsToRemove.map(function (a) { return a.name; }).concat(machinesToRemove.map(function (m) { return m.name; }));
+    };
+    /**
+     * Pauses named aninimations and state machines, or everything if nothing is
+     * specified
+     * @param animatables names of the animations and state machines to pause
+     * @returns a list of names of the animations and state machines paused
+     */
+    Animator.prototype.pause = function (animatables) {
+        var pausedNames = [];
+        this.animations.forEach(function (a) {
+            if (animatables.includes(a.name)) {
+                a.paused = true;
+                pausedNames.push(a.name);
+            }
+        });
+        this.stateMachines.forEach(function (m) {
+            if (animatables.includes(m.name)) {
+                m.paused = true;
+                pausedNames.push(m.name);
+            }
+        });
+        return pausedNames;
+    };
+    Object.defineProperty(Animator.prototype, "isPlaying", {
+        /**
+         * Returns true if at least one animation is active
+         */
+        get: function () {
+            return this.animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false)
+                || this.stateMachines.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * If there are no animations or state machines, add the first one found
+     */
+    Animator.prototype.atLeastOne = function () {
+        if (this.animations.length === 0 && this.stateMachines.length === 0) {
+            if (this.artboard.animationCount() > 0) {
+                // Add the first animation
+                this.animations.push(new Animation(this.artboard.animationByIndex(0), this.runtime));
+            }
+            else if (this.artboard.stateMachineCount() > 0) {
+                // Add the first state machine
+                this.stateMachines.push(new StateMachine(this.artboard.stateMachineByIndex(0), this.runtime));
+            }
+        }
+    };
+    return Animator;
+}());
+// #endregion
 // #region events
 /**
  * Supported event types triggered in Rive
@@ -3852,10 +3999,6 @@ var Rive = /** @class */ (function () {
         // Flag to indicate if the layout has changed; used by the renderer to know
         // when to align
         this._updateLayout = true;
-        // Holds instantiated animations
-        this.animations = [];
-        // Holds instantiated state machines
-        this.stateMachines = [];
         // Tracks the playback state
         this.playState = PlaybackState.Stop;
         // Tracks if a Rive file is loaded
@@ -3911,19 +4054,14 @@ var Rive = /** @class */ (function () {
         if (!this.src && !this.buffer) {
             throw new Error(Rive.missingErrorMessage);
         }
-        // Name of the artboard. Rive operates on only one artboard. If
-        // you want to have multiple artboards, use multiple Rive instances.
-        this.artboardName = artboard;
         // List of animations that should be initialized.
-        this.startingAnimationNames = mapToStringArray(animations);
+        var startingAnimationNames = mapToStringArray(animations);
         // List of state machines that should be initialized
-        this.startingStateMachineNames = mapToStringArray(stateMachines);
+        var startingStateMachineNames = mapToStringArray(stateMachines);
         // Queue up play action and event if necessary
         if (this.autoplay) {
             this.taskQueue.add({ action: function () { return _this.play(); } });
         }
-        // Reset the animations list if loading new file
-        this.animations = [];
         // Ensure loaded is marked as false if loading new file
         this.loaded = false;
         // Queue up play action and event if necessary
@@ -3934,7 +4072,7 @@ var Rive = /** @class */ (function () {
         RuntimeLoader.awaitInstance().then(function (runtime) {
             _this.runtime = runtime;
             // Load Rive data from a source uri or a data buffer
-            _this.initData().catch(function (e) {
+            _this.initData(artboard, startingAnimationNames, startingStateMachineNames).catch(function (e) {
                 console.error(e);
             });
         }).catch(function (e) {
@@ -3942,7 +4080,7 @@ var Rive = /** @class */ (function () {
         });
     };
     // Initializes runtime with Rive data and preps for playing
-    Rive.prototype.initData = function () {
+    Rive.prototype.initData = function (artboardName, animationNames, stateMachineNames) {
         var _a;
         return __awaiter(this, void 0, void 0, function () {
             var _b, _c, msg;
@@ -3965,7 +4103,7 @@ var Rive = /** @class */ (function () {
                         if (this.file) {
                             this.loaded = true;
                             // Initialize and draw frame
-                            this.initArtboard();
+                            this.initArtboard(artboardName, animationNames, stateMachineNames);
                             this.drawFrame();
                             // Everything's set up, emit a load event
                             this.eventManager.fire({
@@ -3987,9 +4125,9 @@ var Rive = /** @class */ (function () {
         });
     };
     // Initialize for playback
-    Rive.prototype.initArtboard = function () {
-        this.artboard = this.artboardName ?
-            this.file.artboard(this.artboardName) :
+    Rive.prototype.initArtboard = function (artboardName, animationNames, stateMachineNames) {
+        this.artboard = artboardName ?
+            this.file.artboard(artboardName) :
             this.file.defaultArtboard();
         // Check that the artboard has at least 1 animation
         if (this.artboard.animationCount() < 1) {
@@ -3997,125 +4135,28 @@ var Rive = /** @class */ (function () {
             this.eventManager.fire({ type: EventType.LoadError, data: msg });
             throw msg;
         }
+        // Initialize the animator
+        this.animator = new Animator(this.runtime, this.artboard);
         // Get the canvas where you want to render the animation and create a renderer
         this.renderer = new this.runtime.CanvasRenderer(this.ctx);
         // Initialize the animations
-        if (this.startingAnimationNames.length > 0) {
-            this.addAnimations(this.startingAnimationNames);
+        if (animationNames.length > 0) {
+            this.animator.add(animationNames);
         }
         // Initialize the state machines
-        if (this.startingStateMachineNames.length > 0) {
-            this.addStateMachines(this.startingStateMachineNames);
+        if (stateMachineNames.length > 0) {
+            this.animator.add(stateMachineNames);
         }
     };
     // Draws the current artboard frame
     Rive.prototype.drawFrame = function () {
-        // Update the renderer's alignment if necessary
-        this.alignRenderer();
         // Advance to the first frame and draw the artboard
         this.artboard.advance(0);
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
+        // Update the renderer's alignment if necessary
+        this.alignRenderer();
+        var bounds = this.artboard.bounds;
+        this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
         this.artboard.draw(this.renderer);
-        this.ctx.restore();
-    };
-    // Adds animations contained in the artboard for playback
-    Rive.prototype.addAnimations = function (animationNames) {
-        animationNames = mapToStringArray(animationNames);
-        var instancedAnimationNames = this.animations.map(function (a) { return a.name; });
-        for (var i in animationNames) {
-            var index = instancedAnimationNames.indexOf(animationNames[i]);
-            if (index >= 0) {
-                // Animation is already instanced, unpause it
-                this.animations[index].paused = false;
-            }
-            else {
-                // Create a new animation instance and add it to the list
-                var anim = this.artboard.animationByName(animationNames[i]);
-                var inst = new this.runtime.LinearAnimationInstance(anim);
-                this.animations.push(new Animation(anim, inst));
-            }
-        }
-        return this.animations.filter(function (a) { return !a.paused; }).map(function (a) { return a.name; });
-    };
-    // Removes animations from playback
-    Rive.prototype.removeAnimations = function (animationNames) {
-        var _this = this;
-        // Determine which animations need to be removed
-        var animationsToRemove = this.animations.filter(function (a) { return animationNames.indexOf(a.name) >= 0; });
-        // Remove the animations
-        animationsToRemove.forEach(function (a) {
-            return _this.animations.splice(_this.animations.indexOf(a), 1);
-        });
-        // Return the list of animations removed
-        return animationsToRemove.map(function (a) { return a.name; });
-    };
-    // Removes all animations from playback
-    Rive.prototype.removeAllAnimations = function () {
-        var names = this.animations.map(function (a) { return a.name; });
-        this.animations.splice(0, this.animations.length);
-        return names;
-    };
-    // Pauses animations
-    Rive.prototype.pauseAnimations = function (animationNames) {
-        var pausedAnimationNames = [];
-        this.animations.forEach(function (a, i) {
-            if (animationNames.indexOf(a.name) >= 0) {
-                a.paused = true;
-                pausedAnimationNames.push(a.name);
-            }
-        });
-        return pausedAnimationNames;
-    };
-    Object.defineProperty(Rive.prototype, "hasPlayingAnimations", {
-        // Returns true if at least one animation is active
-        get: function () {
-            return this.animations.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    // Ensure there's at least one animation for playback; if there are none
-    // marked for playback, then add the first animation in the artboard.
-    Rive.prototype.atLeastOneAnimationForPlayback = function () {
-        if (this.animations.length === 0 && this.stateMachines.length === 0 && this.artboard.animationCount() > 0) {
-            // Add the default animation
-            var animation = this.artboard.animationByIndex(0);
-            var instance = new this.runtime.LinearAnimationInstance(animation);
-            this.animations.push(new Animation(animation, instance));
-        }
-    };
-    Object.defineProperty(Rive.prototype, "hasPlayingStateMachines", {
-        /**
-         * Returns true if at least one state machine is active
-         */
-        get: function () {
-            return this.stateMachines.reduce(function (acc, curr) { return acc || !curr.paused; }, false);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    /**
-     * Adds state machines for playback
-     * @param stateMachineNames names of the state machines to
-     * @returns
-     */
-    Rive.prototype.addStateMachines = function (stateMachineNames) {
-        stateMachineNames = mapToStringArray(stateMachineNames);
-        var instancedStateMachineNames = this.stateMachines.map(function (a) { return a.name; });
-        for (var i in stateMachineNames) {
-            var index = instancedStateMachineNames.indexOf(stateMachineNames[i]);
-            if (index >= 0) {
-                // State machine is already instanced, unpause it
-                this.stateMachines[index].paused = false;
-            }
-            else {
-                // Create a new state machine instance and add it to the list
-                var sm = this.artboard.stateMachineByName(stateMachineNames[i]);
-                this.stateMachines.push(new StateMachine(sm, this.runtime));
-            }
-        }
-        return this.stateMachines.filter(function (m) { return !m.paused; }).map(function (m) { return m.name; });
     };
     // Draw rendering loop; renders animation frames at the correct time interval.
     Rive.prototype.draw = function (time) {
@@ -4127,7 +4168,7 @@ var Rive = /** @class */ (function () {
         var elapsedTime = (time - this.lastRenderTime) / 1000;
         this.lastRenderTime = time;
         // Advance non-paused animations by the elapsed number of seconds
-        var activeAnimations = this.animations.filter(function (a) { return !a.paused; });
+        var activeAnimations = this.animator.animations.filter(function (a) { return !a.paused; });
         for (var _i = 0, activeAnimations_1 = activeAnimations; _i < activeAnimations_1.length; _i++) {
             var animation = activeAnimations_1[_i];
             animation.instance.advance(elapsedTime);
@@ -4137,7 +4178,7 @@ var Rive = /** @class */ (function () {
             animation.instance.apply(this.artboard, 1.0);
         }
         // Advance non-paused state machines by the elapsed number of seconds
-        var activeStateMachines = this.stateMachines.filter(function (a) { return !a.paused; });
+        var activeStateMachines = this.animator.stateMachines.filter(function (a) { return !a.paused; });
         for (var _a = 0, activeStateMachines_1 = activeStateMachines; _a < activeStateMachines_1.length; _a++) {
             var stateMachine = activeStateMachines_1[_a];
             stateMachine.instance.advance(elapsedTime);
@@ -4146,16 +4187,12 @@ var Rive = /** @class */ (function () {
         // Once the animations have been applied to the artboard, advance it
         // by the elapsed time.
         this.artboard.advance(elapsedTime);
-        // Clear the current frame of the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // Update the renderer alignment if necessary
         this.alignRenderer();
-        // this.ctx.clearRect(artboard.bounds.min[0], artboard.bounds.min[1], artboard.bounds.width, artboard.bounds.height);
-        // Render the frame in the canvas
-        this.ctx.save();
+        var bounds = this.artboard.bounds;
+        this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
         this.artboard.draw(this.renderer);
-        this.ctx.restore();
-        for (var _b = 0, _c = this.animations; _b < _c.length; _b++) {
+        for (var _b = 0, _c = this.animator.animations; _b < _c.length; _b++) {
             var animation = _c[_b];
             // Emit if the animation looped
             if (animation.loopValue === 0 && animation.loopCount) {
@@ -4231,8 +4268,8 @@ var Rive = /** @class */ (function () {
             });
             return;
         }
-        var playingAnimations = this.addAnimations(animationNames);
-        this.atLeastOneAnimationForPlayback();
+        var playingAnimations = this.animator.add(animationNames);
+        this.animator.atLeastOne();
         this.playState = PlaybackState.Play;
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
         this.eventManager.fire({
@@ -4243,8 +4280,8 @@ var Rive = /** @class */ (function () {
     // Pauses specified animations; if none specified, pauses all.
     Rive.prototype.pause = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
-        this.pauseAnimations(animationNames);
-        if (!this.hasPlayingAnimations || animationNames.length === 0) {
+        this.animator.pause(animationNames);
+        if (!this.animator.isPlaying || animationNames.length === 0) {
             this.playState = PlaybackState.Pause;
         }
         this.eventManager.fire({
@@ -4256,9 +4293,9 @@ var Rive = /** @class */ (function () {
     Rive.prototype.stop = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
         var stoppedAnimationNames = animationNames.length === 0 ?
-            this.removeAllAnimations() :
-            this.removeAnimations(animationNames);
-        if (!this.hasPlayingAnimations || animationNames.length === 0) {
+            this.animator.remove() :
+            this.animator.remove(animationNames);
+        if (!this.animator.isPlaying || animationNames.length === 0) {
             // Immediately cancel the next frame draw; if we don't do this,
             // strange things will happen if the Rive file/buffer is
             // reloaded.
@@ -4296,7 +4333,7 @@ var Rive = /** @class */ (function () {
             if (!layout.maxX || !layout.maxY) {
                 this.resizeToCanvas();
             }
-            if (this.loaded && !this.hasPlayingAnimations) {
+            if (this.loaded && !this.animator.isPlaying) {
                 this.drawFrame();
             }
         },
@@ -4378,7 +4415,7 @@ var Rive = /** @class */ (function () {
      * @returns the inputs for the named state machine
      */
     Rive.prototype.stateMachineInputs = function (name) {
-        var stateMachine = this.stateMachines.find(function (m) { return m.name === name; });
+        var stateMachine = this.animator.stateMachines.find(function (m) { return m.name === name; });
         return stateMachine === null || stateMachine === void 0 ? void 0 : stateMachine.inputs;
     };
     Object.defineProperty(Rive.prototype, "playingStateMachineNames", {
@@ -4388,7 +4425,7 @@ var Rive = /** @class */ (function () {
             if (!this.loaded) {
                 return [];
             }
-            return this.stateMachines
+            return this.animator.stateMachines
                 .filter(function (m) { return !m.paused; })
                 .map(function (m) { return m.name; });
         },
@@ -4402,7 +4439,7 @@ var Rive = /** @class */ (function () {
             if (!this.loaded) {
                 return [];
             }
-            return this.animations
+            return this.animator.animations
                 .filter(function (a) { return !a.paused; })
                 .map(function (a) { return a.name; });
         },
@@ -4416,7 +4453,7 @@ var Rive = /** @class */ (function () {
             if (!this.loaded) {
                 return [];
             }
-            return this.animations
+            return this.animator.animations
                 .filter(function (a) { return a.paused; })
                 .map(function (a) { return a.name; });
         },

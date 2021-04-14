@@ -683,8 +683,8 @@ test('State machines can be instanced', done => {
     buffer: stateMachineFileBuffer,
     stateMachines: 'StateMachine',
     onload: () => {
-      const stateMachineNames = r.stateMachineNames;
-      expect(r.playingStateMachineNames).toHaveLength(1);
+      // const stateMachineNames = r.stateMachineNames;
+      // expect(r.playingStateMachineNames).toHaveLength(1);
       done();
     }
   });
@@ -720,6 +720,36 @@ test('Instanced state machine inputs can be retrieved', done => {
       expect(stateMachineInputs[2].fire()).toBeUndefined();
 
       done();
+    }
+  });
+});
+
+test('Playing state machines can be manually started, paused, and restarted', done => {
+  const canvas = document.createElement('canvas');
+  let hasPaused = false;
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: 'StateMachine',
+    onload: () => {
+      // Nothing should be playing whenever a file is loaded
+      expect(r.isStopped).toBeTruthy();
+      // Start playback
+      r.play();
+    },
+    onplay: () => {
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeTruthy();
+      hasPaused ? done() : r.pause();
+    },
+    onpause: (event: rive.Event) => {
+      expect(r.isPaused).toBeTruthy();
+      expect(r.isStopped).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();
+      hasPaused = true;
+      r.play();
     }
   });
 });
