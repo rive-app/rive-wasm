@@ -1,7 +1,7 @@
 
 var Rive = (function() {
-  var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined;
-  if (typeof __filename !== 'undefined') _scriptDir = _scriptDir || __filename;
+  var _scriptDir = import.meta.url;
+  
   return (
 function(Rive) {
   Rive = Rive || {};
@@ -3400,10 +3400,4 @@ Module.onRuntimeInitialized = function () {
 }
 );
 })();
-if (typeof exports === 'object' && typeof module === 'object')
-      module.exports = Rive;
-    else if (typeof define === 'function' && define['amd'])
-      define([], function() { return Rive; });
-    else if (typeof exports === 'object')
-      exports["Rive"] = Rive;
-    
+export default Rive;
