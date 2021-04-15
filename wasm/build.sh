@@ -1,9 +1,11 @@
 #!/bin/bash
 echo Building ES6
-./build-wasm.sh es6
+./build-js.sh es6
 echo Building ES5
-./build-wasm.sh es5
+./build-js.sh es5
 echo Building ES6 PURE
-./build-wasm.sh es6pure
+./build-js.sh es6pure
 echo Building ES5 PURE
-./build-wasm.sh es5pure
+./build-js.sh es5pure
+echo Building wasm
+./build-wasm.sh
