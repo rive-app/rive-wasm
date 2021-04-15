@@ -18,7 +18,9 @@ Serve from the wasm subfolder so that the paths to the js and wasm files are cor
             import Rive from '/publish/rive.mjs';
         
             (function () {
-                // first, instantiate the Rive engine and load the WASM file(s)
+                // Instantiate the Rive engine and load the WASM file(s). The
+                // Wasm binary is is embedded in rive.mjs to there's no need to
+                // separately serve the wasm file
                 Rive({
                     locateFile: (file) => 'file://' + file,
                 }).then((rive) => {

@@ -6,3 +6,6 @@
 
 # Node stuff
 node_modules
+
+# parcel stuff
+.parcel-cache

@@ -30,15 +30,5 @@
   "contributors": [
     "Luigi Rosso <luigi@rive.app> (https://rive.app)",
     "Matthew Sullivan <matt@rive.app> (https://rive.app)"
-  ],
-  "scripts": {
-    "transpile": "babel rive.mjs -o rive.js; babel rive.pure.mjs -o rive.pure.js",
-    "minify": "terser --compress --mangle -o rive.min.js -- rive.js; terser --compress --mangle -o rive.pure.min.js -- rive.pure.js"
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.13.14",
-    "@babel/core": "^7.13.15",
-    "@babel/preset-env": "^7.13.15",
-    "terser": "^5.6.1"
-  }
+  ]
 }
