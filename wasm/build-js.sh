@@ -11,7 +11,7 @@ mkdir -p $OUTPUT_DIR
 em++ -Oz --js-opts 0 -g1 \
     --closure 0 \
     --bind \
-    -o $OUTPUT_DIR/rive-pure.js \
+    -o $OUTPUT_DIR/rive-pure.mjs \
     -s ASSERTIONS=0 \
     -s FORCE_FILESYSTEM=0 \
     -s MODULARIZE=1 \
@@ -42,14 +42,14 @@ em++ -Oz --js-opts 0 -g1 \
 
 awk 'NR==FNR { a[n++]=$0; next }
 /console\.log\("--REPLACE WITH RENDERING CODE--"\);/ { for (i=0;i<n;++i) print a[i]; next }
-1' ../js/renderer.js ./bin/release/rive-pure.js >./bin/release/rive-pure-combined.js
+1' ../js/renderer.js ./bin/release/rive-pure.mjs >./bin/release/rive-pure-combined.mjs
 
 if ! command -v terser &>/dev/null; then
     npm install terser -g
 fi
-terser --compress --mangle -o ./bin/release/rive-pure.min.js -- ./bin/release/rive-pure-combined.js
+terser --compress --mangle -o ./bin/release/rive-pure.min.mjs -- ./bin/release/rive-pure-combined.mjs
 
-cp ./bin/release/rive-pure-combined.js ../publish/rive.pure.js
-cp ./bin/release/rive-pure.min.js ../publish/rive.pure.min.js
+cp ./bin/release/rive-pure-combined.mjs ../publish/rive.pure.mjs
+cp ./bin/release/rive-pure.min.mjs ../publish/rive.pure.min.mjs
 
 popd &>/dev/null
