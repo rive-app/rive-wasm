@@ -23,11 +23,13 @@ const webConfig = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'rive.min.js',
-    libraryTarget: 'var',
-    library: 'rive'
+    library: {
+      type: 'assign-properties',
+      name: 'rive'
+    },
   },
   devtool: 'source-map',
-  mode: 'none',
+  mode: 'production',
   // Copy the Wasm file to dist
   plugins: [
     new CopyPlugin({
@@ -38,7 +40,7 @@ const webConfig = {
   ],
 };
 
-const reactConfig = {
+const moduleConfig = {
   entry: './src/rive.ts',
   target: 'es6',
   module: {
@@ -68,4 +70,4 @@ const reactConfig = {
   mode: 'none',
 };
 
-module.exports = [reactConfig, webConfig];
+module.exports = [moduleConfig, webConfig];

@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "rive-js": "file:../.."
+    "rive-js": "file:../../.."
   },
   "devDependencies": {
     "parcel": "next"

@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
-    "rive-js": "file:../..",
+    "rive-js": "file:../../..",
     "vue": "^2.6.11"
   },
   "devDependencies": {
