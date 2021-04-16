@@ -84,7 +84,7 @@ terser --compress --mangle -o ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION -- 
 
 # copy to publish folder
 cp ./bin/release/rive-combined.$FILE_EXTENSION ../publish/$OUTPUT_FILE.$FILE_EXTENSION
-cp ./bin/release/rive.min.mjs ../publish/$OUTPUT_FILE.min.$FILE_EXTENSION
+cp ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION ../publish/$OUTPUT_FILE.min.$FILE_EXTENSION
 # cp ./bin/release/rive.wasm ../publish/rive.wasm
 # cp ./bin/release/rive_wasm.js ../publish/rive_wasm.js
 
