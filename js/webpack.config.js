@@ -35,6 +35,7 @@ const webConfig = {
     new CopyPlugin({
       patterns: [
         { from: '../wasm/publish/rive.wasm', to: 'rive.wasm' },
+        { from: 'build/src/rive.d.ts', to: 'rive.d.ts' },
       ],
     }),
   ],
