@@ -8,6 +8,6 @@
       "target": "es5",
       "esModuleInterop": true,
       "allowJs": true,
-      // "declaration": true
+      "declaration": true
     }
   }

@@ -30,6 +30,7 @@
     "dist/rive.dev.js",
     "dist/rive.dev.js.map",
     "dist/rive.wasm",
+    "dist/rive.d.ts",
     "src/rive.ts"
   ],
   "typings": "./rive.d.ts",
