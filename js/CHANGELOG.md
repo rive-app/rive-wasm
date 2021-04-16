@@ -1,5 +1,13 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.2 (Apr 15, 2021)
+- Updates to latest wasm
+- Changes to packaging to fix importing issues in frameworks such as vue and parcel
+- Adds parcel example
+- rive-canvas is now integrated through package.json
+- rive-canvas typescript definitions now used
+- wasm binary is now embedded in the js package; no more behind the scenes fetch to retrieve it
+
 ## 0.7.8-beta.1 (Apr 13, 2021)
 - State machine support
 - Tweaks to rendering loop
