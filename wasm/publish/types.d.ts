@@ -1,3 +1,5 @@
+import { StateMachineInputType } from "../../js/examples/react_example/node_modules/rive-js/src/rive";
+
 interface RiveOptions {
   locateFile(file: string): string
 }
@@ -9,6 +11,8 @@ export interface RiveCanvas {
   Alignment: AlignmentFactory;
   CanvasRenderer: typeof CanvasRenderer;
   LinearAnimationInstance: typeof LinearAnimationInstance;
+  StateMachineInstance: typeof StateMachineInstance;
+  SMIInput: typeof SMIInput;
   renderFactory: CanvasRenderFactory;
 
   BlendMode: typeof BlendMode;
@@ -91,15 +95,21 @@ export interface CanvasRenderFactory {
 //////////
 export declare class File {
   defaultArtboard(): Artboard;
-  artboard(name: string): Artboard;
+  artboardByName(name: string): Artboard;
+  artboardByIndex(index: number): Artboard;
+  artboardCount(): number;
 }
 export declare class Artboard {
+  get name(): string;
   get bounds(): AABB;
   advance(sec: number): any;
   draw(renderer: CanvasRenderer): void;
   animationByName(name: string): LinearAnimation;
   animationByIndex(index: number): LinearAnimation;
   animationCount(): number;
+  stateMachineByName(name: string): StateMachine;
+  stateMachineByIndex(index: number): StateMachine;
+  stateMachineCount(): number;
   bone(name: string): Bone;
   node(name: string): Node;
   rootBone(name: string): RootBone;
@@ -151,6 +161,45 @@ export declare class LinearAnimationInstance {
    * @param mix 0-1 the strength of the animation in the animations mix.
    */
   apply(artboard: Artboard, mix: number): any;
+}
+
+export declare class StateMachine {
+  get name(): string;
+}
+
+export declare class StateMachineInstance {
+  constructor(stateMachine: StateMachine);
+  inputCount(): number;
+  input(i: number): SMIInput; 
+  advance(sec: number): any;
+  apply(artboard: Artboard): any;
+}
+
+export declare class SMIInput {
+  static bool: number;
+  static number: number;
+  static trigger: number;
+
+  get name(): string;
+  get type(): number;
+  get value(): boolean | number | undefined;
+  set value(val: boolean | number | undefined);
+  fire(): void;
+  asBool(): SMIInput;
+  asNumber(): SMIInput;
+  asTrigger(): SMIInput;
+}
+
+export declare class SMIBool {
+
+}
+
+export declare class SMINumber {
+  
+}
+
+export declare class SMITrigger {
+  
 }
 
 ///////////
