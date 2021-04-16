@@ -9,3 +9,6 @@ node_modules
 
 # parcel stuff
 .parcel-cache
+
+# build stuff
+*/build
