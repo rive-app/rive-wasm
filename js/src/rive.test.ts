@@ -1,3 +1,4 @@
+import { RiveCanvas } from 'rive-canvas';
 import * as rive from './rive';
 
 // #region helper functions
@@ -193,7 +194,7 @@ test('Layouts have sensible defaults', (): void => {
 });
 
 test('Layouts provide runtime fit and alignment values', async () => {
-  const runtime: any = await rive.RuntimeLoader.awaitInstance();
+  const runtime: RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   let layout = new rive.Layout({ fit: rive.Fit.FitWidth, alignment: rive.Alignment.BottomLeft });
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fitWidth);
@@ -207,7 +208,7 @@ test('Layouts provide runtime fit and alignment values', async () => {
   expect(layout.runtimeAlignment(runtime).y).toBe(-1);
 });
 
-test('Layouts can be copied with overriden values', (): void => {
+test('Layouts can be copied with overridden values', (): void => {
   let layout = new rive.Layout({
     fit: rive.Fit.ScaleDown,
     alignment: rive.Alignment.BottomRight,
@@ -238,17 +239,17 @@ test('Layouts can be copied with overriden values', (): void => {
 
 test('Runtime can be loaded using callbacks', async done => {
 
-  let callback1: rive.RuntimeCallback = (runtime: any): void => {
+  let callback1: rive.RuntimeCallback = (runtime: RiveCanvas): void => {
     expect(runtime).toBeDefined();
     expect(runtime.Fit.none).toBeDefined();
     expect(runtime.Fit.cover).toBeDefined();
     expect(runtime.Fit.none).not.toBe(runtime.Fit.cover);
   };
 
-  let callback2: rive.RuntimeCallback = (runtime: any): void =>
+  let callback2: rive.RuntimeCallback = (runtime: RiveCanvas): void =>
     expect(runtime).toBeDefined();
 
-  let callback3: rive.RuntimeCallback = (runtime: any): void => {
+  let callback3: rive.RuntimeCallback = (runtime: RiveCanvas): void => {
     expect(runtime).toBeDefined();
     done();
   };
@@ -260,7 +261,7 @@ test('Runtime can be loaded using callbacks', async done => {
 });
 
 test('Runtime can be loaded using promises', async done => {
-  let rive1: any = await rive.RuntimeLoader.awaitInstance();
+  let rive1: RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   expect(rive1).toBeDefined();
   expect(rive1.Fit.none).toBeDefined();
   expect(rive1.Fit.cover).toBeDefined();
@@ -384,6 +385,38 @@ test('Corrupt Rive file cause explosions', done => {
     buffer: corruptRiveFileBuffer,
     onloaderror: () => done(),
     onload: () => expect(false).toBeTruthy()
+  });
+});
+
+// #endregion
+
+// #region artboards
+
+test('Artboards can be fetched by name', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: 'Artboard2',
+    onload: () => {
+      expect(r).toBeDefined();
+      done();
+    },
+    onloaderror: () => expect(false).toBeTruthy(),
+  });
+});
+
+test('Rive explodes when given an invalid artboard name', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: 'BadArtboard',
+    onload: () => expect(false).toBeTruthy(),
+    onloaderror: () => {
+      // We should get here
+      done();
+    },
   });
 });
 
@@ -683,8 +716,8 @@ test('State machines can be instanced', done => {
     buffer: stateMachineFileBuffer,
     stateMachines: 'StateMachine',
     onload: () => {
-      // const stateMachineNames = r.stateMachineNames;
-      // expect(r.playingStateMachineNames).toHaveLength(1);
+      const stateMachineNames = r.stateMachineNames;
+      expect(r.playingStateMachineNames).toHaveLength(1);
       done();
     }
   });

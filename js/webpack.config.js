@@ -27,7 +27,7 @@ const webConfig = {
     library: 'rive'
   },
   devtool: 'source-map',
-  mode: 'production',
+  mode: 'none',
   // Copy the Wasm file to dist
   plugins: [
     new CopyPlugin({
