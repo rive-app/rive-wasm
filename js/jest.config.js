@@ -1,5 +1,8 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  setupFiles: ['jest-canvas-mock']
+  // Needed for handling ES6 modules
+  "transform": {
+    "^.+\\.m?[t|j]sx?$": "babel-jest"
+  },
+  setupFiles: ['jest-canvas-mock'],
+  // testEnvironment: 'jsdom',
 };

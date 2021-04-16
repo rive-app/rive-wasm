@@ -1,4 +1,4 @@
-import Runtime from '../../wasm/publish/rive.js';``
+import * as rc from 'rive-canvas';
 
 // Tracks playback states; numbers map to the runtime's numerical values
 // i.e. play: 0, pause: 1, stop: 2
@@ -49,8 +49,8 @@ export class Layout {
 
   // Runtime fit and alignment are accessed every frame, so we cache their
   // values to save cycles
-  private cachedRuntimeFit: any;
-  private cachedRuntimeAlignment: any;
+  private cachedRuntimeFit: rc.Fit;
+  private cachedRuntimeAlignment: rc.Alignment;
 
   public readonly fit: Fit;
   public readonly alignment: Alignment;
@@ -89,7 +89,7 @@ export class Layout {
   }
 
   // Returns fit for the Wasm runtime format
-  public runtimeFit(rive: any): any {
+  public runtimeFit(rive: rc.RiveCanvas): rc.Fit {
     if (this.cachedRuntimeFit) return this.cachedRuntimeFit;
 
     let fit;
@@ -106,7 +106,7 @@ export class Layout {
   }
 
   // Returns alignment for the Wasm runtime format
-  public runtimeAlignment(rive: any): any {
+  public runtimeAlignment(rive: rc.RiveCanvas): rc.Alignment {
     if (this.cachedRuntimeAlignment) return this.cachedRuntimeAlignment;
 
     let alignment;
@@ -130,22 +130,22 @@ export class Layout {
 // #region runtime
 
 // Callback type when looking for a runtime instance
-export type RuntimeCallback = (rive: typeof Runtime) => void;
+export type RuntimeCallback = (rive: rc.RiveCanvas) => void;
 
 // Runtime singleton; use getInstance to provide a callback that returns the
 // Rive runtime
 export class RuntimeLoader {
 
   // Singleton helpers
-  private static runtime: typeof Runtime;
+  private static runtime: rc.RiveCanvas;
   // Flag to indicate that loading has started/completed
   private static isLoading: boolean = false;
   // List of callbacks for the runtime that come in while loading
   private static callBackQueue: RuntimeCallback[] = [];
   // Instance of the Rive runtime
-  private static rive: typeof Runtime;
+  private static rive: rc.RiveCanvas;
   // The url for the Wasm file
-  private static wasmWebPath: string = 'https://unpkg.com/rive-js@0.7.8-beta.1/dist/';
+  private static wasmWebPath: string = 'file://';
   // Local path to the Wasm file; for testing purposes
   private static wasmFilePath: string = 'dist/';
   // Are we in test mode?
@@ -156,14 +156,14 @@ export class RuntimeLoader {
 
   // Loads the runtime
   private static loadRuntime(): void {
-    Runtime({
+    rc.default({
       // Loads Wasm bundle
       locateFile: (file: string) =>
         // if in test mode, attempts to load file locally 
         (RuntimeLoader.testMode ?
           RuntimeLoader.wasmFilePath :
           RuntimeLoader.wasmWebPath) + file
-    }).then((rive: typeof Runtime) => {
+    }).then((rive:  rc.RiveCanvas) => {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
       while (RuntimeLoader.callBackQueue.length > 0) {
@@ -187,9 +187,9 @@ export class RuntimeLoader {
   }
 
   // Provides a runtime instance via a promise
-  public static awaitInstance(): Promise<typeof Runtime> {
-    return new Promise<typeof Runtime>((resolve, reject) =>
-      RuntimeLoader.getInstance((rive: typeof Runtime): void => resolve(rive))
+  public static awaitInstance(): Promise<rc.RiveCanvas> {
+    return new Promise<rc.RiveCanvas>((resolve, reject) =>
+      RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => resolve(rive))
     );
   }
 
@@ -208,14 +208,14 @@ export class RuntimeLoader {
 class Animation {
   public loopCount: number = 0;
   public paused: boolean = false;
-  public readonly instance: any;
+  public readonly instance: rc.LinearAnimationInstance;
   /**
    * Constructs a new animation
    * @constructor
    * @param {any} animation: runtime animation object
    * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: any, runtime: any) {
+  constructor(private animation: rc.LinearAnimation, runtime: rc.RiveCanvas) {
     this.instance = new runtime.LinearAnimationInstance(animation);
   }
 
@@ -245,7 +245,7 @@ export enum StateMachineInputType {
  */
 class StateMachineInput {
 
-  constructor(public readonly type: StateMachineInputType, private runtimeInput: any) { }
+  constructor(public readonly type: StateMachineInputType, private runtimeInput: rc.SMIInput) { }
 
   /**
    * Returns the name of the input
@@ -278,7 +278,6 @@ class StateMachineInput {
   }
 }
 
-
 class StateMachine {
 
   /**
@@ -294,14 +293,14 @@ class StateMachine {
   /**
    * Runtime state machine instance
    */
-  public readonly instance: any;
+  public readonly instance: rc.StateMachineInstance;
 
   /**
    * @constructor
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: any, runtime: any) {
+  constructor(private stateMachine: rc.StateMachine, runtime: rc.RiveCanvas) {
     this.instance = new runtime.StateMachineInstance(stateMachine);
     this.initInputs(runtime);
   }
@@ -314,7 +313,7 @@ class StateMachine {
    * Fetches references to the state amchine's inputs and caches them
    * @param runtime an instance of the runtime; needed for the SMIInput types
    */
-  private initInputs(runtime: any): void {
+  private initInputs(runtime: rc.RiveCanvas): void {
     // Fetch the inputs from the runtime if we don't have them
     for (let i = 0; i < this.instance.inputCount(); i++) {
       const input = this.instance.input(i);
@@ -326,14 +325,14 @@ class StateMachine {
    * Maps a runtime input to it's appropriate type
    * @param input 
    */
-  private mapRuntimeInput(input: any, runtime: any): StateMachineInput {
-    if (input.type == runtime.SMIInput.bool) {
+  private mapRuntimeInput(input: rc.SMIInput, runtime: rc.RiveCanvas): StateMachineInput {
+    if (input.type === runtime.SMIInput.bool) {
       return new StateMachineInput(StateMachineInputType.Boolean, input.asBool());
     }
-    else if (input.type == runtime.SMIInput.number) {
+    else if (input.type === runtime.SMIInput.number) {
       return new StateMachineInput(StateMachineInputType.Number, input.asNumber());
     }
-    else if (input.type == runtime.SMIInput.trigger) {
+    else if (input.type === runtime.SMIInput.trigger) {
       return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
     }
   }
@@ -357,8 +356,8 @@ class Animator {
    * @param stateMachines optional list of state machines
    */
   constructor(
-    private runtime: any,
-    private artboard: RuntimeArtboard,
+    private runtime: rc.RiveCanvas,
+    private artboard: rc.Artboard,
     public readonly animations: Animation[] = [],
     public readonly stateMachines: StateMachine[] = []) {}
 
@@ -651,19 +650,6 @@ export interface RiveLoadParameters {
   stateMachines?: string | string[],
 }
 
-// Interface for typing a runtime Artboard
-interface RuntimeArtboard {
-  animationCount: () => number,
-  stateMachineCount: () => number,
-  bounds: any,
-  advance: (elapsedTime: number) => void
-  draw: (renderer: any) => void,
-  animationByName: (name: string) => any,
-  animationByIndex: (index: number) => any,
-  stateMachineByName: (name: string) => any,
-  stateMachineByIndex: (index: number) => any,
-}
-
 export class Rive {
 
   // Canvas in which to render the artboard
@@ -689,7 +675,7 @@ export class Rive {
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
 
   // The runtime renderer
-  private renderer: any;
+  private renderer: rc.Renderer;
 
   // Tracks the playback state
   private playState: PlaybackState = PlaybackState.Stop;
@@ -698,13 +684,13 @@ export class Rive {
   private loaded: boolean = false;
 
   // Wasm runtime
-  private runtime: any;
+  private runtime: rc.RiveCanvas;
 
   // Runtime artboard
-  private artboard: RuntimeArtboard | null = null;
+  private artboard: rc.Artboard | null = null;
 
   // Runtime file
-  private file: any;
+  private file: rc.File;
 
   // Holds event listeners
   private eventManager: EventManager;
@@ -823,6 +809,7 @@ export class Rive {
       return Promise.resolve();
     } else {
       const msg = 'Problem loading file; may be corrupt!';
+      console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);
     }
@@ -831,8 +818,15 @@ export class Rive {
   // Initialize for playback
   private initArtboard(artboardName: string, animationNames: string[], stateMachineNames: string[]): void {
     this.artboard = artboardName ?
-      this.file.artboard(artboardName) :
+      this.file.artboardByName(artboardName) :
       this.file.defaultArtboard();
+
+    if (!this.artboard) {
+      const msg = 'Invalid artboard name or no default artboard';
+      console.warn(msg);
+      this.eventManager.fire({ type: EventType.LoadError, data: msg });
+      return;
+    }
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
@@ -1127,7 +1121,7 @@ export class Rive {
    * @param name the name of the state machine
    * @returns a runtime state machine
    */
-  private getRuntimeStateMachine(name: string): any {
+  private getRuntimeStateMachine(name: string): rc.StateMachine {
     for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
       const stateMachine = this.artboard.stateMachineByIndex(i);
       if (stateMachine.name === name) {
