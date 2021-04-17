@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.7.8-beta.4",
+  "version": "0.7.8-beta.5",
   "description": "Rive's web api.",
   "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",
@@ -35,7 +35,7 @@
   ],
   "typings": "./rive.d.ts",
   "dependencies": {
-    "rive-canvas": "file://../wasm/publish"
+    "rive-canvas": "^0.7.2"
   },
   "devDependencies": {
     "@babel/core": "^7.13.15",

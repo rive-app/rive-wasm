@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.5 (Apr 16, 2021)
+- Fixes broken depenency in betas 3 & 4
+
 ## 0.7.8-beta.4 (Apr 16, 2021)
 - Typescript type definitions are included in the package
 - Adds unsubscribe from events
