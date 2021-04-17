@@ -1,5 +1,9 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.6 (Apr 16, 2021)
+- Fixes issue when ```pause``` or ```stop``` are called before file is initialized
+- Updates Jest config to handle imported rive-canvas ES6 module
+
 ## 0.7.8-beta.5 (Apr 16, 2021)
 - Fixes broken depenency in betas 3 & 4
 
