@@ -4397,6 +4397,10 @@ var Rive = /** @class */ (function () {
     // Pauses specified animations; if none specified, pauses all.
     Rive.prototype.pause = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
+        // If the file's not loaded, early out, nothing to pause
+        if (!this.loaded) {
+            return;
+        }
         this.animator.pause(animationNames);
         if (!this.animator.isPlaying || animationNames.length === 0) {
             this.playState = PlaybackState.Pause;
@@ -4409,6 +4413,10 @@ var Rive = /** @class */ (function () {
     // Stops specified animations; if none specifies, stops them all.
     Rive.prototype.stop = function (animationNames) {
         animationNames = mapToStringArray(animationNames);
+        // If the file's not loaded, early out, nothing to pause
+        if (!this.loaded) {
+            return;
+        }
         var stoppedAnimationNames = animationNames.length === 0 ?
             this.animator.remove() :
             this.animator.remove(animationNames);
@@ -4532,6 +4540,10 @@ var Rive = /** @class */ (function () {
      * @returns the inputs for the named state machine
      */
     Rive.prototype.stateMachineInputs = function (name) {
+        // If the file's not loaded, early out, nothing to pause
+        if (!this.loaded) {
+            return;
+        }
         var stateMachine = this.animator.stateMachines.find(function (m) { return m.name === name; });
         return stateMachine === null || stateMachine === void 0 ? void 0 : stateMachine.inputs;
     };

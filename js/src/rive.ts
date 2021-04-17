@@ -1033,6 +1033,11 @@ export class Rive {
   public pause(animationNames?: string | string[]): void {
     animationNames = mapToStringArray(animationNames);
 
+    // If the file's not loaded, early out, nothing to pause
+    if (!this.loaded) {
+      return;
+    }
+
     this.animator.pause(animationNames);
     if (!this.animator.isPlaying || animationNames.length === 0) {
       this.playState = PlaybackState.Pause;
@@ -1046,6 +1051,11 @@ export class Rive {
   // Stops specified animations; if none specifies, stops them all.
   public stop(animationNames?: string | string[] | undefined): void {
     animationNames = mapToStringArray(animationNames);
+
+    // If the file's not loaded, early out, nothing to pause
+    if (!this.loaded) {
+      return;
+    }
 
     const stoppedAnimationNames: string[] = animationNames.length === 0 ?
       this.animator.remove() :
@@ -1164,6 +1174,10 @@ export class Rive {
    * @returns the inputs for the named state machine
    */
   public stateMachineInputs(name: string): StateMachineInput[] {
+    // If the file's not loaded, early out, nothing to pause
+    if (!this.loaded) {
+      return;
+    }
     const stateMachine = this.animator.stateMachines.find(m => m.name === name);
     return stateMachine?.inputs;
   }
