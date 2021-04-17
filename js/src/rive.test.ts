@@ -283,7 +283,7 @@ test('Runtime can be loaded using promises', async done => {
 
 // #region event
 
-test('Events can be listened for and fired', () => {
+test('Events can be subscribed and unsubscribed to and fired', () => {
   const manager = new rive.Testing.EventManager();
   expect(manager).toBeDefined();
 
@@ -526,6 +526,110 @@ test('Playing a one-shot animation will fire a stop event', done => {
       done();
     },
   });
+});
+
+test('Stop events are received', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: oneShotRiveFileBuffer,
+    autoplay: true,
+    onstop: () => {
+      // We expect to receive a stop event when the animation's done
+      expect(r.isStopped).toBeTruthy();
+      expect(r.isPaused).toBeFalsy();
+      expect(r.isPlaying).toBeFalsy();done();
+    },
+  });
+});
+
+test('Events can be unsubscribed from', done => {
+  const canvas = document.createElement('canvas');
+
+  const stopCallback = (event: rive.Event) =>
+    // We should never reach this
+    expect(false).toBeTruthy();
+  
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: oneShotRiveFileBuffer,
+    autoplay: true,
+    onstop: stopCallback,
+    onplay: (event: rive.Event) => {
+      // Deregister stop subscription
+      r.unsubscribe(rive.EventType.Stop, stopCallback);
+    },
+  });
+  // Time out after 200 ms
+  setTimeout(() => done(), 200);
+});
+
+test('Events of a single type can be mass unsubscribed', done => {
+  const canvas = document.createElement('canvas');
+
+  const loopCallback1 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+  const loopCallback2 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+  const loopCallback3 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: oneShotRiveFileBuffer,
+    autoplay: true,
+    onloop: loopCallback1,
+    onplay: (event: rive.Event) => {
+      r.on(rive.EventType.Loop, loopCallback2);
+      r.on(rive.EventType.Loop, loopCallback3);
+      // Deregisters all loop subscriptions
+      r.unsubscribeAll(rive.EventType.Loop);
+    },
+    onstop: (event: rive.Event) => {
+      // This should not hgave been removed
+      done();
+    }
+  });
+
+  setTimeout(() => r.stop(), 200);
+});
+
+test('All events can be mass unsubscribed', done => {
+  const canvas = document.createElement('canvas');
+
+  const loopCallback1 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+  const loopCallback2 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+  const loopCallback3 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+    const stopCallback1 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+  const stopCallback2 = (event: rive.Event) =>
+    expect(false).toBeTruthy();
+
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: oneShotRiveFileBuffer,
+    autoplay: true,
+    onloop: loopCallback1,
+    onplay: (event: rive.Event) => {
+      r.on(rive.EventType.Loop, loopCallback2);
+      r.on(rive.EventType.Loop, loopCallback3);
+      r.on(rive.EventType.Stop, stopCallback2);
+      // Deregisters all loop subscriptions
+      r.unsubscribeAll();
+    },
+    onstop:stopCallback1,
+  });
+
+  setTimeout(() => {
+    r.stop();
+    done();
+  }, 200);
 });
 
 // #endregion
