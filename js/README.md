@@ -24,13 +24,13 @@ Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
 
-## 0.7.8-beta.3
+## 0.7.8-beta.4
 
 This beta adds state machine support:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.8-beta.3/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.8-beta.4/dist/rive.min.js"></script>
 <script>
     new rive.Rive({
         src: 'https://cdn.rive.app/animations/skills_v7.riv',
@@ -220,6 +220,11 @@ Event callbacks currently supported are:
   - *onpause*: playback has been paused
   - *onloop*: one of the playing animations has looped (```LoopEvent```)
   - *onstop*: playback has stopped (when the animation completes if not a looping animation)
+
+*Unsubscribing functionality is currently only in the beta release*
+You can unsubscribe from a single callback, all callbacks of a specific type, or every callback using:
+  - ```unsubscribe(type, callback)```
+  - ```unsubscribeAll(type)```: if ```type``` is omitted, all callbacks are unsubscribed
 
 ## Other Properties
 

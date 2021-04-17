@@ -136,7 +136,18 @@ declare class EventManager {
     constructor(listeners?: EventListener[]);
     private getListeners;
     add(listener: EventListener): void;
+    /**
+     * Removes a listener
+     * @param listener the listener with the callback to be removed
+     */
     remove(listener: EventListener): void;
+    /**
+     * Clears all listeners of specified type, or every listener if no type is
+     * specified
+     * @param type the type of listeners to clear, or all listeners if not
+     * specified
+     */
+    removeAll(type?: EventType): void;
     fire(event: Event): void;
 }
 export interface Task {
@@ -247,7 +258,24 @@ export declare class Rive {
     get isPlaying(): boolean;
     get isPaused(): boolean;
     get isStopped(): boolean;
+    /**
+     * Subscribe to Rive-generated events
+     * @param type the type of event to subscribe to
+     * @param callback callback to fire when the event occurs
+     */
     on(type: EventType, callback: EventCallback): void;
+    /**
+     * Unsubscribes from a Rive-generated event
+     * @param callback the callback to unsubscribe from
+     */
+    unsubscribe(type: EventType, callback: EventCallback): void;
+    /**
+     * Unsubscribes all listeners from an event type, or everything if no type is
+     * given
+     * @param type the type of event to unsubscribe from, or all types if
+     * undefined
+     */
+    unsubscribeAll(type?: EventType): void;
     /**
      * Returns the contents of a Rive file: the artboards, animations, and state machines
      */

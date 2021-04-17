@@ -1,7 +1,12 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.4 (Apr 16, 2021)
+- Typescript type definitions are included in the package
+- Adds unsubscribe from events
+
 ## 0.7.8-beta.3 (Apr 16, 2021)
-- Updates how webpack packages the vanilla web version to make it work nicelyt with production builds and parcel
+- Updates how webpack packages the vanilla web version to make it work nicely with production builds and parcel
+
 ## 0.7.8-beta.2 (Apr 15, 2021)
 - Updates to latest wasm
 - Changes to packaging to fix importing issues in frameworks such as vue and parcel

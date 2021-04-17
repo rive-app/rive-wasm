@@ -564,11 +564,38 @@ class EventManager {
     }
   }
 
-  // Removes listener
+  /**
+   * Removes a listener
+   * @param listener the listener with the callback to be removed
+   */
   public remove(listener: EventListener): void {
-    const index = this.listeners.indexOf(listener, 0);
-    if (index > -1) {
-      this.listeners.splice(index, 1);
+    // We can't simply look for the listener as it'll be a different instance to
+    // one originally subscribed. Find all the listeners of the right type and
+    // then check their callbacks which should match.
+    for (let i = 0; i < this.listeners.length; i++) {
+      const currentListener = this.listeners[i];
+      if (currentListener.type === listener.type) {
+        if (currentListener.callback === listener.callback) {
+          this.listeners.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Clears all listeners of specified type, or every listener if no type is
+   * specified
+   * @param type the type of listeners to clear, or all listeners if not
+   * specified
+   */
+  public removeAll(type?: EventType) {
+    if (!type) {
+      this.listeners.splice(0, this.listeners.length);
+    } else {
+      this.listeners
+        .filter((l) => l.type === type)
+        .forEach((l) => this.remove(l));
     }
   }
 
@@ -1192,12 +1219,37 @@ export class Rive {
     return this.playState === PlaybackState.Stop;
   }
 
-  // Register a new listener
+  /**
+   * Subscribe to Rive-generated events
+   * @param type the type of event to subscribe to
+   * @param callback callback to fire when the event occurs
+   */
   public on(type: EventType, callback: EventCallback) {
     this.eventManager.add({
       type: type,
       callback: callback,
     });
+  }
+
+  /**
+   * Unsubscribes from a Rive-generated event
+   * @param callback the callback to unsubscribe from
+   */
+  public unsubscribe(type: EventType, callback: EventCallback) {
+    this.eventManager.remove({
+      type: type,
+      callback: callback,
+    });
+  }
+
+  /**
+   * Unsubscribes all listeners from an event type, or everything if no type is
+   * given
+   * @param type the type of event to unsubscribe from, or all types if
+   * undefined
+   */
+  public unsubscribeAll(type?: EventType) {
+    this.eventManager.removeAll(type);
   }
 
   /**
