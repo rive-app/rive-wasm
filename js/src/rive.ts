@@ -1,5 +1,10 @@
 import * as rc from 'rive-canvas';
 
+/**
+ * Generic type for a parameterless void callback
+ */
+export type VoidCallback = () => void;
+
 // Tracks playback states; numbers map to the runtime's numerical values
 // i.e. play: 0, pause: 1, stop: 2
 enum PlaybackState {
@@ -207,7 +212,6 @@ export class RuntimeLoader {
 // state
 class Animation {
   public loopCount: number = 0;
-  public paused: boolean = false;
   public readonly instance: rc.LinearAnimationInstance;
   /**
    * Constructs a new animation
@@ -215,7 +219,7 @@ class Animation {
    * @param {any} animation: runtime animation object
    * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: rc.LinearAnimation, runtime: rc.RiveCanvas) {
+  constructor(private animation: rc.LinearAnimation, runtime: rc.RiveCanvas, public playing: boolean) {
     this.instance = new runtime.LinearAnimationInstance(animation);
   }
 
@@ -286,11 +290,6 @@ class StateMachine {
   public readonly inputs: StateMachineInput[] = [];
 
   /**
-   * Is the state machine paused
-   */
-  public paused: boolean = false;
-
-  /**
    * Runtime state machine instance
    */
   public readonly instance: rc.StateMachineInstance;
@@ -300,7 +299,7 @@ class StateMachine {
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: rc.StateMachine, runtime: rc.RiveCanvas) {
+  constructor(private stateMachine: rc.StateMachine, runtime: rc.RiveCanvas, public playing: boolean) {
     this.instance = new runtime.StateMachineInstance(stateMachine);
     this.initInputs(runtime);
   }
@@ -358,6 +357,7 @@ class Animator {
   constructor(
     private runtime: rc.RiveCanvas,
     private artboard: rc.Artboard,
+    private eventManager: EventManager,
     public readonly animations: Animation[] = [],
     public readonly stateMachines: StateMachine[] = []) {}
 
@@ -370,128 +370,180 @@ class Animator {
    * @param animatable the name(s) of animations and state machines to add
    * @returns a list of names of the playing animations and state machines
    */
-  public add(animatables: string | string[]): string[] {
+  public add(animatables: string | string[], playing: boolean, fireEvent = true): string[] {
     animatables = mapToStringArray(animatables);
-    const instancedAnimationNames = this.animations.map(a => a.name);
-    const instancedMachineNames = this.stateMachines.map(m => m.name);
-    for (const i in animatables) {
-      const aIndex = instancedAnimationNames.indexOf(animatables[i]);
-      const mIndex = instancedMachineNames.indexOf(animatables[i]);
-      if (aIndex >= 0) {
-        // Animation is instanced, unpause it
-        this.animations[aIndex].paused = false;
-      } if (mIndex >= 0) {
-        // State machine is instanced, unpause it
-        this.stateMachines[mIndex].paused = false;
-      } else {
-        // Try to create a new animation instance
-        const anim = this.artboard.animationByName(animatables[i]);
-        if(anim) {
-          this.animations.push(new Animation(anim, this.runtime));
-        } else {
-          const sm = this.artboard.stateMachineByName(animatables[i]);
-          if (sm) {
-            this.stateMachines.push(new StateMachine(sm, this.runtime));
+    // If animatables is empty, play or pause everything
+    if (animatables.length === 0) {
+      this.animations.forEach(a => a.playing = playing);
+      this.stateMachines.forEach(m => m.playing = playing);
+    } else {
+      // Play/pause already instanced items, or create new instances
+      const instancedAnimationNames = this.animations.map(a => a.name);
+      const instancedMachineNames = this.stateMachines.map(m => m.name);
+      for (const i in animatables) {
+        const aIndex = instancedAnimationNames.indexOf(animatables[i]);
+        const mIndex = instancedMachineNames.indexOf(animatables[i]);
+        if (aIndex >= 0 || mIndex >= 0) {
+          if (aIndex >= 0) {
+            // Animation is instanced, play/pause it
+            this.animations[aIndex].playing = playing;
+          } else {
+            // State machine is instanced, play/pause it
+            this.stateMachines[mIndex].playing = playing;
+          }
+       } else {
+          // Try to create a new animation instance
+          const anim = this.artboard.animationByName(animatables[i]);
+          if(anim) {
+            this.animations.push(new Animation(anim, this.runtime, playing));
+          } else {
+            // Try to create a new state machine instance
+            const sm = this.artboard.stateMachineByName(animatables[i]);
+            if (sm) {
+              this.stateMachines.push(new StateMachine(sm, this.runtime, playing));
+            }
           }
         }
       }
     }
-    return this.playing;
+    // Fire play/paused events for animations
+    if (fireEvent) {
+      if (playing) {
+        this.eventManager.fire({
+          type: EventType.Play,
+          data: this.playing,
+        });
+      } else {
+        this.eventManager.fire({
+          type: EventType.Pause,
+          data: this.paused,
+        });
+      }
+    }
+
+    return playing ? this.playing : this.paused;
   }
+
+  /**
+   * Play the named animations/state machines
+   * @param animatables the names of the animations/machines to play; plays all if empty
+   * @returns a list of the playing items
+   */
+  public play(animatables: string | string[]): string[] {
+    return this.add(animatables, true);
+  }
+
+    /**
+   * Pauses named aninimations and state machines, or everything if nothing is
+   * specified
+   * @param animatables names of the animations and state machines to pause
+   * @returns a list of names of the animations and state machines paused
+   */
+     public pause(animatables: string[]): string[] {
+      return this.add(animatables, false);
+    }
 
   /**
    * Returns a list of names of all animations and state machines currently
    * playing
    */
   public get playing(): string[] {
-    return this.animations.filter(a => !a.paused).map(a => a.name).concat(
-           this.stateMachines.filter(m => !m.paused).map(m => m.name)
+    return this.animations.filter(a => a.playing).map(a => a.name).concat(
+           this.stateMachines.filter(m => m.playing).map(m => m.name)
     );
   }
 
   /**
-   * Removes all named animations and state machines
+   * Returns a list of names of all animations and state machines currently
+   * paused
+   */
+     public get paused(): string[] {
+      return this.animations.filter(a => !a.playing).map(a => a.name).concat(
+             this.stateMachines.filter(m => !m.playing).map(m => m.name)
+      );
+    }
+
+  /**
+   * Stops and removes all named animations and state machines
    * @param animatables animations and state machines to remove
    * @returns a list of names of removed items
    */
-  public remove(animatables?: string[]): string[] {
+  public stop(animatables?: string[]): string[] {
     // If nothing's specified, wipe them out, all of them
-    if (!animatables) {
-      const names = this.animations.map(a => a.name).concat(
+    let removedNames: string[] = [];
+    if (animatables.length === 0) {
+      removedNames = this.animations.map(a => a.name).concat(
         this.stateMachines.map(m => m.name)
       );
       this.animations.splice(0, this.animations.length);
       this.stateMachines.splice(0, this.stateMachines.length);
-      return names;
+    } else {
+      // Remove only the named animations/state machines
+      const animationsToRemove = this.animations.filter(
+        a => animatables.includes(a.name)
+      );
+      animationsToRemove.forEach(a =>
+        this.animations.splice(this.animations.indexOf(a), 1)
+      );
+      const machinesToRemove = this.stateMachines.filter(
+        m => animatables.includes(m.name)
+      );
+      machinesToRemove.forEach(m =>
+        this.stateMachines.splice(this.stateMachines.indexOf(m), 1)
+      );
+      removedNames = animationsToRemove.map(a => a.name).concat(
+        machinesToRemove.map(m => m.name));
     }
-    // Remove only the named animations/state machines
-    const animationsToRemove = this.animations.filter(
-      a => animatables.includes(a.name)
-    );
-    animationsToRemove.forEach(a =>
-      this.animations.splice(this.animations.indexOf(a), 1)
-    );
-    const machinesToRemove = this.stateMachines.filter(
-      m => animatables.includes(m.name)
-    );
-    machinesToRemove.forEach(m =>
-      this.stateMachines.splice(this.stateMachines.indexOf(m), 1)
-    );
+
+    this.eventManager.fire({
+      type: EventType.Stop,
+      data: removedNames,
+    });
+
     // Return the list of animations removed
-    return animationsToRemove.map(a => a.name).concat(
-      machinesToRemove.map(m => m.name)
-    );
-  }
-
-  /**
-   * Pauses named aninimations and state machines, or everything if nothing is
-   * specified
-   * @param animatables names of the animations and state machines to pause
-   * @returns a list of names of the animations and state machines paused
-   */
-  public pause(animatables: string[]): string[] {
-    const pausedNames: string[] = [];
-
-    this.animations.forEach((a) => {
-      if (animatables.includes(a.name)) {
-        a.paused = true;
-        pausedNames.push(a.name);
-      }
-    });
-    this.stateMachines.forEach((m) => {
-      if (animatables.includes(m.name)) {
-        m.paused = true;
-        pausedNames.push(m.name);
-      }
-    });
-    return pausedNames;
+    return removedNames;
   }
 
   /**
    * Returns true if at least one animation is active
    */
   public get isPlaying(): boolean {
-    return this.animations.reduce((acc, curr) => acc || !curr.paused, false)
-        || this.stateMachines.reduce((acc, curr) => acc || !curr.paused, false);
+    return this.animations.reduce((acc, curr) => acc || curr.playing, false)
+        || this.stateMachines.reduce((acc, curr) => acc || curr.playing, false);
+  }
+
+  /**
+   * Returns true if all animations are paused and there's at least one animation
+   */
+  public get isPaused(): boolean {
+    return !this.isPlaying && 
+           (this.animations.length > 0 || this.stateMachines.length > 0);  
+  }
+
+  /**
+   * Returns true if there are no playing or paused animations/state machines
+   */
+  public get isStopped(): boolean {
+    return this.animations.length === 0 && this.stateMachines.length === 0;
   }
 
   /**
    * If there are no animations or state machines, add the first one found
+   * @returns the name of the animation or state machine instanced
    */
-   public atLeastOne(): void {
+   public atLeastOne(playing: boolean, fireEvent = true): string {
+    let instancedName: string;
     if (this.animations.length === 0 && this.stateMachines.length === 0) {
       if(this.artboard.animationCount() > 0) {
         // Add the first animation
-        this.animations.push(new Animation(
-          this.artboard.animationByIndex(0), this.runtime));
+        this.add([instancedName = this.artboard.animationByIndex(0).name], playing, fireEvent);
       } else if(this.artboard.stateMachineCount() > 0) {
         // Add the first state machine
-        this.stateMachines.push(new StateMachine(
-          this.artboard.stateMachineByIndex(0), this.runtime));
+        this.add([instancedName = this.artboard.stateMachineByIndex(0).name], playing, fireEvent);
       }
     }
+    return instancedName;
   }
-
 }
 
 // #endregion
@@ -615,12 +667,9 @@ class EventManager {
 // A task in the queue; will fire the action when the queue is processed; will
 // also optionally fire an event.
 export interface Task {
-  action: ActionCallback,
+  action: VoidCallback,
   event?: Event,
 }
-
-// Callback type for task actions
-export type ActionCallback = () => void;
 
 // Manages a queue of tasks
 class TaskQueueManager {
@@ -682,9 +731,6 @@ export class Rive {
   // Canvas in which to render the artboard
   private readonly canvas: HTMLCanvasElement | OffscreenCanvas;
 
-  // Should the animations autoplay?
-  private autoplay: boolean;
-
   // A url to a Rive file; may be undefined if a buffer is specified
   private src: string;
 
@@ -704,11 +750,22 @@ export class Rive {
   // The runtime renderer
   private renderer: rc.Renderer;
 
-  // Tracks the playback state
-  private playState: PlaybackState = PlaybackState.Stop;
+  /**
+   * Flag to active/deactivate renderer
+   */
+  private isRendererActive = true;
 
   // Tracks if a Rive file is loaded
   private loaded: boolean = false;
+
+  /**
+   * Tracks if a Rive file is loaded; we need this in addition to loaded as some
+   * commands (e.g. contents) can be called as soon as the file is loaded.
+   * However, playback commands need to be queued and run in order once initial
+   * animations and autoplay has been sorted out. This applies to play, pause,
+   * and start.
+   */
+  private readyForPlaying: boolean = false;
 
   // Wasm runtime
   private runtime: rc.RiveCanvas;
@@ -734,7 +791,6 @@ export class Rive {
 
   constructor(params: RiveParameters) {
     this.canvas = params.canvas;
-    this.autoplay = params.autoplay ?? false;
     this.src = params.src;
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
@@ -758,7 +814,7 @@ export class Rive {
     this.init({
       src: this.src,
       buffer: this.buffer,
-      autoplay: this.autoplay,
+      autoplay: params.autoplay,
       animations: params.animations,
       stateMachines: params.stateMachines,
       artboard: params.artboard
@@ -775,7 +831,6 @@ export class Rive {
   private init({ src, buffer, animations, stateMachines, artboard, autoplay = false }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
-    this.autoplay = autoplay;
 
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer) {
@@ -788,24 +843,15 @@ export class Rive {
     // List of state machines that should be initialized
     const startingStateMachineNames = mapToStringArray(stateMachines);
 
-    // Queue up play action and event if necessary
-    if (this.autoplay) {
-      this.taskQueue.add({ action: () => this.play() });
-    }
-
     // Ensure loaded is marked as false if loading new file
     this.loaded = false;
-
-    // Queue up play action and event if necessary
-    if (this.autoplay) {
-      this.taskQueue.add({ action: () => this.play() });
-    }
+    this.readyForPlaying = false;
 
     // Ensure the runtime is loaded
     RuntimeLoader.awaitInstance().then((runtime) => {
       this.runtime = runtime;
       // Load Rive data from a source uri or a data buffer
-      this.initData(artboard, startingAnimationNames, startingStateMachineNames).catch(e => {
+      this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay).catch(e => {
         console.error(e);
       });
     }).catch(e => {
@@ -814,7 +860,12 @@ export class Rive {
   }
 
   // Initializes runtime with Rive data and preps for playing
-  private async initData(artboardName: string, animationNames: string[], stateMachineNames: string[]): Promise<void> {
+  private async initData(
+    artboardName: string,
+    animationNames: string[],
+    stateMachineNames: string[],
+    autoplay: boolean
+  ): Promise<void> {
     // Load the buffer from the src if provided
     if (this.src) {
       this.buffer = await loadRiveFile(this.src);
@@ -822,17 +873,23 @@ export class Rive {
     // Load the Rive file
     this.file = await this.runtime.load(new Uint8Array(this.buffer));
     if (this.file) {
-      this.loaded = true;
       // Initialize and draw frame
-      this.initArtboard(artboardName, animationNames, stateMachineNames);
-      this.drawFrame();
+      this.initArtboard(artboardName, animationNames, stateMachineNames, autoplay);
+
       // Everything's set up, emit a load event
+      this.loaded = true;
       this.eventManager.fire({
         type: EventType.Load,
         data: this.src ?? 'buffer'
       });
-      // Clear the task queue
+
+      // Flag ready for playback commands and clear the task queue; this order
+      // is important or it may infinitely recurse
+      this.readyForPlaying = true;
       this.taskQueue.process();
+
+      this.drawFrame();
+
       return Promise.resolve();
     } else {
       const msg = 'Problem loading file; may be corrupt!';
@@ -843,7 +900,12 @@ export class Rive {
   }
 
   // Initialize for playback
-  private initArtboard(artboardName: string, animationNames: string[], stateMachineNames: string[]): void {
+  private initArtboard(
+    artboardName: string,
+    animationNames: string[],
+    stateMachineNames: string[],
+    autoplay: boolean
+  ): void {
     this.artboard = artboardName ?
       this.file.artboardByName(artboardName) :
       this.file.defaultArtboard();
@@ -863,33 +925,36 @@ export class Rive {
     }
 
     // Initialize the animator
-    this.animator = new Animator(this.runtime, this.artboard);
+    this.animator = new Animator(this.runtime, this.artboard, this.eventManager);
 
     // Get the canvas where you want to render the animation and create a renderer
     this.renderer = new this.runtime.CanvasRenderer(this.ctx);
 
-    // Initialize the animations
-    if (animationNames.length > 0) {
-      this.animator.add(animationNames);
-    }
 
-    // Initialize the state machines
-    if (stateMachineNames.length > 0) {
-      this.animator.add(stateMachineNames);
+    // Initialize the animations; as loaded hasn't happened yet, we need to
+    // suppress firing the play/pause events until the load vent has fired. To
+    // do this we tell the animator to suppress firing events, and add event
+    // firing to the task queue.
+    let instancedNames: string[];
+    if (animationNames.length > 0 || stateMachineNames.length > 0) {
+      instancedNames = animationNames.concat(stateMachineNames);
+      this.animator.add(instancedNames, autoplay, false);
+    } else {
+      instancedNames = [this.animator.atLeastOne(autoplay, false)];
     }
+    // Queue up firing the playback events
+    this.taskQueue.add({
+      action: () => {},
+      event: {
+        type: autoplay ? EventType.Play : EventType.Pause,
+        data: instancedNames,
+      }
+    });
   }
 
   // Draws the current artboard frame
   public drawFrame() {
-    // Advance to the first frame and draw the artboard
-    this.artboard.advance(0);
-
-    // Update the renderer's alignment if necessary
-    this.alignRenderer();
-
-    const bounds = this.artboard.bounds;
-    this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
-    this.artboard.draw(this.renderer);
+    this.startRendering();
   }
 
   // Tracks the last timestamp at which the animation was rendered. Used only in
@@ -897,20 +962,39 @@ export class Rive {
   private lastRenderTime: number;
 
   // Tracks the current animation frame request
-  private frameRequestId: number;
+  private frameRequestId: number | null;
 
-  // Draw rendering loop; renders animation frames at the correct time interval.
-  private draw(time: number): void {
+  /**
+   * Used be draw to track when a second of active rendering time has passed. Used for debugging purposes
+   */
+  private renderSecondTimer: number = 0;
+
+  /**
+   * Draw rendering loop; renders animation frames at the correct time interval.
+   * @param time the time at which to render a frame 
+   */
+  private draw(time: number, onSecond?: VoidCallback): void {
+    // Clear the frameRequestId, as we're now rendering a fresh frame
+    this.frameRequestId = null;
+
     // On the first pass, make sure lastTime has a valid value
     if (!this.lastRenderTime) {
       this.lastRenderTime = time;
     }
+
+    // Handle the onSecond callback
+    this.renderSecondTimer += (time - this.lastRenderTime);
+    if (this.renderSecondTimer > 5000) {
+      this.renderSecondTimer = 0;
+      onSecond?.();
+    }
+
     // Calculate the elapsed time between frames in seconds
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
 
     // Advance non-paused animations by the elapsed number of seconds
-    const activeAnimations = this.animator.animations.filter(a => !a.paused);
+    const activeAnimations = this.animator.animations.filter(a => a.playing);
     for (const animation of activeAnimations) {
       animation.instance.advance(elapsedTime);
       if (animation.instance.didLoop) {
@@ -920,7 +1004,7 @@ export class Rive {
     }
 
     // Advance non-paused state machines by the elapsed number of seconds
-    const activeStateMachines = this.animator.stateMachines.filter(a => !a.paused);
+    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
     for (const stateMachine of activeStateMachines) {
       stateMachine.instance.advance(elapsedTime);
       stateMachine.instance.apply(this.artboard);
@@ -963,14 +1047,16 @@ export class Rive {
       }
     }
 
+
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
-    if (this.playState === PlaybackState.Play) {
-      this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
-    } else if (this.playState === PlaybackState.Pause) {
+    if (this.animator.isPlaying) {
+      // Request a new rendering frame
+      this.startRendering();
+    } else if (this.animator.isPaused) {
       // Reset the end time so on playback it starts at the correct frame
       this.lastRenderTime = 0;
-    } else if (this.playState === PlaybackState.Stop) {
+    } else if (this.animator.isStopped) {
       // Reset animation instances, artboard and time
       // TODO: implement this properly when we have instancing
       // this.initArtboard();
@@ -1007,26 +1093,19 @@ export class Rive {
     }
   }
 
-  // Plays specified animations; if none specified, it plays paused ones.
-  public play(animationNames?: string | string[]): void {
+  // Plays specified animations; if none specified, it unpauses everything.
+  public play(animationNames?: string | string[], autoplay?: true): void {
     animationNames = mapToStringArray(animationNames);
 
     // If the file's not loaded, queue up the play
-    if (!this.loaded) {
+    if (!this.readyForPlaying) {
       this.taskQueue.add({
-        action: () => this.play(animationNames),
+        action: () => this.play(animationNames, autoplay),
       });
       return;
     }
-
-    const playingAnimations = this.animator.add(animationNames);
-    this.animator.atLeastOne();
-    this.playState = PlaybackState.Play;
-    this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
-    this.eventManager.fire({
-      type: EventType.Play,
-      data: this.playingAnimationNames
-    });
+    this.animator.play(animationNames);
+    this.startRendering();
   }
 
   // Pauses specified animations; if none specified, pauses all.
@@ -1034,44 +1113,26 @@ export class Rive {
     animationNames = mapToStringArray(animationNames);
 
     // If the file's not loaded, early out, nothing to pause
-    if (!this.loaded) {
+    if (!this.readyForPlaying) {
+      this.taskQueue.add({
+        action: () => this.pause(animationNames),
+      });
       return;
     }
-
     this.animator.pause(animationNames);
-    if (!this.animator.isPlaying || animationNames.length === 0) {
-      this.playState = PlaybackState.Pause;
-    }
-    this.eventManager.fire({
-      type: EventType.Pause,
-      data: this.pausedAnimationNames,
-    });
   }
 
   // Stops specified animations; if none specifies, stops them all.
   public stop(animationNames?: string | string[] | undefined): void {
     animationNames = mapToStringArray(animationNames);
-
     // If the file's not loaded, early out, nothing to pause
-    if (!this.loaded) {
+    if (!this.readyForPlaying) {
+      this.taskQueue.add({
+        action: () => this.stop(animationNames),
+      });
       return;
     }
-
-    const stoppedAnimationNames: string[] = animationNames.length === 0 ?
-      this.animator.remove() :
-      this.animator.remove(animationNames);
-
-    if (!this.animator.isPlaying || animationNames.length === 0) {
-      // Immediately cancel the next frame draw; if we don't do this,
-      // strange things will happen if the Rive file/buffer is
-      // reloaded.
-      cancelAnimationFrame(this.frameRequestId);
-      this.playState = PlaybackState.Stop;
-    }
-    this.eventManager.fire({
-      type: EventType.Stop,
-      data: stoppedAnimationNames,
-    });
+    this.animator.stop(animationNames);
   }
 
   // Loads a new Rive file, keeping listeners in place
@@ -1154,20 +1215,6 @@ export class Rive {
   }
 
   /**
-   * Gets a runtime state machine object by name
-   * @param name the name of the state machine
-   * @returns a runtime state machine
-   */
-  private getRuntimeStateMachine(name: string): rc.StateMachine {
-    for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
-      const stateMachine = this.artboard.stateMachineByIndex(i);
-      if (stateMachine.name === name) {
-        return stateMachine;
-      }
-    }
-  }
-
-  /**
    * Returns the inputs for the specified instanced state machine, or an empty
    * list if the name is invalid or the state machine is not instanced
    * @param name the state machine name
@@ -1182,18 +1229,16 @@ export class Rive {
     return stateMachine?.inputs;
   }
 
-  // Returns a list of playing animation names
+  // Returns a list of playing machine names
   public get playingStateMachineNames(): string[] {
     // If the file's not loaded, we got nothing to return
     if (!this.loaded) {
       return [];
     }
     return this.animator.stateMachines
-      .filter(m => !m.paused)
+      .filter(m => m.playing)
       .map(m => m.name);
   }
-
-
 
   // Returns a list of playing animation names
   public get playingAnimationNames(): string[] {
@@ -1202,7 +1247,7 @@ export class Rive {
       return [];
     }
     return this.animator.animations
-      .filter(a => !a.paused)
+      .filter(a => a.playing)
       .map(a => a.name);
   }
 
@@ -1214,23 +1259,37 @@ export class Rive {
       return [];
     }
     return this.animator.animations
-      .filter(a => a.paused)
+      .filter(a => !a.playing)
       .map(a => a.name);
+  }
+
+  /**
+   *  Returns a list of paused machine names
+   * @returns a list of state machine names that are paused
+   */
+  public get pausedStateMachineNames(): string[] {
+    // If the file's not loaded, we got nothing to return
+    if (!this.loaded) {
+      return [];
+    }
+    return this.animator.stateMachines
+      .filter(m => !m.playing)
+      .map(m => m.name);
   }
 
   // Returns true if playing
   public get isPlaying(): boolean {
-    return this.playState === PlaybackState.Play;
+    return this.animator.isPlaying;
   }
 
   // Returns trus if all animations are paused
   public get isPaused(): boolean {
-    return this.playState === PlaybackState.Pause;
+    return this.animator.isPaused;
   }
 
   // Returns true if all animations are stopped
   public get isStopped(): boolean {
-    return this.playState === PlaybackState.Stop;
+    return this.animator.isStopped;
   }
 
   /**
@@ -1264,6 +1323,28 @@ export class Rive {
    */
   public unsubscribeAll(type?: EventType) {
     this.eventManager.removeAll(type);
+  }
+
+  /**
+   * Stops the rendering loop; this is different from pausing in that it doesn't
+   * change the state of any animation. It stops rendering from occurring. This
+   * is designed for situations such as when Rive isn't visible.
+   * 
+   * The only way to start rendering again is to call `startRendering`/
+   */
+  public stopRendering() {
+    cancelAnimationFrame(this.frameRequestId);
+    this.frameRequestId = null;
+  }
+
+  /**
+   * Starts the rendering loop if it has been previously stopped. If the
+   * renderer is already active, then this will have zero effect.
+   */
+  public startRendering() {
+    if (!this.frameRequestId) {
+      this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
+    }
   }
 
   /**
@@ -1365,7 +1446,7 @@ let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
 
 // #endregion
 
-// #region exports for testing
+// #region testing utilities
 
 // Exports to only be used for tests
 export const Testing = {
