@@ -1,4 +1,8 @@
 import * as rc from 'rive-canvas';
+/**
+ * Generic type for a parameterless void callback
+ */
+export declare type VoidCallback = () => void;
 export declare enum Fit {
     Cover = "cover",
     Contain = "contain",
@@ -151,10 +155,9 @@ declare class EventManager {
     fire(event: Event): void;
 }
 export interface Task {
-    action: ActionCallback;
+    action: VoidCallback;
     event?: Event;
 }
-export declare type ActionCallback = () => void;
 declare class TaskQueueManager {
     private eventManager;
     private queue;
@@ -188,15 +191,25 @@ export interface RiveLoadParameters {
 }
 export declare class Rive {
     private readonly canvas;
-    private autoplay;
     private src;
     private buffer;
     private _layout;
     private _updateLayout;
     private ctx;
     private renderer;
-    private playState;
+    /**
+     * Flag to active/deactivate renderer
+     */
+    private isRendererActive;
     private loaded;
+    /**
+     * Tracks if a Rive file is loaded; we need this in addition to loaded as some
+     * commands (e.g. contents) can be called as soon as the file is loaded.
+     * However, playback commands need to be queued and run in order once initial
+     * animations and autoplay has been sorted out. This applies to play, pause,
+     * and start.
+     */
+    private readyForPlaying;
     private runtime;
     private artboard;
     private file;
@@ -212,12 +225,20 @@ export declare class Rive {
     drawFrame(): void;
     private lastRenderTime;
     private frameRequestId;
+    /**
+     * Used be draw to track when a second of active rendering time has passed. Used for debugging purposes
+     */
+    private renderSecondTimer;
+    /**
+     * Draw rendering loop; renders animation frames at the correct time interval.
+     * @param time the time at which to render a frame
+     */
     private draw;
     /**
      * Align the renderer
      */
     private alignRenderer;
-    play(animationNames?: string | string[]): void;
+    play(animationNames?: string | string[], autoplay?: true): void;
     pause(animationNames?: string | string[]): void;
     stop(animationNames?: string | string[] | undefined): void;
     load(params: RiveLoadParameters): void;
@@ -240,12 +261,6 @@ export declare class Rive {
      */
     get stateMachineNames(): string[];
     /**
-     * Gets a runtime state machine object by name
-     * @param name the name of the state machine
-     * @returns a runtime state machine
-     */
-    private getRuntimeStateMachine;
-    /**
      * Returns the inputs for the specified instanced state machine, or an empty
      * list if the name is invalid or the state machine is not instanced
      * @param name the state machine name
@@ -255,6 +270,11 @@ export declare class Rive {
     get playingStateMachineNames(): string[];
     get playingAnimationNames(): string[];
     get pausedAnimationNames(): string[];
+    /**
+     *  Returns a list of paused machine names
+     * @returns a list of state machine names that are paused
+     */
+    get pausedStateMachineNames(): string[];
     get isPlaying(): boolean;
     get isPaused(): boolean;
     get isStopped(): boolean;
@@ -276,6 +296,19 @@ export declare class Rive {
      * undefined
      */
     unsubscribeAll(type?: EventType): void;
+    /**
+     * Stops the rendering loop; this is different from pausing in that it doesn't
+     * change the state of any animation. It stops rendering from occurring. This
+     * is designed for situations such as when Rive isn't visible.
+     *
+     * The only way to start rendering again is to call `startRendering`/
+     */
+    stopRendering(): void;
+    /**
+     * Starts the rendering loop if it has been previously stopped. If the
+     * renderer is already active, then this will have zero effect.
+     */
+    startRendering(): void;
     /**
      * Returns the contents of a Rive file: the artboards, animations, and state machines
      */

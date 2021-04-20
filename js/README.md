@@ -204,7 +204,7 @@ const r = new rive.Rive({
 
 // See what animations are on the artboard once the Rive file loads
 r.on('load', () => {
-    console.log('Animations ' + rive.animationNames());
+    console.log('Animations ' + r.animationNames());
 });
 
 // onloop will pass the name of the looped animation and loop type; useful when mixing multiple animations together
