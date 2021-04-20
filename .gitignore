@@ -12,3 +12,5 @@ node_modules
 
 # build stuff
 */build
+/wasm/Makefile
+/wasm/rive.make
