@@ -36,7 +36,6 @@ pushd build &>/dev/null
 mkdir -p $OUTPUT_DIR
 
 em++ -Oz \
-    --js-opts 0 -g1 \
     --closure 0 \
     --bind \
     -g1 \
@@ -52,7 +51,6 @@ em++ -Oz \
     -s SINGLE_FILE=1 \
     -s USE_ES6_IMPORT_META=0 \
     -s EXPORT_NAME="Rive" \
-    -s LLD_REPORT_UNDEFINED \
     -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 \
     -DSINGLE \
     -DANSI_DECLARATORS \
