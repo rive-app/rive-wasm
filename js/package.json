@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.7.8-beta.7",
+  "version": "0.7.8-beta.8",
   "description": "Rive's web api.",
   "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",

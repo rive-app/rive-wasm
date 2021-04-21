@@ -4671,7 +4671,9 @@ var Rive = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(Rive.prototype, "isPlaying", {
-        // Returns true if playing
+        /**
+         * @returns true if any animation is playing
+         */
         get: function () {
             return this.animator.isPlaying;
         },
@@ -4679,7 +4681,9 @@ var Rive = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(Rive.prototype, "isPaused", {
-        // Returns trus if all animations are paused
+        /**
+         * @returns true if all instanced animations are paused
+         */
         get: function () {
             return this.animator.isPaused;
         },
@@ -4687,9 +4691,22 @@ var Rive = /** @class */ (function () {
         configurable: true
     });
     Object.defineProperty(Rive.prototype, "isStopped", {
-        // Returns true if all animations are stopped
+        /**
+         * @returns true if no animations are playing or paused
+         */
         get: function () {
             return this.animator.isStopped;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Rive.prototype, "bounds", {
+        /**
+         * @returns the bounds of the current artboard, or undefined if the artboard
+         * isn't loaded yet.
+         */
+        get: function () {
+            return this.artboard ? this.artboard.bounds : undefined;
         },
         enumerable: false,
         configurable: true

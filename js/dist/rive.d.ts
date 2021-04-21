@@ -3,6 +3,11 @@ import * as rc from 'rive-canvas';
  * Generic type for a parameterless void callback
  */
 export declare type VoidCallback = () => void;
+/**
+ * Interface for artboard bounds
+ */
+export interface Bounds extends rc.AABB {
+}
 export declare enum Fit {
     Cover = "cover",
     Contain = "contain",
@@ -275,9 +280,23 @@ export declare class Rive {
      * @returns a list of state machine names that are paused
      */
     get pausedStateMachineNames(): string[];
+    /**
+     * @returns true if any animation is playing
+     */
     get isPlaying(): boolean;
+    /**
+     * @returns true if all instanced animations are paused
+     */
     get isPaused(): boolean;
+    /**
+     * @returns true if no animations are playing or paused
+     */
     get isStopped(): boolean;
+    /**
+     * @returns the bounds of the current artboard, or undefined if the artboard
+     * isn't loaded yet.
+     */
+    get bounds(): Bounds;
     /**
      * Subscribe to Rive-generated events
      * @param type the type of event to subscribe to

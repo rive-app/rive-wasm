@@ -1,5 +1,12 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.8 (Apr 21, 2021)
+- Added getting artboard bounds
+
+## 0.7.8-beta.7 (Apr 20, 2021)
+- Reworked playback tracking and event system under the hood
+- Exposed ```startRendering``` and ```stopRendering``` functions
+
 ## 0.7.8-beta.6 (Apr 16, 2021)
 - Fixes issue when ```pause``` or ```stop``` are called before file is initialized
 - Updates Jest config to handle imported rive-canvas ES6 module
