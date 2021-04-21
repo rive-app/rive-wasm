@@ -361,8 +361,6 @@ class Animator {
     public readonly animations: Animation[] = [],
     public readonly stateMachines: StateMachine[] = []) {}
 
-
-
   /**
    * Adds animations and state machines by their names. If names are shared
    * between animations & state machines, then the first one found wiil be
@@ -468,7 +466,9 @@ class Animator {
    * @param animatables animations and state machines to remove
    * @returns a list of names of removed items
    */
-  public stop(animatables?: string[]): string[] {
+  public stop(animatables?: string[] | string): string[] {
+    animatables = mapToStringArray(animatables);
+
     // If nothing's specified, wipe them out, all of them
     let removedNames: string[] = [];
     if (animatables.length === 0) {
@@ -543,6 +543,37 @@ class Animator {
       }
     }
     return instancedName;
+  }
+
+  /**
+   * Checks if any animations have looped and if so, fire the appropriate event
+   */
+  public handleLooping() {
+    for (const animation of this.animations) {
+      // Emit if the animation looped
+      if (animation.loopValue === 0 && animation.loopCount) {
+        animation.loopCount = 0;
+        // This is a one-shot; if it has ended, delete the instance
+        this.stop(animation.name);
+      }
+      else if (animation.loopValue === 1 && animation.loopCount) {
+        this.eventManager.fire({
+          type: EventType.Loop,
+          data: { animation: animation.name, type: LoopType.Loop }
+        });
+        animation.loopCount = 0;
+      }
+      // Wasm indicates a loop at each time the animation
+      // changes direction, so a full loop/lap occurs every
+      // two loop counts
+      else if (animation.loopValue === 2 && animation.loopCount > 1) {
+        this.eventManager.fire({
+          type: EventType.Loop,
+          data: { animation: animation.name, type: LoopType.PingPong }
+        });
+        animation.loopCount = 0;
+      }
+    }
   }
 }
 
@@ -932,22 +963,22 @@ export class Rive {
 
 
     // Initialize the animations; as loaded hasn't happened yet, we need to
-    // suppress firing the play/pause events until the load vent has fired. To
+    // suppress firing the play/pause events until the load event has fired. To
     // do this we tell the animator to suppress firing events, and add event
     // firing to the task queue.
-    let instancedNames: string[];
+    let instanceNames: string[];
     if (animationNames.length > 0 || stateMachineNames.length > 0) {
-      instancedNames = animationNames.concat(stateMachineNames);
-      this.animator.add(instancedNames, autoplay, false);
+      instanceNames = animationNames.concat(stateMachineNames);
+      this.animator.add(instanceNames, autoplay, false);
     } else {
-      instancedNames = [this.animator.atLeastOne(autoplay, false)];
+      instanceNames = [this.animator.atLeastOne(autoplay, false)];
     }
     // Queue up firing the playback events
     this.taskQueue.add({
       action: () => {},
       event: {
         type: autoplay ? EventType.Play : EventType.Pause,
-        data: instancedNames,
+        data: instanceNames,
       }
     });
   }
@@ -1021,32 +1052,7 @@ export class Rive {
     this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
     this.artboard.draw(this.renderer);
 
-    for (const animation of this.animator.animations) {
-      // Emit if the animation looped
-      if (animation.loopValue === 0 && animation.loopCount) {
-        animation.loopCount = 0;
-        // This is a one-shot; if it has ended, delete the instance
-        this.stop(animation.name);
-      }
-      else if (animation.loopValue === 1 && animation.loopCount) {
-        this.eventManager.fire({
-          type: EventType.Loop,
-          data: { animation: animation.name, type: LoopType.Loop }
-        });
-        animation.loopCount = 0;
-      }
-      // Wasm indicates a loop at each time the animation
-      // changes direction, so a full loop/lap occurs every
-      // two loop counts
-      else if (animation.loopValue === 2 && animation.loopCount > 1) {
-        this.eventManager.fire({
-          type: EventType.Loop,
-          data: { animation: animation.name, type: LoopType.PingPong }
-        });
-        animation.loopCount = 0;
-      }
-    }
-
+    this.animator.handleLooping();
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations

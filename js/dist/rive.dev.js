@@ -3983,6 +3983,7 @@ var Animator = /** @class */ (function () {
      */
     Animator.prototype.stop = function (animatables) {
         var _this = this;
+        animatables = mapToStringArray(animatables);
         // If nothing's specified, wipe them out, all of them
         var removedNames = [];
         if (animatables.length === 0) {
@@ -4059,6 +4060,37 @@ var Animator = /** @class */ (function () {
             }
         }
         return instancedName;
+    };
+    /**
+     * Checks if any animations have looped and if so, fire the appropriate event
+     */
+    Animator.prototype.handleLooping = function () {
+        for (var _i = 0, _a = this.animations; _i < _a.length; _i++) {
+            var animation = _a[_i];
+            // Emit if the animation looped
+            if (animation.loopValue === 0 && animation.loopCount) {
+                animation.loopCount = 0;
+                // This is a one-shot; if it has ended, delete the instance
+                this.stop(animation.name);
+            }
+            else if (animation.loopValue === 1 && animation.loopCount) {
+                this.eventManager.fire({
+                    type: EventType.Loop,
+                    data: { animation: animation.name, type: LoopType.Loop }
+                });
+                animation.loopCount = 0;
+            }
+            // Wasm indicates a loop at each time the animation
+            // changes direction, so a full loop/lap occurs every
+            // two loop counts
+            else if (animation.loopValue === 2 && animation.loopCount > 1) {
+                this.eventManager.fire({
+                    type: EventType.Loop,
+                    data: { animation: animation.name, type: LoopType.PingPong }
+                });
+                animation.loopCount = 0;
+            }
+        }
     };
     return Animator;
 }());
@@ -4327,23 +4359,23 @@ var Rive = /** @class */ (function () {
         // Get the canvas where you want to render the animation and create a renderer
         this.renderer = new this.runtime.CanvasRenderer(this.ctx);
         // Initialize the animations; as loaded hasn't happened yet, we need to
-        // suppress firing the play/pause events until the load vent has fired. To
+        // suppress firing the play/pause events until the load event has fired. To
         // do this we tell the animator to suppress firing events, and add event
         // firing to the task queue.
-        var instancedNames;
+        var instanceNames;
         if (animationNames.length > 0 || stateMachineNames.length > 0) {
-            instancedNames = animationNames.concat(stateMachineNames);
-            this.animator.add(instancedNames, autoplay, false);
+            instanceNames = animationNames.concat(stateMachineNames);
+            this.animator.add(instanceNames, autoplay, false);
         }
         else {
-            instancedNames = [this.animator.atLeastOne(autoplay, false)];
+            instanceNames = [this.animator.atLeastOne(autoplay, false)];
         }
         // Queue up firing the playback events
         this.taskQueue.add({
             action: function () { },
             event: {
                 type: autoplay ? EventType.Play : EventType.Pause,
-                data: instancedNames,
+                data: instanceNames,
             }
         });
     };
@@ -4396,32 +4428,7 @@ var Rive = /** @class */ (function () {
         var bounds = this.artboard.bounds;
         this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
         this.artboard.draw(this.renderer);
-        for (var _b = 0, _c = this.animator.animations; _b < _c.length; _b++) {
-            var animation = _c[_b];
-            // Emit if the animation looped
-            if (animation.loopValue === 0 && animation.loopCount) {
-                animation.loopCount = 0;
-                // This is a one-shot; if it has ended, delete the instance
-                this.stop(animation.name);
-            }
-            else if (animation.loopValue === 1 && animation.loopCount) {
-                this.eventManager.fire({
-                    type: EventType.Loop,
-                    data: { animation: animation.name, type: LoopType.Loop }
-                });
-                animation.loopCount = 0;
-            }
-            // Wasm indicates a loop at each time the animation
-            // changes direction, so a full loop/lap occurs every
-            // two loop counts
-            else if (animation.loopValue === 2 && animation.loopCount > 1) {
-                this.eventManager.fire({
-                    type: EventType.Loop,
-                    data: { animation: animation.name, type: LoopType.PingPong }
-                });
-                animation.loopCount = 0;
-            }
-        }
+        this.animator.handleLooping();
         // Calling requestAnimationFrame will rerun draw() at the correct rate:
         // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
         if (this.animator.isPlaying) {
