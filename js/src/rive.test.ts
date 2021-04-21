@@ -408,13 +408,31 @@ test('Artboards can be fetched by name', done => {
 
 test('Rive explodes when given an invalid artboard name', done => {
   const canvas = document.createElement('canvas');
-  const r = new rive.Rive({
+  new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     artboard: 'BadArtboard',
     onload: () => expect(false).toBeTruthy(),
     onloaderror: () => {
       // We should get here
+      done();
+    },
+  });
+});
+
+test('Artboard bounds can be retrieved from a loaded Rive file', done =>{
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    artboard: 'MyArtboard',
+    buffer: stateMachineFileBuffer,
+    onload: () => {
+      const bounds = r.bounds;
+      expect(bounds).toBeDefined();
+      expect(bounds.minX).toBe(0);
+      expect(bounds.minY).toBe(0);
+      expect(bounds.maxX).toBe(500);
+      expect(bounds.maxY).toBe(500);
       done();
     },
   });
@@ -846,22 +864,22 @@ test('Instanced state machine inputs can be retrieved', done => {
       stateMachineInputs = r.stateMachineInputs('StateMachine');
       expect(stateMachineInputs).toHaveLength(3);
 
-      // expect(stateMachineInputs[0].type).toBe(rive.StateMachineInputType.Number);
-      // expect(stateMachineInputs[0].name).toBe('MyNum');
-      // expect(stateMachineInputs[0].value).toBe(0);
-      // stateMachineInputs[0].value = 12;
-      // expect(stateMachineInputs[0].value).toBe(12);
+      expect(stateMachineInputs[0].type).toBe(rive.StateMachineInputType.Number);
+      expect(stateMachineInputs[0].name).toBe('MyNum');
+      expect(stateMachineInputs[0].value).toBe(0);
+      stateMachineInputs[0].value = 12;
+      expect(stateMachineInputs[0].value).toBe(12);
 
-      // expect(stateMachineInputs[1].type).toBe(rive.StateMachineInputType.Boolean);
-      // expect(stateMachineInputs[1].name).toBe('MyBool');
-      // expect(stateMachineInputs[1].value).toBe(false);
-      // stateMachineInputs[1].value = true;
-      // expect(stateMachineInputs[1].value).toBe(true);
+      expect(stateMachineInputs[1].type).toBe(rive.StateMachineInputType.Boolean);
+      expect(stateMachineInputs[1].name).toBe('MyBool');
+      expect(stateMachineInputs[1].value).toBe(false);
+      stateMachineInputs[1].value = true;
+      expect(stateMachineInputs[1].value).toBe(true);
 
-      // expect(stateMachineInputs[2].type).toBe(rive.StateMachineInputType.Trigger);
-      // expect(stateMachineInputs[2].name).toBe('MyTrig');
-      // expect(stateMachineInputs[2].value).toBeUndefined();
-      // expect(stateMachineInputs[2].fire()).toBeUndefined();
+      expect(stateMachineInputs[2].type).toBe(rive.StateMachineInputType.Trigger);
+      expect(stateMachineInputs[2].name).toBe('MyTrig');
+      expect(stateMachineInputs[2].value).toBeUndefined();
+      expect(stateMachineInputs[2].fire()).toBeUndefined();
 
       done();
     }

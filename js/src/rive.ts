@@ -13,6 +13,11 @@ enum PlaybackState {
   Stop
 }
 
+/**
+ * Interface for artboard bounds
+ */
+export interface Bounds extends rc.AABB {}
+
 // #region layout
 
 // Fit options for the canvas
@@ -1283,19 +1288,33 @@ export class Rive {
       .map(m => m.name);
   }
 
-  // Returns true if playing
+  /**
+   * @returns true if any animation is playing
+   */
   public get isPlaying(): boolean {
     return this.animator.isPlaying;
   }
 
-  // Returns trus if all animations are paused
+  /**
+   * @returns true if all instanced animations are paused
+   */
   public get isPaused(): boolean {
     return this.animator.isPaused;
   }
 
-  // Returns true if all animations are stopped
+  /**
+   * @returns true if no animations are playing or paused
+   */
   public get isStopped(): boolean {
     return this.animator.isStopped;
+  }
+
+  /**
+   * @returns the bounds of the current artboard, or undefined if the artboard
+   * isn't loaded yet.
+   */
+  public get bounds(): Bounds {
+    return this.artboard ? this.artboard.bounds : undefined;
   }
 
   /**

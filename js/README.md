@@ -24,13 +24,13 @@ Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
 
-## 0.7.8-beta.6
+## 0.7.8-beta.8
 
 This beta adds state machine support:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.8-beta.6/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.8-beta.8/dist/rive.min.js"></script>
 <script>
     new rive.Rive({
         src: 'https://cdn.rive.app/animations/skills_v7.riv',
