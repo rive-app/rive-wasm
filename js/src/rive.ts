@@ -1360,7 +1360,7 @@ export class Rive {
    * they would have been at if rendering had not been stopped.
    */
   public stopRendering() {
-    if (this.frameRequestId) {
+    if (this.loaded && this.frameRequestId) {
       cancelAnimationFrame(this.frameRequestId);
       this.frameRequestId = null;
     }
@@ -1371,7 +1371,7 @@ export class Rive {
    * renderer is already active, then this will have zero effect.
    */
   public startRendering() {
-    if (!this.frameRequestId) {
+    if (this.loaded && !this.frameRequestId) {
       this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
     }
   }
