@@ -1354,12 +1354,16 @@ export class Rive {
    * Stops the rendering loop; this is different from pausing in that it doesn't
    * change the state of any animation. It stops rendering from occurring. This
    * is designed for situations such as when Rive isn't visible.
-   * 
-   * The only way to start rendering again is to call `startRendering`/
+   *
+   * The only way to start rendering again is to call `startRendering`.
+   * Animations that are marked as playing will start from the position that
+   * they would have been at if rendering had not been stopped.
    */
   public stopRendering() {
-    cancelAnimationFrame(this.frameRequestId);
-    this.frameRequestId = null;
+    if (this.frameRequestId) {
+      cancelAnimationFrame(this.frameRequestId);
+      this.frameRequestId = null;
+    }
   }
 
   /**

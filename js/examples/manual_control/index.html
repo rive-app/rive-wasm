@@ -14,6 +14,7 @@
             <button id="idle">Start Truck</button>
             <button id="wipers">Start Wipers</button>
             <button id="bounce">Rough Road</button>
+            <button id="rendering">Stop Rendering</button>
         </div>
 
         <script src="/dist/rive.min.js"></script>
@@ -28,6 +29,7 @@
             const idleButton = document.getElementById('idle');
             const wipersButton = document.getElementById('wipers');
             const bounceButton = document.getElementById('bounce');
+            const renderingButton = document.getElementById('rendering');
 
             idleButton.onclick = _ => 
             truck.playingAnimationNames.includes('idle') ?
@@ -43,6 +45,17 @@
                 truck.playingAnimationNames.includes('bouncing') ?
                     truck.pause('bouncing') :
                     truck.play('bouncing');
+
+            renderingButton.onclick = _ => {
+                if (renderingButton.innerHTML.includes('Start')) {
+                    truck.startRendering();
+                    renderingButton.innerHTML = 'Stop Rendering';
+                } else {
+                    truck.stopRendering();
+                    renderingButton.innerHTML = 'Start Rendering';
+                }
+            };
+                
 
             // Listen for play events to update button text
             truck.on(rive.EventType.Play, (event) => {
