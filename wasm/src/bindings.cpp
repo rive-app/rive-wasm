@@ -6,6 +6,10 @@
 #include "animation/state_machine_instance.hpp"
 #include "animation/state_machine_number.hpp"
 #include "animation/state_machine_trigger.hpp"
+#include "animation/animation_state.hpp"
+#include "animation/entry_state.hpp"
+#include "animation/exit_state.hpp"
+#include "animation/any_state.hpp"
 #include "artboard.hpp"
 #include "bones/bone.hpp"
 #include "bones/root_bone.hpp"
@@ -367,7 +371,25 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)
       .function("input", &rive::StateMachineInstance::input,
-                allow_raw_pointers()); 
+                allow_raw_pointers())
+      .function("stateChangedCount", &rive::StateMachineInstance::stateChangedCount)
+      .function("stateChangedNameByIndex",
+                optional_override([](rive::StateMachineInstance &self, size_t index) -> std::string {
+                  const rive::LayerState* state = self.stateChangedByIndex(index);
+                  if (state != nullptr)
+                    switch(state->coreType()) {
+                      case rive::AnimationState::typeKey:
+                        return state->as<rive::AnimationState>()->animation()->name();
+                      case rive::EntryState::typeKey:
+                        return "entry";
+                      case rive::ExitState::typeKey:
+                        return "exit";
+                      case rive::AnyState::typeKey:
+                        return "any";
+                  }
+                  return "unknown";
+                }),
+                allow_raw_pointers());
 
   class_<rive::SMIInput>("SMIInput")
       .property("type", &rive::SMIInput::inputCoreType)
