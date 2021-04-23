@@ -309,8 +309,19 @@ class StateMachine {
     this.initInputs(runtime);
   }
 
-  public get name() {
+  public get name(): string {
     return this.stateMachine.name;
+  }
+
+  /**
+   * Returns a list of state names that have changed on this frame
+   */
+  public get statesChanged(): string[] {
+    const names: string[] = [];
+    for (let i = 0; i < this.instance.stateChangedCount(); i++) {
+      names.push(this.instance.stateChangedNameByIndex(i));
+    }
+    return names;
   }
 
   /**
@@ -554,7 +565,7 @@ class Animator {
    * Checks if any animations have looped and if so, fire the appropriate event
    */
   public handleLooping() {
-    for (const animation of this.animations) {
+    for (const animation of this.animations.filter(a => a.playing)) {
       // Emit if the animation looped
       if (animation.loopValue === 0 && animation.loopCount) {
         animation.loopCount = 0;
@@ -580,6 +591,23 @@ class Animator {
       }
     }
   }
+
+  /**
+   * Checks if states have changed in state machines and fires a statechange
+   * event
+   */
+  public handleStateChanges() {
+    const statesChanged: string[] = [];
+    for (const stateMachine of this.stateMachines.filter(sm => sm.playing)) {
+     statesChanged.push(...stateMachine.statesChanged);
+    }
+    if (statesChanged.length > 0) {
+      this.eventManager.fire({
+        type: EventType.StateChange,
+        data: statesChanged,
+      });
+    }
+  }
 }
 
 // #endregion
@@ -590,13 +618,14 @@ class Animator {
  * Supported event types triggered in Rive
  */
 export enum EventType {
-  Load = 'load',
-  LoadError = 'loaderror',
-  Play = 'play',
-  Pause = 'pause',
-  Stop = 'stop',
-  Loop = 'loop',
-  Draw = 'draw',
+  Load        = 'load',
+  LoadError   = 'loaderror',
+  Play        = 'play',
+  Pause       = 'pause',
+  Stop        = 'stop',
+  Loop        = 'loop',
+  Draw        = 'draw',
+  StateChange = 'statechange',
 }
 
 // Event fired by Rive
@@ -750,6 +779,7 @@ export interface RiveParameters {
   onpause?: EventCallback,
   onstop?: EventCallback,
   onloop?: EventCallback,
+  onstatechange?: EventCallback,
 }
 
 // Interface to Rive.load function
@@ -843,6 +873,7 @@ export class Rive {
     if (params.onpause) this.on(EventType.Pause, params.onpause);
     if (params.onstop) this.on(EventType.Stop, params.onstop);
     if (params.onloop) this.on(EventType.Loop, params.onloop);
+    if (params.onstatechange) this.on(EventType.StateChange, params.onstatechange);
 
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
@@ -1057,7 +1088,11 @@ export class Rive {
     this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
     this.artboard.draw(this.renderer);
 
+    // Check for any animations that looped
     this.animator.handleLooping();
+
+    // Check for any state machines that had a state change
+    this.animator.handleStateChanges();
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations

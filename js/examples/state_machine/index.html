@@ -10,10 +10,13 @@
         <div>
             <canvas id="canvas" width="1000" height="1000"></canvas>
         </div>
+        <div>State changed to <span id="stateName"> -- </span></div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
         <script src="/dist/rive.min.js"></script>
         <script>
+            const stateName = document.getElementById('stateName');
+
             // autoplays the first animation in the default artboard
             const r = new rive.Rive({
                 src: 'https://cdn.rive.app/animations/skills_v7.riv',
@@ -23,7 +26,10 @@
                 onload: (_) => {
                     const inputs = r.stateMachineInputs('Designer\'s Test');
                     setupUI(inputs);
-            },
+                },
+                onstatechange: (event) => {
+                    stateName.innerHTML = event.data[0];
+                },
             });
 
             function setupUI(inputs) {
