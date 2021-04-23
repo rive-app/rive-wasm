@@ -1,5 +1,3 @@
-import { StateMachineInputType } from "../../js/examples/react_example/node_modules/rive-js/src/rive";
-
 interface RiveOptions {
   locateFile(file: string): string
 }
@@ -173,6 +171,8 @@ export declare class StateMachineInstance {
   input(i: number): SMIInput; 
   advance(sec: number): any;
   apply(artboard: Artboard): any;
+  stateChangedCount(): number;
+  stateChangedNameByIndex(i: number): string;
 }
 
 export declare class SMIInput {
