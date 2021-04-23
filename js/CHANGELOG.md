@@ -1,5 +1,9 @@
 # Rive.js Changelog
 
+## 0.7.9
+- Promotes beta to stable
+- Updates docs
+
 ## 0.7.8-beta.9 (Apr 22, 2021)
 - Added ```onstatechange``` in constructor to listen for state changes in state machines
 

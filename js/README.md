@@ -7,14 +7,14 @@ Rive.js is in beta; the api is subject to change as we continue to improve it. P
 The api may change with each release, so please specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.7/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.9/dist/rive.min.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.7"
+    "rive-js": "0.7.9"
   }
 }
 ```
@@ -23,27 +23,6 @@ Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/
 
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
-
-## 0.7.8-beta.9
-
-This beta adds state machine support:
-
-```html
-<canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.8-beta.9/dist/rive.min.js"></script>
-<script>
-    new rive.Rive({
-        src: 'https://cdn.rive.app/animations/skills_v7.riv',
-        canvas: document.getElementById('canvas'),
-        stateMachines: 'Designer\'s Test',
-        autoplay: true,
-    });
-</script>
-
-It also has changes under the hood to make things more compatible across the board with frameworks like vue, parcel, etc.
-```
-
-See [this example](https://github.com/rive-app/rive-wasm/blob/master/js/examples/state_machine/index.html) for more details.
 
 ## Installing
 The simplest way to get this running is copy ```dist/rive.min.js``` into your project.
@@ -54,7 +33,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.7/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.9/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new rive.Rive({
@@ -192,6 +171,53 @@ reader.onload = () => {
 reader.readAsArrayBuffer(file);
 ```
 
+## State Machines
+
+Playing state machines is much like animations; you can specify which state machine to play when creating a Rive object:
+
+```js
+new rive.Rive({
+    src: 'https://cdn.rive.app/animations/skills_v7.riv',
+    canvas: document.getElementById('canvas'),
+    stateMachines: 'Designer\'s Test',
+    autoplay: true,
+});
+```
+
+You can start, pause, and stop state machines with the ```play```, ```pause```, and ```stop``` functions:
+
+```js
+const r = new rive.Rive({
+    src: 'https://cdn.rive.app/animations/skills_v7.riv',
+    canvas: document.getElementById('canvas'),
+});
+
+r.play('Designer\'s Test');
+r.pause();
+```
+
+State machine inputs can be retrieved with ```stateMachineInputs```. Trigger inputs can be fired with ```fire``` and boolean/number inputs can have their values set with ```value```:
+
+```js
+const inputs = r.stateMachineInputs('Designer\'s Test');
+inputs.forEach((input) => {
+    // Trigger
+    if (input.type === rive.StateMachineInputType.Trigger) {
+        input.fire(); 
+    }
+    // Number
+    else if (input.type === rive.StateMachineInputType.Number) {
+        input.value = 10;
+    }
+    // Boolean
+    else if (input.type === rive.StateMachineInputType.Boolean) {
+        input.value = true;
+    }
+});
+```
+
+See [this example](https://github.com/rive-app/rive-wasm/blob/master/js/examples/state_machine/index.html) for more details.
+
 ## Events
 
 Rive.js has a number of events that you can listen for:
@@ -220,9 +246,8 @@ Event callbacks currently supported are:
   - *onpause*: playback has been paused
   - *onloop*: one of the playing animations has looped (```LoopEvent```)
   - *onstop*: playback has stopped (when the animation completes if not a looping animation)
-  - *onstatechange*: state has changed in a state machine *BETA ONLY*
+  - *onstatechange*: state has changed in a state machine
 
-*Unsubscribing functionality is currently only in the beta release*
 You can unsubscribe from a single callback, all callbacks of a specific type, or every callback using:
   - ```unsubscribe(type, callback)```
   - ```unsubscribeAll(type)```: if ```type``` is omitted, all callbacks are unsubscribed
