@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.8-beta.9 (Apr 22, 2021)
+- Added ```onstatechange``` in constructor to listen for state changes in state machines
+
 ## 0.7.8-beta.8 (Apr 21, 2021)
 - Added getting artboard bounds
 

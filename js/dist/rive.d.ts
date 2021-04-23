@@ -108,7 +108,8 @@ export declare enum EventType {
     Pause = "pause",
     Stop = "stop",
     Loop = "loop",
-    Draw = "draw"
+    Draw = "draw",
+    StateChange = "statechange"
 }
 export interface Event {
     type: EventType;
@@ -185,6 +186,7 @@ export interface RiveParameters {
     onpause?: EventCallback;
     onstop?: EventCallback;
     onloop?: EventCallback;
+    onstatechange?: EventCallback;
 }
 export interface RiveLoadParameters {
     src?: string;
@@ -320,7 +322,9 @@ export declare class Rive {
      * change the state of any animation. It stops rendering from occurring. This
      * is designed for situations such as when Rive isn't visible.
      *
-     * The only way to start rendering again is to call `startRendering`/
+     * The only way to start rendering again is to call `startRendering`.
+     * Animations that are marked as playing will start from the position that
+     * they would have been at if rendering had not been stopped.
      */
     stopRendering(): void;
     /**
