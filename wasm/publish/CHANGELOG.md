@@ -1,5 +1,9 @@
 # Rive Wasm Changelog
 
+## 0.7.3
+- Updates C++ to latest
+- Adds functions to make detecting state changes in state machines easier
+
 ## 0.7.2
 - Exposes enableWorkArea property
 - Adds simple examples primarily designed to test buiilds
