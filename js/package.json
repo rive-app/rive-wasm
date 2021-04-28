@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "description": "Rive's web api.",
   "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",
@@ -33,7 +33,7 @@
     "dist/rive.d.ts",
     "src/rive.ts"
   ],
-  "typings": "./rive.d.ts",
+  "typings": "./dist/rive.d.ts",
   "dependencies": {
     "rive-canvas": "0.7.3"
   },
