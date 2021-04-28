@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.10
+- Fixes incorrect types path
+
 ## 0.7.9
 - Promotes beta to stable
 - Updates docs

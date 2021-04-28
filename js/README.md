@@ -7,14 +7,14 @@ Rive.js is in beta; the api is subject to change as we continue to improve it. P
 The api may change with each release, so please specify which version you're using when importing the script:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.9/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.10/dist/rive.min.js"></script>
 ```
 
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.9"
+    "rive-js": "0.7.10"
   }
 }
 ```
@@ -33,7 +33,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.9/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.10/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new rive.Rive({
