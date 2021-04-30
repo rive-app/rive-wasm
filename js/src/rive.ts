@@ -252,7 +252,7 @@ export enum StateMachineInputType {
 /**
  * An input for a state machine
  */
-class StateMachineInput {
+export class StateMachineInput {
 
   constructor(public readonly type: StateMachineInputType, private runtimeInput: rc.SMIInput) { }
 
