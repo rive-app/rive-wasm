@@ -233,6 +233,16 @@ class Animation {
     return this.animation.name;
   }
 
+  // Returns the animation's current time
+  public get time(): number {
+      return this.instance.time;
+  }
+
+  // Sets the animation's current time
+  public set time(value: number) {
+      this.instance.time = value;
+  }
+
   // Returns the animation's loop type
   public get loopValue(): number {
     return this.animation.loopValue;
@@ -325,7 +335,7 @@ class StateMachine {
   }
 
   /**
-   * Fetches references to the state amchine's inputs and caches them
+   * Fetches references to the state machine's inputs and caches them
    * @param runtime an instance of the runtime; needed for the SMIInput types
    */
   private initInputs(runtime: rc.RiveCanvas): void {
@@ -379,7 +389,7 @@ class Animator {
 
   /**
    * Adds animations and state machines by their names. If names are shared
-   * between animations & state machines, then the first one found wiil be
+   * between animations & state machines, then the first one found will be
    * created. Best not to use the same names for these in your Rive file.
    * @param animatable the name(s) of animations and state machines to add
    * @returns a list of names of the playing animations and state machines
@@ -448,13 +458,29 @@ class Animator {
   }
 
     /**
-   * Pauses named aninimations and state machines, or everything if nothing is
+   * Pauses named animations and state machines, or everything if nothing is
    * specified
    * @param animatables names of the animations and state machines to pause
    * @returns a list of names of the animations and state machines paused
    */
      public pause(animatables: string[]): string[] {
       return this.add(animatables, false);
+    }
+
+    /**
+     * Set time of named animations
+     * @param animatables names of the animations to scrub
+     * @param value time scrub value, a floating point number to which the playhead is jumped
+     * @returns a list of names of the animations that were scrubbed
+     */
+    public scrub(animatables: string[], value: number): string[] {
+        return animatables.map(animatable => {
+            const animation = this.animations.find((animation) => animation.name === animatable);
+            if (animation) {
+                animation.time = value;
+                return animation?.name;
+            }
+        });
     }
 
   /**
@@ -1039,8 +1065,9 @@ export class Rive {
   /**
    * Draw rendering loop; renders animation frames at the correct time interval.
    * @param time the time at which to render a frame 
+   * @param scrubbing draw a single frame with animations in regards to their time instead of elapsed time
    */
-  private draw(time: number, onSecond?: VoidCallback): void {
+  private draw(time: number, onSecond?: VoidCallback, scrubbing?: boolean): void {
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
 
@@ -1060,15 +1087,26 @@ export class Rive {
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
 
-    // Advance non-paused animations by the elapsed number of seconds
-    const activeAnimations = this.animator.animations.filter(a => a.playing);
-    for (const animation of activeAnimations) {
-      animation.instance.advance(elapsedTime);
-      if (animation.instance.didLoop) {
-        animation.loopCount += 1;
+    // Draw only a scrubbed single frame when scrubbing
+    if (scrubbing) {
+      for (const animation of this.animator.animations) {
+        const playhead = animation.instance.time;
+        animation.instance.time = 0;
+        animation.instance.advance(playhead);
+        animation.instance.apply(this.artboard, 1.0);
       }
-      animation.instance.apply(this.artboard, 1.0);
+    }else{
+      // Advance non-paused animations by the elapsed number of seconds
+      const activeAnimations = this.animator.animations.filter(a => a.playing);
+      for (const animation of activeAnimations) {
+        animation.instance.advance(elapsedTime);
+        if (animation.instance.didLoop) {
+          animation.loopCount += 1;
+        }
+        animation.instance.apply(this.artboard, 1.0);
+      }
     }
+
 
     // Advance non-paused state machines by the elapsed number of seconds
     const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
@@ -1166,6 +1204,21 @@ export class Rive {
       return;
     }
     this.animator.pause(animationNames);
+  }
+
+  public scrub(animationNames?: string | string[], value?: number): void {
+    animationNames = mapToStringArray(animationNames);
+
+    // If the file's not loaded, early out, nothing to pause
+    if (!this.readyForPlaying) {
+        this.taskQueue.add({
+            action: () => this.scrub(animationNames, value),
+        });
+        return;
+    }
+    //scrub the animation time and draw a single frame
+    this.animator.scrub(animationNames, value || 0);
+    this.draw(value,undefined,true);
   }
 
   // Stops specified animations; if none specifies, stops them all.
