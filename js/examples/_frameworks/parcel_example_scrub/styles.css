@@ -1,0 +1,14 @@
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+main {
+	height: 300vh;
+}
+
+main > section {
+	position: fixed;
+	top: 0;
+	left: 0;
+}
