@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="user-scalable=no">
+        <title>Rive Hello World - Scrubbing</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body class="parent">
+        <main>
+            <section>
+                <canvas id="canvas" width="500" height="500"></canvas>
+                <h3>scroll to scrub!</h3>
+            </section>
+
+        </main>
+
+        <script src="../../../dist/rive.min.js"></script>
+        <script>
+            // autoplays the first animation in the default artboard
+            const animation = new rive.Rive({
+                src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
+                canvas: document.getElementById('canvas'),
+            });
+            animation.on('load', () => {
+                document.getElementsByTagName('body')[0].onscroll = () => {
+                    const totalScroll =
+                        document.documentElement.scrollHeight - window.innerHeight;
+                    const scrub = 1 * (window.scrollY / totalScroll).toFixed(3);
+                    animation.scrub(['idle'],scrub)
+                };
+            })
+        </script>
+    </body>
+</html>
