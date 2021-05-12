@@ -218,6 +218,10 @@ export class RuntimeLoader {
 class Animation {
   public loopCount: number = 0;
   public readonly instance: rc.LinearAnimationInstance;
+
+  // Time to which the animation should move to on the next render
+  public scrubTo: number | null = null;
+
   /**
    * Constructs a new animation
    * @constructor
@@ -246,6 +250,25 @@ class Animation {
   // Returns the animation's loop type
   public get loopValue(): number {
     return this.animation.loopValue;
+  }
+
+  /**
+   * Advances the animation by the give time. If the animation needs scrubbing,
+   * time is ignored and the stored scrub value is used.
+   * @param time the time to advance the animation by if no scrubbing required
+   */
+  public advance(time: number) {
+    if (this.scrubTo === null) {
+      this.instance.advance(time);
+    } else {
+      this.instance.time = 0;
+      this.instance.advance(this.scrubTo);
+      this.scrubTo = null;
+    }
+  }
+
+  public get needsScrub(): boolean {
+    return this.scrubTo !== null;
   }
 }
 
@@ -469,18 +492,14 @@ class Animator {
 
     /**
      * Set time of named animations
-     * @param animatables names of the animations to scrub
+     * @param animations names of the animations to scrub
      * @param value time scrub value, a floating point number to which the playhead is jumped
      * @returns a list of names of the animations that were scrubbed
      */
     public scrub(animatables: string[], value: number): string[] {
-        return animatables.map(animatable => {
-            const animation = this.animations.find((animation) => animation.name === animatable);
-            if (animation) {
-                animation.time = value;
-                return animation?.name;
-            }
-        });
+      const forScrubbing = this.animations.filter(a => animatables.includes(a.name));
+      forScrubbing.forEach(a => a.scrubTo = value);
+      return forScrubbing.map(a => a.name);
     }
 
   /**
@@ -1086,11 +1105,14 @@ export class Rive {
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
 
-
     // Advance non-paused animations by the elapsed number of seconds
-    const activeAnimations = this.animator.animations.filter(a => a.playing);
+    // Also advance any animations that require scrubbing
+    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub)
+      // The scrubbed animations must be applied first to prevent weird artifacts
+      // if the playing animations conflict with the scrubbed animating attribuates.
+      .sort((first, second) => first.needsScrub ? -1 : 1);
     for (const animation of activeAnimations) {
-      animation.instance.advance(elapsedTime);
+      animation.advance(elapsedTime);
       if (animation.instance.didLoop) {
         animation.loopCount += 1;
       }
@@ -1136,30 +1158,6 @@ export class Rive {
       // this.drawFrame();
       this.lastRenderTime = 0;
     }
-  }
-
-  /**
-   * Draw a single frame, used when scrubbing
-   * @param animationNames names of all scrubbed animations
-   * @param time the time at which to render this frame
-   */
-  private drawSingleFrame(animationNames: string[], time: number): void {
-    // Draw only a scrubbed single frame when scrubbing
-    const animations = this.animator.animations.filter(animation => animationNames.includes(animation.name));
-
-    for (const animation of animations) {
-      const playhead = animation.instance.time;
-      animation.instance.time = 0;
-      animation.instance.advance(playhead);
-      animation.instance.apply(this.artboard, 1.0);
-    }
-
-    // Update the renderer alignment if necessary
-    this.alignRenderer();
-
-    const bounds = this.artboard.bounds;
-    this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
-    this.artboard.draw(this.renderer);
   }
 
   /**
@@ -1229,9 +1227,11 @@ export class Rive {
         });
         return;
     }
-    //scrub the animation time and draw a single frame
+
+    // Scrub the animation time; we draw a single frame here so that if
+    // nothing's currently playing, the scrubbed animation is still rendered/
     this.animator.scrub(animationNames, value || 0);
-    this.drawSingleFrame(animationNames, value);
+    this.drawFrame();
   }
 
   // Stops specified animations; if none specifies, stops them all.

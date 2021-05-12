@@ -942,7 +942,7 @@ test('Playing state machines report when states have changed', done => {
       const inputs = r.stateMachineInputs(r.playingStateMachineNames[0]);
 
       if (state === 0) {
-        console.log(`State: ${(stateNames as string[])[0]}`);
+        // console.log(`State: ${(stateNames as string[])[0]}`);
         expect(stateNames).toHaveLength(1);
         expect((stateNames as string[])[0]).toBe('LoopingAnimation');
         
