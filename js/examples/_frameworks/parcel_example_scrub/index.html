@@ -21,23 +21,26 @@
             const animation = new rive.Rive({
                 src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
                 canvas: document.getElementById('canvas'),
+                autoplay: true,
+                //animations: ['idle', 'windshield_wipers', 'bouncing']
             });
             animation.on('load', () => {
-                animation.play(['idle']);
 
-                //scrub to 1.5 (should start at 0 and scrub start is 1.5)
-                animation.scrub(['bouncing'],0, 1.5);
+                //only added animations can be scrubbed. just add these by either playing / pausing them
+                //alternatively define them in the Rive options in 'animations', see above ^
+                animation.pause(['windshield_wipers', 'bouncing']);
+
+                //start scrubbing bouncing from 1.5
+                animation.scrub(['bouncing'],1.5);
 
                 document.getElementsByTagName('body')[0].onscroll = () => {
                     const totalScroll =
                         document.documentElement.scrollHeight - window.innerHeight;
                     const scrub = 1 * (window.scrollY / totalScroll).toFixed(3);
 
-                    //test scrubbing two different animations, but 'idle' will keep playing as usual
+                    //test scrubbing two different animations, but the default animation 'idle' will keep playing as usual!
                     animation.scrub(['windshield_wipers'],scrub);
-
-                    //notice the bouncing has a work-area loop, we can now set a scrub start to start scrubbing from that loop start point
-                    animation.scrub(['bouncing'],scrub * 3, 1.5);
+                    animation.scrub(['bouncing'],scrub * 3 + 1.5);
                 };
             })
         </script>
