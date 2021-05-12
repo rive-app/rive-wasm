@@ -965,3 +965,31 @@ test('Playing state machines report when states have changed', done => {
 });
 
 // #endregion
+
+// #region scrubbing
+
+test('An animation can be played and scrubbed without altering playback state', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    onload: () => {
+      const firstAnimation = r.animationNames[0];
+      r.play(firstAnimation);
+    },
+    onplay: () => {
+      const firstAnimation = r.animationNames[0];
+      r.scrub(firstAnimation, 0.5);
+      expect(r.isPlaying).toBeTruthy();
+      r.pause(firstAnimation)
+    },
+    onpause: () => {
+      const firstAnimation = r.animationNames[0];
+      r.scrub(firstAnimation, 0.8);
+      expect(r.isPlaying).toBeFalsy();
+      done();
+    }
+  });
+});
+
+// #endregion
