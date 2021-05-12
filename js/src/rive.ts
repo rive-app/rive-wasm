@@ -1066,8 +1066,9 @@ export class Rive {
    * Draw rendering loop; renders animation frames at the correct time interval.
    * @param time the time at which to render a frame 
    * @param scrubbing draw a single frame with animations in regards to their time instead of elapsed time
+   * @param scrubStart if animation is looped from a work area, user might want scrub->0 to start at a specific time
    */
-  private draw(time: number, onSecond?: VoidCallback, scrubbing?: boolean): void {
+  private draw(time: number, onSecond?: VoidCallback, scrubbing?: boolean, scrubStart?: number): void {
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
 
@@ -1085,13 +1086,16 @@ export class Rive {
 
     // Calculate the elapsed time between frames in seconds
     const elapsedTime = (time - this.lastRenderTime) / 1000;
-    this.lastRenderTime = time;
+    if (!scrubbing) {
+      this.lastRenderTime = time;
+    }
 
     // Draw only a scrubbed single frame when scrubbing
     if (scrubbing) {
-      for (const animation of this.animator.animations) {
+      const pausedAnimations = this.animator.animations.filter(a => !a.playing);
+      for (const animation of pausedAnimations) {
         const playhead = animation.instance.time;
-        animation.instance.time = 0;
+        animation.instance.time = scrubStart || 0;
         animation.instance.advance(playhead);
         animation.instance.apply(this.artboard, 1.0);
       }
@@ -1105,19 +1109,20 @@ export class Rive {
         }
         animation.instance.apply(this.artboard, 1.0);
       }
+
+      // Advance non-paused state machines by the elapsed number of seconds
+      const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
+      for (const stateMachine of activeStateMachines) {
+        stateMachine.instance.advance(elapsedTime);
+        stateMachine.instance.apply(this.artboard);
+      }
     }
 
-
-    // Advance non-paused state machines by the elapsed number of seconds
-    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
-    for (const stateMachine of activeStateMachines) {
-      stateMachine.instance.advance(elapsedTime);
-      stateMachine.instance.apply(this.artboard);
-    }
-
-    // Once the animations have been applied to the artboard, advance it
+    // Once the animations have been applied to the artboard and if not scrubbing, advance it
     // by the elapsed time.
-    this.artboard.advance(elapsedTime);
+    if (!scrubbing) {
+      this.artboard.advance(elapsedTime);
+    }
 
     // Update the renderer alignment if necessary
     this.alignRenderer();
@@ -1134,7 +1139,7 @@ export class Rive {
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
-    if (this.animator.isPlaying) {
+    if (this.animator.isPlaying && !scrubbing) {
       // Request a new rendering frame
       this.startRendering();
     } else if (this.animator.isPaused) {
@@ -1206,19 +1211,20 @@ export class Rive {
     this.animator.pause(animationNames);
   }
 
-  public scrub(animationNames?: string | string[], value?: number): void {
+  public scrub(animationNames?: string | string[], value?: number, scrubStart?: number): void {
     animationNames = mapToStringArray(animationNames);
 
     // If the file's not loaded, early out, nothing to pause
     if (!this.readyForPlaying) {
         this.taskQueue.add({
-            action: () => this.scrub(animationNames, value),
+            action: () => this.scrub(animationNames, value, scrubStart),
         });
         return;
     }
     //scrub the animation time and draw a single frame
+    this.animator.pause(animationNames);
     this.animator.scrub(animationNames, value || 0);
-    this.draw(value,undefined,true);
+    this.draw(value,undefined,true, scrubStart);
   }
 
   // Stops specified animations; if none specifies, stops them all.
