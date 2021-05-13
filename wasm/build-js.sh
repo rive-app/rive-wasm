@@ -7,6 +7,8 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+CFLAGS=
+
 if [ "$1" == "es6" ]; then
     FILE_EXTENSION=mjs
     OUTPUT_FILE=rive
@@ -15,6 +17,11 @@ elif [ "$1" == "es5" ]; then
     FILE_EXTENSION=js
     OUTPUT_FILE=rive
     WASM=1
+elif [ "$1" == "tools" ]; then
+    FILE_EXTENSION=mjs
+    OUTPUT_FILE=rive.tools.pure
+    WASM=0
+    CFLAGS=-DENABLE_QUERY_FLAT_VERTICES
 elif [ "$1" == "es6pure" ]; then
     FILE_EXTENSION=mjs
     OUTPUT_FILE=rive.pure
@@ -24,7 +31,7 @@ elif [ "$1" == "es5pure" ]; then
     OUTPUT_FILE=rive.pure
     WASM=0
 else
-    echo "incorrect type: build.sh <es6|es5|es6pure|es5pure>"
+    echo "incorrect type: build.sh <es6|es5|es6pure|es5pure|tools>"
     exit 1
 fi
 
@@ -51,6 +58,7 @@ em++ -Oz \
     -s SINGLE_FILE=1 \
     -s USE_ES6_IMPORT_META=0 \
     -s EXPORT_NAME="Rive" \
+    $CFLAGS \
     -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 \
     -DSINGLE \
     -DANSI_DECLARATORS \
@@ -62,6 +70,10 @@ em++ -Oz \
     -I../submodules/rive-cpp/include \
     --no-entry \
     --post-js ../js/marker.js \
+    ../submodules/rive-cpp/src/generated/bones/*.cpp \
+    ../submodules/rive-cpp/src/generated/shapes/*.cpp \
+    ../submodules/rive-cpp/src/generated/shapes/paint/*.cpp \
+    ../submodules/rive-cpp/src/generated/animation/*.cpp \
     ../submodules/rive-cpp/src/*/*.cpp \
     ../submodules/rive-cpp/src/*.cpp \
     ../submodules/rive-cpp/src/core/field_types/*.cpp \
