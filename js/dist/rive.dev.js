@@ -3297,6 +3297,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Layout": () => (/* binding */ Layout),
 /* harmony export */   "RuntimeLoader": () => (/* binding */ RuntimeLoader),
 /* harmony export */   "StateMachineInputType": () => (/* binding */ StateMachineInputType),
+/* harmony export */   "StateMachineInput": () => (/* binding */ StateMachineInput),
 /* harmony export */   "EventType": () => (/* binding */ EventType),
 /* harmony export */   "LoopType": () => (/* binding */ LoopType),
 /* harmony export */   "Rive": () => (/* binding */ Rive),
@@ -3532,6 +3533,8 @@ var Animation = /** @class */ (function () {
         this.animation = animation;
         this.playing = playing;
         this.loopCount = 0;
+        // Time to which the animation should move to on the next render
+        this.scrubTo = null;
         this.instance = new runtime.LinearAnimationInstance(animation);
     }
     Object.defineProperty(Animation.prototype, "name", {
@@ -3542,10 +3545,44 @@ var Animation = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Animation.prototype, "time", {
+        // Returns the animation's current time
+        get: function () {
+            return this.instance.time;
+        },
+        // Sets the animation's current time
+        set: function (value) {
+            this.instance.time = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(Animation.prototype, "loopValue", {
         // Returns the animation's loop type
         get: function () {
             return this.animation.loopValue;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    /**
+     * Advances the animation by the give time. If the animation needs scrubbing,
+     * time is ignored and the stored scrub value is used.
+     * @param time the time to advance the animation by if no scrubbing required
+     */
+    Animation.prototype.advance = function (time) {
+        if (this.scrubTo === null) {
+            this.instance.advance(time);
+        }
+        else {
+            this.instance.time = 0;
+            this.instance.advance(this.scrubTo);
+            this.scrubTo = null;
+        }
+    };
+    Object.defineProperty(Animation.prototype, "needsScrub", {
+        get: function () {
+            return this.scrubTo !== null;
         },
         enumerable: false,
         configurable: true
@@ -3604,6 +3641,7 @@ var StateMachineInput = /** @class */ (function () {
     };
     return StateMachineInput;
 }());
+
 var StateMachine = /** @class */ (function () {
     /**
      * @constructor
@@ -3642,7 +3680,7 @@ var StateMachine = /** @class */ (function () {
         configurable: true
     });
     /**
-     * Fetches references to the state amchine's inputs and caches them
+     * Fetches references to the state machine's inputs and caches them
      * @param runtime an instance of the runtime; needed for the SMIInput types
      */
     StateMachine.prototype.initInputs = function (runtime) {
@@ -3694,7 +3732,7 @@ var Animator = /** @class */ (function () {
     }
     /**
      * Adds animations and state machines by their names. If names are shared
-     * between animations & state machines, then the first one found wiil be
+     * between animations & state machines, then the first one found will be
      * created. Best not to use the same names for these in your Rive file.
      * @param animatable the name(s) of animations and state machines to add
      * @returns a list of names of the playing animations and state machines
@@ -3766,13 +3804,24 @@ var Animator = /** @class */ (function () {
         return this.add(animatables, true);
     };
     /**
-   * Pauses named aninimations and state machines, or everything if nothing is
+   * Pauses named animations and state machines, or everything if nothing is
    * specified
    * @param animatables names of the animations and state machines to pause
    * @returns a list of names of the animations and state machines paused
    */
     Animator.prototype.pause = function (animatables) {
         return this.add(animatables, false);
+    };
+    /**
+     * Set time of named animations
+     * @param animations names of the animations to scrub
+     * @param value time scrub value, a floating point number to which the playhead is jumped
+     * @returns a list of names of the animations that were scrubbed
+     */
+    Animator.prototype.scrub = function (animatables, value) {
+        var forScrubbing = this.animations.filter(function (a) { return animatables.includes(a.name); });
+        forScrubbing.forEach(function (a) { return a.scrubTo = value; });
+        return forScrubbing.map(function (a) { return a.name; });
     };
     Object.defineProperty(Animator.prototype, "playing", {
         /**
@@ -4244,10 +4293,14 @@ var Rive = /** @class */ (function () {
         var elapsedTime = (time - this.lastRenderTime) / 1000;
         this.lastRenderTime = time;
         // Advance non-paused animations by the elapsed number of seconds
-        var activeAnimations = this.animator.animations.filter(function (a) { return a.playing; });
+        // Also advance any animations that require scrubbing
+        var activeAnimations = this.animator.animations.filter(function (a) { return a.playing || a.needsScrub; })
+            // The scrubbed animations must be applied first to prevent weird artifacts
+            // if the playing animations conflict with the scrubbed animating attribuates.
+            .sort(function (first, second) { return first.needsScrub ? -1 : 1; });
         for (var _i = 0, activeAnimations_1 = activeAnimations; _i < activeAnimations_1.length; _i++) {
             var animation = activeAnimations_1[_i];
-            animation.instance.advance(elapsedTime);
+            animation.advance(elapsedTime);
             if (animation.instance.didLoop) {
                 animation.loopCount += 1;
             }
@@ -4338,6 +4391,21 @@ var Rive = /** @class */ (function () {
             return;
         }
         this.animator.pause(animationNames);
+    };
+    Rive.prototype.scrub = function (animationNames, value) {
+        var _this = this;
+        animationNames = mapToStringArray(animationNames);
+        // If the file's not loaded, early out, nothing to pause
+        if (!this.readyForPlaying) {
+            this.taskQueue.add({
+                action: function () { return _this.scrub(animationNames, value); },
+            });
+            return;
+        }
+        // Scrub the animation time; we draw a single frame here so that if
+        // nothing's currently playing, the scrubbed animation is still rendered/
+        this.animator.scrub(animationNames, value || 0);
+        this.drawFrame();
     };
     // Stops specified animations; if none specifies, stops them all.
     Rive.prototype.stop = function (animationNames) {
