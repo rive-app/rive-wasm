@@ -39,8 +39,8 @@
                     const scrub = 1 * (window.scrollY / totalScroll).toFixed(3);
 
                     //test scrubbing two different animations, but the default animation 'idle' will keep playing as usual!
-                    animation.scrub(['windshield_wipers'],scrub);
-                    animation.scrub(['bouncing'],scrub * 3 + 1.5);
+                    animation.scrub('windshield_wipers', scrub);
+                    animation.scrub('bouncing', scrub * 3 + 1.5);
                 };
             })
         </script>
