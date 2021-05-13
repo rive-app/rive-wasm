@@ -15,7 +15,7 @@
 
         </main>
 
-        <script src="../../../dist/rive.min.js"></script>
+        <script src="/dist/rive.min.js"></script>
         <script>
             // autoplays the first animation in the default artboard
             const animation = new rive.Rive({
@@ -31,7 +31,7 @@
                 animation.pause(['windshield_wipers', 'bouncing']);
 
                 //start scrubbing bouncing from 1.5
-                animation.scrub(['bouncing'],1.5);
+                animation.scrub(['bouncing'], 1.5);
 
                 document.getElementsByTagName('body')[0].onscroll = () => {
                     const totalScroll =
