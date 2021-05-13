@@ -77,7 +77,7 @@ export declare enum StateMachineInputType {
 /**
  * An input for a state machine
  */
-declare class StateMachineInput {
+export declare class StateMachineInput {
     readonly type: StateMachineInputType;
     private runtimeInput;
     constructor(type: StateMachineInputType, runtimeInput: rc.SMIInput);
@@ -247,6 +247,7 @@ export declare class Rive {
     private alignRenderer;
     play(animationNames?: string | string[], autoplay?: true): void;
     pause(animationNames?: string | string[]): void;
+    scrub(animationNames?: string | string[], value?: number): void;
     stop(animationNames?: string | string[] | undefined): void;
     load(params: RiveLoadParameters): void;
     set layout(layout: Layout);

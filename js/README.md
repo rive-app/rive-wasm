@@ -252,6 +252,14 @@ You can unsubscribe from a single callback, all callbacks of a specific type, or
   - ```unsubscribe(type, callback)```
   - ```unsubscribeAll(type)```: if ```type``` is omitted, all callbacks are unsubscribed
 
+## Scrubbing
+
+Paused animations can be manually advanced (scrubbed) by a specified amount of time:
+
+```js
+animation.scrub(myAnimationName, timeInSeconds);
+```
+
 ## Other Properties
 
  - *source*: returns the source for the animation
