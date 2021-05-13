@@ -1,4 +1,8 @@
 #include "animation/animation.hpp"
+#include "animation/animation_state.hpp"
+#include "animation/any_state.hpp"
+#include "animation/entry_state.hpp"
+#include "animation/exit_state.hpp"
 #include "animation/linear_animation.hpp"
 #include "animation/linear_animation_instance.hpp"
 #include "animation/state_machine_bool.hpp"
@@ -6,10 +10,6 @@
 #include "animation/state_machine_instance.hpp"
 #include "animation/state_machine_number.hpp"
 #include "animation/state_machine_trigger.hpp"
-#include "animation/animation_state.hpp"
-#include "animation/entry_state.hpp"
-#include "animation/exit_state.hpp"
-#include "animation/any_state.hpp"
 #include "artboard.hpp"
 #include "bones/bone.hpp"
 #include "bones/root_bone.hpp"
@@ -21,6 +21,8 @@
 #include "math/mat2d.hpp"
 #include "node.hpp"
 #include "renderer.hpp"
+#include "shapes/cubic_vertex.hpp"
+#include "shapes/path.hpp"
 #include "transform_component.hpp"
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -146,6 +148,54 @@ rive::File *load(emscripten::val byteArray) {
 EMSCRIPTEN_BINDINGS(RiveWASM) {
   function("load", &load, allow_raw_pointers());
 
+#ifdef ENABLE_QUERY_FLAT_VERTICES
+  class_<rive::FlattenedPath>("FlattenedPath")
+      .function("length",
+                optional_override([](rive::FlattenedPath &self) -> size_t {
+                  return self.vertices().size();
+                }))
+      .function("isCubic", optional_override([](rive::FlattenedPath &self,
+                                                size_t index) -> bool {
+                  if (index >= self.vertices().size()) {
+                    return false;
+                  }
+                  return self.vertices()[index]->is<rive::CubicVertex>();
+                }))
+      .function("x", optional_override(
+                         [](rive::FlattenedPath &self, size_t index) -> float {
+                           return self.vertices()[index]->x();
+                         }))
+      .function("y", optional_override(
+                         [](rive::FlattenedPath &self, size_t index) -> float {
+                           return self.vertices()[index]->y();
+                         }))
+      .function("inX", optional_override([](rive::FlattenedPath &self,
+                                            size_t index) -> float {
+                  return self.vertices()[index]
+                      ->as<rive::CubicVertex>()
+                      ->renderIn()[0];
+                }))
+      .function("inY", optional_override([](rive::FlattenedPath &self,
+                                            size_t index) -> float {
+                  return self.vertices()[index]
+                      ->as<rive::CubicVertex>()
+                      ->renderIn()[1];
+                }))
+      .function("outX", optional_override([](rive::FlattenedPath &self,
+                                             size_t index) -> float {
+                  return self.vertices()[index]
+                      ->as<rive::CubicVertex>()
+                      ->renderOut()[0];
+                }))
+      .function("outY", optional_override([](rive::FlattenedPath &self,
+                                             size_t index) -> float {
+                  return self.vertices()[index]
+                      ->as<rive::CubicVertex>()
+                      ->renderOut()[1];
+                }));
+
+#endif
+
   class_<rive::Renderer>("Renderer")
       .function("save", &RendererWrapper::save, pure_virtual(),
                 allow_raw_pointers())
@@ -260,8 +310,25 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("artboardCount", &rive::File::artboardCount);
 
   class_<rive::Artboard>("Artboard")
+#ifdef ENABLE_QUERY_FLAT_VERTICES
+      .function("flattenPath",
+                optional_override([](rive::Artboard &self,
+                                     size_t index) -> rive::FlattenedPath * {
+                  auto artboardObjects = self.objects();
+                  if (index >= artboardObjects.size()) {
+                    return nullptr;
+                  }
+                  auto object = artboardObjects[index];
+                  if (!object->is<rive::Path>()) {
+                    return nullptr;
+                  }
+                  auto path = object->as<rive::Path>();
+                  return path->makeFlat();
+                }),
+                allow_raw_pointers())
+#endif
       .property("name", select_overload<const std::string &() const>(
-                &rive::Artboard::name))
+                            &rive::Artboard::name))
       .function("advance", &rive::Artboard::advance)
       .function("draw", &rive::Artboard::draw, allow_raw_pointers())
       .function("transformComponent",
@@ -372,28 +439,31 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("inputCount", &rive::StateMachineInstance::inputCount)
       .function("input", &rive::StateMachineInstance::input,
                 allow_raw_pointers())
-      .function("stateChangedCount", &rive::StateMachineInstance::stateChangedCount)
-      .function("stateChangedNameByIndex",
-                optional_override([](rive::StateMachineInstance &self, size_t index) -> std::string {
-                  const rive::LayerState* state = self.stateChangedByIndex(index);
-                  if (state != nullptr)
-                    switch(state->coreType()) {
-                      case rive::AnimationState::typeKey:
-                        return state->as<rive::AnimationState>()->animation()->name();
-                      case rive::EntryState::typeKey:
-                        return "entry";
-                      case rive::ExitState::typeKey:
-                        return "exit";
-                      case rive::AnyState::typeKey:
-                        return "any";
-                  }
-                  return "unknown";
-                }),
-                allow_raw_pointers());
+      .function("stateChangedCount",
+                &rive::StateMachineInstance::stateChangedCount)
+      .function(
+          "stateChangedNameByIndex",
+          optional_override([](rive::StateMachineInstance &self,
+                               size_t index) -> std::string {
+            const rive::LayerState *state = self.stateChangedByIndex(index);
+            if (state != nullptr)
+              switch (state->coreType()) {
+              case rive::AnimationState::typeKey:
+                return state->as<rive::AnimationState>()->animation()->name();
+              case rive::EntryState::typeKey:
+                return "entry";
+              case rive::ExitState::typeKey:
+                return "exit";
+              case rive::AnyState::typeKey:
+                return "any";
+              }
+            return "unknown";
+          }),
+          allow_raw_pointers());
 
   class_<rive::SMIInput>("SMIInput")
       .property("type", &rive::SMIInput::inputCoreType)
-      .property("name",&rive::SMIInput::name)
+      .property("name", &rive::SMIInput::name)
       .class_property("bool", &stateMachineBoolTypeKey)
       .class_property("number", &stateMachineNumberTypeKey)
       .class_property("trigger", &stateMachineTriggerTypeKey)
@@ -424,33 +494,15 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
           }),
           allow_raw_pointers());
 
-  class_<rive::SMIBool, base<rive::SMIInput>>("SMIBool")
-      .property("value",
-                select_overload<bool() const>(&rive::SMIBool::value),
-                select_overload<void(bool)>(&rive::SMIBool::value));
+  class_<rive::SMIBool, base<rive::SMIInput>>("SMIBool").property(
+      "value", select_overload<bool() const>(&rive::SMIBool::value),
+      select_overload<void(bool)>(&rive::SMIBool::value));
   class_<rive::SMINumber, base<rive::SMIInput>>("SMINumber")
       .property("value",
                 select_overload<float() const>(&rive::SMINumber::value),
                 select_overload<void(float)>(&rive::SMINumber::value));
   class_<rive::SMITrigger, base<rive::SMIInput>>("SMITrigger")
       .function("fire", &rive::SMITrigger::fire);
-
-  // In JS this should look like...
-  // var smi = new StateMachineInstance(stateMachine);
-  // for(int i = 0; i < smi.inputCount(); i++) {
-  // 	var input = smi.input(i);
-  // 	switch(input.type) {
-  // 		case SMIInput.bool:
-  // 			input = input.asBool();
-  // 			break;
-  // 		case SMIInput.number:
-  // 		input = input.asNumber();
-  // 			break;
-  // 		case SMIInput.trigger:
-  // 			input = input.asTrigger();
-  // 			break;
-  // 	}
-  // }
 
   enum_<rive::Fit>("Fit")
       .value("fill", rive::Fit::fill)
