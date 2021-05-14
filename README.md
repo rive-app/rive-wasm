@@ -2,8 +2,6 @@
 
 [Rive's](https://rive.app) web runtime.
 
-[![Sparkline](https://stars.medv.io/rive-app/rive-wasm.svg)](https://stars.medv.io/rive-app/rive-wasm)
-
 Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on latest updates.
 
 ## Wasm
@@ -289,3 +287,7 @@ npx http-server
 ```
 
 and then navigate to the examples, e.g.: ```http://localhost:8000/examples/hello_world/index.html```.
+
+## Stars Sparkline
+
+[![Sparkline](https://stars.medv.io/rive-app/rive-wasm.svg)](https://stars.medv.io/rive-app/rive-wasm)
