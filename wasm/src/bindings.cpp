@@ -312,19 +312,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::Artboard>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
       .function("flattenPath",
-                optional_override([](rive::Artboard &self,
-                                     size_t index) -> rive::FlattenedPath * {
-                  auto artboardObjects = self.objects();
-                  if (index >= artboardObjects.size()) {
-                    return nullptr;
-                  }
-                  auto object = artboardObjects[index];
-                  if (!object->is<rive::Path>()) {
-                    return nullptr;
-                  }
-                  auto path = object->as<rive::Path>();
-                  return path->makeFlat();
-                }),
+                optional_override(
+                    [](rive::Artboard &self, size_t index,
+                       bool transformToParent) -> rive::FlattenedPath * {
+                      auto artboardObjects = self.objects();
+                      if (index >= artboardObjects.size()) {
+                        return nullptr;
+                      }
+                      auto object = artboardObjects[index];
+                      if (!object->is<rive::Path>()) {
+                        return nullptr;
+                      }
+                      auto path = object->as<rive::Path>();
+                      return path->makeFlat(transformToParent);
+                    }),
                 allow_raw_pointers())
 #endif
       .property("name", select_overload<const std::string &() const>(
@@ -433,8 +434,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
 
   class_<rive::StateMachineInstance>("StateMachineInstance")
       .constructor<rive::StateMachine *>()
-      .function("advance", &rive::StateMachineInstance::advance)
-      .function("apply", &rive::StateMachineInstance::apply,
+      .function("advance", &rive::StateMachineInstance::advance,
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)
       .function("input", &rive::StateMachineInstance::input,
