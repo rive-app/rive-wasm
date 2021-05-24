@@ -169,8 +169,7 @@ export declare class StateMachineInstance {
   constructor(stateMachine: StateMachine);
   inputCount(): number;
   input(i: number): SMIInput; 
-  advance(sec: number): any;
-  apply(artboard: Artboard): any;
+  advance(artboard: Artboard, sec: number): any;
   stateChangedCount(): number;
   stateChangedNameByIndex(i: number): string;
 }

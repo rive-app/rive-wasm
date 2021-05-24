@@ -1122,8 +1122,8 @@ export class Rive {
     // Advance non-paused state machines by the elapsed number of seconds
     const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
     for (const stateMachine of activeStateMachines) {
-      stateMachine.instance.advance(elapsedTime);
-      stateMachine.instance.apply(this.artboard);
+      stateMachine.instance.advance(this.artboard, elapsedTime);
+      // stateMachine.instance.apply(this.artboard);
     }
 
     // Once the animations have been applied to the artboard, advance it
