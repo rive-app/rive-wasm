@@ -1,7 +1,15 @@
 # Rive.js Changelog
 
+## 0.7.13
+- Fixes README in npm
+
+## 0.7.12
+- Updates cpp to latest
+- support for blend states in state machines
+
 ## 0.7.11
 - Adds scrubbing functionality and example, contributed by [nilskj](https://github.com/nilskj)
+
 ## 0.7.10
 - Fixes incorrect types path
 

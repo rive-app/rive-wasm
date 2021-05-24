@@ -1,6 +1,6 @@
 {
   "name": "rive-canvas",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Rive JS WASM runtime.",
   "main": "rive.mjs",
   "homepage": "https://rive.app",

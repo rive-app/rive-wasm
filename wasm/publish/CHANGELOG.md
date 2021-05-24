@@ -1,5 +1,8 @@
 # Rive Wasm Changelog
 
+## 0.7.4
+- Updates C++ to latest
+- Support for blend states
 ## 0.7.3
 - Updates C++ to latest
 - Adds functions to make detecting state changes in state machines easier
