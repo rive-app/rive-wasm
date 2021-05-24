@@ -18,7 +18,7 @@ The easiest way to run this is to copy ```dist/rive.min.js``` into your project 
 <script src="https://unpkg.com/rive-js@0.7.11/dist/rive.min.js"></script>
 ```
 
-If you're using npm, you cn include it in your dependencies:
+If you're using npm, you can include it in your dependencies:
 
 ```json
 {
