@@ -3466,12 +3466,7 @@ var RuntimeLoader = /** @class */ (function () {
     RuntimeLoader.loadRuntime = function () {
         rive_canvas__WEBPACK_IMPORTED_MODULE_0__.default({
             // Loads Wasm bundle
-            locateFile: function (file) {
-                // if in test mode, attempts to load file locally 
-                return (RuntimeLoader.testMode ?
-                    RuntimeLoader.wasmFilePath :
-                    RuntimeLoader.wasmWebPath) + file;
-            }
+            locateFile: function (_) { return RuntimeLoader.wasmURL; }
         }).then(function (rive) {
             var _a;
             RuntimeLoader.runtime = rive;
@@ -3501,20 +3496,17 @@ var RuntimeLoader = /** @class */ (function () {
             return RuntimeLoader.getInstance(function (rive) { return resolve(rive); });
         });
     };
-    // Places the loader in test mode
-    RuntimeLoader.setTestMode = function (mode) {
-        RuntimeLoader.testMode = mode;
+    // Manually sets the wasm url
+    RuntimeLoader.setWasmUrl = function (url) {
+        RuntimeLoader.wasmURL = url;
     };
     // Flag to indicate that loading has started/completed
     RuntimeLoader.isLoading = false;
     // List of callbacks for the runtime that come in while loading
     RuntimeLoader.callBackQueue = [];
-    // The url for the Wasm file
-    RuntimeLoader.wasmWebPath = 'file://';
-    // Local path to the Wasm file; for testing purposes
-    RuntimeLoader.wasmFilePath = 'dist/';
-    // Are we in test mode?
-    RuntimeLoader.testMode = false;
+    // Path to the Wasm file; default path works for testing only;
+    // if embedded wasm is used then this is never used.
+    RuntimeLoader.wasmURL = 'dist/rive.wasm';
     return RuntimeLoader;
 }());
 

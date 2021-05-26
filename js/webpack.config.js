@@ -71,4 +71,34 @@ const moduleConfig = {
   mode: 'none',
 };
 
-module.exports = [moduleConfig, webConfig];
+const moduleLeanConfig = {
+  entry: './build/lean/rive.ts',
+  target: 'es6',
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    fallback: {
+      'path': false,
+      'fs': false
+    }
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'rive.lean.dev.js',
+    libraryTarget: 'umd',
+    library: 'rive',
+    globalObject: 'this',
+  },
+  devtool: 'source-map',
+  mode: 'none',
+};
+
+module.exports = [moduleConfig, webConfig, moduleLeanConfig];

@@ -153,13 +153,10 @@ export class RuntimeLoader {
   // List of callbacks for the runtime that come in while loading
   private static callBackQueue: RuntimeCallback[] = [];
   // Instance of the Rive runtime
-  private static rive: rc.RiveCanvas;
-  // The url for the Wasm file
-  private static wasmWebPath: string = 'file://';
-  // Local path to the Wasm file; for testing purposes
-  private static wasmFilePath: string = 'dist/';
-  // Are we in test mode?
-  private static testMode: boolean = false;
+  private static rive: rc.RiveCanvas;  
+  // Path to the Wasm file; default path works for testing only;
+  // if embedded wasm is used then this is never used.
+  private static wasmURL: string = 'dist/rive.wasm';
 
   // Class is never instantiated
   private constructor() { }
@@ -168,12 +165,8 @@ export class RuntimeLoader {
   private static loadRuntime(): void {
     rc.default({
       // Loads Wasm bundle
-      locateFile: (file: string) =>
-        // if in test mode, attempts to load file locally 
-        (RuntimeLoader.testMode ?
-          RuntimeLoader.wasmFilePath :
-          RuntimeLoader.wasmWebPath) + file
-    }).then((rive:  rc.RiveCanvas) => {
+      locateFile: (_: string) => RuntimeLoader.wasmURL
+    }).then((rive: rc.RiveCanvas) => {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
       while (RuntimeLoader.callBackQueue.length > 0) {
@@ -203,9 +196,9 @@ export class RuntimeLoader {
     );
   }
 
-  // Places the loader in test mode
-  public static setTestMode(mode: boolean): void {
-    RuntimeLoader.testMode = mode;
+  // Manually sets the wasm url
+  public static setWasmUrl(url: string): void {
+    RuntimeLoader.wasmURL = url;
   }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.7.13",
+  "version": "0.7.14",
   "description": "Rive's web api.",
   "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",
@@ -29,13 +29,15 @@
     "dist/rive.min.js.map",
     "dist/rive.dev.js",
     "dist/rive.dev.js.map",
+    "dist/rive.lean.dev.js",
+    "dist/rive.lean.dev.js.map",
     "dist/rive.wasm",
     "dist/rive.d.ts",
     "src/rive.ts"
   ],
   "typings": "./dist/rive.d.ts",
   "dependencies": {
-    "rive-canvas": "0.7.4"
+    "rive-canvas": "0.7.5"
   },
   "devDependencies": {
     "@babel/core": "^7.13.15",
