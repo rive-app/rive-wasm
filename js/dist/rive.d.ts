@@ -60,14 +60,12 @@ export declare class RuntimeLoader {
     private static isLoading;
     private static callBackQueue;
     private static rive;
-    private static wasmWebPath;
-    private static wasmFilePath;
-    private static testMode;
+    private static wasmURL;
     private constructor();
     private static loadRuntime;
     static getInstance(callback: RuntimeCallback): void;
     static awaitInstance(): Promise<rc.RiveCanvas>;
-    static setTestMode(mode: boolean): void;
+    static setWasmUrl(url: string): void;
 }
 export declare enum StateMachineInputType {
     Number = 56,

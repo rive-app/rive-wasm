@@ -147,7 +147,6 @@ beforeEach(() => {
   // Suppress console.warn and console.error
   jest.spyOn(console, 'error').mockImplementation(() => { });
   jest.spyOn(console, 'warn').mockImplementation(() => { });
-  rive.RuntimeLoader.setTestMode(true);
 });
 
 afterEach(() => { });
