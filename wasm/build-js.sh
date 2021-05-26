@@ -13,28 +13,42 @@ if [ "$1" == "es6" ]; then
     FILE_EXTENSION=mjs
     OUTPUT_FILE=rive
     WASM=1
+    SINGLE_FILE=1
 elif [ "$1" == "es5" ]; then
     FILE_EXTENSION=js
     OUTPUT_FILE=rive
     WASM=1
+    SINGLE_FILE=1
 elif [ "$1" == "tools" ]; then
     FILE_EXTENSION=mjs
     OUTPUT_FILE=rive.tools.pure
     WASM=0
+    SINGLE_FILE=1
     CFLAGS=-DENABLE_QUERY_FLAT_VERTICES
 elif [ "$1" == "es6pure" ]; then
     FILE_EXTENSION=mjs
     OUTPUT_FILE=rive.pure
     WASM=0
+    SINGLE_FILE=1
 elif [ "$1" == "es5pure" ]; then
     FILE_EXTENSION=js
     OUTPUT_FILE=rive.pure
     WASM=0
+    SINGLE_FILE=1
+elif [ "$1" == "es6lean" ]; then
+    FILE_EXTENSION=mjs
+    OUTPUT_FILE=rive.lean
+    WASM=1
+    SINGLE_FILE=0
+elif [ "$1" == "es5lean" ]; then
+    FILE_EXTENSION=js
+    OUTPUT_FILE=rive.lean
+    WASM=1
+    SINGLE_FILE=0
 else
-    echo "incorrect type: build.sh <es6|es5|es6pure|es5pure|tools>"
+    echo "incorrect type: build.sh <es6|es5|es6pure|es5pure|es6lean|es5lean|tools>"
     exit 1
 fi
-
 
 mkdir -p build
 pushd build &>/dev/null
@@ -55,7 +69,7 @@ em++ -Oz \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s DISABLE_EXCEPTION_CATCHING=1 \
     -s WASM=$WASM \
-    -s SINGLE_FILE=1 \
+    -s SINGLE_FILE=$SINGLE_FILE \
     -s USE_ES6_IMPORT_META=0 \
     -s EXPORT_NAME="Rive" \
     $CFLAGS \
@@ -95,7 +109,12 @@ terser --compress --mangle -o ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION -- 
 # copy to publish folder
 cp ./bin/release/rive-combined.$FILE_EXTENSION ../publish/$OUTPUT_FILE.$FILE_EXTENSION
 cp ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION ../publish/$OUTPUT_FILE.min.$FILE_EXTENSION
-# cp ./bin/release/rive.wasm ../publish/rive.wasm
+
+# copy the wasm if it's been generated
+if [ $WASM -eq 1 ] && [ $SINGLE_FILE -eq 0 ]; then
+    echo "copying wasm"
+    cp ./bin/release/$OUTPUT_FILE.wasm ../publish/rive.wasm
+fi
 # cp ./bin/release/rive_wasm.js ../publish/rive_wasm.js
 
 popd &>/dev/null

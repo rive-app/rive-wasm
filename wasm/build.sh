@@ -7,5 +7,7 @@ echo Building ES6 PURE
 ./build-js.sh es6pure
 echo Building ES5 PURE
 ./build-js.sh es5pure
-echo Building wasm
-./build-wasm.sh
+echo Building ES6 NO BUNDLED WASM
+./build-js.sh es6lean
+echo Building ES5 NO BUNDLED WASM
+./build-js.sh es5lean
