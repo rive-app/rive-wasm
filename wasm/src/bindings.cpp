@@ -359,7 +359,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                     &rive::Artboard::stateMachine),
                 allow_raw_pointers())
       .function("stateMachineCount", &rive::Artboard::stateMachineCount)
-      .property("bounds", &rive::Artboard::bounds);
+      .property("bounds", &rive::Artboard::bounds)
+      .function("instance", &rive::Artboard::instance, allow_raw_pointers());
 
   class_<rive::TransformComponent>("TransformComponent")
       .property(
