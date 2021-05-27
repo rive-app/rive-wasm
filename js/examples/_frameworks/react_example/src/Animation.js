@@ -4,13 +4,14 @@ import { Rive, Layout } from 'rive-js';
 const Animation = ({ asset, animation, fit, alignment }) => {
     const canvas = useRef(null);
     const animationContainer = useRef(null);
-    let rive = useRef(null);
+    const rive = useRef(null);
 
     // Resizes the canvas to match the parent element
     useEffect(() => {
         
         let resizer = () => {
-            const { width: w, height: h } = animationContainer.current.getBoundingClientRect();
+            const { width: w, height: h } =
+                animationContainer.current.getBoundingClientRect();
             canvas.current.width = w;
             canvas.current.height = h;
         };
@@ -31,7 +32,7 @@ const Animation = ({ asset, animation, fit, alignment }) => {
     });
 
     return (
-        <div ref={animationContainer} className="App-logo">
+        <div ref={animationContainer} className="Rive-logo">
             <canvas ref={canvas} />
         </div>
     );
