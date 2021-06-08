@@ -100,6 +100,9 @@ export declare class File {
 export declare class Artboard {
   get name(): string;
   get bounds(): AABB;
+  instance(): Artboard;
+  // Deletes the backing wasm artboard instance
+  delete(): void;
   advance(sec: number): any;
   draw(renderer: CanvasRenderer): void;
   animationByName(name: string): LinearAnimation;
@@ -159,6 +162,8 @@ export declare class LinearAnimationInstance {
    * @param mix 0-1 the strength of the animation in the animations mix.
    */
   apply(artboard: Artboard, mix: number): any;
+  // Deletes the backing Wasm animation instance
+  delete(): void;
 }
 
 export declare class StateMachine {
@@ -172,6 +177,8 @@ export declare class StateMachineInstance {
   advance(artboard: Artboard, sec: number): any;
   stateChangedCount(): number;
   stateChangedNameByIndex(i: number): string;
+  // Deletes the backing Wasm state machine instance
+  delete(): void;
 }
 
 export declare class SMIInput {
