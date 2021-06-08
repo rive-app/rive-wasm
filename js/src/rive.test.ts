@@ -1015,7 +1015,7 @@ test('Artboards can be reset back to their starting state', done => {
     onloop: (event: rive.Event) => {
       if (loopCount == 0) {
         // Reset the animation; animation should continue to play
-        r.reset();
+        r.reset({autoplay: true});
       } else {
         done();
       }

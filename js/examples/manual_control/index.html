@@ -15,6 +15,7 @@
             <button id="wipers">Start Wipers</button>
             <button id="bounce">Rough Road</button>
             <button id="rendering">Stop Rendering</button>
+            <button id="reset">Reset</button>
         </div>
 
         <script src="/dist/rive.min.js"></script>
@@ -30,6 +31,7 @@
             const wipersButton = document.getElementById('wipers');
             const bounceButton = document.getElementById('bounce');
             const renderingButton = document.getElementById('rendering');
+            const resetButton = document.getElementById('reset');
 
             idleButton.onclick = _ => 
             truck.playingAnimationNames.includes('idle') ?
@@ -55,8 +57,9 @@
                     renderingButton.innerHTML = 'Start Rendering';
                 }
             };
-                
-
+              
+            resetButton.onclick = _ => truck.reset({autoplay: true});
+            
             // Listen for play events to update button text
             truck.on(rive.EventType.Play, (event) => {
                 const names = event.data;

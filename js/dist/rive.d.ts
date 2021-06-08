@@ -194,6 +194,12 @@ export interface RiveLoadParameters {
     animations?: string | string[];
     stateMachines?: string | string[];
 }
+export interface RiveResetParameters {
+    artboard?: string;
+    animations?: string | string[];
+    stateMachines?: string | string[];
+    autoplay?: boolean;
+}
 export declare class Rive {
     private readonly canvas;
     private src;
@@ -255,7 +261,15 @@ export declare class Rive {
     pause(animationNames?: string | string[]): void;
     scrub(animationNames?: string | string[], value?: number): void;
     stop(animationNames?: string | string[] | undefined): void;
-    reset(): void;
+    /**
+     * Resets the animation
+     * @param artboard the name of the artboard, or default if none given
+     * @param animations the names of animations for playback
+     * @param stateMachines the names of state machines for playback
+     * @param autoplay whether to autoplay when reset, defaults to false
+     *
+     */
+    reset(params?: RiveResetParameters): void;
     load(params: RiveLoadParameters): void;
     set layout(layout: Layout);
     /**
