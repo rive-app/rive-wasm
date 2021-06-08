@@ -992,3 +992,36 @@ test('An animation can be played and scrubbed without altering playback state', 
 });
 
 // #endregion
+
+// #region reseting
+
+test('Artboards can be reset back to their starting state', done => {
+  const canvas = document.createElement('canvas');
+  
+  // Track the nr of loops
+  let loopCount: number = 0;
+  
+  // Start up a looping animation
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loopRiveFileBuffer,
+    autoplay: true,
+    onload: () => {
+      // Default artboard should be selected
+      expect(r.activeArtboard).toBe('New Artboard');
+      // This should only ever happen once
+      expect(loopCount).toBe(0);
+    },
+    onloop: (event: rive.Event) => {
+      if (loopCount == 0) {
+        // Reset the animation; animation should continue to play
+        r.reset();
+      } else {
+        done();
+      }
+      loopCount++;
+    },
+  });
+});
+
+// #endregion

@@ -263,6 +263,14 @@ class Animation {
   public get needsScrub(): boolean {
     return this.scrubTo !== null;
   }
+
+  /**
+   * Deletes the backing Wasm animation instance; once this is called, this
+   * animation is no more.
+   */
+  public cleanup() {
+    this.instance.delete();
+  }
 }
 
 // #endregion
@@ -377,6 +385,14 @@ class StateMachine {
       return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
     }
   }
+
+  /**
+   * Deletes the backing Wasm state machine instance; once this is called, this
+   * state machine is no more.
+   */
+     public cleanup() {
+      this.instance.delete();
+    }
 }
 
 // #endregion
@@ -525,10 +541,15 @@ class Animator {
 
     // If nothing's specified, wipe them out, all of them
     let removedNames: string[] = [];
+    // Stop everything
     if (animatables.length === 0) {
       removedNames = this.animations.map(a => a.name).concat(
         this.stateMachines.map(m => m.name)
       );
+      // Clean up before emptying the arrays
+      this.animations.forEach(a => a.cleanup());
+      this.stateMachines.forEach(m => m.cleanup());
+      // Empty out the arrays
       this.animations.splice(0, this.animations.length);
       this.stateMachines.splice(0, this.stateMachines.length);
     } else {
@@ -536,15 +557,18 @@ class Animator {
       const animationsToRemove = this.animations.filter(
         a => animatables.includes(a.name)
       );
-      animationsToRemove.forEach(a =>
-        this.animations.splice(this.animations.indexOf(a), 1)
-      );
+      
+      animationsToRemove.forEach(a => {
+        a.cleanup();
+        this.animations.splice(this.animations.indexOf(a), 1);
+      });
       const machinesToRemove = this.stateMachines.filter(
         m => animatables.includes(m.name)
       );
-      machinesToRemove.forEach(m =>
-        this.stateMachines.splice(this.stateMachines.indexOf(m), 1)
-      );
+      machinesToRemove.forEach(m => {
+        m.cleanup();
+        this.stateMachines.splice(this.stateMachines.indexOf(m), 1);
+      });
       removedNames = animationsToRemove.map(a => a.name).concat(
         machinesToRemove.map(m => m.name));
     }
@@ -646,6 +670,7 @@ class Animator {
       });
     }
   }
+
 }
 
 // #endregion
@@ -1011,16 +1036,22 @@ export class Rive {
     stateMachineNames: string[],
     autoplay: boolean
   ): void {
-    this.artboard = artboardName ?
+
+    // Fetch the artboard
+    const rootArtboard = artboardName ?
       this.file.artboardByName(artboardName) :
       this.file.defaultArtboard();
-
-    if (!this.artboard) {
+    
+    // Check we have a working artboard
+    if (!rootArtboard) {
       const msg = 'Invalid artboard name or no default artboard';
       console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return;
     }
+
+    // Instance the artboard
+    this.artboard = rootArtboard.instance();
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
@@ -1181,6 +1212,18 @@ export class Rive {
     }
   }
 
+  /**
+   * Cleans up any Wasm-generated objects that need to be manually destroyed:
+   * artboard instances, animation instances, state machine instances.
+   *
+   * Once this is called, things will need to be reinitialized or bad things
+   * might happen.
+   */
+  public cleanup() {
+    this.artboard.delete();
+    // TODO: delete animation and state machine instances
+  }
+
   // Plays specified animations; if none specified, it unpauses everything.
   public play(animationNames?: string | string[], autoplay?: true): void {
     animationNames = mapToStringArray(animationNames);
@@ -1240,6 +1283,25 @@ export class Rive {
     this.animator.stop(animationNames);
   }
 
+  /*
+   * Resets the animation to its initial state
+   */
+  public reset(): void {
+    // Get the current artboard, animations, state machines, and playback states
+    const artBoardName = this.artboard.name;
+    const animationNames = this.animator.animations.map(a => a.name);
+    const stateMachineNames = this.animator.stateMachines.map(m => m.name);
+    const autoplay = this.isPlaying;
+
+    // Stop everything and clean up
+    this.stop();
+    this.cleanup();
+
+    // Reinitialize an artboard instance with the state
+    this.initArtboard(artBoardName, animationNames, stateMachineNames, autoplay);
+  }
+
+
   // Loads a new Rive file, keeping listeners in place
   public load(params: RiveLoadParameters): void {
     // Stop all animations
@@ -1289,6 +1351,13 @@ export class Rive {
   // Returns the animation source, which may be undefined
   public get source(): string {
     return this.src;
+  }
+
+  /**
+   * Returns the name of the active artboard
+   */
+  public get activeArtboard(): string {
+    return this.artboard.name;
   }
 
   // Returns a list of animation names on the chosen artboard

@@ -243,10 +243,19 @@ export declare class Rive {
      * Align the renderer
      */
     private alignRenderer;
+    /**
+     * Cleans up any Wasm-generated objects that need to be manually destroyed:
+     * artboard instances, animation instances, state machine instances.
+     *
+     * Once this is called, things will need to be reinitialized or bad things
+     * might happen.
+     */
+    cleanup(): void;
     play(animationNames?: string | string[], autoplay?: true): void;
     pause(animationNames?: string | string[]): void;
     scrub(animationNames?: string | string[], value?: number): void;
     stop(animationNames?: string | string[] | undefined): void;
+    reset(): void;
     load(params: RiveLoadParameters): void;
     set layout(layout: Layout);
     /**
@@ -261,6 +270,10 @@ export declare class Rive {
      */
     resizeToCanvas(): void;
     get source(): string;
+    /**
+     * Returns the name of the active artboard
+     */
+    get activeArtboard(): string;
     get animationNames(): string[];
     /**
      * Returns a list of state machine names from the current artboard
