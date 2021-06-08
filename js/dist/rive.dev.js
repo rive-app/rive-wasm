@@ -4448,15 +4448,21 @@ var Rive = /** @class */ (function () {
         }
         this.animator.stop(animationNames);
     };
-    /*
-     * Resets the animation to its initial state
+    /**
+     * Resets the animation
+     * @param artboard the name of the artboard, or default if none given
+     * @param animations the names of animations for playback
+     * @param stateMachines the names of state machines for playback
+     * @param autoplay whether to autoplay when reset, defaults to false
+     *
      */
-    Rive.prototype.reset = function () {
+    Rive.prototype.reset = function (params) {
+        var _a;
         // Get the current artboard, animations, state machines, and playback states
-        var artBoardName = this.artboard.name;
-        var animationNames = this.animator.animations.map(function (a) { return a.name; });
-        var stateMachineNames = this.animator.stateMachines.map(function (m) { return m.name; });
-        var autoplay = this.isPlaying;
+        var artBoardName = params === null || params === void 0 ? void 0 : params.artboard;
+        var animationNames = mapToStringArray(params === null || params === void 0 ? void 0 : params.animations);
+        var stateMachineNames = mapToStringArray(params === null || params === void 0 ? void 0 : params.stateMachines);
+        var autoplay = (_a = params === null || params === void 0 ? void 0 : params.autoplay) !== null && _a !== void 0 ? _a : false;
         // Stop everything and clean up
         this.stop();
         this.cleanup();

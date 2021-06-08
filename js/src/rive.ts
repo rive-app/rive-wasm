@@ -855,6 +855,14 @@ export interface RiveLoadParameters {
   stateMachines?: string | string[],
 }
 
+// Interface ot Rive.reset function
+export interface RiveResetParameters {
+  artboard?: string,
+  animations?: string | string[],
+  stateMachines?: string | string[],
+  autoplay?: boolean,
+}
+
 export class Rive {
 
   // Canvas in which to render the artboard
@@ -1283,15 +1291,20 @@ export class Rive {
     this.animator.stop(animationNames);
   }
 
-  /*
-   * Resets the animation to its initial state
+  /**
+   * Resets the animation
+   * @param artboard the name of the artboard, or default if none given
+   * @param animations the names of animations for playback
+   * @param stateMachines the names of state machines for playback
+   * @param autoplay whether to autoplay when reset, defaults to false
+   *
    */
-  public reset(): void {
+  public reset(params?: RiveResetParameters): void {
     // Get the current artboard, animations, state machines, and playback states
-    const artBoardName = this.artboard.name;
-    const animationNames = this.animator.animations.map(a => a.name);
-    const stateMachineNames = this.animator.stateMachines.map(m => m.name);
-    const autoplay = this.isPlaying;
+    const artBoardName = params?.artboard;
+    const animationNames = mapToStringArray(params?.animations);
+    const stateMachineNames = mapToStringArray(params?.stateMachines);
+    const autoplay = params?.autoplay ?? false;
 
     // Stop everything and clean up
     this.stop();
