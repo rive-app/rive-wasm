@@ -1,5 +1,9 @@
 # Rive.js Changelog
 
+## 0.7.15
+- Fixes memory leaks with instances of animations and state machines
+- Adds `reset` function to Rive that will reset animations to their original state
+
 ## 0.7.14
 - Includes a lean JS build that does not bundle the wasm binary - rive.lean.dev.js; this is intended for those who want to serve the wasm binary independently of the js code. The overall download size will be smaller as the wasm binary is base64 encoded in the bundled version. Use ```RuntimeLoader.setWasmUrl()``` to provide the runtime with the location of the wasm binary prior to creating Rive objects.
 
