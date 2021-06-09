@@ -1,5 +1,9 @@
 # Rive Wasm Changelog
 
+## 0.7.6
+- Updates C++ to latest
+- Adds delete function to instance types
+
 ## 0.7.5
 - Includes a lean JS build that does not bundle the wasm binary - rive.lean.(m)js; this is intended for those who want to serve the wasm binary independently of the js code
 
