@@ -22,7 +22,8 @@
         <script>
             // animation will show the first frame but not start playing
             const truck = new rive.Rive({
-                src: 'https://cdn.rive.app/animations/off_road_car_v7.riv',
+                src: 'https://cdn.rive.app/animations/vehicles.riv',
+                artboard: 'Jeep',
                 canvas: document.getElementById('canvas'),
                 layout: new rive.Layout({fit: 'fill'}),
             });
@@ -58,7 +59,10 @@
                 }
             };
               
-            resetButton.onclick = _ => truck.reset({autoplay: true});
+            // When reseting, the artboard, starting animations and autoplay can
+            // be changed
+            resetButton.onclick = _ => truck.reset({
+                artboard: 'Jeep', autoplay: true});
             
             // Listen for play events to update button text
             truck.on(rive.EventType.Play, (event) => {
@@ -83,12 +87,10 @@
                     } else if (name === 'windshield_wipers') {
                         wipersButton.innerHTML = 'Start Wipers';
                     } else if (name === 'bouncing') {
-                        bounceButton.innerHTML = 'Smooth Road';
+                        bounceButton.innerHTML = 'Rough Road';
                     } 
                 });
             });
-
         </script>
-
     </body>
 </html>
