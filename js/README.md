@@ -2,6 +2,8 @@
 
 [Rive's](https://rive.app) web runtime.
 
+Detailed runtime documentation can be found in [Rive's help center](https://help.rive.app/runtimes).
+
 Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on latest updates.
 
 ## Wasm
