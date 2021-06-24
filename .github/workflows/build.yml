@@ -12,9 +12,9 @@ jobs:
         with:
           version: 2.0.17
           actions-cache-folder: "emsdk-cache"
-      - name: Build WASM
-        run: cd wasm && ./build.sh
       - name: Install modules
         run: cd js && npm install
       - name: Build
         run: cd js && ./build.sh
+      - name: Run tests
+        run: cd js && npm test

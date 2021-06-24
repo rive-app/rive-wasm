@@ -1,4 +1,4 @@
-![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/tests.yml/badge.svg) 
+![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/build.yml/badge.svg) 
 ![Discord badge](https://img.shields.io/discord/532365473602600965)
 ![Twitter handle](https://img.shields.io/twitter/follow/rive_app.svg?style=social&label=Follow)
 # Rive.js
