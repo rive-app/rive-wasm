@@ -29,7 +29,7 @@ WASM=1
 mkdir -p build
 pushd build &>/dev/null
 
-# make the output directory if it dont's exist
+# make the output directory if it doesn't exist
 mkdir -p $OUTPUT_DIR
 
 

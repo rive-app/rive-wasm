@@ -1,0 +1,11 @@
+name: Build JS
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        run: cd js && npm install
+      - name: Build
+        run: cd js && ./build.sh
