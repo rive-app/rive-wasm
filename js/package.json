@@ -37,7 +37,7 @@
   ],
   "typings": "./dist/rive.d.ts",
   "dependencies": {
-    "rive-canvas": "0.7.7"
+    "rive-canvas": "0.7.7 || 0.7.6"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",
