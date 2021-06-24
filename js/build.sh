@@ -6,11 +6,6 @@
 mkdir -p build/lean
 
 # copy the rive wasm js and type definitions files to build dir
-if [ ! -f ../wasm/publish/rive.lean.mjs ]; then
-    pushd ../wasm
-    ./build-js.sh es6lean
-    popd
-fi
 cp ../wasm/publish/rive.lean.mjs ./build/lean/wasm.js
 cp ../wasm/publish/types.d.ts ./build/lean/wasm.d.ts
 

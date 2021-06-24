@@ -5,6 +5,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v9
+        with:
+          version: 2.0.17
+          actions-cache-folder: "emsdk-cache"
+      - name: Build WASM
+        run: cd wasm && ./build.sh
       - name: Install modules
         run: cd js && npm install
       - name: Build

@@ -14,3 +14,11 @@ node_modules
 */build
 /wasm/Makefile
 /wasm/rive.make
+/wasm/publish/rive.pure.min.mjs
+/wasm/publish/rive.pure.min.js
+/wasm/publish/rive.min.mjs
+/wasm/publish/rive.min.js
+/wasm/publish/rive.lean.min.mjs
+/wasm/publish/rive.lean.min.js
+/js/dist/rive.lean.dev.js.map
+/js/dist/rive.lean.dev.js
