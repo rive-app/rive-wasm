@@ -9,9 +9,9 @@ Detailed runtime documentation can be found in [Rive's help center](https://help
 
 Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on latest updates.
 
-## Wasm
+## WASM (and local builds)
 
-If you're looking for information on our low-level Wasm runtime, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
+If you're looking for information on our low-level Wasm runtime, or you're interested in contributing and building this repo locally, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
 
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
@@ -32,8 +32,7 @@ If you're using npm, you can include it in your dependencies:
     "rive-js": "0.7.16"
   }
 }
-```
-
+``` 
 ## Quick Start
 
 Play the first animation in the default artboard:

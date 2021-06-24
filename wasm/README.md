@@ -1,17 +1,15 @@
-# rive-wasm
+# Rive WASM
 
 Wasm/JS runtime for Rive
 
-## submodules
+## Submodules
 
 This repository uses submodules. To clone it, you can run the following:
 
 `git clone --recurse-submodules git@github.com:rive-app/rive-wasm.git`
 
-## building
+## Building
 
-Rive's Wasm build requires a patched version of Emscripten so that it can take full advantage of the ```no-rtti``` compiler directive, which helps to keep the runtime size small.
-
-Run ```source setup_build_tools.sh``` from the root folder of the repository to download, configure, and compile Emscripten. The script will also set environment variables, now you can build the Wasm/js runtimes by running ```./build.sh```.
-
-If you start a new terminal, you will need to run `source setup_build_tools.sh` again before running `./build.sh`.
+- [Install emscripten](https://emscripten.org/docs/getting_started/downloads.html) we try to use the latest. We're currently building against 2.0.17.
+- ```./build.sh``` to build the various wasm modules necessary for rive-js (js/build.sh will do this automatically if necessary).
+- ```./build-wasm.sh``` if you're iterating on C++ code changes and want to rebuild often with quick iteration (this requires premake5).
