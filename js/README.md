@@ -11,7 +11,7 @@ Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/
 
 ## WASM (and local builds)
 
-If you're looking for information on our low-level Wasm runtime, or you're interested in contributing and building this repo locally, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
+If you're looking for information on our low-level WASM runtime, or you're interested in contributing and building this repo locally, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
 
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
