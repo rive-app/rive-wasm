@@ -22,7 +22,11 @@ cp ../wasm/publish/types.d.ts ./build/lean/wasm.d.ts
 cp src/rive.ts build/lean/
 
 # Replace the import statement at the top
-sed -i '' '1s/.*/import * as rc from '"'"'.\/wasm'"'"';/' build/lean/rive.ts
+if [ "$(uname)" == "Darwin" ]; then
+    sed -i '' '1s/.*/import * as rc from '"'"'.\/wasm'"'"';/' build/lean/rive.ts
+else
+    sed -i '1s/.*/import * as rc from '"'"'.\/wasm'"'"';/' build/lean/rive.ts
+fi
 
 # run web-pack
 npm run build
