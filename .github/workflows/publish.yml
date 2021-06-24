@@ -1,0 +1,26 @@
+name: Publish
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  merge_job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v9
+        with:
+          version: 2.0.17
+          actions-cache-folder: "emsdk-cache"
+      - name: Build WASM
+        run: cd wasm && ./build.sh
+      - name: Try Publish
+        run: cd wasm && ./publish/publish.sh
+      - name: Install modules
+        run: cd js && npm install
+      - name: Build
+        run: cd js && ./build.sh
+      - name: Try Publish
+        run: cd js && ./publish.sh

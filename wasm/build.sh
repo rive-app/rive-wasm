@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e
+
 echo Building ES6
 ./build-js.sh es6
 echo Building ES5

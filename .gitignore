@@ -22,3 +22,4 @@ node_modules
 /wasm/publish/rive.lean.min.js
 /js/dist/rive.lean.dev.js.map
 /js/dist/rive.lean.dev.js
+/wasm/publish/rive.mjs

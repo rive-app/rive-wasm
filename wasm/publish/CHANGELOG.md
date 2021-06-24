@@ -1,5 +1,8 @@
 # Rive Wasm Changelog
 
+## 0.7.7
+- Updates C++ to latest which includes fix to stroke rendering when width is 0
+
 ## 0.7.6
 - Updates C++ to latest
 - Adds delete function to instance types

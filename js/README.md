@@ -20,7 +20,7 @@ If you're using Rive files in v6 format, then please use the `0.6.1` version of 
 The easiest way to run this is to copy ```dist/rive.min.js``` into your project and embed with a ```script``` tag:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.15/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
 ```
 
 If you're using npm, you can include it in your dependencies:
@@ -29,7 +29,7 @@ If you're using npm, you can include it in your dependencies:
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.15"
+    "rive-js": "0.7.16"
   }
 }
 ```
@@ -40,7 +40,7 @@ Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.15/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new rive.Rive({

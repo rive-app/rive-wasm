@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 OUTPUT_DIR=bin/release
 
 if [ $# -ne 1 ]; then

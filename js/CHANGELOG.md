@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.16
+- Fixes issue with strokes rendering when they have 0 thickness/width.
+
 ## 0.7.15
 - Fixes memory leaks with instances of animations and state machines
 - Adds `reset` function to Rive that will reset animations to their original state
