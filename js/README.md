@@ -1,4 +1,4 @@
-![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/tests.yml/badge.svg) 
+![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/build.yml/badge.svg) 
 ![Discord badge](https://img.shields.io/discord/532365473602600965)
 ![Twitter handle](https://img.shields.io/twitter/follow/rive_app.svg?style=social&label=Follow)
 # Rive.js
@@ -9,9 +9,9 @@ Detailed runtime documentation can be found in [Rive's help center](https://help
 
 Please see the [changelog](https://github.com/rive-app/rive-wasm/blob/master/js/CHANGELOG.md) for info on latest updates.
 
-## Wasm
+## WASM (and local builds)
 
-If you're looking for information on our low-level Wasm runtime, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
+If you're looking for information on our low-level WASM runtime, or you're interested in contributing and building this repo locally, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).
 
 ## v6 Users
 If you're using Rive files in v6 format, then please use the `0.6.1` version of this package. Versions older than this have a breaking bug.
@@ -20,7 +20,7 @@ If you're using Rive files in v6 format, then please use the `0.6.1` version of 
 The easiest way to run this is to copy ```dist/rive.min.js``` into your project and embed with a ```script``` tag:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.15/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
 ```
 
 If you're using npm, you can include it in your dependencies:
@@ -29,18 +29,17 @@ If you're using npm, you can include it in your dependencies:
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.15"
+    "rive-js": "0.7.16"
   }
 }
-```
-
+``` 
 ## Quick Start
 
 Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.15/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new rive.Rive({

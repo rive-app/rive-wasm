@@ -1,7 +1,11 @@
-name: Build JS
-on: push
+name: Publish to NPM
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
 jobs:
-  build:
+  merge_job:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,3 +22,7 @@ jobs:
         run: cd js && ./build.sh
       - name: Run tests
         run: cd js && npm test
+      - name: Try Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd js && ./publish.sh

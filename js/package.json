@@ -1,6 +1,6 @@
 {
   "name": "rive-js",
-  "version": "0.7.15",
+  "version": "0.7.0",
   "description": "Rive's web api.",
   "main": "dist/rive.dev.js",
   "unpkg": "dist/rive.min.js",
@@ -36,9 +36,6 @@
     "src/rive.ts"
   ],
   "typings": "./dist/rive.d.ts",
-  "dependencies": {
-    "rive-canvas": "0.7.6"
-  },
   "devDependencies": {
     "@babel/core": "^7.14.3",
     "@babel/plugin-transform-modules-commonjs": "^7.14.0",

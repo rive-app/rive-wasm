@@ -1,4 +1,4 @@
-import { RiveCanvas } from 'rive-canvas';
+import * as rc from './rive_canvas.js';
 import * as rive from './rive';
 
 // #region helper functions
@@ -195,7 +195,7 @@ test('Layouts have sensible defaults', (): void => {
 });
 
 test('Layouts provide runtime fit and alignment values', async () => {
-  const runtime: RiveCanvas = await rive.RuntimeLoader.awaitInstance();
+  const runtime: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   let layout = new rive.Layout({ fit: rive.Fit.FitWidth, alignment: rive.Alignment.BottomLeft });
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fitWidth);
@@ -240,17 +240,17 @@ test('Layouts can be copied with overridden values', (): void => {
 
 test('Runtime can be loaded using callbacks', async done => {
 
-  let callback1: rive.RuntimeCallback = (runtime: RiveCanvas): void => {
+  let callback1: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     expect(runtime.Fit.none).toBeDefined();
     expect(runtime.Fit.cover).toBeDefined();
     expect(runtime.Fit.none).not.toBe(runtime.Fit.cover);
   };
 
-  let callback2: rive.RuntimeCallback = (runtime: RiveCanvas): void =>
+  let callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void =>
     expect(runtime).toBeDefined();
 
-  let callback3: rive.RuntimeCallback = (runtime: RiveCanvas): void => {
+  let callback3: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     done();
   };
@@ -262,7 +262,7 @@ test('Runtime can be loaded using callbacks', async done => {
 });
 
 test('Runtime can be loaded using promises', async done => {
-  let rive1: RiveCanvas = await rive.RuntimeLoader.awaitInstance();
+  let rive1: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   expect(rive1).toBeDefined();
   expect(rive1.Fit.none).toBeDefined();
   expect(rive1.Fit.cover).toBeDefined();
