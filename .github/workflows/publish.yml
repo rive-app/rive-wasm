@@ -1,7 +1,9 @@
-name: Publish
+name: Publish to NPM
 on:
   pull_request:
     types: [closed]
+    branches:
+      - master
 jobs:
   merge_job:
     runs-on: ubuntu-latest
@@ -14,16 +16,13 @@ jobs:
         with:
           version: 2.0.17
           actions-cache-folder: "emsdk-cache"
-      - name: Build WASM
-        run: cd wasm && ./build.sh
-      - name: Try Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd wasm && ./publish/publish.sh
       - name: Install modules
         run: cd js && npm install
       - name: Build
         run: cd js && ./build.sh
+      - name: Run tests
+        run: cd js && npm test
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

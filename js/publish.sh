@@ -1,9 +1,5 @@
 #!/bin/bash
 set -e
-LOCAL_VERSION=`node -p "require('./package.json').version"`
-NPM_VERSION=`npm show rive-js version`
-
-echo Local version is $LOCAL_VERSION and NPM is $NPM_VERSION
-if [ $LOCAL_VERSION != $NPM_VERSION ]; then 
-    npm publish
-fi
+NPM_VERSIONS=`npm show rive-js versions`
+node next_version.js "$NPM_VERSIONS"
+npm publish
