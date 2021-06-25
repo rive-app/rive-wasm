@@ -16,7 +16,6 @@ jobs:
         with:
           version: 2.0.17
           actions-cache-folder: "emsdk-cache"
-        run: cd wasm && ./publish/publish.sh
       - name: Install modules
         run: cd js && npm install
       - name: Build
