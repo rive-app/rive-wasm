@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run cpp version check
-        uses: rive-app/github-actions-submodule-check@v6
+        uses: rive-app/github-actions-submodule-check@v7
         with:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SUBMODULE_GIT_URL: https://github.com/rive-app/rive-cpp.git
