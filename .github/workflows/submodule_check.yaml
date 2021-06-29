@@ -13,12 +13,13 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Run cpp version check 
-        env:
-            SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        run: sh ./.github/scripts/rive_cpp_check.sh
+      - name: Run cpp version check
+        uses: rive-app/github-actions-submodule-check@v6
+        with:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SUBMODULE_GIT_URL: https://github.com/rive-app/rive-cpp.git
