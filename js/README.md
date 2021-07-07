@@ -68,7 +68,7 @@ new rive.Rive({
 Options for ```fit``` are:
 - 'cover'
 - 'contain'
-- 'Fill'
+- 'fill'
 - 'fitWidth'
 - 'fitHeight'
 - 'none'
