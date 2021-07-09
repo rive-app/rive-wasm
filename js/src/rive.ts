@@ -966,13 +966,24 @@ export class Rive {
 
     // New event management system
     this.eventManager = new EventManager();
-    if (params.onload) this.on(EventType.Load, params.onload);
-    if (params.onloaderror) this.on(EventType.LoadError, params.onloaderror);
-    if (params.onplay) this.on(EventType.Play, params.onplay);
-    if (params.onpause) this.on(EventType.Pause, params.onpause);
-    if (params.onstop) this.on(EventType.Stop, params.onstop);
-    if (params.onloop) this.on(EventType.Loop, params.onloop);
-    if (params.onstatechange) this.on(EventType.StateChange, params.onstatechange);
+    if (params.onLoad) this.on(EventType.Load, params.onLoad);
+    if (params.onLoadError) this.on(EventType.LoadError, params.onLoadError);
+    if (params.onPlay) this.on(EventType.Play, params.onPlay);
+    if (params.onPause) this.on(EventType.Pause, params.onPause);
+    if (params.onStop) this.on(EventType.Stop, params.onStop);
+    if (params.onLoop) this.on(EventType.Loop, params.onLoop);
+    if (params.onStateChange) this.on(EventType.StateChange, params.onStateChange);
+    
+    /**
+     * @deprecated Use camelCase'd versions instead.
+     */
+    if (params.onload && !params.onLoad) this.on(EventType.Load, params.onload);
+    if (params.onloaderror && !params.onLoadError) this.on(EventType.LoadError, params.onloaderror);
+    if (params.onplay && !params.onPlay) this.on(EventType.Play, params.onplay);
+    if (params.onpause && !params.onPause) this.on(EventType.Pause, params.onpause);
+    if (params.onstop && !params.onStop) this.on(EventType.Stop, params.onstop);
+    if (params.onloop && !params.onLoop) this.on(EventType.Loop, params.onloop);
+    if (params.onstatechange && !params.onStateChange) this.on(EventType.StateChange, params.onstatechange);
 
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
