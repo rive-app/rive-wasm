@@ -246,13 +246,13 @@ r.on('loop', (event) => {
 ```
 
 Event callbacks currently supported are:
-  - *onload*: fired when the Rive file is loaded and ready for playback
-  - *onloaderror*: fired if an error occurred while trying to load a Rive file
-  - *onplay*: Rive has started playing an animation
-  - *onpause*: playback has been paused
-  - *onloop*: one of the playing animations has looped (```LoopEvent```)
-  - *onstop*: playback has stopped (when the animation completes if not a looping animation)
-  - *onstatechange*: state has changed in a state machine
+  - *onLoad*: fired when the Rive file is loaded and ready for playback
+  - *onLoadError*: fired if an error occurred while trying to load a Rive file
+  - *onPlay*: Rive has started playing an animation
+  - *onPause*: playback has been paused
+  - *onLoop*: one of the playing animations has looped (```LoopEvent```)
+  - *onStop*: playback has stopped (when the animation completes if not a looping animation)
+  - *onStateChange*: state has changed in a state machine
 
 You can unsubscribe from a single callback, all callbacks of a specific type, or every callback using:
   - ```unsubscribe(type, callback)```

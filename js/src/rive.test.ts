@@ -371,11 +371,11 @@ test('Rive objects initialize correctly', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
-    onload: () => {
+    onLoad: () => {
       expect(r).toBeDefined();
       done();
     },
-    onloaderror: () => expect(false).toBeTruthy(),
+    onLoadError: () => expect(false).toBeTruthy(),
   });
 });
 
@@ -384,8 +384,8 @@ test('Corrupt Rive file cause explosions', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: corruptRiveFileBuffer,
-    onloaderror: () => done(),
-    onload: () => expect(false).toBeTruthy()
+    onLoadError: () => done(),
+    onLoad: () => expect(false).toBeTruthy()
   });
 });
 
@@ -399,11 +399,11 @@ test('Artboards can be fetched by name', done => {
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     artboard: 'Artboard2',
-    onload: () => {
+    onLoad: () => {
       expect(r).toBeDefined();
       done();
     },
-    onloaderror: () => expect(false).toBeTruthy(),
+    onLoadError: () => expect(false).toBeTruthy(),
   });
 });
 
@@ -413,8 +413,8 @@ test('Rive explodes when given an invalid artboard name', done => {
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     artboard: 'BadArtboard',
-    onload: () => expect(false).toBeTruthy(),
-    onloaderror: () => {
+    onLoad: () => expect(false).toBeTruthy(),
+    onLoadError: () => {
       // We should get here
       done();
     },
@@ -427,7 +427,7 @@ test('Artboard bounds can be retrieved from a loaded Rive file', done =>{
     canvas: canvas,
     artboard: 'MyArtboard',
     buffer: stateMachineFileBuffer,
-    onload: () => {
+    onLoad: () => {
       const bounds = r.bounds;
       expect(bounds).toBeDefined();
       expect(bounds.minX).toBe(0);
@@ -448,7 +448,7 @@ test('Playback state for new Rive objects is pause', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
-    onload: () => {
+    onLoad: () => {
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeTruthy();
       expect(r.isPlaying).toBeFalsy();
@@ -463,13 +463,13 @@ test('Playback state for auto-playing new Rive objects is play', done => {
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
-    onload: () => {
+    onLoad: () => {
       // We expect things to be stopped right after loading
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onplay: () => {
+    onPlay: () => {
       // We expect things to start playing shortly after load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
@@ -489,13 +489,13 @@ test('Playing a ping-pong animation will fire a loop event', done => {
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
-    onplay: () => {
+    onPlay: () => {
       // We expect things to start playing shortly after load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       expect(r.isPlaying).toBeTruthy();
       expect(event.type).toBe(rive.EventType.Loop);
       expect(event.data).toBeDefined();
@@ -511,13 +511,13 @@ test('Playing a loop animation will fire a loop event', done => {
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
-    onplay: () => {
+    onPlay: () => {
       // We expect things to start playing shortly after load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       expect(r.isPlaying).toBeTruthy();
       expect(event.type).toBe(rive.EventType.Loop);
       expect(event.data).toBeDefined();
@@ -533,13 +533,13 @@ test('Playing a one-shot animation will fire a stop event', done => {
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
-    onplay: () => {
+    onPlay: () => {
       // We expect things to start playing shortly after load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onstop: (event: rive.Event) => {
+    onStop: (event: rive.Event) => {
       expect(r.isStopped).toBeTruthy();
       expect(event.type).toBe(rive.EventType.Stop);
       done();
@@ -553,7 +553,7 @@ test('Stop events are received', done => {
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
-    onstop: () => {
+    onStop: () => {
       // We expect to receive a stop event when the animation's done
       expect(r.isStopped).toBeTruthy();
       expect(r.isPaused).toBeFalsy();
@@ -574,8 +574,8 @@ test('Events can be unsubscribed from', done => {
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
-    onstop: stopCallback,
-    onplay: (event: rive.Event) => {
+    onStop: stopCallback,
+    onPlay: (event: rive.Event) => {
       // Deregister stop subscription
       r.unsubscribe(rive.EventType.Stop, stopCallback);
     },
@@ -599,14 +599,14 @@ test('Events of a single type can be mass unsubscribed', done => {
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
-    onloop: loopCallback1,
-    onplay: (event: rive.Event) => {
+    onLoop: loopCallback1,
+    onPlay: (event: rive.Event) => {
       r.on(rive.EventType.Loop, loopCallback2);
       r.on(rive.EventType.Loop, loopCallback3);
       // Deregisters all loop subscriptions
       r.unsubscribeAll(rive.EventType.Loop);
     },
-    onstop: (event: rive.Event) => {
+    onStop: (event: rive.Event) => {
       // This should not hgave been removed
       done();
     }
@@ -634,15 +634,15 @@ test('All events can be mass unsubscribed', done => {
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
-    onloop: loopCallback1,
-    onplay: (event: rive.Event) => {
+    onLoop: loopCallback1,
+    onPlay: (event: rive.Event) => {
       r.on(rive.EventType.Loop, loopCallback2);
       r.on(rive.EventType.Loop, loopCallback3);
       r.on(rive.EventType.Stop, stopCallback2);
       // Deregisters all loop subscriptions
       r.unsubscribeAll();
     },
-    onstop:stopCallback1,
+    onStop:stopCallback1,
   });
 
   setTimeout(() => {
@@ -661,23 +661,23 @@ test('Playing animations can be manually started and stopped', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
-    onload: () => {
+    onLoad: () => {
       // Initial animation should be ready and paused on load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeTruthy();
       // Start playback
       r.play();
     },
-    onplay: () => {
+    onPlay: () => {
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       // Once it's looped, attempt to stop
       r.stop();
     },
-    onstop: (event: rive.Event) => {
+    onStop: (event: rive.Event) => {
       expect(r.isStopped).toBeTruthy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeFalsy();
@@ -694,29 +694,29 @@ test('Playing animations can be manually started, paused, and restarted', done =
   const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
-    onload: () => {
+    onLoad: () => {
       // Nothing should be playing whenever a file is loaded
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeTruthy();
       // Start playback
       r.play();
     },
-    onplay: () => {
+    onPlay: () => {
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       hasLooped ? r.stop() : r.pause();
       hasLooped = true;
     },
-    onpause: (event: rive.Event) => {
+    onPause: (event: rive.Event) => {
       expect(r.isPaused).toBeTruthy();
       expect(r.isStopped).toBeFalsy();
       expect(r.isPlaying).toBeFalsy();
       r.play();
     },
-    onstop: (event: rive.Event) => {
+    onStop: (event: rive.Event) => {
       expect(hasLooped).toBeTruthy();
       expect(r.isStopped).toBeTruthy();
       expect(r.isPaused).toBeFalsy();
@@ -739,7 +739,7 @@ test('Multiple files can be loaded and played', done => {
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
-    onload: () => {
+    onLoad: () => {
       // Nothing should be playing whenever a file is loaded
       expect(r.isStopped).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
@@ -749,20 +749,20 @@ test('Multiple files can be loaded and played', done => {
         firstLoadOccurred = true;
       }
     },
-    onplay: () => {
+    onPlay: () => {
       // We expect things to start playing shortly after load
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       expect(r.isPlaying).toBeTruthy();
       expect(loopOccurred).toBeFalsy();
       loopOccurred = true;
       // After the first loop, load a new file
       r.load({ buffer: oneShotRiveFileBuffer, autoplay: true });
     },
-    onstop: (event: rive.Event) => {
+    onStop: (event: rive.Event) => {
       expect(r.isStopped).toBeTruthy();
       expect(r.isPlaying).toBeFalsy();
       expect(loopOccurred).toBeTruthy();
@@ -778,7 +778,7 @@ test('Layout is set to canvas dimensions if not specified', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
-    onload: () => {
+    onLoad: () => {
       expect(r.layout.minX).toBe(0);
       expect(r.layout.minY).toBe(0);
       expect(r.layout.maxX).toBe(400);
@@ -797,7 +797,7 @@ test('Rive file contents can be read', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    onload: () => {
+    onLoad: () => {
       const contents = r.contents;
       expect(contents).toBeDefined();
       expect(contents.artboards).toBeDefined();
@@ -831,7 +831,7 @@ test('State machine names can be retrieved', done => {
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    onload: () => {
+    onLoad: () => {
       const stateMachineNames = r.stateMachineNames;
       expect(stateMachineNames).toHaveLength(1);
       expect(stateMachineNames[0]).toBe('StateMachine');
@@ -846,7 +846,7 @@ test('State machines can be instanced', done => {
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     stateMachines: 'StateMachine',
-    onpause: () => {
+    onPause: () => {
       expect(r.pausedStateMachineNames).toHaveLength(1);
       done();
     }
@@ -859,7 +859,7 @@ test('Instanced state machine inputs can be retrieved', done => {
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     stateMachines: 'StateMachine',
-    onpause: () => {
+    onPause: () => {
       let stateMachineInputs = r.stateMachineInputs('BadName');
       expect(stateMachineInputs).toBeUndefined();
       stateMachineInputs = r.stateMachineInputs('StateMachine');
@@ -895,19 +895,19 @@ test('Playing state machines can be manually started, paused, and restarted', do
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     stateMachines: 'StateMachine',
-    onload: () => {
+    onLoad: () => {
       // Nothing should be playing whenever a file is loaded
       expect(r.isStopped).toBeFalsy();
       // Start playback
       r.play();
     },
-    onplay: () => {
+    onPlay: () => {
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
       hasPaused ? done() : r.pause();
     },
-    onpause: (event: rive.Event) => {
+    onPause: (event: rive.Event) => {
       expect(r.isPaused).toBeTruthy();
       expect(r.isStopped).toBeFalsy();
       expect(r.isPlaying).toBeFalsy();
@@ -927,7 +927,7 @@ test('Playing state machines report when states have changed', done => {
     artboard: 'MyArtboard',
     stateMachines: 'StateMachine',
     autoplay: true,
-    onplay: () => {
+    onPlay: () => {
       // Expect the correct animation to be playing
       expect(r.playingStateMachineNames).toHaveLength(1);
       expect(r.playingStateMachineNames[0]).toBe('StateMachine');
@@ -937,7 +937,7 @@ test('Playing state machines report when states have changed', done => {
       expect(inputs[1].name).toBe('MyBool');
       expect(inputs[2].name).toBe('MyTrig');
     },
-    onstatechange: ({type: type, data: stateNames}) => {
+    onStateChange: ({type: type, data: stateNames}) => {
       const inputs = r.stateMachineInputs(r.playingStateMachineNames[0]);
 
       if (state === 0) {
@@ -972,17 +972,17 @@ test('An animation can be played and scrubbed without altering playback state', 
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    onload: () => {
+    onLoad: () => {
       const firstAnimation = r.animationNames[0];
       r.play(firstAnimation);
     },
-    onplay: () => {
+    onPlay: () => {
       const firstAnimation = r.animationNames[0];
       r.scrub(firstAnimation, 0.5);
       expect(r.isPlaying).toBeTruthy();
       r.pause(firstAnimation)
     },
-    onpause: () => {
+    onPause: () => {
       const firstAnimation = r.animationNames[0];
       r.scrub(firstAnimation, 0.8);
       expect(r.isPlaying).toBeFalsy();
@@ -1006,13 +1006,13 @@ test('Artboards can be reset back to their starting state', done => {
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
-    onload: () => {
+    onLoad: () => {
       // Default artboard should be selected
       expect(r.activeArtboard).toBe('New Artboard');
       // This should only ever happen once
       expect(loopCount).toBe(0);
     },
-    onloop: (event: rive.Event) => {
+    onLoop: (event: rive.Event) => {
       if (loopCount == 0) {
         // Reset the animation; animation should continue to play
         r.reset({autoplay: true});
