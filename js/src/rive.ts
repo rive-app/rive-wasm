@@ -836,12 +836,40 @@ export interface RiveParameters {
   stateMachines?: string | string[],
   layout?: Layout,
   autoplay?: boolean,
+  onLoad?: EventCallback,
+  onLoadError?: EventCallback,
+  onPlay?: EventCallback,
+  onPause?: EventCallback,
+  onStop?: EventCallback,
+  onLoop?: EventCallback,
+  onStateChange?: EventCallback,
+  /**
+   * @deprecated Use `onLoad()` instead
+   */
   onload?: EventCallback,
+  /**
+   * @deprecated Use `onLoadError()` instead
+   */
   onloaderror?: EventCallback,
+  /**
+   * @deprecated Use `onPoad()` instead
+   */
   onplay?: EventCallback,
+  /**
+   * @deprecated Use `onPause()` instead
+   */
   onpause?: EventCallback,
+  /**
+   * @deprecated Use `onStop()` instead
+   */
   onstop?: EventCallback,
+  /**
+   * @deprecated Use `onLoop()` instead
+   */
   onloop?: EventCallback,
+  /**
+   * @deprecated Use `onStateChange()` instead
+   */
   onstatechange?: EventCallback,
 }
 
