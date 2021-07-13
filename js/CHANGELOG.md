@@ -1,5 +1,8 @@
 # Rive.js Changelog
 
+## 0.7.17
+- Adds camelCase parameters, deprecates old ones.
+
 ## 0.7.16
 - Fixes issue with strokes rendering when they have 0 thickness/width.
 
