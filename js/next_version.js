@@ -18,7 +18,7 @@ for (let version of versions) {
     for (let i = 0; i < version.length; i++) {
         version[i] = Number.parseInt(version[i]);
     }
-    if (current[0] == version[0] && current[1] == version[1] && buildNumber < version[2]) {
+    if (current[0] == version[0] && current[1] == version[1] && buildNumber <= version[2]) {
         buildNumber = version[2] + 1;
     }
 
