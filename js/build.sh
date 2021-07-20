@@ -13,8 +13,8 @@ if [ ! -f ../wasm/publish/rive.mjs ]; then
     ./build.sh
     popd
 fi
-cp ../wasm/publish/rive.mjs ./src/rive_canvas.js
-cp ../wasm/publish/types.d.ts ./src/rive_canvas.d.ts
+cp ../wasm/publish/rive.mjs ./dist/rive_canvas.js
+cp ../wasm/publish/types.d.ts ./dist/rive_canvas.d.ts
 cp ../wasm/publish/rive.lean.mjs ./build/lean/wasm.js
 cp ../wasm/publish/types.d.ts ./build/lean/wasm.d.ts
 

@@ -29,6 +29,8 @@ node_modules
 /wasm/publish/rive.js
 /js/src/rive.mjs
 /js/src/rive_canvas.js
+/js/dist/rive_canvas.js
+/js/dist/rive_canvas.d.ts
 /js/src/rive_canvas.d.ts
 /js/dist/rive.wasm
 /js/dist/rive.min.js.map
