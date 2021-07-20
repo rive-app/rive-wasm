@@ -90,6 +90,7 @@ em++ -Oz \
     ../submodules/rive-cpp/src/generated/shapes/*.cpp \
     ../submodules/rive-cpp/src/generated/shapes/paint/*.cpp \
     ../submodules/rive-cpp/src/generated/animation/*.cpp \
+    ../submodules/rive-cpp/src/generated/constraints/*.cpp \
     ../submodules/rive-cpp/src/*/*.cpp \
     ../submodules/rive-cpp/src/*.cpp \
     ../submodules/rive-cpp/src/core/field_types/*.cpp \
