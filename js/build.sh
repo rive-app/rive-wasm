@@ -6,6 +6,7 @@ set -e
 
 # create the build dir
 mkdir -p build/lean
+mkdir -p dist
 
 # copy the rive wasm js and type definitions files to build dir
 if [ ! -f ../wasm/publish/rive.mjs ]; then 
