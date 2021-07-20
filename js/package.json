@@ -33,6 +33,8 @@
     "dist/rive.lean.dev.js.map",
     "dist/rive.wasm",
     "dist/rive.d.ts",
+    "dist/rive_canvas.js",
+    "dist/rive_canvas.d.ts",
     "src/rive.ts"
   ],
   "typings": "./dist/rive.d.ts",
