@@ -1204,8 +1204,9 @@ export class Rive {
     // Update the renderer alignment if necessary
     this.alignRenderer();
 
-    const bounds = this.artboard.bounds;
-    this.ctx.clearRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
+    // Clear the canvas for the next frame
+    this.clearCanvas();
+
     this.artboard.draw(this.renderer);
 
     // Check for any animations that looped
@@ -1229,6 +1230,19 @@ export class Rive {
       // this.drawFrame();
       this.lastRenderTime = 0;
     }
+  }
+
+  /**
+   * Clears the canvas
+   */
+  private clearCanvas(): void {
+    // Preserve the current transform matrix
+    this.ctx.save();
+    // Use the identity matrix while clearing the canvas to ensure whole canvas is cleared
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.width);
+    // Restore transform matrix
+    this.ctx.restore();
   }
 
   /**
