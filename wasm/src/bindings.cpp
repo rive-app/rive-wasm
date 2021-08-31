@@ -14,6 +14,7 @@
 #include "rive/bones/bone.hpp"
 #include "rive/bones/root_bone.hpp"
 #include "rive/component.hpp"
+#include "rive/constraints/constraint.hpp"
 #include "rive/core.hpp"
 #include "rive/core/binary_reader.hpp"
 #include "rive/file.hpp"
@@ -208,6 +209,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("clipPath", &RendererWrapper::clipPath, pure_virtual(),
                 allow_raw_pointers())
       .function("align", &rive::Renderer::align)
+      .function("computeAlignment", &rive::Renderer::computeAlignment)
       .allow_subclass<RendererWrapper>("RendererWrapper");
 
   class_<rive::RenderPath>("RenderPath")
@@ -287,12 +289,28 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
   class_<rive::Mat2D>("Mat2D")
-      .property("xx", &rive::Mat2D::xx)
-      .property("xy", &rive::Mat2D::xy)
-      .property("yx", &rive::Mat2D::yx)
-      .property("yy", &rive::Mat2D::yy)
-      .property("tx", &rive::Mat2D::tx)
-      .property("ty", &rive::Mat2D::ty);
+      .constructor<>()
+      .property("xx", select_overload<float() const>(&rive::Mat2D::xx),
+                select_overload<void(float)>(&rive::Mat2D::xx))
+      .property("xy", select_overload<float() const>(&rive::Mat2D::xy),
+                select_overload<void(float)>(&rive::Mat2D::xy))
+      .property("yx", select_overload<float() const>(&rive::Mat2D::yx),
+                select_overload<void(float)>(&rive::Mat2D::yx))
+      .property("yy", select_overload<float() const>(&rive::Mat2D::yy),
+                select_overload<void(float)>(&rive::Mat2D::yy))
+      .property("tx", select_overload<float() const>(&rive::Mat2D::tx),
+                select_overload<void(float)>(&rive::Mat2D::tx))
+      .property("ty", select_overload<float() const>(&rive::Mat2D::ty),
+                select_overload<void(float)>(&rive::Mat2D::ty))
+      .function("invert", optional_override([](rive::Mat2D &self,
+                                               rive::Mat2D &result) -> bool {
+                  return rive::Mat2D::invert(result, self);
+                }))
+      .function("multiply",
+                optional_override([](rive::Mat2D &self, rive::Mat2D &result,
+                                     rive::Mat2D &other) -> void {
+                  rive::Mat2D::multiply(result, self, other);
+                }));
 
   class_<rive::File>("File")
       .function(
@@ -374,7 +392,19 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .property(
           "rotation",
           select_overload<float() const>(&rive::TransformComponent::rotation),
-          select_overload<void(float)>(&rive::TransformComponent::rotation));
+          select_overload<void(float)>(&rive::TransformComponent::rotation))
+      .function("worldTransform",
+                optional_override(
+                    [](rive::TransformComponent &self) -> rive::Mat2D & {
+                      return self.mutableWorldTransform();
+                    }),
+                allow_raw_pointers())
+      .function("parentWorldTransform",
+                optional_override([](rive::TransformComponent &self,
+                                     rive::Mat2D &result) -> void {
+                  rive::Mat2D::copy(result, getParentWorld(self));
+                }),
+                allow_raw_pointers());
 
   class_<rive::Node, base<rive::TransformComponent>>("Node")
       .property("x",
