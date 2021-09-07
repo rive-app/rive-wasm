@@ -959,7 +959,6 @@ export class Rive {
     this.src = params.src;
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
-    this._updateLayout = true;
 
     // Fetch the 2d context from the canvas
     this.ctx = this.canvas.getContext('2d');
@@ -1204,9 +1203,6 @@ export class Rive {
     // Update the renderer alignment if necessary
     this.alignRenderer();
 
-    // Clear the canvas for the next frame
-    this.clearCanvas();
-
     this.artboard.draw(this.renderer);
 
     // Check for any animations that looped
@@ -1233,44 +1229,27 @@ export class Rive {
   }
 
   /**
-   * Clears the canvas
-   */
-  private clearCanvas(): void {
-    // Preserve the current transform matrix
-    this.ctx.save();
-    // Use the identity matrix while clearing the canvas to ensure whole canvas is cleared
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.width);
-    // Restore transform matrix
-    this.ctx.restore();
-  }
-
-  /**
    * Align the renderer
    */
   private alignRenderer(): void {
-    // Update the renderer alignment if necessary
-    if (this._updateLayout) {
-      // Restore from previous save in case a previous align occurred
-      this.ctx.restore();
-      // Canvas must be wiped to prevent artifacts
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      // Now save so that future changes to align can restore
-      this.ctx.save();
-      // Align things up safe in the knowledge we can restore if changed
-      this.renderer.align(
-        this._layout.runtimeFit(this.runtime),
-        this._layout.runtimeAlignment(this.runtime),
-        {
-          minX: this._layout.minX,
-          minY: this._layout.minY,
-          maxX: this._layout.maxX,
-          maxY: this._layout.maxY
-        },
-        this.artboard.bounds
-      );
-      this._updateLayout = false;
-    }
+    // Restore from previous save in case a previous align occurred
+    this.ctx.restore();
+    // Canvas must be wiped to prevent artifacts
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // Now save so that future changes to align can restore
+    this.ctx.save();
+    // Align things up safe in the knowledge we can restore if changed
+    this.renderer.align(
+      this._layout.runtimeFit(this.runtime),
+      this._layout.runtimeAlignment(this.runtime),
+      {
+        minX: this._layout.minX,
+        minY: this._layout.minY,
+        maxX: this._layout.maxX,
+        maxY: this._layout.maxY
+      },
+      this.artboard.bounds
+    );
   }
 
   /**
@@ -1372,8 +1351,6 @@ export class Rive {
   public load(params: RiveLoadParameters): void {
     // Stop all animations
     this.stop();
-    // Update the layout to account for new renderer
-    this._updateLayout = true;
     // Reinitialize
     this.init(params);
   }
@@ -1381,7 +1358,6 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
-    this._updateLayout = true;
     // If the maxX or maxY are 0, then set them to the canvas width and height
     if (!layout.maxX || !layout.maxY) {
       this.resizeToCanvas();
@@ -1411,7 +1387,6 @@ export class Rive {
       maxX: this.canvas.width,
       maxY: this.canvas.height
     });
-    this._updateLayout = true;
   }
 
   // Returns the animation source, which may be undefined
