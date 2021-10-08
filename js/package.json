@@ -10,6 +10,7 @@
     "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
   },
   "scripts": {
+    "dev": "npx webpack watch",
     "build": "npx webpack",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
     "test": "jest"

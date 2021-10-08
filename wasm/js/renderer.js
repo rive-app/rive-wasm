@@ -10,26 +10,21 @@ function makeMatrix(m2d) {
 }
 
 Module.onRuntimeInitialized = function () {
-    const {
-        RenderPaintStyle,
-        FillRule,
-        RenderPath,
-        RenderPaint,
-        Renderer,
-        StrokeCap,
-        StrokeJoin,
-        BlendMode
-    } = Module;
+    const RenderPaintStyle = Module.RenderPaintStyle;
+    const FillRule = Module.FillRule;
+    const RenderPath = Module.RenderPath;
+    const RenderPaint = Module.RenderPaint;
+    const Renderer = Module.Renderer;
+    const StrokeCap = Module.StrokeCap;
+    const StrokeJoin = Module.StrokeJoin;
+    const BlendMode = Module.BlendMode;
 
-    const {
-        fill,
-        stroke
-    } = RenderPaintStyle;
+    const fill = RenderPaintStyle.fill;
+    const stroke = RenderPaintStyle.stroke;
 
-    const {
-        evenOdd,
-        nonZero
-    } = FillRule;
+    const evenOdd = FillRule.evenOdd;
+    const nonZero = FillRule.nonZero;
+
 
     var CanvasRenderPath = RenderPath.extend("CanvasRenderPath", {
         __construct: function () {
@@ -42,7 +37,7 @@ Module.onRuntimeInitialized = function () {
         addPath: function (path, m2d) {
             this._path2D.addPath(path._path2D, makeMatrix(m2d));
         },
-        fillRule: function(fillRule) {
+        fillRule: function (fillRule) {
             this._fillRule = fillRule;
         },
         moveTo: function (x, y) {
@@ -184,26 +179,21 @@ Module.onRuntimeInitialized = function () {
         },
 
         draw: function (ctx, path) {
-            let {
-                _style,
-                _value,
-                _gradient,
-                _blend
-            } = this;
+            let _style = this._style;
+            let _value = this._value;
+            let _gradient = this._gradient;
+            let _blend = this._blend;
 
             ctx.globalCompositeOperation = _blend;
 
             if (_gradient != null) {
-                const {
-                    sx,
-                    sy,
-                    ex,
-                    ey,
-                    stops,
-                    isRadial
-                } = _gradient;
+                const sx = _gradient.sx;
+                const sy = _gradient.sy;
+                const ex = _gradient.ex;
+                const ey = _gradient.ey;
+                const stops = _gradient.stops;
 
-                if (isRadial) {
+                if (_gradient.isRadial) {
                     var dx = ex - sx;
                     var dy = ey - sy;
                     var radius = Math.sqrt(dx * dx + dy * dy);
@@ -212,10 +202,10 @@ Module.onRuntimeInitialized = function () {
                     _value = ctx.createLinearGradient(sx, sy, ex, ey);
                 }
 
-                for (const {
-                        stop,
-                        color
-                    } of stops) {
+                for (let i = 0, l = stops.length; i < l; i++) {
+                    const value = stops[i];
+                    const stop = value.stop;
+                    const color = value.color;
                     _value.addColorStop(stop, _colorStyle(color));
                 }
                 this._value = _value;
