@@ -85,7 +85,7 @@ em++ -Oz \
     -fno-unwind-tables \
     -I../submodules/rive-cpp/include \
     --no-entry \
-    --post-js ../js/marker.js \
+    --pre-js ../js/renderer.js \
     ../submodules/rive-cpp/src/generated/bones/*.cpp \
     ../submodules/rive-cpp/src/generated/shapes/*.cpp \
     ../submodules/rive-cpp/src/generated/shapes/paint/*.cpp \
@@ -97,20 +97,13 @@ em++ -Oz \
     ../submodules/rive-cpp/src/shapes/paint/*.cpp \
     ../src/bindings.cpp
 
-awk 'NR==FNR { a[n++]=$0; next }
-/console\.log\("--REPLACE WITH RENDERING CODE--"\);/ { for (i=0;i<n;++i) print a[i]; next }
-1' ../js/renderer.js ./bin/release/$OUTPUT_FILE.$FILE_EXTENSION >./bin/release/rive-combined.$FILE_EXTENSION
-
 if ! command -v terser &>/dev/null; then
     npm install terser -g
 fi
-terser --compress --mangle -o ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION -- ./bin/release/rive-combined.$FILE_EXTENSION
-
-# Encode the wasm binary into string and wrap in js
-# node ../scripts/wasm2str.js ./bin/release/rive.wasm ./bin/release/rive_wasm.js
+terser --compress --mangle -o ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION -- ./bin/release/$OUTPUT_FILE.$FILE_EXTENSION
 
 # copy to publish folder
-cp ./bin/release/rive-combined.$FILE_EXTENSION ../publish/$OUTPUT_FILE.$FILE_EXTENSION
+cp ./bin/release/$OUTPUT_FILE.$FILE_EXTENSION ../publish/$OUTPUT_FILE.$FILE_EXTENSION
 cp ./bin/release/$OUTPUT_FILE.min.$FILE_EXTENSION ../publish/$OUTPUT_FILE.min.$FILE_EXTENSION
 
 # copy the wasm if it's been generated
@@ -118,6 +111,5 @@ if [ $WASM -eq 1 ] && [ $SINGLE_FILE -eq 0 ]; then
     echo "copying wasm"
     cp ./bin/release/$OUTPUT_FILE.wasm ../publish/rive.wasm
 fi
-# cp ./bin/release/rive_wasm.js ../publish/rive_wasm.js
 
 popd &>/dev/null
