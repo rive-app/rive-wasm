@@ -3,6 +3,9 @@ module.exports = {
   "transform": {
     "^.+\\.m?[t|j]sx?$": "babel-jest"
   },
+  "moduleNameMapper": {
+    "rive_canvas.mjs": "<rootDir>/dist/rive_canvas.mjs"
+  },
   "transformIgnorePatterns": [
     // Needed to handle ES6 rive-canvas module
     "/node_modules/(?!rive-canvas).+\\.m?js$"
