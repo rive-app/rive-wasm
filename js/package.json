@@ -30,6 +30,8 @@
     "dist/rive.min.js.map",
     "dist/rive_single.js",
     "dist/rive_single.js.map",
+    "dist/rive_light.js",
+    "dist/rive_light.js.map",
     "dist/rive.js",
     "dist/rive.js.map",
     "dist/rive_canvas.wasm",
