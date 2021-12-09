@@ -109,4 +109,35 @@ const moduleConfig = {
   mode: 'none',
 };
 
-module.exports = [moduleConfig, moduleConfigSingle, webConfig];
+// Module configuration for bundler friendly build. Uses rive_canvas with a
+// bundled wasm file for simplicity/no external wasm loading.
+const moduleConfigSingleLight = {
+  entry: './src/rive.ts',
+  target: 'es6',
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    alias: {
+      './rive_canvas.mjs': path.resolve(__dirname, 'dist/rive_canvas_light.mjs'),
+    }
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'rive_light.js',
+    libraryTarget: 'umd',
+    library: 'rive',
+    globalObject: 'this',
+  },
+  devtool: 'source-map',
+  mode: 'none',
+};
+
+module.exports = [moduleConfig, moduleConfigSingle, webConfig, moduleConfigSingleLight];
