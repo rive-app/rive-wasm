@@ -1,14 +1,15 @@
 {
-    "compilerOptions": {
-      "outDir": "./build/",
-      "noImplicitAny": true,
-      "sourceMap": true,
-      "moduleResolution": "node",
-      "module": "esnext",
-      "target": "es5",
-      "esModuleInterop": true,
-      "allowJs": true,
-      "declaration": true,
-      "baseUrl": "."
-    }
+  "compilerOptions": {
+    "outDir": "./build/",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "module": "esnext",
+    "target": "es5",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "declaration": true,
+    "baseUrl": ".",
+    "resolveJsonModule": true
   }
+}

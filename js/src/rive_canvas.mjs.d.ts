@@ -21,6 +21,7 @@ interface RiveOptions {
     StrokeJoin: typeof StrokeJoin;
   
     load(buffer: Uint8Array): File;
+    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas) : CanvasRenderer;
   }
   
   //////////////
@@ -33,6 +34,8 @@ interface RiveOptions {
     transform(tranform: Mat2D): void;
     drawPath(path: RenderPath, paint: RenderPaint): void;
     clipPath(path: RenderPath): void;
+    clear(): void;
+    flush(): void;
   }
   
   export declare class RenderPathWrapper {

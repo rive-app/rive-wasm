@@ -1,5 +1,6 @@
 import 'regenerator-runtime/runtime';
-import RiveCanvas from '../../build/bin/debug/rive.mjs';
+// import RiveCanvas from '../../../js/dist/rive_canvas_light.mjs';
+import RiveCanvas from '../../../js/dist/rive_canvas_single.mjs';
 import './main.css';
 
 async function main() {
@@ -24,8 +25,6 @@ async function main() {
             const file = rive.load(new Uint8Array(event.target.result));
             artboard = file.defaultArtboard();
             animation = new rive.LinearAnimationInstance(artboard.animationByIndex(0));
-
-            console.log("ARTBOARD IS", artboard, animation);
         }
 
         reader.readAsArrayBuffer(droppedFile);

@@ -1,4 +1,5 @@
 import * as rc from './rive_canvas.mjs';
+import * as packageData from '../package.json';
 
 /**
  * Generic type for a parameterless void callback
@@ -156,7 +157,7 @@ export class RuntimeLoader {
   private static rive: rc.RiveCanvas;  
   // Path to the Wasm file; default path works for testing only;
   // if embedded wasm is used then this is never used.
-  private static wasmURL: string = 'dist/rive.wasm';
+  private static wasmURL: string = `https://unpkg.com/rive-js@${packageData.version}/dist/rive.min.js`;
 
   // Class is never instantiated
   private constructor() { }
@@ -909,9 +910,6 @@ export class Rive {
   // when to align
   private _updateLayout: boolean = true;
 
-  // The canvas 2D context
-  private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
-
   // The runtime renderer
   private renderer: rc.Renderer;
 
@@ -959,9 +957,6 @@ export class Rive {
     this.src = params.src;
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
-
-    // Fetch the 2d context from the canvas
-    this.ctx = this.canvas.getContext('2d');
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1048,6 +1043,7 @@ export class Rive {
     }
     // Load the Rive file
     this.file = await this.runtime.load(new Uint8Array(this.buffer));
+
     if (this.file) {
       // Initialize and draw frame
       this.initArtboard(artboardName, animationNames, stateMachineNames, autoplay);
@@ -1110,7 +1106,7 @@ export class Rive {
     this.animator = new Animator(this.runtime, this.artboard, this.eventManager);
 
     // Get the canvas where you want to render the animation and create a renderer
-    this.renderer = new this.runtime.CanvasRenderer(this.ctx);
+    this.renderer = this.runtime.makeRenderer(this.canvas);
 
 
     // Initialize the animations; as loaded hasn't happened yet, we need to
@@ -1200,10 +1196,18 @@ export class Rive {
     // by the elapsed time.
     this.artboard.advance(elapsedTime);
 
+    const {renderer} = this;
+    renderer.save();
+
     // Update the renderer alignment if necessary
     this.alignRenderer();
 
-    this.artboard.draw(this.renderer);
+    this.artboard.draw(renderer);
+
+    renderer.restore();
+
+    renderer.flush();
+    
 
     // Check for any animations that looped
     this.animator.handleLooping();
@@ -1232,23 +1236,22 @@ export class Rive {
    * Align the renderer
    */
   private alignRenderer(): void {
-    // Restore from previous save in case a previous align occurred
-    this.ctx.restore();
+    const {renderer, runtime, _layout, artboard} = this;
     // Canvas must be wiped to prevent artifacts
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    renderer.clear();
     // Now save so that future changes to align can restore
-    this.ctx.save();
+    renderer.save();
     // Align things up safe in the knowledge we can restore if changed
-    this.renderer.align(
-      this._layout.runtimeFit(this.runtime),
-      this._layout.runtimeAlignment(this.runtime),
+    renderer.align(
+      _layout.runtimeFit(runtime),
+      _layout.runtimeAlignment(runtime),
       {
-        minX: this._layout.minX,
-        minY: this._layout.minY,
-        maxX: this._layout.maxX,
-        maxY: this._layout.maxY
+        minX: _layout.minX,
+        minY: _layout.minY,
+        maxX: _layout.maxX,
+        maxY: _layout.maxY
       },
-      this.artboard.bounds
+      artboard.bounds
     );
   }
 
