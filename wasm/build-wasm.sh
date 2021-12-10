@@ -2,6 +2,8 @@
 
 OPTIONS=0
 PREMAKE_FLAGS=
+WD=`pwd`
+export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
 while getopts "s:r:" flag; do
     case "${flag}" in
         s)

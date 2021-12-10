@@ -1,4 +1,5 @@
-function makeMatrix(m2d) {
+function makeMatrix(m2d)
+{
     const m = new DOMMatrix();
     m.a = m2d.xx;
     m.b = m2d.xy;
@@ -9,15 +10,16 @@ function makeMatrix(m2d) {
     return m;
 }
 
-Module.onRuntimeInitialized = function () {
-    const RenderPaintStyle = Module.RenderPaintStyle;
-    const FillRule = Module.FillRule;
-    const RenderPath = Module.RenderPath;
-    const RenderPaint = Module.RenderPaint;
-    const Renderer = Module.Renderer;
-    const StrokeCap = Module.StrokeCap;
-    const StrokeJoin = Module.StrokeJoin;
-    const BlendMode = Module.BlendMode;
+Rive.onRuntimeInitialized = function ()
+{
+    const RenderPaintStyle = Rive.RenderPaintStyle;
+    const FillRule = Rive.FillRule;
+    const RenderPath = Rive.RenderPath;
+    const RenderPaint = Rive.RenderPaint;
+    const Renderer = Rive.Renderer;
+    const StrokeCap = Rive.StrokeCap;
+    const StrokeJoin = Rive.StrokeJoin;
+    const BlendMode = Rive.BlendMode;
 
     const fill = RenderPaintStyle.fill;
     const stroke = RenderPaintStyle.stroke;
@@ -27,48 +29,61 @@ Module.onRuntimeInitialized = function () {
 
 
     var CanvasRenderPath = RenderPath.extend("CanvasRenderPath", {
-        __construct: function () {
-            this.__parent.__construct.call(this);
+        "__construct": function ()
+        {
+            this["__parent"]["__construct"].call(this);
             this._path2D = new Path2D();
         },
-        reset: function () {
+        "reset": function ()
+        {
             this._path2D = new Path2D();
         },
-        addPath: function (path, m2d) {
+        "addPath": function (path, m2d)
+        {
             this._path2D.addPath(path._path2D, makeMatrix(m2d));
         },
-        fillRule: function (fillRule) {
+        "fillRule": function (fillRule)
+        {
             this._fillRule = fillRule;
         },
-        moveTo: function (x, y) {
+        "moveTo": function (x, y)
+        {
             this._path2D.moveTo(x, y);
         },
-        lineTo: function (x, y) {
+        "lineTo": function (x, y)
+        {
             this._path2D.lineTo(x, y);
         },
-        cubicTo: function (ox, oy, ix, iy, x, y) {
+        "cubicTo": function (ox, oy, ix, iy, x, y)
+        {
             this._path2D.bezierCurveTo(ox, oy, ix, iy, x, y);
         },
-        close: function () {
+        "close": function ()
+        {
             this._path2D.closePath();
         }
     });
 
-    function _colorStyle(value) {
+    function _colorStyle(value)
+    {
         return 'rgba(' + ((0x00ff0000 & value) >>>
-                16) + ',' + ((0x0000ff00 &
+            16) + ',' + ((0x0000ff00 &
                 value) >>> 8) + ',' + ((0x000000ff & value) >>> 0) + ',' +
             (((0xff000000 & value) >>> 24) / 0xFF) + ')'
     }
     var CanvasRenderPaint = RenderPaint.extend("CanvasRenderPaint", {
-        color: function (value) {
+        "color": function (value)
+        {
             this._value = _colorStyle(value);
         },
-        thickness: function (value) {
+        "thickness": function (value)
+        {
             this._thickness = value;
         },
-        join: function (value) {
-            switch (value) {
+        "join": function (value)
+        {
+            switch (value)
+            {
                 case StrokeJoin.miter:
                     this._join = 'miter';
                     break;
@@ -80,8 +95,10 @@ Module.onRuntimeInitialized = function () {
                     break;
             }
         },
-        cap: function (value) {
-            switch (value) {
+        "cap": function (value)
+        {
+            switch (value)
+            {
                 case StrokeCap.butt:
                     this._cap = 'butt';
                     break;
@@ -93,11 +110,14 @@ Module.onRuntimeInitialized = function () {
                     break;
             }
         },
-        style: function (value) {
+        "style": function (value)
+        {
             this._style = value;
         },
-        blendMode: function (value) {
-            switch (value) {
+        "blendMode": function (value)
+        {
+            switch (value)
+            {
                 case BlendMode.srcOver:
                     this._blend = 'source-over';
                     break;
@@ -148,7 +168,8 @@ Module.onRuntimeInitialized = function () {
                     break;
             }
         },
-        linearGradient: function (sx, sy, ex, ey) {
+        "linearGradient": function (sx, sy, ex, ey)
+        {
             this._gradient = {
                 sx,
                 sy,
@@ -157,7 +178,8 @@ Module.onRuntimeInitialized = function () {
                 stops: []
             };
         },
-        radialGradient: function (sx, sy, ex, ey) {
+        "radialGradient": function (sx, sy, ex, ey)
+        {
             this._gradient = {
                 sx,
                 sy,
@@ -167,95 +189,115 @@ Module.onRuntimeInitialized = function () {
                 isRadial: true
             };
         },
-        addStop: function (color, stop) {
+        "addStop": function (color, stop)
+        {
             this._gradient.stops.push({
                 color,
                 stop
             });
         },
 
-        completeGradient: function () {
+        "completeGradient": function ()
+        {
 
         },
 
-        draw: function (ctx, path) {
+        "draw": function (ctx, path)
+        {
             let _style = this._style;
             let _value = this._value;
             let _gradient = this._gradient;
             let _blend = this._blend;
 
-            ctx.globalCompositeOperation = _blend;
+            ctx["globalCompositeOperation"] = _blend;
 
-            if (_gradient != null) {
+            if (_gradient != null)
+            {
                 const sx = _gradient.sx;
                 const sy = _gradient.sy;
                 const ex = _gradient.ex;
                 const ey = _gradient.ey;
                 const stops = _gradient.stops;
 
-                if (_gradient.isRadial) {
+                if (_gradient["isRadial"])
+                {
                     var dx = ex - sx;
                     var dy = ey - sy;
                     var radius = Math.sqrt(dx * dx + dy * dy);
-                    _value = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius);
-                } else {
-                    _value = ctx.createLinearGradient(sx, sy, ex, ey);
+                    _value = ctx["createRadialGradient"](sx, sy, 0, sx, sy, radius);
+                } else
+                {
+                    _value = ctx["createLinearGradient"](sx, sy, ex, ey);
                 }
 
-                for (let i = 0, l = stops.length; i < l; i++) {
+                for (let i = 0, l = stops["length"]; i < l; i++)
+                {
                     const value = stops[i];
-                    const stop = value.stop;
-                    const color = value.color;
-                    _value.addColorStop(stop, _colorStyle(color));
+                    const stop = value["stop"];
+                    const color = value["color"];
+                    _value["addColorStop"](stop, _colorStyle(color));
                 }
                 this._value = _value;
                 this._gradient = null;
             }
-            switch (_style) {
+            switch (_style)
+            {
                 case stroke:
-                    ctx.strokeStyle = _value;
-                    ctx.lineWidth = this._thickness;
-                    ctx.lineCap = this._cap;
-                    ctx.lineJoin = this._join;
-                    ctx.stroke(path._path2D);
+                    ctx["strokeStyle"] = _value;
+                    ctx["lineWidth"] = this._thickness;
+                    ctx["lineCap"] = this._cap;
+                    ctx["lineJoin"] = this._join;
+                    ctx["stroke"](path._path2D);
                     break;
                 case fill:
-                    ctx.fillStyle = _value;
-                    ctx.fill(path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
+                    ctx["fillStyle"] = _value;
+                    ctx["fill"](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
                     break;
             }
         }
     });
 
-    Module.CanvasRenderer = Renderer.extend("Renderer", {
-        __construct: function (ctx) {
-            this.__parent.__construct.call(this);
+    Rive.CanvasRenderer = Renderer.extend("Renderer", {
+        "__construct": function (ctx)
+        {
+            this["__parent"]["__construct"].call(this);
             this._ctx = ctx;
         },
-        save: function () {
-            this._ctx.save();
+        "save": function ()
+        {
+            this._ctx["save"]();
         },
-        restore: function () {
-            this._ctx.restore();
+        "restore": function ()
+        {
+            this._ctx["restore"]();
         },
-        transform: function (matrix) {
-            this._ctx.transform(matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.tx,
+        "transform": function (matrix)
+        {
+            this._ctx["transform"](matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.tx,
                 matrix.ty);
         },
-        drawPath: function (path, paint) {
-            paint.draw(this._ctx, path);
+        "drawPath": function (path, paint)
+        {
+            paint["draw"](this._ctx, path);
         },
-        clipPath: function (path) {
-            this._ctx.clip(path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
+        "clipPath": function (path)
+        {
+            this._ctx["clip"](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
         }
     });
 
-    Module.renderFactory = {
-        makeRenderPaint: function () {
+    Rive.renderFactory = {
+        makeRenderPaint: function ()
+        {
             return new CanvasRenderPaint();
         },
-        makeRenderPath: function () {
+        makeRenderPath: function ()
+        {
             return new CanvasRenderPath();
+        },
+        makeRenderImage: function ()
+        {
+
         }
     };
 };
