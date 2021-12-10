@@ -8,12 +8,14 @@ jobs:
         with:
           submodules: true
       - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v9
+        uses: mymindstorm/setup-emsdk@latest
         with:
-          version: 2.0.17
+          version: 3.0.0
           actions-cache-folder: "emsdk-cache"
       - name: Install modules
         run: cd js && npm install
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
       - name: Build
         run: cd js && ./build.sh
       - name: Run tests
