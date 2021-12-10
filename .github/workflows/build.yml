@@ -8,7 +8,7 @@ jobs:
         with:
           submodules: true
       - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@latest
+        uses: mymindstorm/setup-emsdk@v11
         with:
           version: 3.0.0
           actions-cache-folder: "emsdk-cache"
