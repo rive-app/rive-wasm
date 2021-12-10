@@ -16,9 +16,7 @@
         "parcel-bundler": "^1.12.5"
     },
     "dependencies": {
-        "audio-loader": "^1.0.3",
         "parcel-plugin-asset-copier": "^1.1.0",
         "src": "^1.1.2"
-    },
-    "assetsPath": "assets"
+    }
 }
