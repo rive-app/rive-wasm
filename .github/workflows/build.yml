@@ -12,6 +12,12 @@ jobs:
         with:
           version: 3.0.0
           actions-cache-folder: "emsdk-cache"
+      - name: Install premake
+        run: |
+          wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha16/premake-5.0.0-alpha16-linux.tar.gz
+          tar -xvf premake-5.0.0-alpha16-linux.tar.gz
+          sudo chmod a+x premake5
+          sudo mv premake5 /usr/local/bin
       - name: Install modules
         run: cd js && npm install
       - name: Setup Ninja
