@@ -1,6 +1,8 @@
+#ifdef RIVE_SKIA_RENDERER
 #include "GrDirectContext.h"
 #include "SkSurface.h"
 #include "gl/GrGLInterface.h"
+#endif
 #include "rive/animation/animation.hpp"
 #include "rive/animation/animation_state.hpp"
 #include "rive/animation/any_state.hpp"
@@ -28,8 +30,10 @@
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
 #include "rive/transform_component.hpp"
+#ifdef RIVE_SKIA_RENDERER
 #include "skia_renderer.hpp"
 #include <GL/gl.h>
+#endif
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>

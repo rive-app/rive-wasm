@@ -32,7 +32,6 @@ linkoptions {
             "-g0", 
             "--closure 1",
             "--bind", 
-            "-o build/bin/%{cfg.buildcfg}/rive.mjs", 
             "-s ASSERTIONS=0",
             "-s FORCE_FILESYSTEM=0", 
             "-s MODULARIZE=1", 
@@ -42,7 +41,6 @@ linkoptions {
             "-s ALLOW_MEMORY_GROWTH=1", 
             "-s DISABLE_EXCEPTION_CATCHING=1", 
             "-s WASM=1", 
-            -- "-s SINGLE_FILE=1",
             -- "-s EXPORT_ES6=1",
             "-s USE_ES6_IMPORT_META=0", 
             "-s EXPORT_NAME=\"Rive\"", 
@@ -57,8 +55,22 @@ linkoptions {
         }
 
 filter "options:not skia"
-    linkoptions {"--pre-js ./js/renderer.js"}
-    
+    linkoptions {
+            "--pre-js ./js/renderer.js",
+            "-o build/bin/%{cfg.buildcfg}/rive_light.mjs",
+        }
+
+
+filter { "options:skia", "options:single_file" }
+    linkoptions {
+        "-o build/bin/%{cfg.buildcfg}/rive_combined.mjs",
+    }
+
+filter { "options:skia", "options:not single_file" }
+    linkoptions {
+        "-o build/bin/%{cfg.buildcfg}/rive.mjs",
+    }
+
 filter "options:skia"
     defines {"RIVE_SKIA_RENDERER"}
     buildoptions { "-DSK_GL" }
@@ -78,6 +90,11 @@ filter "options:skia"
             "--pre-js ./js/skia_renderer.js"
         }
 
+filter "options:single_file"
+        linkoptions {
+            "-s SINGLE_FILE=1"
+        }
+
 filter "configurations:debug"
 defines {"DEBUG"}
 symbols "On"
@@ -89,5 +106,10 @@ optimize "On"
 
 newoption {
     trigger = "skia",
-    description = "Set when linking with Skia"
+    description = "Set when linking with Skia."
+}
+
+newoption {
+    trigger = "single_file",
+    description = "Set when the wasm should be packed in with the js code."
 }
