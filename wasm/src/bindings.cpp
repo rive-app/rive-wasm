@@ -1,3 +1,6 @@
+#include "GrDirectContext.h"
+#include "SkSurface.h"
+#include "gl/GrGLInterface.h"
 #include "rive/animation/animation.hpp"
 #include "rive/animation/animation_state.hpp"
 #include "rive/animation/any_state.hpp"
@@ -25,6 +28,8 @@
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
 #include "rive/transform_component.hpp"
+#include "skia_renderer.hpp"
+#include <GL/gl.h>
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -118,6 +123,7 @@ public:
   void completeGradient() override { call<void>("completeGradient"); }
 };
 
+#ifndef RIVE_SKIA_RENDERER
 namespace rive {
 RenderPaint *makeRenderPaint() {
   val renderPaint =
@@ -131,6 +137,7 @@ RenderPath *makeRenderPath() {
   return renderPath.as<RenderPath *>(allow_raw_pointers());
 }
 } // namespace rive
+#endif
 
 rive::File *load(emscripten::val byteArray) {
   std::vector<unsigned char> rv;
@@ -145,6 +152,55 @@ rive::File *load(emscripten::val byteArray) {
   auto result = rive::File::import(reader, &file);
   return file;
 }
+
+#ifdef RIVE_SKIA_RENDERER
+class WebGLSkiaRenderer : public rive::SkiaRenderer {
+private:
+  sk_sp<GrDirectContext> m_Context;
+  SkSurface *m_Surface;
+
+public:
+  WebGLSkiaRenderer(sk_sp<GrDirectContext> context, int width, int height)
+      : m_Context(context),
+        m_Surface(makeSurface(context, width, height)), rive::SkiaRenderer(
+                                                            nullptr) {
+    m_Canvas = m_Surface->getCanvas();
+  }
+
+  void clear() {
+    SkPaint paint;
+    paint.setColor(SK_ColorTRANSPARENT);
+    m_Canvas->drawPaint(paint);
+  }
+
+  void flush() { m_Context->flush(); }
+
+  static SkSurface *makeSurface(sk_sp<GrDirectContext> context, int width,
+                                int height) {
+    GrGLint buffer;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+    GrGLFramebufferInfo framebufferInfo;
+    framebufferInfo.fFBOID = buffer;
+    framebufferInfo.fFormat = GL_RGBA8;
+
+    GrBackendRenderTarget backendRenderTarget(width, height,
+                                              0, // sample count
+                                              0, // stencil bits
+                                              framebufferInfo);
+
+    return SkSurface::MakeFromBackendRenderTarget(
+               context.get(), backendRenderTarget, kBottomLeft_GrSurfaceOrigin,
+               kRGBA_8888_SkColorType, nullptr, nullptr)
+        .release();
+  }
+};
+
+WebGLSkiaRenderer *makeSkiaRenderer(int width, int height) {
+  GrContextOptions options;
+  sk_sp<GrDirectContext> context = GrDirectContext::MakeGL(nullptr, options);
+  return new WebGLSkiaRenderer(context, width, height);
+}
+#endif
 
 EMSCRIPTEN_BINDINGS(RiveWASM) {
   function("load", &load, allow_raw_pointers());
@@ -194,9 +250,23 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                       ->as<rive::CubicVertex>()
                       ->renderOut()[1];
                 }));
-
 #endif
 
+#ifdef RIVE_SKIA_RENDERER
+  class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
+      .function("clear", &WebGLSkiaRenderer::clear, allow_raw_pointers())
+      .function("flush", &WebGLSkiaRenderer::flush, allow_raw_pointers());
+  class_<rive::Renderer>("Renderer")
+      .function("save", &rive::Renderer::save)
+      .function("restore", &rive::Renderer::restore)
+      .function("transform", &rive::Renderer::transform, allow_raw_pointers())
+      .function("drawPath", &rive::Renderer::drawPath, allow_raw_pointers())
+      .function("clipPath", &rive::Renderer::clipPath, allow_raw_pointers())
+      .function("align", &rive::Renderer::align, allow_raw_pointers())
+      .function("computeAlignment", &rive::Renderer::computeAlignment,
+                allow_raw_pointers());
+  function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
+#else
   class_<rive::Renderer>("Renderer")
       .function("save", &RendererWrapper::save, pure_virtual(),
                 allow_raw_pointers())
@@ -227,7 +297,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("close", &RenderPathWrapper::close, pure_virtual(),
                 allow_raw_pointers())
       .allow_subclass<RenderPathWrapper>("RenderPathWrapper");
-
   enum_<rive::RenderPaintStyle>("RenderPaintStyle")
       .value("fill", rive::RenderPaintStyle::fill)
       .value("stroke", rive::RenderPaintStyle::stroke);
@@ -287,6 +356,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("completeGradient", &RenderPaintWrapper::completeGradient,
                 pure_virtual(), allow_raw_pointers())
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
+#endif
 
   class_<rive::Mat2D>("Mat2D")
       .constructor<>()
