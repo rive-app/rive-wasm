@@ -157,7 +157,7 @@ export class RuntimeLoader {
   private static rive: rc.RiveCanvas;  
   // Path to the Wasm file; default path works for testing only;
   // if embedded wasm is used then this is never used.
-  private static wasmURL: string = `https://unpkg.com/rive-js@${packageData.version}/dist/rive.min.js`;
+  private static wasmURL: string = `https://unpkg.com/rive-js@${packageData.version}/dist/rive_canvas.wasm`;
 
   // Class is never instantiated
   private constructor() { }

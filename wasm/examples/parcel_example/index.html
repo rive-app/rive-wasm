@@ -1,17 +1,19 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="user-scalable=no">
-        <title>Rive Parcel Testing
-        </title>
-    </head>
-    <body class="parent">
-        <div>
-            <canvas id="canvas" width="500" height="500"></canvas>
-        </div>
-        <script type="module">
-            import Rive from '../../publish/rive.mjs';
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="user-scalable=no">
+    <title>Rive Parcel Testing
+    </title>
+</head>
+
+<body class="parent">
+    <div>
+        <canvas id="canvas" width="500" height="500"></canvas>
+    </div>
+    <script type="module">
+        import Rive from '../../../js/dist/rive_canvas_single.mjs';
 
             (function () {
             // first, instantiate the Rive engine and load the WASM file(s)
@@ -35,13 +37,12 @@
                 const vibrationInstance = new rive.LinearAnimationInstance(vibrationAnim);
                 // let's grab our canvas
                 const canvas = document.getElementById('canvas');
-                const ctx = canvas.getContext('2d');
                 // nw we can create a Rive renderer and wire it up to our 2D context
-                const renderer = new rive.CanvasRenderer(ctx);
+                const renderer = new rive.makeRenderer(canvas);
                 // advance the artboard to render a frame
                 artboard.advance(0);
                 // Let's make sure our frame fits into our canvas
-                ctx.save();
+                renderer.save();
                 renderer.align(rive.Fit.contain, rive.Alignment.center, {
                     minX: 0,
                     minY: 0,
@@ -50,7 +51,7 @@
                 }, artboard.bounds);
                 // and now we can draw our frame to our canvas
                 artboard.draw(renderer);
-                ctx.restore();
+                renderer.restore();
 
                 // track the last time a frame was rendered
                 let lastTime = 0;
@@ -74,11 +75,9 @@
                     // advance the artboard
                     artboard.advance(elapsedTime);
 
-                    // render the animation frame
-                    // first, clear the canvas
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    // let's resize it to fit the canvas
-                    ctx.save();
+                    // clear the canvas
+                    renderer.clear();
+                    renderer.save();
                     renderer.align(rive.Fit.contain, rive.Alignment.center, {
                     minX: 0,
                     minY: 0,
@@ -87,7 +86,8 @@
                     }, artboard.bounds);
                     // and now we can draw our frame to our canvas
                     artboard.draw(renderer);
-                    ctx.restore();
+                    renderer.restore();
+                    renderer.flush();
 
                     // and kick off the next frame
                     requestAnimationFrame(draw);
@@ -98,5 +98,6 @@
             });
             })();
         </script>
-    </body>
+</body>
+
 </html>

@@ -1,6 +1,7 @@
 ![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/build.yml/badge.svg) 
 ![Discord badge](https://img.shields.io/discord/532365473602600965)
 ![Twitter handle](https://img.shields.io/twitter/follow/rive_app.svg?style=social&label=Follow)
+![npm](https://img.shields.io/npm/v/rive-js)
 # Rive.js
 
 [Rive's](https://rive.app) web runtime.
@@ -20,26 +21,61 @@ If you're using Rive files in v6 format, then please use the `0.6.1` version of 
 The easiest way to run this is to copy ```dist/rive.min.js``` into your project and embed with a ```script``` tag:
 
 ```javascript
-<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@latest/dist/rive.min.js"></script>
 ```
 
-If you're using npm, you can include it in your dependencies:
+If you're using a bundler, you can get the package from npm:
 
+```npm install rive-js```
+
+Which will add it to your dependencies:
 ```json
 {
   "name": "my-app",
   "dependencies": {
-    "rive-js": "0.7.16"
+    "rive-js": "^0.7.0"
   }
 }
 ``` 
+
+## Importing the Rive-JS module
+When importing or requiring the Rive module from our npm package, it's important to note that there are three options.
+- Rive module
+- Rive Single module
+- Rive Light module
+
+### Rive module
+Offers the best Performance & Fidelity, our recommended way to use Rive-JS.
+```
+import * as rive from 'rive';
+```
+This uses Rive's WebGL renderer, offering the best performance and fidelity with edit-time experience. There are upcoming features to Rive that will only be availble with the WebGL renderer. Furthermore, when using this module the WASM is downloaded externally which allows it to be cached across sites using Rive. You can override the WASM location if you wish to self host it. We strongly recommend brotli compressing the WASM file to optimize download size.
+```
+RuntimeLoader.setWasmUrl('https://my.site.come/rive_canvas.wasm');
+```
+
+### Rive Single module
+Offers the best Performance & Fidelity in a single js file.
+```
+import * as rive from 'rive/dist/rive_single.js';
+```
+Same as above, uses the WebGL renderer but the rive_canvas.wasm file is encoded into the js. The WASM bytes will not be externally downloaded but it will also not be as well cached and will incur an overall larger download size.
+
+### Rive Light module
+No WebGL, supporting rendering to many canvases concurrently.
+```
+import * as rive from 'rive/dist/rive_light.js';
+```
+This module uses a lightweight renderer which only uses the native CanvasRenderingContext2D (no WebGL). Use this on sites were you intend to display lots of different Canvases with Rive content concurrently. With WebGL you will be limited by the maximum number of contexts allowed by the browser. The lightweight renderer works around this limitation by using the native high level canvas renderer (CanvasRenderingContext2D). WASM is encoded into the js like in rive_single.
+
+
 ## Quick Start
 
 Play the first animation in the default artboard:
 
 ```html
 <canvas id="canvas" width="400" height="300"></canvas>
-<script src="https://unpkg.com/rive-js@0.7.16/dist/rive.min.js"></script>
+<script src="https://unpkg.com/rive-js@latest/dist/rive.min.js"></script>
 <script>
     // autoplays the first animation in the default artboard
     new rive.Rive({
