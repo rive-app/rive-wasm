@@ -11,17 +11,72 @@ includedirs {"./submodules/rive-cpp/include"}
 
 files {"./submodules/rive-cpp/src/**.cpp", "./src/bindings.cpp"}
 
-buildoptions {"-Oz", "-g1", "--closure 0", "--bind", "-g1", "-o build/bin/%{cfg.buildcfg}/rive.mjs", "-s STRICT=1",
-              "-s DISABLE_EXCEPTION_CATCHING=1", "-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0", "-DSINGLE",
-              "-DANSI_DECLARATORS", "-Wno-c++17-extensions", "-fno-exceptions", "-fno-rtti", "-fno-unwind-tables",
-              "--no-entry", "--pre-js ./js/renderer.js"}
+buildoptions {
+            "-Oz", 
+            "-g0",
+            "-s STRICT=1",
+            "-s DISABLE_EXCEPTION_CATCHING=1", 
+            "-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0", 
+            "-DSINGLE",
+            "-DANSI_DECLARATORS", 
+            "-Wno-c++17-extensions", 
+            "-fno-exceptions", 
+            "-fno-rtti", 
+            "-flto",
+            "-fno-unwind-tables",
+            "--no-entry"
+        }
 
-linkoptions {"-Oz", "-g1", "--closure 0", "--bind", "-g1", "-o build/bin/%{cfg.buildcfg}/rive.mjs", "-s ASSERTIONS=0",
-             "-s FORCE_FILESYSTEM=0", "-s MODULARIZE=1", "-s NO_EXIT_RUNTIME=1", "-s STRICT=1",
-             "-s ALLOW_MEMORY_GROWTH=1", "-s DISABLE_EXCEPTION_CATCHING=1", "-s WASM=1", "-s SINGLE_FILE=1",
-             "-s USE_ES6_IMPORT_META=0", "-s EXPORT_NAME=\"Rive\"", "-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0", "-DSINGLE",
-             "-DANSI_DECLARATORS", "-Wno-c++17-extensions", "-fno-exceptions", "-fno-rtti", "-fno-unwind-tables",
-             "--no-entry", "--pre-js ./js/renderer.js"}
+linkoptions {
+            "-Oz", 
+            "-g0", 
+            "--closure 1",
+            "--bind", 
+            "-o build/bin/%{cfg.buildcfg}/rive.mjs", 
+            "-s ASSERTIONS=0",
+            "-s FORCE_FILESYSTEM=0", 
+            "-s MODULARIZE=1", 
+            "-s NO_EXIT_RUNTIME=1", 
+            "-s STRICT=1", 
+            "-flto",
+            "-s ALLOW_MEMORY_GROWTH=1", 
+            "-s DISABLE_EXCEPTION_CATCHING=1", 
+            "-s WASM=1", 
+            -- "-s SINGLE_FILE=1",
+            -- "-s EXPORT_ES6=1",
+            "-s USE_ES6_IMPORT_META=0", 
+            "-s EXPORT_NAME=\"Rive\"", 
+            "-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0", 
+            "-DSINGLE",
+            "-DANSI_DECLARATORS", 
+            "-Wno-c++17-extensions", 
+            "-fno-exceptions", 
+            "-fno-rtti", 
+            "-fno-unwind-tables",
+            "--no-entry"
+        }
+
+filter "options:not skia"
+    linkoptions {"--pre-js ./js/renderer.js"}
+    
+filter "options:skia"
+    defines {"RIVE_SKIA_RENDERER"}
+    buildoptions { "-DSK_GL" }
+    includedirs {"./submodules/rive-cpp/skia/renderer/include", 
+                "./submodules/rive-cpp/skia/dependencies/skia", 
+                "./submodules/rive-cpp/skia/dependencies/skia/include/core",
+                "./submodules/rive-cpp/skia/dependencies/skia/include/effects", 
+                "./submodules/rive-cpp/skia/dependencies/skia/include/gpu",
+                "./submodules/rive-cpp/skia/dependencies/skia/include/config"}
+    files {"./submodules/rive-cpp/skia/renderer/src/**.cpp"}
+    libdirs {"submodules/rive-cpp/skia/dependencies/skia/out/wasm/"}
+    links {"skia", "GL"}
+    linkoptions {
+            "-s USE_WEBGL2=1", 
+            "-s MIN_WEBGL_VERSION=2", 
+            "-s MAX_WEBGL_VERSION=2",
+            "--pre-js ./js/skia_renderer.js"
+        }
 
 filter "configurations:debug"
 defines {"DEBUG"}
@@ -32,3 +87,7 @@ defines {"RELEASE"}
 defines {"NDEBUG"}
 optimize "On"
 
+newoption {
+    trigger = "skia",
+    description = "Set when linking with Skia"
+}
