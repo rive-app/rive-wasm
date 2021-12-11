@@ -1,18 +1,22 @@
 #!/bin/bash
 
-while getopts r: flag
-do
+OPTIONS=0
+PREMAKE_FLAGS=
+while getopts "s:r:" flag; do
     case "${flag}" in
+        s)
+            OPTIONS=$(( OPTIONS + 1 ))
+            PREMAKE_FLAGS+="--single_file "
+            ;;
         r) 
-            shift 2
+            OPTIONS=$(( OPTIONS + 2 ))
             if [ "${OPTARG}" = "skia" ]; then
-                PREMAKE_FLAGS=--skia
+                PREMAKE_FLAGS+="--skia "
             fi
             ;;
     esac
 done
-
-
+shift $OPTIONS
 OPTION=$1
 MODE=debug
 

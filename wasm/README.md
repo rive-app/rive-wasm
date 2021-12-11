@@ -1,5 +1,16 @@
 # Rive WASM
 
+# Building
+```build-all-wasm.sh``` will build all the various permutations of the Rive WASM modules necessary to build rive-js.
+
+## rive.mjs
+WASM/JS runtime for Rive which provides a feature rich performance driven renderer in WebGL. There are two flavors of this:
+- rive.mjs
+    - Loads rive.wasm bytes asynchronously from a separate file. Best for production environments looking to for an optimal download size.
+- rive_combined.mjs
+    - The wasm bytes are encoded into the js file, providing an easy to use all-in-one solution.
+
+## rive_light.mjs
 WASM/JS runtime for Rive which provides a thin layer over rive-cpp implementing the abstract renderer with Canvas 2D.
 
 ## Render Loop
