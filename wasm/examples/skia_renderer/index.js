@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime';
-// import RiveCanvas from '../../../js/dist/rive_canvas_light.mjs';
-import RiveCanvas from '../../../js/dist/rive_canvas_single.mjs';
+import RiveCanvas from '../../../js/dist/rive_canvas_light.mjs';
+// import RiveCanvas from '../../../js/dist/rive_canvas_single.mjs';
 import './main.css';
 
 async function main() {

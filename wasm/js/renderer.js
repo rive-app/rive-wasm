@@ -40,7 +40,6 @@ Rive.onRuntimeInitialized = function () {
             );
             image.onload = function () {
                 cri._image = image;
-                console.log("SETTING", image.width, image.height, cri["size"]);
                 cri["size"](image.width, image.height);
             };
 
