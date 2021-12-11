@@ -75,6 +75,11 @@ public:
   void clipPath(rive::RenderPath *path) override {
     call<void>("clipPath", path);
   }
+
+  void drawImage(rive::RenderImage *image, rive::BlendMode value,
+                 float opacity) override {
+    call<void>("drawImage", image, value, opacity);
+  }
 };
 
 class RenderPathWrapper : public wrapper<rive::RenderPath> {
@@ -127,6 +132,21 @@ public:
   void completeGradient() override { call<void>("completeGradient"); }
 };
 
+class RenderImageWrapper : public wrapper<rive::RenderImage> {
+public:
+  EMSCRIPTEN_WRAPPER(RenderImageWrapper);
+
+  bool decode(const uint8_t *bytes, std::size_t size) override {
+    emscripten::val byteArray =
+        emscripten::val(emscripten::typed_memory_view(size, bytes));
+    return call<bool>("decode", byteArray);
+  }
+  void size(int width, int height) {
+    m_Width = width;
+    m_Height = height;
+  }
+};
+
 #ifndef RIVE_SKIA_RENDERER
 namespace rive {
 RenderPaint *makeRenderPaint() {
@@ -139,6 +159,12 @@ RenderPath *makeRenderPath() {
   val renderPath =
       val::module_property("renderFactory").call<val>("makeRenderPath");
   return renderPath.as<RenderPath *>(allow_raw_pointers());
+}
+
+RenderImage *makeRenderImage() {
+  val renderImage =
+      val::module_property("renderFactory").call<val>("makeRenderImage");
+  return renderImage.as<RenderImage *>(allow_raw_pointers());
 }
 } // namespace rive
 #endif
@@ -360,6 +386,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("completeGradient", &RenderPaintWrapper::completeGradient,
                 pure_virtual(), allow_raw_pointers())
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
+
+  class_<rive::RenderImage>("RenderImage")
+      .function("decode", &RenderImageWrapper::decode, pure_virtual(),
+                allow_raw_pointers())
+      .function("size", &RenderImageWrapper::size)
+      .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 #endif
 
   class_<rive::Mat2D>("Mat2D")

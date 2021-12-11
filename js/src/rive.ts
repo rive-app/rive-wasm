@@ -1,4 +1,4 @@
-import * as rc from './rive_canvas.js';
+import * as rc from './rive_canvas.mjs';
 
 /**
  * Generic type for a parameterless void callback
