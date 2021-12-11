@@ -13,6 +13,7 @@ Rive.onRuntimeInitialized = function () {
     const RenderPaintStyle = Rive.RenderPaintStyle;
     const FillRule = Rive.FillRule;
     const RenderPath = Rive.RenderPath;
+    const RenderImage = Rive.RenderImage;
     const RenderPaint = Rive.RenderPaint;
     const Renderer = Rive.Renderer;
     const StrokeCap = Rive.StrokeCap;
@@ -25,7 +26,64 @@ Rive.onRuntimeInitialized = function () {
     const evenOdd = FillRule.evenOdd;
     const nonZero = FillRule.nonZero;
 
+    var CanvasRenderImage = RenderImage.extend('CanvasRenderImage', {
+        '__construct': function () {
+            this['__parent']['__construct'].call(this);
+        },
+        'decode': function (bytes) {
+            var cri = this;
+            var image = new Image();
+            image.src = URL.createObjectURL(
+                new Blob([bytes], {
+                    type: 'image/png'
+                })
+            );
+            image.onload = function () {
+                cri._image = image;
+                console.log("SETTING", image.width, image.height, cri["size"]);
+                cri["size"](image.width, image.height);
+            };
 
+        }
+    });
+
+
+    function _canvasBlend(value) {
+        switch (value) {
+            case BlendMode.srcOver:
+                return 'source-over';
+            case BlendMode.screen:
+                return 'screen';
+            case BlendMode.overlay:
+                return 'overlay';
+            case BlendMode.darken:
+                return 'darken';
+            case BlendMode.lighten:
+                return 'lighten';
+            case BlendMode.colorDodge:
+                return 'color-dodge';
+            case BlendMode.colorBurn:
+                return 'color-burn';
+            case BlendMode.hardLight:
+                return 'hard-light';
+            case BlendMode.softLight:
+                return 'soft-light';
+            case BlendMode.difference:
+                return 'difference';
+            case BlendMode.exclusion:
+                return 'exclusion';
+            case BlendMode.multiply:
+                return 'multiply';
+            case BlendMode.hue:
+                return 'hue';
+            case BlendMode.saturation:
+                return 'saturation';
+            case BlendMode.color:
+                return 'color';
+            case BlendMode.luminosity:
+                return 'luminosity';
+        }
+    }
     var CanvasRenderPath = RenderPath.extend('CanvasRenderPath', {
         '__construct': function () {
             this['__parent']['__construct'].call(this);
@@ -97,56 +155,7 @@ Rive.onRuntimeInitialized = function () {
             this._style = value;
         },
         'blendMode': function (value) {
-            switch (value) {
-                case BlendMode.srcOver:
-                    this._blend = 'source-over';
-                    break;
-                case BlendMode.screen:
-                    this._blend = 'screen';
-                    break;
-                case BlendMode.overlay:
-                    this._blend = 'overlay';
-                    break;
-                case BlendMode.darken:
-                    this._blend = 'darken';
-                    break;
-                case BlendMode.lighten:
-                    this._blend = 'lighten';
-                    break;
-                case BlendMode.colorDodge:
-                    this._blend = 'color-dodge';
-                    break;
-                case BlendMode.colorBurn:
-                    this._blend = 'color-burn';
-                    break;
-                case BlendMode.hardLight:
-                    this._blend = 'hard-light';
-                    break;
-                case BlendMode.softLight:
-                    this._blend = 'soft-light';
-                    break;
-                case BlendMode.difference:
-                    this._blend = 'difference';
-                    break;
-                case BlendMode.exclusion:
-                    this._blend = 'exclusion';
-                    break;
-                case BlendMode.multiply:
-                    this._blend = 'multiply';
-                    break;
-                case BlendMode.hue:
-                    this._blend = 'hue';
-                    break;
-                case BlendMode.saturation:
-                    this._blend = 'saturation';
-                    break;
-                case BlendMode.color:
-                    this._blend = 'color';
-                    break;
-                case BlendMode.luminosity:
-                    this._blend = 'luminosity';
-                    break;
-            }
+            this._blend = _canvasBlend(value);
         },
         'linearGradient': function (sx, sy, ex, ey) {
             this._gradient = {
@@ -246,6 +255,17 @@ Rive.onRuntimeInitialized = function () {
         'drawPath': function (path, paint) {
             paint['draw'](this._ctx, path);
         },
+        'drawImage': function (image, blend, opacity) {
+            var img = image._image;
+            if (!img) {
+                return;
+            }
+            var ctx = this._ctx;
+            ctx['globalCompositeOperation'] = _canvasBlend(blend);
+            ctx['globalAlpha'] = opacity;
+            ctx.drawImage(img, 0, 0);
+            ctx['globalAlpha'] = 1;
+        },
         'clipPath': function (path) {
             this._ctx['clip'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
         },
@@ -270,7 +290,7 @@ Rive.onRuntimeInitialized = function () {
             return new CanvasRenderPath();
         },
         makeRenderImage: function () {
-
+            return new CanvasRenderImage();
         }
     };
 };
