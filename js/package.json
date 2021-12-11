@@ -2,7 +2,7 @@
   "name": "rive-js",
   "version": "0.7.0",
   "description": "Rive's web api.",
-  "main": "dist/rive.dev.js",
+  "main": "dist/rive.js",
   "unpkg": "dist/rive.min.js",
   "homepage": "https://rive.app",
   "repository": {
@@ -28,15 +28,17 @@
   "files": [
     "dist/rive.min.js",
     "dist/rive.min.js.map",
-    "dist/rive.dev.js",
-    "dist/rive.dev.js.map",
-    "dist/rive.lean.dev.js",
-    "dist/rive.lean.dev.js.map",
-    "dist/rive.wasm",
-    "dist/rive.d.ts",
-    "dist/rive_canvas.js",
-    "dist/rive_canvas.d.ts",
-    "src/rive.ts"
+    "dist/rive_single.js",
+    "dist/rive_single.js.map",
+    "dist/rive.js",
+    "dist/rive.js.map",
+    "dist/rive_canvas.wasm",
+    "dist/rive_canvas_light.mjs",
+    "dist/rive_canvas_single.mjs",
+    "dist/rive_canvas.mjs",
+    "src/rive.ts",
+    "src/rive_canvas.mjs.d.ts",
+    "dist/rive.d.ts"
   ],
   "typings": "./dist/rive.d.ts",
   "devDependencies": {

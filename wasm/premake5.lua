@@ -57,18 +57,18 @@ linkoptions {
 filter "options:not skia"
     linkoptions {
             "--pre-js ./js/renderer.js",
-            "-o build/bin/%{cfg.buildcfg}/rive_light.mjs",
+            "-o build/bin/%{cfg.buildcfg}/rive_canvas_light.mjs",
         }
 
 
 filter { "options:skia", "options:single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/rive_combined.mjs",
+        "-o build/bin/%{cfg.buildcfg}/rive_canvas_single.mjs",
     }
 
 filter { "options:skia", "options:not single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/rive.mjs",
+        "-o build/bin/%{cfg.buildcfg}/rive_canvas.mjs",
     }
 
 filter "options:skia"
