@@ -33,4 +33,4 @@ jobs:
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && npm ./bump_version.sh
+        run: cd js && ./bump_version.sh
