@@ -26,6 +26,10 @@ jobs:
         run: cd js && npm install
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Bump Version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd js && ./bump_version.sh
       - name: Build
         run: cd js && ./build.sh
       - name: Run tests
@@ -33,4 +37,4 @@ jobs:
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && ./bump_version.sh
+        run: cd js && npm publish
