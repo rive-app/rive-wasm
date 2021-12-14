@@ -34,10 +34,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd js && ./bump_version.sh
-      - name: Test Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && npm publish --tag=test
       - name: Build
         run: cd js && ./build.sh
       - name: Run tests
@@ -45,4 +41,4 @@ jobs:
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && npm publish --tag=test
+        run: cd js && npm publish --tag=alpha
