@@ -1,0 +1,29 @@
+{
+  "name": "@rive/webgl-single",
+  "version": "1.0.0",
+  "description": "Rive's webgl based web api with bundled wasm.",
+  "main": "rive.js",
+  "homepage": "https://rive.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
+  },
+  "keywords": [
+    "rive",
+    "animation"
+  ],
+  "author": "Rive",
+  "contributors": [
+    "Luigi Rosso <luigi@rive.app> (https://rive.app)",
+    "Maxwell Talbot <max@rive.app> (https://rive.app)",
+    "Arthur Vivian <arthur@rive.app> (https://rive.app)",
+    "Umberto Sonnino <umberto@rive.app> (https://rive.app)",
+    "Matthew Sullivan <matt.j.sullivan@gmail.com> (mailto:matt.j.sullivan@gmail.com)"
+  ],
+  "license": "MIT",
+  "files": [
+    "rive.js"
+  ],
+  "typings": "rive.d.ts",
+  "dependencies": {}
+}

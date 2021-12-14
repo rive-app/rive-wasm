@@ -8,27 +8,61 @@ pushd submodules/rive-cpp/skia/dependencies
 ./make_skia_wasm.sh
 popd
 
-rm -f ../js/dist/*.mjs
-rm -f ../js/dist/*.wasm
+rm -f ../js/npm/canvas_advanced/*.mjs
+rm -f ../js/npm/canvas_advanced/*.wasm
+
+rm -f ../js/npm/webgl_advanced/*.mjs
+rm -f ../js/npm/webgl_advanced/*.wasm
+
+rm -f ../js/npm/canvas_advanced_single/*.mjs
+rm -f ../js/npm/webgl_advanced_single/*.mjs
+
+rm -f ../js/npm/canvas/*.mjs
+rm -f ../js/npm/canvas/*.wasm
+
+rm -f ../js/npm/webgl/*.mjs
+rm -f ../js/npm/webgl/*.wasm
+
+rm -f ../js/npm/canvas_single/*.mjs
+rm -f ../js/npm/webgl_single/*.mjs
+
+mkdir -p ../js/npm/webgl
+mkdir -p ../js/npm/canvas
+mkdir -p ../js/npm/webgl_single
+mkdir -p ../js/npm/canvas_single
+mkdir -p ../js/npm/canvas_advanced
+mkdir -p ../js/npm/webgl_advanced
+mkdir -p ../js/npm/canvas_advanced_single
+mkdir -p ../js/npm/webgl_advanced_single
 
 echo 
-echo "::::: building rive_canvas_light.js"
+echo "::::: building @rive/canvas_advanced"
+echo 
+./build-wasm.sh clean
+./build-wasm.sh release
+cp build/bin/release/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
+cp build/bin/release/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
+cp build/bin/release/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
+
+echo 
+echo "::::: building @rive/canvas_advanced_single"
 echo 
 ./build-wasm.sh clean
 ./build-wasm.sh -s release
-cp build/bin/release/rive_canvas_light.mjs ../js/dist/rive_canvas_light.mjs
+cp build/bin/release/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
 
 echo 
-echo "::::: building rive_canvas_single.js"
-echo 
-./build-wasm.sh clean
-./build-wasm.sh -r skia -s release
-cp build/bin/release/rive_canvas_single.mjs ../js/dist/rive_canvas_single.mjs
-
-echo 
-echo "::::: building rive_canvas.js and rive_canvas.wasm"
+echo "::::: building @rive/webgl_advanced"
 echo 
 ./build-wasm.sh clean
 ./build-wasm.sh -r skia release
-cp build/bin/release/rive_canvas.mjs ../js/dist/rive_canvas.mjs
-cp build/bin/release/rive_canvas.wasm ../js/dist/rive_canvas.wasm
+cp build/bin/release/webgl_advanced.mjs ../js/npm/webgl_advanced/webgl_advanced.mjs
+cp build/bin/release/webgl_advanced.wasm ../js/npm/webgl_advanced/rive.wasm
+cp build/bin/release/webgl_advanced.wasm ../js/npm/webgl/rive.wasm
+
+echo 
+echo "::::: building @rive/webgl_advanced_single"
+echo 
+./build-wasm.sh clean
+./build-wasm.sh -r skia -s release
+cp build/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs

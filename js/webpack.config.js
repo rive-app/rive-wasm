@@ -1,105 +1,30 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
-// This file contains three different webpack configurations. Each one remaps
-// the location of rive_canvas.mjs to the appropriate one built by
-// wasm/build-all-wasm.sh.
+// This file contains various different webpack configurations for the high
+// level api. Each one remaps the location of rive_advanced.mjs to the
+// appropriate one built by wasm/build-all-wasm.sh.
 
-// Simple configuration for browser friendly bundle. Builds a simple rive.min.js
-// that can be directly added to any page with a script tag.
-const webConfig = {
-  entry: './src/rive.ts',
-  target: 'web',
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      }
-    ],
-  },
-  resolve: {
-    extensions: ['.js'],
-    alias: {
-      './rive_canvas.mjs': path.resolve(__dirname, 'dist/rive_canvas_single.mjs'),
-    }
-  },
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'rive.min.js',
-    library: {
-      type: 'assign-properties',
-      name: 'rive'
-    },
-  },
-  devtool: 'source-map',
-  mode: 'production',
-  // Copy the Wasm file to dist
-  plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: 'build/src/rive.d.ts', to: 'rive.d.ts' },
-      ],
-    }),
-  ],
-};
-
-
-// Module configuration for bundler friendly build. Uses rive_canvas with a
-// bundled wasm file for simplicity/no external wasm loading.
-const moduleConfigSingle = {
+// Uses canvas_advanced with an externally loaded wasm file.
+const canvas = {
   entry: './src/rive.ts',
   target: 'es6',
   module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
+    rules: [{
+      test: /\.ts$/,
+      use: 'ts-loader',
+      exclude: /node_modules/,
+    }, ],
   },
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      './rive_canvas.mjs': path.resolve(__dirname, 'dist/rive_canvas_single.mjs'),
+      './rive_advanced.mjs': path.resolve(__dirname, 'npm/canvas_advanced/canvas_advanced.mjs'),
+      'package.json': path.resolve(__dirname, 'npm/canvas/package.json'),
     }
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'rive_single.js',
-    libraryTarget: 'umd',
-    library: 'rive',
-    globalObject: 'this',
-  },
-  devtool: 'source-map',
-  mode: 'none',
-};
-
-
-// Leanest module configuration for bundler friendly build. Uses rive_canvas
-// which will attempt to load wasm bytes via the network for rive_canvas.
-const moduleConfig = {
-  entry: './src/rive.ts',
-  target: 'es6',
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    extensions: ['.ts', '.js'],
-    alias: {
-      './rive_canvas.mjs': path.resolve(__dirname, 'dist/rive_canvas.mjs'),
-    }
-  },
-  output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'npm/canvas'),
     filename: 'rive.js',
     libraryTarget: 'umd',
     library: 'rive',
@@ -109,29 +34,28 @@ const moduleConfig = {
   mode: 'none',
 };
 
-// Module configuration for bundler friendly build. Uses rive_canvas with a
-// bundled wasm file for simplicity/no external wasm loading.
-const moduleConfigSingleLight = {
+// Uses canvas_advanced with a bundled wasm file for simplicity/no external wasm
+// loading.
+const canvasSingle = {
   entry: './src/rive.ts',
   target: 'es6',
   module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      },
-    ],
+    rules: [{
+      test: /\.ts$/,
+      use: 'ts-loader',
+      exclude: /node_modules/,
+    }, ],
   },
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      './rive_canvas.mjs': path.resolve(__dirname, 'dist/rive_canvas_light.mjs'),
+      './rive_advanced.mjs': path.resolve(__dirname, 'npm/canvas_advanced_single/canvas_advanced_single.mjs'),
+      'package.json': path.resolve(__dirname, 'npm/canvas_single/package.json'),
     }
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'rive_light.js',
+    path: path.resolve(__dirname, 'npm/canvas_single'),
+    filename: 'rive.js',
     libraryTarget: 'umd',
     library: 'rive',
     globalObject: 'this',
@@ -140,4 +64,65 @@ const moduleConfigSingleLight = {
   mode: 'none',
 };
 
-module.exports = [moduleConfig, moduleConfigSingle, webConfig, moduleConfigSingleLight];
+
+
+// Uses webgl_advanced with an externally loaded wasm file.
+const webgl = {
+  entry: './src/rive.ts',
+  target: 'es6',
+  module: {
+    rules: [{
+      test: /\.ts$/,
+      use: 'ts-loader',
+      exclude: /node_modules/,
+    }, ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    alias: {
+      './rive_advanced.mjs': path.resolve(__dirname, 'npm/webgl_advanced/webgl_advanced.mjs'),
+      'package.json': path.resolve(__dirname, 'npm/webgl/package.json'),
+    }
+  },
+  output: {
+    path: path.resolve(__dirname, 'npm/webgl'),
+    filename: 'rive.js',
+    libraryTarget: 'umd',
+    library: 'rive',
+    globalObject: 'this',
+  },
+  devtool: 'source-map',
+  mode: 'none',
+};
+
+// Uses webgl_advanced with a bundled wasm file for simplicity/no external wasm
+// loading.
+const webglSingle = {
+  entry: './src/rive.ts',
+  target: 'es6',
+  module: {
+    rules: [{
+      test: /\.ts$/,
+      use: 'ts-loader',
+      exclude: /node_modules/,
+    }, ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    alias: {
+      './rive_advanced.mjs': path.resolve(__dirname, 'npm/webgl_advanced_single/webgl_advanced_single.mjs'),
+      'package.json': path.resolve(__dirname, 'npm/webgl_single/package.json'),
+    }
+  },
+  output: {
+    path: path.resolve(__dirname, 'npm/webgl_single'),
+    filename: 'rive.js',
+    libraryTarget: 'umd',
+    library: 'rive',
+    globalObject: 'this',
+  },
+  devtool: 'source-map',
+  mode: 'none',
+};
+
+module.exports = [canvasSingle, canvas, webglSingle, webgl];

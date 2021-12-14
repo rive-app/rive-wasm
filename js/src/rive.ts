@@ -1,5 +1,5 @@
-import * as rc from './rive_canvas.mjs';
-import * as packageData from '../package.json';
+import * as rc from './rive_advanced.mjs';
+import * as packageData from 'package.json';
 
 /**
  * Generic type for a parameterless void callback
@@ -157,7 +157,7 @@ export class RuntimeLoader {
   private static rive: rc.RiveCanvas;  
   // Path to the Wasm file; default path works for testing only;
   // if embedded wasm is used then this is never used.
-  private static wasmURL: string = `https://unpkg.com/rive-js@${packageData.version}/dist/rive_canvas.wasm`;
+  private static wasmURL: string = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
 
   // Class is never instantiated
   private constructor() { }
