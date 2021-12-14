@@ -5,7 +5,7 @@ Rive's low level web runtime. Use this over the high level JS runtime if you nee
 - create scenes out of multiple Rive files
 
 # Building
-```build-all-wasm.sh``` will build all the various permutations of the Rive WASM modules necessary to build rive-js.
+```build_all_wasm.sh``` will build all the various permutations of the Rive WASM modules necessary to build rive-js.
 
 ## rive_canvas.mjs
 WASM/JS runtime for Rive which provides a feature rich performance driven renderer in WebGL. There are two flavors of this:

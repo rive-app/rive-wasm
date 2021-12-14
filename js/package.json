@@ -52,7 +52,6 @@
     "@babel/preset-typescript": "^7.13.0",
     "@types/jest": "^26.0.23",
     "babel-jest": "^27.0.2",
-    "copy-webpack-plugin": "^9.0.0",
     "jest": "^26.6.3",
     "jest-canvas-mock": "^2.3.1",
     "ts-jest": "^26.5.6",
