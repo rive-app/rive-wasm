@@ -1,8 +1,9 @@
 const fs = require('fs');
-const package = require('./package.json');
+const path = process.argv[3];
+const package = require(path + '/package.json');
 const versions = JSON.parse(process.argv[2].trim().replace(/\'/g, '"'));
 const current = package.version;
-const latest = versions[versions.length-1];
+const latest = versions[versions.length - 1];
 
 // Returns -1 if first is less than second, 1 if first is greater than second, otherwise 0 if equal.
 function compareVersion(first, second) {
@@ -31,7 +32,7 @@ function compareVersion(first, second) {
 
 if (compareVersion(current, latest) <= 0) {
     const parts = latest.split('.').map((value) => parseInt(value));
-    parts[parts.length-1] = parts[parts.length-1] + 1;
+    parts[parts.length - 1] = parts[parts.length - 1] + 1;
     package.version = parts.join('.');
-    fs.writeFileSync('./package.json', JSON.stringify(package, null, 2));
+    fs.writeFileSync(path + '/package.json', JSON.stringify(package, null, 2));
 }
