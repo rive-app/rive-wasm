@@ -54,21 +54,27 @@ linkoptions {
             "--no-entry"
         }
 
-filter "options:not skia"
+filter { "options:not skia", "options:not single_file" }
     linkoptions {
             "--pre-js ./js/renderer.js",
-            "-o build/bin/%{cfg.buildcfg}/rive_canvas_light.mjs",
+            "-o build/bin/%{cfg.buildcfg}/canvas_advanced.mjs",
+        }
+
+filter { "options:not skia", "options:single_file" }
+    linkoptions {
+            "--pre-js ./js/renderer.js",
+            "-o build/bin/%{cfg.buildcfg}/canvas_advanced_single.mjs",
         }
 
 
 filter { "options:skia", "options:single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/rive_canvas_single.mjs",
+        "-o build/bin/%{cfg.buildcfg}/webgl_advanced_single.mjs",
     }
 
 filter { "options:skia", "options:not single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/rive_canvas.mjs",
+        "-o build/bin/%{cfg.buildcfg}/webgl_advanced.mjs",
     }
 
 filter "options:skia"

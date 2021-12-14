@@ -1,4 +1,4 @@
-import * as rc from './rive_canvas.mjs';
+import * as rc from './rive_advanced.mjs';
 import * as rive from './rive';
 
 // #region helper functions
