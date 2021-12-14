@@ -33,7 +33,7 @@ jobs:
       - name: Bump Version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && ./bump_version.sh
+        run: cd js && ./bump_all_versions.sh
       - name: Build
         run: cd js && ./build.sh
       - name: Run tests
