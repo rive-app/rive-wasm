@@ -1,9 +1,8 @@
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
 
 // This file contains various different webpack configurations for the high
 // level api. Each one remaps the location of rive_advanced.mjs to the
-// appropriate one built by wasm/build-all-wasm.sh.
+// appropriate one built by wasm/build_all_wasm.sh.
 
 // Uses canvas_advanced with an externally loaded wasm file.
 const canvas = {
