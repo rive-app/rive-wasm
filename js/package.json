@@ -1,9 +1,8 @@
 {
   "name": "rive-js",
+  "private": true,
   "version": "1.0.0",
-  "description": "Rive's web api.",
-  "main": "dist/rive.js",
-  "unpkg": "dist/rive.min.js",
+  "description": "Helper for building rive-api combinations (multiple separate packages).",
   "homepage": "https://rive.app",
   "repository": {
     "type": "git",
