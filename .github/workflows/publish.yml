@@ -16,6 +16,10 @@ jobs:
         with:
           version: 3.0.0
           actions-cache-folder: "emsdk-cache"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "12.x"
+          registry-url: "https://registry.npmjs.org"
       - name: Install premake
         run: |
           wget https://github.com/premake/premake-core/releases/download/v5.0.0-alpha16/premake-5.0.0-alpha16-linux.tar.gz
@@ -30,6 +34,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd js && ./bump_version.sh
+      - name: Test Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: cd js && npm publish --tag=test
       - name: Build
         run: cd js && ./build.sh
       - name: Run tests
@@ -37,4 +45,4 @@ jobs:
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && npm publish
+        run: cd js && npm publish --tag=test
