@@ -1,4 +1,5 @@
 var Rive = {
+    load: function () {},
     RenderPaintStyle: {
         fill: {},
         stroke: {}
@@ -36,6 +37,7 @@ var Rive = {
         luminosity: {}
     },
     Renderer: {},
+    Artboard: {},
     CanvasRenderer: {},
     RenderPath: {},
     RenderPaint: {},
