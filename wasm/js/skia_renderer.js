@@ -17,6 +17,23 @@ Module.onRuntimeInitialized = function () {
         var handle = GL.createContext(canvas, contextAttributes);
         GL.makeContextCurrent(handle);
 
-        return makeRenderer(canvas.width, canvas.height);
+        const renderer = makeRenderer(canvas.width, canvas.height);
+        renderer._handle = handle;
+        renderer._canvas = canvas;
+        renderer._width = canvas.width;
+        renderer._height = canvas.height;
+        return renderer;
+    };
+    const cppClear = Module['WebGLRenderer']['prototype']['clear'];
+    Module['WebGLRenderer']['prototype']['clear'] = function () {
+        GL.makeContextCurrent(this._handle);
+        const canvas = this._canvas;
+        if (this._width != canvas.width || this._height != canvas.height) {
+
+            this.resize(canvas.width, canvas.height);
+            this._width = canvas.width;
+            this._height = canvas.height;
+        }
+        cppClear.call(this);
     };
 };

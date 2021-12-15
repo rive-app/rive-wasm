@@ -1021,6 +1021,10 @@ export class Rive {
     // Ensure the runtime is loaded
     RuntimeLoader.awaitInstance().then((runtime) => {
       this.runtime = runtime;
+
+      // Get the canvas where you want to render the animation and create a renderer
+      this.renderer = this.runtime.makeRenderer(this.canvas);
+    
       // Load Rive data from a source uri or a data buffer
       this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay).catch(e => {
         console.error(e);
@@ -1104,9 +1108,6 @@ export class Rive {
 
     // Initialize the animator
     this.animator = new Animator(this.runtime, this.artboard, this.eventManager);
-
-    // Get the canvas where you want to render the animation and create a renderer
-    this.renderer = this.runtime.makeRenderer(this.canvas);
 
 
     // Initialize the animations; as loaded hasn't happened yet, we need to

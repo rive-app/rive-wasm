@@ -197,6 +197,14 @@ public:
     m_Canvas = m_Surface->getCanvas();
   }
 
+  ~WebGLSkiaRenderer() { delete m_Surface; }
+
+  void resize(int width, int height) {
+    delete m_Surface;
+    m_Surface = makeSurface(m_Context, width, height);
+    m_Canvas = m_Surface->getCanvas();
+  }
+
   void clear() {
     SkPaint paint;
     paint.setColor(SK_ColorTRANSPARENT);
@@ -283,9 +291,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
 #endif
 
 #ifdef RIVE_SKIA_RENDERER
-  class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
-      .function("clear", &WebGLSkiaRenderer::clear, allow_raw_pointers())
-      .function("flush", &WebGLSkiaRenderer::flush, allow_raw_pointers());
   class_<rive::Renderer>("Renderer")
       .function("save", &rive::Renderer::save)
       .function("restore", &rive::Renderer::restore)
@@ -295,6 +300,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("align", &rive::Renderer::align, allow_raw_pointers())
       .function("computeAlignment", &rive::Renderer::computeAlignment,
                 allow_raw_pointers());
+  class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
+      .function("clear", &WebGLSkiaRenderer::clear)
+      .function("flush", &WebGLSkiaRenderer::flush)
+      .function("resize", &WebGLSkiaRenderer::resize);
+
   function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
 #else
   class_<rive::Renderer>("Renderer")
