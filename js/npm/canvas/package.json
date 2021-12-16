@@ -23,7 +23,10 @@
   "license": "MIT",
   "files": [
     "rive.js",
-    "rive.wasm"
+    "rive.js.map",
+    "rive.wasm",
+    "rive.d.ts",
+    "rive_advanced.mjs.d.ts"
   ],
   "typings": "rive.d.ts",
   "dependencies": {},
