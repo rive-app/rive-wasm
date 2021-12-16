@@ -1,5 +1,5 @@
 {
-  "name": "@rive/canvas-advanced",
+  "name": "@rive-app/canvas-advanced",
   "version": "1.0.0",
   "description": "Rive's lightweight low-level canvas based web api.",
   "main": "canvas_advanced.mjs",

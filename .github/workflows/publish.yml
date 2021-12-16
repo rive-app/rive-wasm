@@ -41,4 +41,4 @@ jobs:
       - name: Try Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd js && ./publish_all.sh --tag=alpha
+        run: cd js && ./publish_all.sh --access public

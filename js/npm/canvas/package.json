@@ -1,5 +1,5 @@
 {
-  "name": "@rive/canvas",
+  "name": "@rive-app/canvas",
   "version": "1.0.0",
   "description": "Rive's canvas based web api.",
   "main": "rive.js",
