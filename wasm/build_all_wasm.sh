@@ -36,7 +36,7 @@ mkdir -p ../js/npm/canvas_advanced_single
 mkdir -p ../js/npm/webgl_advanced_single
 
 echo 
-echo "::::: building @rive/canvas_advanced"
+echo "::::: building @rive-app/canvas_advanced"
 echo 
 ./build_wasm.sh clean
 ./build_wasm.sh release
@@ -45,14 +45,14 @@ cp build/bin/release/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
 cp build/bin/release/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
 
 echo 
-echo "::::: building @rive/canvas_advanced_single"
+echo "::::: building @rive-app/canvas_advanced_single"
 echo 
 ./build_wasm.sh clean
 ./build_wasm.sh -s release
 cp build/bin/release/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
 
 echo 
-echo "::::: building @rive/webgl_advanced"
+echo "::::: building @rive-app/webgl_advanced"
 echo 
 ./build_wasm.sh clean
 ./build_wasm.sh -r skia release
@@ -61,7 +61,7 @@ cp build/bin/release/webgl_advanced.wasm ../js/npm/webgl_advanced/rive.wasm
 cp build/bin/release/webgl_advanced.wasm ../js/npm/webgl/rive.wasm
 
 echo 
-echo "::::: building @rive/webgl_advanced_single"
+echo "::::: building @rive-app/webgl_advanced_single"
 echo 
 ./build_wasm.sh clean
 ./build_wasm.sh -r skia -s release
