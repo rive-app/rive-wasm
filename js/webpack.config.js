@@ -17,10 +17,14 @@ const canvas = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    fallback: {
+      fs: false,
+      path: false,
+    },
     alias: {
       './rive_advanced.mjs': path.resolve(__dirname, 'npm/canvas_advanced/canvas_advanced.mjs'),
       'package.json': path.resolve(__dirname, 'npm/canvas/package.json'),
-    }
+    },
   },
   output: {
     path: path.resolve(__dirname, 'npm/canvas'),
@@ -47,6 +51,10 @@ const canvasSingle = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    fallback: {
+      'fs': false,
+      'path': false,
+    },
     alias: {
       './rive_advanced.mjs': path.resolve(__dirname, 'npm/canvas_advanced_single/canvas_advanced_single.mjs'),
       'package.json': path.resolve(__dirname, 'npm/canvas_single/package.json'),
@@ -78,6 +86,10 @@ const webgl = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    fallback: {
+      'fs': false,
+      'path': false,
+    },
     alias: {
       './rive_advanced.mjs': path.resolve(__dirname, 'npm/webgl_advanced/webgl_advanced.mjs'),
       'package.json': path.resolve(__dirname, 'npm/webgl/package.json'),
@@ -108,6 +120,10 @@ const webglSingle = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    fallback: {
+      'fs': false,
+      'path': false,
+    },
     alias: {
       './rive_advanced.mjs': path.resolve(__dirname, 'npm/webgl_advanced_single/webgl_advanced_single.mjs'),
       'package.json': path.resolve(__dirname, 'npm/webgl_single/package.json'),
@@ -124,4 +140,5 @@ const webglSingle = {
   mode: 'none',
 };
 
-module.exports = [canvasSingle, canvas, webglSingle, webgl];
+// module.exports = [canvasSingle, canvas, webglSingle, webgl];
+module.exports = [canvas];

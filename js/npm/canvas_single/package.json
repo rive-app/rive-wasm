@@ -25,5 +25,9 @@
     "rive.js"
   ],
   "typings": "rive.d.ts",
-  "dependencies": {}
+  "dependencies": {},
+  "browser": {
+    "fs": false,
+    "path": false
+  }
 }

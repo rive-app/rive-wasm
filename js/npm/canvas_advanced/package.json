@@ -25,5 +25,9 @@
     "canvas_advanced.mjs",
     "rive.wasm"
   ],
-  "dependencies": {}
+  "dependencies": {},
+  "browser": {
+    "fs": false,
+    "path": false
+  }
 }
