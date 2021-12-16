@@ -1,5 +1,5 @@
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
+const FileManagerPlugin = require('filemanager-webpack-plugin')
 
 // This file contains various different webpack configurations for the high
 // level api. Each one remaps the location of rive_advanced.mjs to the
@@ -37,11 +37,21 @@ const canvas = {
   devtool: 'source-map',
   mode: 'none',
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/canvas/rive.d.ts') },
-        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/canvas/rive_advanced.mjs.d.ts') },
-      ],
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {
+              source: 'build/src/rive.d.ts',
+              destination: path.resolve(__dirname, 'npm/canvas/rive.d.ts')
+            },
+            {
+              source: 'src/rive_advanced.mjs.d.ts',
+              destination: path.resolve(__dirname, 'npm/canvas/rive_advanced.mjs.d.ts')
+            },
+          ]
+        }
+      }
     })
   ]
 };
@@ -79,11 +89,21 @@ const canvasSingle = {
   devtool: 'source-map',
   mode: 'none',
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/canvas_single/rive.d.ts') },
-        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/canvas_single/rive_advanced.mjs.d.ts') },
-      ],
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {
+              source: 'build/src/rive.d.ts',
+              destination: path.resolve(__dirname, 'npm/canvas_single/rive.d.ts')
+            },
+            {
+              source: 'src/rive_advanced.mjs.d.ts',
+              destination: path.resolve(__dirname, 'npm/canvas_single/rive_advanced.mjs.d.ts')
+            },
+          ]
+        }
+      }
     })
   ]
 };
@@ -122,11 +142,21 @@ const webgl = {
   devtool: 'source-map',
   mode: 'none',
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/webgl/rive.d.ts') },
-        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/webgl/rive_advanced.mjs.d.ts') },
-      ],
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {
+              source: 'build/src/rive.d.ts',
+              destination: path.resolve(__dirname, 'npm/webgl/rive.d.ts')
+            },
+            {
+              source: 'src/rive_advanced.mjs.d.ts',
+              destination: path.resolve(__dirname, 'npm/webgl/rive_advanced.mjs.d.ts')
+            },
+          ]
+        }
+      }
     })
   ]
 };
@@ -164,11 +194,21 @@ const webglSingle = {
   devtool: 'source-map',
   mode: 'none',
   plugins: [
-    new CopyPlugin({
-      patterns: [
-        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/webgl_single/rive.d.ts') },
-        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/webgl_single/rive_advanced.mjs.d.ts') },
-      ],
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {
+              source: 'build/src/rive.d.ts',
+              destination: path.resolve(__dirname, 'npm/webgl_single/rive.d.ts')
+            },
+            {
+              source: 'src/rive_advanced.mjs.d.ts',
+              destination: path.resolve(__dirname, 'npm/webgl_single/rive_advanced.mjs.d.ts')
+            },
+          ]
+        }
+      }
     })
   ]
 };
