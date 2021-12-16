@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 // This file contains various different webpack configurations for the high
 // level api. Each one remaps the location of rive_advanced.mjs to the
@@ -35,6 +36,14 @@ const canvas = {
   },
   devtool: 'source-map',
   mode: 'none',
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/canvas/rive.d.ts') },
+        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/canvas/rive_advanced.mjs.d.ts') },
+      ],
+    })
+  ]
 };
 
 // Uses canvas_advanced with a bundled wasm file for simplicity/no external wasm
@@ -69,6 +78,14 @@ const canvasSingle = {
   },
   devtool: 'source-map',
   mode: 'none',
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/canvas_single/rive.d.ts') },
+        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/canvas_single/rive_advanced.mjs.d.ts') },
+      ],
+    })
+  ]
 };
 
 
@@ -104,6 +121,14 @@ const webgl = {
   },
   devtool: 'source-map',
   mode: 'none',
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/webgl/rive.d.ts') },
+        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/webgl/rive_advanced.mjs.d.ts') },
+      ],
+    })
+  ]
 };
 
 // Uses webgl_advanced with a bundled wasm file for simplicity/no external wasm
@@ -138,7 +163,14 @@ const webglSingle = {
   },
   devtool: 'source-map',
   mode: 'none',
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        { from: 'build/src/rive.d.ts', to: path.resolve(__dirname, 'npm/webgl_single/rive.d.ts') },
+        { from: 'src/rive_advanced.mjs.d.ts', to: path.resolve(__dirname, 'npm/webgl_single/rive_advanced.mjs.d.ts') },
+      ],
+    })
+  ]
 };
 
-// module.exports = [canvasSingle, canvas, webglSingle, webgl];
-module.exports = [canvas];
+module.exports = [canvasSingle, canvas, webglSingle, webgl];
