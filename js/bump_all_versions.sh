@@ -4,7 +4,8 @@ set -e
 # Bump the version number of every npm module in the npm folder.
 for dir in ./npm/*; do
     pushd $dir > /dev/null
-    echo Bumping version of `echo $dir | sed 's:.*/::'`
-    ../../bump_version.sh
+    repo_name=`echo $dir | sed 's:.*/::' | sed 's/_/-/g'`
+    echo Bumping version of $repo_name
+    ../../bump_version.sh $repo_name
     popd > /dev/null
 done
