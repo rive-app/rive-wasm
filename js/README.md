@@ -1,7 +1,6 @@
 ![Build Status](https://github.com/rive-app/rive-wasm/actions/workflows/build.yml/badge.svg) 
 ![Discord badge](https://img.shields.io/discord/532365473602600965)
 ![Twitter handle](https://img.shields.io/twitter/follow/rive_app.svg?style=social&label=Follow)
-![npm](https://img.shields.io/npm/v/rive-js)
 # Rive's Web Runtime
 
 [Rive's](https://rive.app) web runtime.
@@ -30,7 +29,7 @@ For example, with the high level APIs (non-advanced) you can use:
 RuntimeLoader.setWasmUrl('https://my.site.come/rive_canvas.wasm');
 ```
 
-### WebGL
+### WebGL ![npm](https://img.shields.io/npm/v/@rive-app/webgl)
 ```
 npm install @rive-app/webgl
 ```
@@ -42,7 +41,7 @@ An easy to use high level Rive API using the WebGL renderer. This lets Rive sque
 **A note about WebGL**
 Most browsers limit the number of concurrent WebGL contexts. If you're planning on displaying Rive content in a list item or many times on the same page, it's up to you to manage the lifecycle of the provided Canvas object or consider using the Canvas packages which use the CanvasRenderingContext2D renderer which do not have a context limitation.
 
-### WebGL Advanced
+### WebGL Advanced ![npm](https://img.shields.io/npm/v/@rive-app/webgl-advanced)
 ```
 npm install @rive-app/webgl-advanced
 ```
@@ -50,7 +49,7 @@ A low level Rive API using the WebGL renderer. It has the same benefits as the r
 - Full control over the update and render loop.
 - Allows for rendering multiple Rive artboards to a single canvas.
 - Allows deeper control and manipulation of the components in a Rive hierarchy.
-### Canvas
+### Canvas ![npm](https://img.shields.io/npm/v/@rive-app/canvas)
 ```
 npm install @rive-app/canvas
 ```
@@ -59,7 +58,7 @@ An easy to use high level Rive API using the CanvasRenderingContext2D renderer. 
 - Displaying many animated canvases concurrently on the screen.
 - Simple vector graphics animations without mesh deformations and other upcoming advanced rendering features.
 
-### Canvas Advanced
+### Canvas Advanced ![npm](https://img.shields.io/npm/v/@rive-app/canvas-advanced)
 ```
 npm install @rive-app/canvas-advanced
 ```
