@@ -135,17 +135,7 @@ const webgl = {
     filename: 'rive.js',
     libraryTarget: 'umd',
     library: 'rive',
-    globalObject: `(() => {
-      if (typeof self !== 'undefined') {
-          return self;
-      } else if (typeof window !== 'undefined') {
-          return window;
-      } else if (typeof global !== 'undefined') {
-          return global;
-      } else {
-          return Function('return this')();
-      }
-  })()`,
+    globalObject: 'this',
   },
   devtool: 'source-map',
   mode: 'none',
