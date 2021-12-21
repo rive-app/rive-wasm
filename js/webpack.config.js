@@ -40,8 +40,7 @@ const canvas = {
     new FileManagerPlugin({
       events: {
         onEnd: {
-          copy: [
-            {
+          copy: [{
               source: 'build/src/rive.d.ts',
               destination: path.resolve(__dirname, 'npm/canvas/rive.d.ts')
             },
@@ -92,8 +91,7 @@ const canvasSingle = {
     new FileManagerPlugin({
       events: {
         onEnd: {
-          copy: [
-            {
+          copy: [{
               source: 'build/src/rive.d.ts',
               destination: path.resolve(__dirname, 'npm/canvas_single/rive.d.ts')
             },
@@ -137,7 +135,17 @@ const webgl = {
     filename: 'rive.js',
     libraryTarget: 'umd',
     library: 'rive',
-    globalObject: 'this',
+    globalObject: `(() => {
+      if (typeof self !== 'undefined') {
+          return self;
+      } else if (typeof window !== 'undefined') {
+          return window;
+      } else if (typeof global !== 'undefined') {
+          return global;
+      } else {
+          return Function('return this')();
+      }
+  })()`,
   },
   devtool: 'source-map',
   mode: 'none',
@@ -145,8 +153,7 @@ const webgl = {
     new FileManagerPlugin({
       events: {
         onEnd: {
-          copy: [
-            {
+          copy: [{
               source: 'build/src/rive.d.ts',
               destination: path.resolve(__dirname, 'npm/webgl/rive.d.ts')
             },
@@ -197,8 +204,7 @@ const webglSingle = {
     new FileManagerPlugin({
       events: {
         onEnd: {
-          copy: [
-            {
+          copy: [{
               source: 'build/src/rive.d.ts',
               destination: path.resolve(__dirname, 'npm/webgl_single/rive.d.ts')
             },
