@@ -59,7 +59,9 @@ new rive.Rive({
 });
 ```
 
-To try this out quickly, feel free to [fork this CodeSandbox](https://codesandbox.io/s/rive-plain-js-sandbox-1ddrc?file=/src/index.js) that has everything set up for you in a small project setup. Just add your Rive file to the sandbox and change the `src` attribute to test your animation out and see it live (note however, you may need to create a CodeSandbox account if you're adding dropping in a local file).
+To try this out quickly, feel free to [fork this CodeSandbox](https://codesandbox.io/s/rive-plain-js-sandbox-1ddrc?file=/src/index.js) that has everything set up for you in a small project. Just add your Rive file to the sandbox and change the `src` attribute to test your animation out and see it live (note however, you may need to create a CodeSandbox account if you're dropping in a local file).
+
+![CodeSandbox example image](./assets/readme-code-sandbox.png)
 
 ## Rive API Configuration
 
