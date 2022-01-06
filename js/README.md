@@ -16,13 +16,13 @@ Rive is a real-time interactive design and animation tool. Use our collaborative
 
 This project deploys various packages which are published to npm.
 
-For most cases when integrating Rive assets (`.riv` files) into your application, we recommend installing the `@rive-app/webgl` package. You can install this in your web application via:
+For most cases when integrating Rive assets (`.riv` files) into your application, we recommend installing the `@rive-app/webgl` package, which uses the [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderer to display your animations. You can install this in your web application via:
 
 ```
 npm install @rive-app/webgl
 ```
 
-For more advanced usage in controlling the render of your assets, check out the other web runtime packages to understand which one may fit your needs better in our [web runtimes](WEB_RUNTIMES.md) docs. The high-level API described in the docs below remains the same among all of these packages.
+For more advanced usage in controlling the render of your assets, or if you would rather use the [Canvas](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) renderer to display your animations, check out the other web runtime packages to understand which one may fit your needs better in our [web runtimes](WEB_RUNTIMES.md) docs. The high-level API described in the docs below remains the same among all of these packages.
 
 **Note:** If you previously used the `rive-js` package in your application, we recommend updating to using the package above to ensure you have support for the latest features (i.e raster assets).
 
@@ -40,12 +40,10 @@ See below for an example on how to autoplay the first animation in the default a
 HTML file:
 
 ```html
-<body>
-  <div>
-    <p>Hello, Rive!</p>
-    <canvas id="canvas"></canvas>
-  </div>
-</body>
+<div>
+  <p>Hello, Rive!</p>
+  <canvas id="canvas"></canvas>
+</div>
 ```
 
 JS file
