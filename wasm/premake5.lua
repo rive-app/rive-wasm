@@ -79,7 +79,7 @@ filter { "options:skia", "options:not single_file" }
 
 filter "options:skia"
     defines {"RIVE_SKIA_RENDERER"}
-    buildoptions { "-DSK_GL" }
+    buildoptions { "-DSK_GL", "-DSK_SUPPORT_GPU=1" }
     includedirs {"./submodules/rive-cpp/skia/renderer/include", 
                 "./submodules/rive-cpp/skia/dependencies/skia", 
                 "./submodules/rive-cpp/skia/dependencies/skia/include/core",
@@ -91,8 +91,6 @@ filter "options:skia"
     links {"skia", "GL"}
     linkoptions {
             "-s USE_WEBGL2=1", 
-            "-s MIN_WEBGL_VERSION=2", 
-            "-s MAX_WEBGL_VERSION=2",
             "--pre-js ./js/skia_renderer.js"
         }
 
