@@ -14,7 +14,14 @@ Module.onRuntimeInitialized = function () {
             'explicitSwapControl': 0,
             'renderViaOffscreenBackBuffer': 0
         };
-        var handle = GL.createContext(canvas, contextAttributes);
+
+        var ctx = canvas.getContext('webgl2', contextAttributes);
+        // Fallback for browsers that don't support webgl2 (e.g Safari 14)
+        if (!ctx) {
+            ctx = canvas.getContext('webgl', contextAttributes);
+        }
+        var handle = GL.registerContext(ctx, contextAttributes);
+
         GL.makeContextCurrent(handle);
 
         const renderer = makeRenderer(canvas.width, canvas.height);

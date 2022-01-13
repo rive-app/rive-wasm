@@ -90,7 +90,9 @@ filter "options:skia"
     libdirs {"submodules/rive-cpp/skia/dependencies/skia/out/wasm/"}
     links {"skia", "GL"}
     linkoptions {
-            "-s USE_WEBGL2=1", 
+            "-s USE_WEBGL2=1",
+            "-s MIN_WEBGL_VERSION=1",
+            "-s MAX_WEBGL_VERSION=2",
             "--pre-js ./js/skia_renderer.js"
         }
 
