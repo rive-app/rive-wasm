@@ -1,1 +1,0 @@
-{"version":3,"sources":["main.css"],"names":[],"mappings":"AAAA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA;AACA","file":"parcel_example.e31bb0bc.css","sourceRoot":"..","sourcesContent":["* {\n    margin: 0;\n    padding: 0;\n}\n\nbody {\n    background-color: #333;\n}\n\ncanvas {\n    position: absolute;\n    width: 100%;\n    height: 100%;\n}"]}
