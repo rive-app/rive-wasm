@@ -1255,7 +1255,6 @@ export class Rive {
     const {renderer, runtime, _layout, artboard} = this;
     // Canvas must be wiped to prevent artifacts
     renderer.clear();
-    // Now save so that future changes to align can restore
     // Align things up safe in the knowledge we can restore if changed
     renderer.align(
       _layout.runtimeFit(runtime),
