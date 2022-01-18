@@ -12,3 +12,17 @@ canvas {
     width: 100%;
     height: 100%;
 }
+
+.counter {
+    position: absolute;
+    color: white;
+    z-index: 100
+}
+
+.fps {
+    top: 0px;
+}
+
+.framems {
+    top: 20px;
+}

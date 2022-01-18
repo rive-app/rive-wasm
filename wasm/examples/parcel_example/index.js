@@ -1,5 +1,7 @@
 import 'regenerator-runtime';
 import RiveCanvas from '../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs';
+// import RiveCanvas from '../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs';
+import Animation from './hero-v6.riv';
 import './main.css';
 
 // Loads a default animation and displays it using the advanced api. Drag and
@@ -9,10 +11,10 @@ async function main() {
     const rive = await RiveCanvas();
 
     async function loadDefault() {
-        const bytes = await (await fetch(new Request('https://cdn.rive.app/animations/vehicles.riv'))).arrayBuffer();
+        const bytes = await (await fetch(new Request(Animation))).arrayBuffer();
         const file = rive.load(new Uint8Array(bytes));
         artboard = file.defaultArtboard();
-        animation = new rive.LinearAnimationInstance(artboard.animationByIndex(0));
+        stateMachine = new rive.StateMachineInstance(artboard.stateMachineByIndex(0));
     }
     await loadDefault();
 
@@ -64,18 +66,31 @@ async function main() {
     });
 
     let lastTime = 0;
-    let artboard, animation;
+    let artboard, stateMachine;
+
+    const times = [];
+    const durations = [];
 
     function draw(time) {
         if (!lastTime) {
             lastTime = time;
         }
-        const elapsedSeconds = (time - lastTime) / 1000;
+        const elapsedMs = time - lastTime;
+        const elapsedSeconds = elapsedMs / 1000;
         lastTime = time;
+
+        const before = performance.now()
+        // Update fps
+        while (times.length > 0 && times[0] <= time - 1000) {
+            times.shift();
+            durations.shift();
+        }
+        times.push(before);
+        document.getElementById('fps-value').innerText = times.length;
+
         renderer.clear();
         if (artboard) {
-            animation.advance(elapsedSeconds);
-            animation.apply(artboard, 1);
+            stateMachine.advance(artboard, elapsedSeconds);
             artboard.advance(elapsedSeconds);
             renderer.save();
             renderer.align(rive.Fit.contain, rive.Alignment.center, {
@@ -86,8 +101,15 @@ async function main() {
             }, artboard.bounds);
             artboard.draw(renderer);
             renderer.restore();
+
         }
         renderer.flush();
+
+        // Update frame time
+        const after = performance.now();
+        durations.push(after - before);
+        // Use average of all recent durations
+        document.getElementById('framems-value').innerText = (durations.reduce((p, n) => p + n, 0) / durations.length).toFixed(4);
 
         requestAnimationFrame(draw);
     }
