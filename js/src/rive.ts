@@ -952,6 +952,11 @@ export class Rive {
   private static readonly missingErrorMessage: string =
     'Rive source file or data buffer required';
 
+  // Durations to generate a frame for the last second. Used for performance profiling.
+  public durations: number[] = [];
+  public frameTimes: number[] = [];
+  public frameCount: number = 0;
+
   constructor(params: RiveParameters) {
     this.canvas = params.canvas;
     this.src = params.src;
@@ -1153,6 +1158,8 @@ export class Rive {
    * @param time the time at which to render a frame
    */
   private draw(time: number, onSecond?: VoidCallback): void {
+    const before = performance.now();
+
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
 
@@ -1206,15 +1213,23 @@ export class Rive {
     this.artboard.draw(renderer);
 
     renderer.restore();
-
     renderer.flush();
-    
 
     // Check for any animations that looped
     this.animator.handleLooping();
 
     // Check for any state machines that had a state change
     this.animator.handleStateChanges();
+
+    // Add duration to create frame to durations array
+    this.frameCount++;
+    const after = performance.now();
+    this.frameTimes.push(after);
+    this.durations.push(after - before);
+    while (this.frameTimes[0] <= after - 1000) {
+      this.frameTimes.shift();
+      this.durations.shift();
+    }
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
@@ -1241,7 +1256,6 @@ export class Rive {
     // Canvas must be wiped to prevent artifacts
     renderer.clear();
     // Now save so that future changes to align can restore
-    renderer.save();
     // Align things up safe in the knowledge we can restore if changed
     renderer.align(
       _layout.runtimeFit(runtime),
@@ -1254,6 +1268,17 @@ export class Rive {
       },
       artboard.bounds
     );
+  }
+
+  public get fps () {
+    return this.durations.length;
+  }
+
+  public get frameTime() {
+    if (this.durations.length === 0) {
+      return 0;
+    }
+    return (this.durations.reduce((a, b) => a + b, 0) / this.durations.length).toFixed(4);
   }
 
   /**

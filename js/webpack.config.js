@@ -52,7 +52,10 @@ const canvas = {
         }
       }
     })
-  ]
+  ],
+  watchOptions: {
+    ignored: ['**/node_modules', '**/npm'],
+  },
 };
 
 // Uses canvas_advanced with a bundled wasm file for simplicity/no external wasm
@@ -103,7 +106,10 @@ const canvasSingle = {
         }
       }
     })
-  ]
+  ],
+  watchOptions: {
+    ignored: ['**/node_modules', '**/npm'],
+  },
 };
 
 
@@ -155,7 +161,10 @@ const webgl = {
         }
       }
     })
-  ]
+  ],
+  watchOptions: {
+    ignored: ['**/node_modules', '**/npm'],
+  },
 };
 
 // Uses webgl_advanced with a bundled wasm file for simplicity/no external wasm
@@ -206,7 +215,10 @@ const webglSingle = {
         }
       }
     })
-  ]
+  ],
+  watchOptions: {
+    ignored: ['**/node_modules', '**/npm'],
+  },
 };
 
 module.exports = [canvasSingle, canvas, webglSingle, webgl];
