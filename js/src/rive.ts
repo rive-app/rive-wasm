@@ -845,6 +845,11 @@ export interface RiveParameters {
   onLoop?: EventCallback,
   onStateChange?: EventCallback,
   /**
+   * If true, the canvas will scale the drawing board size based on a multiplier of the devicePixelRatio. 
+   * Defaults to true.
+   */
+  useDevicePixelRatio?: boolean,
+  /**
    * @deprecated Use `onLoad()` instead
    */
   onload?: EventCallback,
@@ -948,6 +953,9 @@ export class Rive {
   // Animator: manages animations and state machines
   private animator: Animator;
 
+  // Tracks whether to use devicePixelRatio to determine canvas drawing size
+  private useDevicePixelRatio: boolean = true;
+
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
     'Rive source file or data buffer required';
@@ -993,7 +1001,7 @@ export class Rive {
       autoplay: params.autoplay,
       animations: params.animations,
       stateMachines: params.stateMachines,
-      artboard: params.artboard
+      artboard: params.artboard,
     });
   }
 
@@ -1029,6 +1037,11 @@ export class Rive {
 
       // Get the canvas where you want to render the animation and create a renderer
       this.renderer = this.runtime.makeRenderer(this.canvas);
+
+      // Initial size adjustment based on devicePixelRatio if no width/height are specified explicitly
+      if (!(this.canvas.width || this.canvas.height)) {
+        this.resizeDrawingSurfaceToCanvas();
+      }
     
       // Load Rive data from a source uri or a data buffer
       this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay).catch(e => {
@@ -1415,6 +1428,28 @@ export class Rive {
       maxX: this.canvas.width,
       maxY: this.canvas.height
     });
+  }
+
+  /**
+   * Accounts for devicePixelRatio as a multiplier to render the size of the canvas drawing surface.
+   * Uses the size of the backing canvas to set new width/height attributes. Need to re-render
+   * and resize the layout to match the new drawing surface afterwards. Useful function for consumers
+   * to include in a window resize listener
+   */
+  public resizeDrawingSurfaceToCanvas() {
+    if (this.canvas instanceof HTMLCanvasElement && !!window) {
+      const {width, height} = this.canvas.getBoundingClientRect();
+      if (this.useDevicePixelRatio) {
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = dpr * width;
+        this.canvas.height = dpr * height;
+      } else {
+        this.canvas.width = width;
+        this.canvas.height = height;
+      }
+      this.startRendering();
+      this.resizeToCanvas();
+    }
   }
 
   // Returns the animation source, which may be undefined
