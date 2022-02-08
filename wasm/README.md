@@ -32,5 +32,5 @@ This repository uses submodules. To clone it, you can run the following:
 If you'd like to contribute or make modifications to the source code, you'll need to run the various build scripts provided.
 
 - [Install emscripten](https://emscripten.org/docs/getting_started/downloads.html) we try to use the latest. We're currently building against 3.0.0.
-- ```./build.sh``` to build the various wasm modules necessary for rive-js (js/build.sh will do this automatically if necessary).
-- ```./build-wasm.sh``` if you're iterating on C++ code changes and want to rebuild often with quick iteration (this requires premake5).
+- ```./build_all_wasm.sh``` to build the various wasm modules necessary for rive-js (js/build.sh will do this automatically if necessary).
+- ```./build_wasm.sh``` if you're iterating on C++ code changes and want to rebuild often with quick iteration (this requires premake5).
