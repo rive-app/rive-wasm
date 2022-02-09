@@ -20,6 +20,7 @@ while getopts "s:r:" flag; do
     *)
         # Alert users about unused/wrong flags.
         echo Unknown option flag "$flag"
+        ;;
     esac
 done
 shift $OPTIONS
@@ -35,9 +36,9 @@ elif [ "$OPTION" = "clean" ]; then
     rm -fR ./build
     exit 0
 elif [ "$OPTION" = "tools" ]; then
-    premake5 gmake2 "$PREMAKE_FLAGS" && AR=emar CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES CC=emcc CXX=em++ make config=release -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES CC=emcc CXX=em++ make config=release -j7
 elif [ "$OPTION" = "release" ]; then
-    premake5 gmake2 "$PREMAKE_FLAGS" && AR=emar CC=emcc CXX=em++ make config=release -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make config=release -j7
 else
-    premake5 gmake2 "$PREMAKE_FLAGS" && AR=emar CC=emcc CXX=em++ make -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make -j7
 fi
