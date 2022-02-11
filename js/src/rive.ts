@@ -845,11 +845,6 @@ export interface RiveParameters {
   onLoop?: EventCallback,
   onStateChange?: EventCallback,
   /**
-   * If true, the canvas will scale the drawing board size based on a multiplier of the devicePixelRatio. 
-   * Defaults to true.
-   */
-  useDevicePixelRatio?: boolean,
-  /**
    * @deprecated Use `onLoad()` instead
    */
   onload?: EventCallback,
@@ -952,9 +947,6 @@ export class Rive {
 
   // Animator: manages animations and state machines
   private animator: Animator;
-
-  // Tracks whether to use devicePixelRatio to determine canvas drawing size
-  private useDevicePixelRatio: boolean = true;
 
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
@@ -1439,14 +1431,9 @@ export class Rive {
   public resizeDrawingSurfaceToCanvas() {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
       const {width, height} = this.canvas.getBoundingClientRect();
-      if (this.useDevicePixelRatio) {
-        const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = dpr * width;
-        this.canvas.height = dpr * height;
-      } else {
-        this.canvas.width = width;
-        this.canvas.height = height;
-      }
+      const dpr = window.devicePixelRatio || 1;
+      this.canvas.width = dpr * width;
+      this.canvas.height = dpr * height;
       this.startRendering();
       this.resizeToCanvas();
     }
