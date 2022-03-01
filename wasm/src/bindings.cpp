@@ -120,16 +120,20 @@ public:
   void style(rive::RenderPaintStyle value) override {
     call<void>("style", value);
   }
-  void linearGradient(float sx, float sy, float ex, float ey) override {
-    call<void>("linearGradient", sx, sy, ex, ey);
+
+  void shader(rive::rcp<rive::RenderShader> shader) override {
+    // TODO: pass shader to js
   }
-  void radialGradient(float sx, float sy, float ex, float ey) override {
-    call<void>("radialGradient", sx, sy, ex, ey);
-  }
-  void addStop(unsigned int color, float stop) override {
-    call<void>("addStop", color, stop);
-  }
-  void completeGradient() override { call<void>("completeGradient"); }
+  // void linearGradient(float sx, float sy, float ex, float ey) override {
+  //   call<void>("linearGradient", sx, sy, ex, ey);
+  // }
+  // void radialGradient(float sx, float sy, float ex, float ey) override {
+  //   call<void>("radialGradient", sx, sy, ex, ey);
+  // }
+  // void addStop(unsigned int color, float stop) override {
+  //   call<void>("addStop", color, stop);
+  // }
+  // void completeGradient() override { call<void>("completeGradient"); }
 };
 
 class RenderImageWrapper : public wrapper<rive::RenderImage> {
@@ -373,6 +377,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .value("color", rive::BlendMode::color)
       .value("luminosity", rive::BlendMode::luminosity);
 
+  class_<rive::rcp<rive::RenderShader>>("RenderShader");
+
   class_<rive::RenderPaint>("RenderPaint")
       .function("color", &RenderPaintWrapper::color, pure_virtual(),
                 allow_raw_pointers())
@@ -387,14 +393,16 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       .function("blendMode", &RenderPaintWrapper::blendMode, pure_virtual(),
                 allow_raw_pointers())
-      .function("linearGradient", &RenderPaintWrapper::linearGradient,
-                pure_virtual(), allow_raw_pointers())
-      .function("radialGradient", &RenderPaintWrapper::radialGradient,
-                pure_virtual(), allow_raw_pointers())
-      .function("addStop", &RenderPaintWrapper::addStop, pure_virtual(),
+      .function("shader", &RenderPaintWrapper::shader, pure_virtual(),
                 allow_raw_pointers())
-      .function("completeGradient", &RenderPaintWrapper::completeGradient,
-                pure_virtual(), allow_raw_pointers())
+      // .function("linearGradient", &RenderPaintWrapper::linearGradient,
+      //           pure_virtual(), allow_raw_pointers())
+      // .function("radialGradient", &RenderPaintWrapper::radialGradient,
+      //           pure_virtual(), allow_raw_pointers())
+      // .function("addStop", &RenderPaintWrapper::addStop, pure_virtual(),
+      //           allow_raw_pointers())
+      // .function("completeGradient", &RenderPaintWrapper::completeGradient,
+      //           pure_virtual(), allow_raw_pointers())
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
   class_<rive::RenderImage>("RenderImage")
@@ -425,7 +433,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("multiply",
                 optional_override([](rive::Mat2D &self, rive::Mat2D &result,
                                      rive::Mat2D &other) -> void {
-                  rive::Mat2D::multiply(result, self, other);
+                  result = rive::Mat2D::multiply(self, other);
                 }));
 
   class_<rive::File>("File")
@@ -521,7 +529,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("parentWorldTransform",
                 optional_override([](rive::TransformComponent &self,
                                      rive::Mat2D &result) -> void {
-                  rive::Mat2D::copy(result, getParentWorld(self));
+                  result = rive::Mat2D(getParentWorld(self));
                 }),
                 allow_raw_pointers());
 
