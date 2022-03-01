@@ -56,6 +56,8 @@ const uint16_t stateMachineNumberTypeKey =
 const uint16_t stateMachineTriggerTypeKey =
     rive::StateMachineTriggerBase::typeKey;
 
+#ifndef RIVE_SKIA_RENDERER
+
 class RendererWrapper : public wrapper<rive::Renderer> {
 public:
   EMSCRIPTEN_WRAPPER(RendererWrapper);
@@ -135,7 +137,6 @@ public:
   // }
   // void completeGradient() override { call<void>("completeGradient"); }
 };
-
 class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
@@ -150,8 +151,6 @@ public:
     m_Height = height;
   }
 };
-
-#ifndef RIVE_SKIA_RENDERER
 namespace rive {
 RenderPaint *makeRenderPaint() {
   val renderPaint =
@@ -473,7 +472,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .property("name", select_overload<const std::string &() const>(
                             &rive::Artboard::name))
       .function("advance", &rive::Artboard::advance)
-      .function("draw", &rive::Artboard::draw, allow_raw_pointers())
+      .function(
+          "draw",
+          optional_override([](rive::Artboard &self, rive::Renderer *renderer) {
+            return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
+          }),
+          allow_raw_pointers())
       .function("transformComponent",
                 &rive::Artboard::find<rive::TransformComponent>,
                 allow_raw_pointers())
