@@ -107,6 +107,52 @@ public:
   void close() override { call<void>("close"); }
 };
 
+class RenderPaintWrapper;
+class GradientShader : public rive::RenderShader {
+private:
+  std::vector<float> m_Stops;
+  std::vector<rive::ColorInt> m_Colors;
+
+public:
+  GradientShader(const rive::ColorInt colors[], const float stops[], int count)
+      : m_Stops(stops, stops + count), m_Colors(colors, colors + count) {}
+
+  void passStopsToJS(const RenderPaintWrapper &wrapper);
+
+  virtual void passToJS(const RenderPaintWrapper &wrapper) = 0;
+};
+
+class LinearGradientShader : public GradientShader {
+private:
+  float m_StartX;
+  float m_StartY;
+  float m_EndX;
+  float m_EndY;
+
+public:
+  LinearGradientShader(const rive::ColorInt colors[], const float stops[],
+                       int count, float sx, float sy, float ex, float ey)
+      : GradientShader(colors, stops, count), m_StartX(sx), m_StartY(sy),
+        m_EndX(ex), m_EndY(ey) {}
+
+  void passToJS(const RenderPaintWrapper &wrapper) override;
+};
+
+class RadialGradientShader : public GradientShader {
+private:
+  float m_CenterX;
+  float m_CenterY;
+  float m_Radius;
+
+public:
+  RadialGradientShader(const rive::ColorInt colors[], const float stops[],
+                       int count, float cx, float cy, float r)
+      : GradientShader(colors, stops, count), m_CenterX(cx), m_CenterY(cy),
+        m_Radius(r) {}
+
+  void passToJS(const RenderPaintWrapper &wrapper) override;
+};
+
 class RenderPaintWrapper : public wrapper<rive::RenderPaint> {
 public:
   EMSCRIPTEN_WRAPPER(RenderPaintWrapper);
@@ -124,19 +170,28 @@ public:
   }
 
   void shader(rive::rcp<rive::RenderShader> shader) override {
-    // TODO: pass shader to js
+    static_cast<GradientShader *>(shader.get())->passToJS(*this);
   }
-  // void linearGradient(float sx, float sy, float ex, float ey) override {
-  //   call<void>("linearGradient", sx, sy, ex, ey);
-  // }
-  // void radialGradient(float sx, float sy, float ex, float ey) override {
-  //   call<void>("radialGradient", sx, sy, ex, ey);
-  // }
-  // void addStop(unsigned int color, float stop) override {
-  //   call<void>("addStop", color, stop);
-  // }
-  // void completeGradient() override { call<void>("completeGradient"); }
 };
+
+void GradientShader::passStopsToJS(const RenderPaintWrapper &wrapper) {
+  // Consider passing in a bulk op encoding into a single array.
+  for (std::size_t i = 0; i < m_Stops.size(); i++) {
+    wrapper.call<void>("addStop", m_Colors[i], m_Stops[i]);
+  }
+}
+
+void LinearGradientShader::passToJS(const RenderPaintWrapper &wrapper) {
+  wrapper.call<void>("linearGradient", m_StartX, m_StartY, m_EndX, m_EndY);
+  passStopsToJS(wrapper);
+}
+
+void RadialGradientShader::passToJS(const RenderPaintWrapper &wrapper) {
+  wrapper.call<void>("radialGradient", m_CenterX, m_CenterY,
+                     m_CenterX + m_Radius, m_CenterY);
+  passStopsToJS(wrapper);
+}
+
 class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
@@ -150,8 +205,32 @@ public:
     m_Width = width;
     m_Height = height;
   }
+
+  rive::rcp<rive::RenderShader>
+  makeShader(rive::RenderTileMode tx, rive::RenderTileMode ty,
+             const rive::Mat2D *localMatrix) const override {
+    return nullptr;
+  }
 };
 namespace rive {
+rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
+                                     const ColorInt colors[], // [count]
+                                     const float stops[],     // [count]
+                                     int count, RenderTileMode,
+                                     const Mat2D *localMatrix) {
+  return rcp<RenderShader>(
+      new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
+}
+
+rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
+                                     const ColorInt colors[], // [count]
+                                     const float stops[],     // [count]
+                                     int count, RenderTileMode,
+                                     const Mat2D *localMatrix) {
+  return rcp<RenderShader>(
+      new RadialGradientShader(colors, stops, count, cx, cy, radius));
+}
+
 RenderPaint *makeRenderPaint() {
   val renderPaint =
       val::module_property("renderFactory").call<val>("makeRenderPaint");
@@ -394,14 +473,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       .function("shader", &RenderPaintWrapper::shader, pure_virtual(),
                 allow_raw_pointers())
-      // .function("linearGradient", &RenderPaintWrapper::linearGradient,
-      //           pure_virtual(), allow_raw_pointers())
-      // .function("radialGradient", &RenderPaintWrapper::radialGradient,
-      //           pure_virtual(), allow_raw_pointers())
-      // .function("addStop", &RenderPaintWrapper::addStop, pure_virtual(),
-      //           allow_raw_pointers())
-      // .function("completeGradient", &RenderPaintWrapper::completeGradient,
-      //           pure_virtual(), allow_raw_pointers())
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
   class_<rive::RenderImage>("RenderImage")
