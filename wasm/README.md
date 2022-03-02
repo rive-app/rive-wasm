@@ -34,3 +34,19 @@ If you'd like to contribute or make modifications to the source code, you'll nee
 - [Install emscripten](https://emscripten.org/docs/getting_started/downloads.html) we try to use the latest. We're currently building against 3.0.0.
 - ```./build_all_wasm.sh``` to build the various wasm modules necessary for rive-js (js/build.sh will do this automatically if necessary).
 - ```./build_wasm.sh``` if you're iterating on C++ code changes and want to rebuild often with quick iteration (this requires premake5).
+
+## Testing
+```
+cd wasm/examples/parcel_example
+```
+
+May need to do this once
+```
+npm install
+```
+
+Then run
+```
+npm run start
+```
+
