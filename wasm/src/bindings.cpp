@@ -78,10 +78,16 @@ public:
     call<void>("clipPath", path);
   }
 
-  void drawImage(rive::RenderImage *image, rive::BlendMode value,
+  void drawImage(const rive::RenderImage *image, rive::BlendMode value,
                  float opacity) override {
     call<void>("drawImage", image, value, opacity);
   }
+
+  void drawImageMesh(const rive::RenderImage *,
+                     rive::rcp<rive::RenderBuffer> vertices_f32,
+                     rive::rcp<rive::RenderBuffer> uvCoords_f32,
+                     rive::rcp<rive::RenderBuffer> indices_u16, rive::BlendMode,
+                     float opacity) override {}
 };
 
 class RenderPathWrapper : public wrapper<rive::RenderPath> {
@@ -196,9 +202,9 @@ class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
 
-  bool decode(const uint8_t *bytes, std::size_t size) override {
-    emscripten::val byteArray =
-        emscripten::val(emscripten::typed_memory_view(size, bytes));
+  bool decode(rive::Span<const uint8_t> bytes) override {
+    emscripten::val byteArray = emscripten::val(
+        emscripten::typed_memory_view(bytes.size(), bytes.data()));
     return call<bool>("decode", byteArray);
   }
   void size(int width, int height) {
@@ -213,6 +219,9 @@ public:
   }
 };
 namespace rive {
+rcp<RenderBuffer> makeBufferU16(Span<const uint16_t>) { return nullptr; }
+rcp<RenderBuffer> makeBufferU32(Span<const uint32_t>) { return nullptr; }
+rcp<RenderBuffer> makeBufferF32(Span<const float>) { return nullptr; }
 rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
                                      const ColorInt colors[], // [count]
                                      const float stops[],     // [count]

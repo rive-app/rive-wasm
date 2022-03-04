@@ -31,6 +31,7 @@ async function main() {
     function loadFile(droppedFile) {
         const reader = new FileReader();
         reader.onload = function (event) {
+            stateMachine = null;
             const file = rive.load(new Uint8Array(event.target.result));
             artboard = file.defaultArtboard();
             animation = new rive.LinearAnimationInstance(artboard.animationByIndex(0));
@@ -66,7 +67,7 @@ async function main() {
     });
 
     let lastTime = 0;
-    let artboard, stateMachine;
+    let artboard, stateMachine, animation;
 
     const times = [];
     const durations = [];
@@ -90,7 +91,14 @@ async function main() {
 
         renderer.clear();
         if (artboard) {
-            stateMachine.advance(artboard, elapsedSeconds);
+            if (stateMachine) {
+                stateMachine.advance(artboard, elapsedSeconds);
+            }
+            if (animation) {
+                animation.advance(elapsedSeconds);
+                animation.apply(artboard, 1);
+
+            }
             artboard.advance(elapsedSeconds);
             renderer.save();
             renderer.align(rive.Fit.contain, rive.Alignment.center, {
