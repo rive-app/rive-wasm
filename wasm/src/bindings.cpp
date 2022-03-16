@@ -296,11 +296,7 @@ public:
     m_Canvas = m_Surface->getCanvas();
   }
 
-  void clear() {
-    SkPaint paint;
-    paint.setColor(SK_ColorTRANSPARENT);
-    m_Canvas->drawPaint(paint);
-  }
+  void clear() { m_Canvas->clear(0); }
 
   void flush() { m_Context->flush(); }
 
