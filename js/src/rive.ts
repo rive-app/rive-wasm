@@ -837,6 +837,7 @@ export interface RiveParameters {
   stateMachines?: string | string[],
   layout?: Layout,
   autoplay?: boolean,
+  useOffscreenRenderer?: boolean,
   onLoad?: EventCallback,
   onLoadError?: EventCallback,
   onPlay?: EventCallback,
@@ -882,6 +883,7 @@ export interface RiveLoadParameters {
   artboard?: string,
   animations?: string | string[],
   stateMachines?: string | string[],
+  useOffscreenRenderer?: boolean,
 }
 
 // Interface ot Rive.reset function
@@ -994,6 +996,7 @@ export class Rive {
       animations: params.animations,
       stateMachines: params.stateMachines,
       artboard: params.artboard,
+      useOffscreenRenderer: params.useOffscreenRenderer,
     });
   }
 
@@ -1004,7 +1007,7 @@ export class Rive {
   }
 
   // Initializes the Rive object either from constructor or load()
-  private init({ src, buffer, animations, stateMachines, artboard, autoplay = false }: RiveLoadParameters): void {
+  private init({ src, buffer, animations, stateMachines, artboard, autoplay = false, useOffscreenRenderer = false }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
 
@@ -1028,7 +1031,7 @@ export class Rive {
       this.runtime = runtime;
 
       // Get the canvas where you want to render the animation and create a renderer
-      this.renderer = this.runtime.makeRenderer(this.canvas);
+      this.renderer = this.runtime.makeRenderer(this.canvas, useOffscreenRenderer);
 
       // Initial size adjustment based on devicePixelRatio if no width/height are specified explicitly
       if (!(this.canvas.width || this.canvas.height)) {

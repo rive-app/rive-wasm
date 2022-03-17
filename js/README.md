@@ -300,6 +300,21 @@ The following are more properties exposed on the Rive object during instantiatio
 - _isPaused_: are all animations paused?
 - _isStopped_: are all animation stopped?
 
+### Other Notes
+If you plan on using `@rive-app/webgl` for the high-level runtime and have a fair number of Rive animations displaying on the screen all at once, we recommend setting the `useOffscreenRenderer` parameter on intialization to `true` during instantiation. Read more about how the animations will share a single shared context in our [WASM docs](https://github.com/rive-app/rive-wasm/tree/master/wasm#gl-contexts) and see below for an example:
+
+```js
+const foo = new Rive({
+    src: "truck.riv",
+    canvas: canvasInstance,
+    animations: "idle",
+    layout: new Layout({fit: "cover", alignment: "center"}),
+    autoplay: true,
+    useOffscreenRenderer: true,
+});
+```
+Note that in a our next major version, this may be turned on by default.
+
 ## Examples
 
 To run the examples in the `examples` folder, run a HTTP server at the root of the `js` directory. If you have Python installed, the following works nicely:

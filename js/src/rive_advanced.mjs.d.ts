@@ -21,7 +21,7 @@ interface RiveOptions {
     StrokeJoin: typeof StrokeJoin;
   
     load(buffer: Uint8Array): File;
-    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas) : CanvasRenderer;
+    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
   }
   
   //////////////
