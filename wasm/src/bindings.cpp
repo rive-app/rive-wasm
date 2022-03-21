@@ -300,21 +300,19 @@ public:
 
   void flush() { m_Context->flush(); }
 
-  static SkSurface *makeSurface(sk_sp<GrDirectContext> context, int width,
-                                int height) {
-    m_Context->resetContext(kRenderTarget_GrGLBackendState);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+  SkSurface* makeSurface(sk_sp<GrDirectContext> context, int width, int height) {
     int numSamples, numStencilBits;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glGetIntegerv(GL_SAMPLES, &numSamples);
     glGetIntegerv(GL_STENCIL_BITS, &numStencilBits);
+    m_Context->resetContext(kRenderTarget_GrGLBackendState);
 
     GrGLFramebufferInfo framebufferInfo;
     framebufferInfo.fFBOID = 0;
     framebufferInfo.fFormat = GL_RGBA8;
 
     GrBackendRenderTarget backendRenderTarget(width, height,
-                                              numSamples
+                                              numSamples,
                                               numStencilBits,
                                               framebufferInfo);
 
