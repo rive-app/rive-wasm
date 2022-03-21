@@ -32,7 +32,7 @@
 #include "rive/transform_component.hpp"
 #ifdef RIVE_SKIA_RENDERER
 #include "skia_renderer.hpp"
-#include <GL/gl.h>
+#include <GLES3/gl3.h>
 #endif
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -302,15 +302,20 @@ public:
 
   static SkSurface *makeSurface(sk_sp<GrDirectContext> context, int width,
                                 int height) {
-    GrGLint buffer;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &buffer);
+    m_Context->resetContext(kRenderTarget_GrGLBackendState);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    int numSamples, numStencilBits;
+    glGetIntegerv(GL_SAMPLES, &numSamples);
+    glGetIntegerv(GL_STENCIL_BITS, &numStencilBits);
+
     GrGLFramebufferInfo framebufferInfo;
-    framebufferInfo.fFBOID = buffer;
+    framebufferInfo.fFBOID = 0;
     framebufferInfo.fFormat = GL_RGBA8;
 
     GrBackendRenderTarget backendRenderTarget(width, height,
-                                              0, // sample count
-                                              0, // stencil bits
+                                              numSamples
+                                              numStencilBits,
                                               framebufferInfo);
 
     return SkSurface::MakeFromBackendRenderTarget(
