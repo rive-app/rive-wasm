@@ -68,4 +68,4 @@ echo "::::: building @rive-app/webgl_advanced_single"
 echo 
 ./build_wasm.sh clean
 OUT_DIR=build/webgl_advanced_single ./build_wasm.sh -r skia -s release
-cp build/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
+cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
