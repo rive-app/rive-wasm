@@ -5,8 +5,8 @@ project "rive"
 kind "ConsoleApp"
 language "C++"
 cppdialect "C++17"
-targetdir "build/bin/%{cfg.buildcfg}"
-objdir "build/obj/%{cfg.buildcfg}"
+targetdir ((os.getenv("OUT_DIR") or "build") .. "/bin/%{cfg.buildcfg}")
+objdir ((os.getenv("OUT_DIR") or "build") .. "/obj/%{cfg.buildcfg}")
 includedirs {"./submodules/rive-cpp/include"}
 
 files {"./submodules/rive-cpp/src/**.cpp", "./src/bindings.cpp"}
@@ -57,24 +57,24 @@ linkoptions {
 filter { "options:not skia", "options:not single_file" }
     linkoptions {
             "--pre-js ./js/renderer.js",
-            "-o build/bin/%{cfg.buildcfg}/canvas_advanced.mjs",
+            "-o %{cfg.targetdir}/canvas_advanced.mjs",
         }
 
 filter { "options:not skia", "options:single_file" }
     linkoptions {
             "--pre-js ./js/renderer.js",
-            "-o build/bin/%{cfg.buildcfg}/canvas_advanced_single.mjs",
+            "-o %{cfg.targetdir}/canvas_advanced_single.mjs",
         }
 
 
 filter { "options:skia", "options:single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/webgl_advanced_single.mjs",
+        "-o %{cfg.targetdir}/webgl_advanced_single.mjs",
     }
 
 filter { "options:skia", "options:not single_file" }
     linkoptions {
-        "-o build/bin/%{cfg.buildcfg}/webgl_advanced.mjs",
+        "-o %{cfg.targetdir}/webgl_advanced.mjs",
     }
 
 filter "options:skia"
