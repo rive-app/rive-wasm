@@ -4,6 +4,7 @@ set -e
 OPTIONS=0
 PREMAKE_FLAGS=
 WD=$(pwd)
+NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
 while getopts "s:r:" flag; do
     case "${flag}" in
@@ -36,9 +37,9 @@ elif [ "$OPTION" = "clean" ]; then
     rm -fR ./build
     exit 0
 elif [ "$OPTION" = "tools" ]; then
-    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES CC=emcc CXX=em++ make config=release -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES CC=emcc CXX=em++ make config=release -j$NCPU
 elif [ "$OPTION" = "release" ]; then
-    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make config=release -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make config=release -j$NCPU
 else
-    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make -j7
+    premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make -j$NCPU
 fi
