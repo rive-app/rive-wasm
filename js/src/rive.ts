@@ -1213,6 +1213,8 @@ export class Rive {
     this.artboard.advance(elapsedTime);
 
     const {renderer} = this;
+    // Canvas must be wiped to prevent artifacts
+    renderer.clear();
     renderer.save();
 
     // Update the renderer alignment if necessary
@@ -1261,8 +1263,6 @@ export class Rive {
    */
   private alignRenderer(): void {
     const {renderer, runtime, _layout, artboard} = this;
-    // Canvas must be wiped to prevent artifacts
-    renderer.clear();
     // Align things up safe in the knowledge we can restore if changed
     renderer.align(
       _layout.runtimeFit(runtime),
