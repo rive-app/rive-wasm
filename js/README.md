@@ -55,7 +55,7 @@ new rive.Rive({
   // Hosted .riv asset, or a local one
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
   canvas: document.getElementById("canvas"),
-  autoplay: true
+  autoplay: true,
 });
 ```
 
@@ -76,7 +76,7 @@ new rive.Rive({
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
   canvas: document.getElementById("canvas"),
   layout: new rive.Layout({ fit: "contain", alignment: "topRight" }),
-  autoplay: true
+  autoplay: true,
 });
 ```
 
@@ -110,12 +110,12 @@ The layout can be updated at any time with the `layout` setter:
 const r = new rive.Rive({
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
   canvas: document.getElementById("canvas"),
-  autoplay: true
+  autoplay: true,
 });
 
 r.layout = new rive.Layout({
   fit: rive.Fit.Cover,
-  alignment: rive.Alignment.BottomCenter
+  alignment: rive.Alignment.BottomCenter,
 });
 ```
 
@@ -133,7 +133,7 @@ new rive.Rive({
   canvas: document.getElementById("canvas"),
   artboard: "New Artboard",
   animations: "idle",
-  autoplay: true
+  autoplay: true,
 });
 ```
 
@@ -144,7 +144,7 @@ new rive.Rive({
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
   canvas: document.getElementById("canvas"),
   animations: ["idle", "windshield_wipers", "bouncing"],
-  autoplay: true
+  autoplay: true,
 });
 ```
 
@@ -155,7 +155,7 @@ You can manually start and pause playback, and check if playback is active:
 ```js
 const r = new rive.Rive({
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
-  canvas: document.getElementById("canvas")
+  canvas: document.getElementById("canvas"),
 });
 
 r.play();
@@ -191,7 +191,7 @@ reader.onload = () => {
   const riveArrayBuffer = reader.result;
   new rive.Rive({
     buffer: riveArrayBuffer,
-    canvas: document.getElementById("canvas")
+    canvas: document.getElementById("canvas"),
   });
 };
 reader.readAsArrayBuffer(file);
@@ -206,7 +206,7 @@ new rive.Rive({
   src: "https://cdn.rive.app/animations/skills_v7.riv",
   canvas: document.getElementById("canvas"),
   stateMachines: "Designer's Test",
-  autoplay: true
+  autoplay: true,
 });
 ```
 
@@ -215,7 +215,7 @@ You can start, pause, and stop state machines with the `play`, `pause`, and `sto
 ```js
 const r = new rive.Rive({
   src: "https://cdn.rive.app/animations/skills_v7.riv",
-  canvas: document.getElementById("canvas")
+  canvas: document.getElementById("canvas"),
 });
 
 r.play("Designer's Test");
@@ -226,7 +226,7 @@ State machine inputs can be retrieved with `stateMachineInputs`. Trigger inputs 
 
 ```js
 const inputs = r.stateMachineInputs("Designer's Test");
-inputs.forEach(input => {
+inputs.forEach((input) => {
   // Trigger
   if (input.type === rive.StateMachineInputType.Trigger) {
     input.fire();
@@ -251,7 +251,7 @@ The Rive object returned on instantiation has a number of events that you can li
 ```js
 const r = new rive.Rive({
   src: "https://cdn.rive.app/animations/off_road_car_v7.riv",
-  canvas: document.getElementById("canvas")
+  canvas: document.getElementById("canvas"),
 });
 
 // See what animations are on the artboard once the Rive file loads
@@ -260,7 +260,7 @@ r.on("load", () => {
 });
 
 // onloop will pass the name of the looped animation and loop type; useful when mixing multiple animations together
-r.on("loop", event => {
+r.on("loop", (event) => {
   console.log(event.data.animation + " has looped as a " + event.data.type);
 });
 ```
@@ -301,21 +301,36 @@ The following are more properties exposed on the Rive object during instantiatio
 - _isStopped_: are all animation stopped?
 
 ### Other Notes
+
 If you plan on using `@rive-app/webgl` for the high-level runtime and have a fair number of Rive animations displaying on the screen all at once, we recommend setting the `useOffscreenRenderer` parameter on intialization to `true` during instantiation. Read more about how the animations will share a single shared context in our [WASM docs](https://github.com/rive-app/rive-wasm/tree/master/wasm#gl-contexts) and see below for an example:
 
 ```js
 const foo = new Rive({
-    src: "truck.riv",
-    canvas: canvasInstance,
-    animations: "idle",
-    layout: new Layout({fit: "cover", alignment: "center"}),
-    autoplay: true,
-    useOffscreenRenderer: true,
+  src: "truck.riv",
+  canvas: canvasInstance,
+  animations: "idle",
+  layout: new Layout({ fit: "cover", alignment: "center" }),
+  autoplay: true,
+  useOffscreenRenderer: true,
 });
 ```
+
 Note that in a our next major version, this may be turned on by default.
 
 ## Examples
+
+To run the example in `wasm/examples/parcel_example` which shows how to build a render loop with the low-level API for a number of Rive files, as well as how Rive can work with the Parcel zero-config build tool:
+
+1. Pre-requisite: Ensure you have the `webgl_advanced_single` build locally (this is located in `js/npm/webgl_advanced_single`)
+
+- You can get by running the `./build.sh` script at `js/build.sh`
+- Make sure you're set up following the contribution/setup steps in the [wasm docs](#wasm-and-contributing)
+
+2. Install: `cd` into the `parcel_example` directory and run `npm i` to install dependencies
+3. Start: Run `npm start` which should bring up a server via the parcel-bundler, at `http://localhost:1234`
+4. (Optional): To play with the number of canvases on the page, set the query param `?numCanvases=20` for example
+5. (Optional): To set a random size for the canvases uniformly, set the query param `?hasRandomSizes=true` for example
+6. Example URL: `http://localhost:1234/?numCanvases=25&hasRandomSizes=true`
 
 To run the examples in the `examples` folder, run a HTTP server at the root of the `js` directory. If you have Python installed, the following works nicely:
 
