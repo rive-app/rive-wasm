@@ -66,6 +66,5 @@ cp build/webgl_advanced/bin/release/webgl_advanced.wasm ../js/npm/webgl/rive.was
 echo 
 echo "::::: building @rive-app/webgl_advanced_single"
 echo 
-./build_wasm.sh clean
 OUT_DIR=build/webgl_advanced_single ./build_wasm.sh -r skia -s release
 cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
