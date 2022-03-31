@@ -62,6 +62,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   }
   canvas.width = hasRandomSizes ? `${randomNum}` : "400";
   canvas.height = hasRandomSizes ? `${randomNum}` : "400";
+  // Don't use the offscreen renderer for FF as it should have a context limit of 300
   const renderer = rive.makeRenderer(canvas, !isFF);
 
   function loadFile(droppedFile) {
