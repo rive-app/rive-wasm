@@ -48,7 +48,7 @@ Module.onRuntimeInitialized = function () {
     function makeGLRenderer(canvas) {
         var contextAttributes = {
             'alpha': 1,
-            'depth': 1,
+            'depth': 0,
             'stencil': 8,
             'antialias': 0,
             'premultipliedAlpha': 1,
