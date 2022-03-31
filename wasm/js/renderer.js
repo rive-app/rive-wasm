@@ -262,8 +262,66 @@ Rive.onRuntimeInitialized = function () {
             var ctx = this._ctx;
             ctx['globalCompositeOperation'] = _canvasBlend(blend);
             ctx['globalAlpha'] = opacity;
-            ctx.drawImage(img, 0, 0);
+            ctx['drawImage'](img, 0, 0);
             ctx['globalAlpha'] = 1;
+        },
+        'drawImageMesh': function (image, blend, opacity, vtx, uv, indices) {
+            // Adapted from https://stackoverflow.com/questions/4774172/image-manipulation-and-texture-mapping-using-html5-canvas
+            var img = image._image;
+            if (!img) {
+                return;
+            }
+            var width = img['width'];
+            var height = img['height'];
+            for (var i = 0; i < indices.length; i += 3) {
+                var vtx1 = indices[i] * 2;
+                var vtx2 = indices[i + 1] * 2;
+                var vtx3 = indices[i + 2] * 2;
+                var ctx = this._ctx;
+                var x0 = vtx[vtx1],
+                    x1 = vtx[vtx2],
+                    x2 = vtx[vtx3];
+                var y0 = vtx[vtx1 + 1],
+                    y1 = vtx[vtx2 + 1],
+                    y2 = vtx[vtx3 + 1];
+                var u0 = uv[vtx1] * width,
+                    u1 = uv[vtx2] * width,
+                    u2 = uv[vtx3] * width;
+                var v0 = uv[vtx1 + 1] * height,
+                    v1 = uv[vtx2 + 1] * height,
+                    v2 = uv[vtx3 + 1] * height;
+
+                // Clip triangle
+                ctx['save']();
+                ctx['beginPath']();
+                ctx['moveTo'](x0, y0);
+                ctx['lineTo'](x1, y1);
+                ctx['lineTo'](x2, y2);
+                ctx['closePath']();
+                ctx['clip']();
+
+                // Compute image transform matrix (apply transform after clip).
+                var delta = u0 * v1 + v0 * u2 + u1 * v2 - v1 * u2 - v0 * u1 - u0 * v2;
+                var delta_a = x0 * v1 + v0 * x2 + x1 * v2 - v1 * x2 - v0 * x1 - x0 * v2;
+                var delta_b = u0 * x1 + x0 * u2 + u1 * x2 - x1 * u2 - x0 * u1 - u0 * x2;
+                var delta_c = u0 * v1 * x2 + v0 * x1 * u2 + x0 * u1 * v2 - x0 * v1 * u2 -
+                    v0 * u1 * x2 - u0 * x1 * v2;
+                var delta_d = y0 * v1 + v0 * y2 + y1 * v2 - v1 * y2 - v0 * y1 - y0 * v2;
+                var delta_e = u0 * y1 + y0 * u2 + u1 * y2 - y1 * u2 - y0 * u1 - u0 * y2;
+                var delta_f = u0 * v1 * y2 + v0 * y1 * u2 + y0 * u1 * v2 - y0 * v1 * u2 -
+                    v0 * u1 * y2 - u0 * y1 * v2;
+
+                // Transform and draw
+                ctx['transform'](delta_a / delta, delta_d / delta,
+                    delta_b / delta, delta_e / delta,
+                    delta_c / delta, delta_f / delta);
+
+                ctx['globalCompositeOperation'] = _canvasBlend(blend);
+                ctx['globalAlpha'] = opacity;
+                ctx['drawImage'](img, 0, 0);
+                ctx['globalAlpha'] = 1;
+                ctx['restore']();
+            }
         },
         'clipPath': function (path) {
             this._ctx['clip'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
