@@ -50,7 +50,7 @@ Module.onRuntimeInitialized = function () {
             'alpha': 1,
             'depth': 1,
             'stencil': 8,
-            'antialias': 1,
+            'antialias': 0,
             'premultipliedAlpha': 1,
             'preserveDrawingBuffer': 0,
             'preferLowPowerToHighPerformance': 0,
