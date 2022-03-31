@@ -325,6 +325,9 @@ public:
 
 WebGLSkiaRenderer *makeSkiaRenderer(int width, int height) {
   GrContextOptions options;
+  // We don't seem to always use high resolution canvases yet (via window.devicePixelRatio).
+  // Always request 8 samples. Skia will automatically switch to 4 if 8 isn't supported.
+  options.fInternalMultisampleCount = 8;
   sk_sp<GrDirectContext> context = GrDirectContext::MakeGL(nullptr, options);
   return new WebGLSkiaRenderer(context, width, height);
 }
