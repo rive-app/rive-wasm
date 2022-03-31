@@ -60,6 +60,35 @@ const uint16_t stateMachineTriggerTypeKey =
 
 #ifndef RIVE_SKIA_RENDERER
 
+class CanvasBuffer : public rive::RenderBuffer {
+  const size_t m_ElemSize;
+  void *m_Buffer;
+
+public:
+  CanvasBuffer(const void *src, size_t count, size_t elemSize)
+      : RenderBuffer(count), m_ElemSize(elemSize) {
+    size_t bytes = count * elemSize;
+    m_Buffer = malloc(bytes);
+    memcpy(m_Buffer, src, bytes);
+  }
+
+  ~CanvasBuffer() { free(m_Buffer); }
+
+  const float *f32s() const {
+    assert(m_ElemSize == sizeof(float));
+    return static_cast<const float *>(m_Buffer);
+  }
+
+  const uint16_t *u16s() const {
+    assert(m_ElemSize == sizeof(uint16_t));
+    return static_cast<const uint16_t *>(m_Buffer);
+  }
+
+  static const CanvasBuffer *Cast(const rive::RenderBuffer *buffer) {
+    return reinterpret_cast<const CanvasBuffer *>(buffer);
+  }
+};
+
 class RendererWrapper : public wrapper<rive::Renderer> {
 public:
   EMSCRIPTEN_WRAPPER(RendererWrapper);
@@ -85,11 +114,27 @@ public:
     call<void>("drawImage", image, value, opacity);
   }
 
-  void drawImageMesh(const rive::RenderImage *,
+  void drawImageMesh(const rive::RenderImage *image,
                      rive::rcp<rive::RenderBuffer> vertices_f32,
                      rive::rcp<rive::RenderBuffer> uvCoords_f32,
-                     rive::rcp<rive::RenderBuffer> indices_u16, rive::BlendMode,
-                     float opacity) override {}
+                     rive::rcp<rive::RenderBuffer> indices_u16,
+                     rive::BlendMode value, float opacity) override {
+
+    auto vtx = CanvasBuffer::Cast(vertices_f32.get());
+    auto uv = CanvasBuffer::Cast(uvCoords_f32.get());
+    auto indices = CanvasBuffer::Cast(indices_u16.get());
+
+    emscripten::val uvJS{
+        emscripten::typed_memory_view(uv->count(), uv->f32s())};
+
+    emscripten::val vtxJS{
+        emscripten::typed_memory_view(vtx->count(), vtx->f32s())};
+
+    emscripten::val indicesJS{
+        emscripten::typed_memory_view(indices->count(), indices->u16s())};
+
+    call<void>("drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS);
+  }
 };
 
 class RenderPathWrapper : public wrapper<rive::RenderPath> {
@@ -221,9 +266,21 @@ public:
   }
 };
 namespace rive {
-rcp<RenderBuffer> makeBufferU16(Span<const uint16_t>) { return nullptr; }
-rcp<RenderBuffer> makeBufferU32(Span<const uint32_t>) { return nullptr; }
-rcp<RenderBuffer> makeBufferF32(Span<const float>) { return nullptr; }
+
+template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
+  return rcp<RenderBuffer>(
+      new CanvasBuffer(span.data(), span.size(), sizeof(T)));
+}
+
+rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) {
+  return make_buffer(data);
+}
+rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) {
+  return make_buffer(data);
+}
+rcp<RenderBuffer> makeBufferF32(Span<const float> data) {
+  return make_buffer(data);
+}
 rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
                                      const ColorInt colors[], // [count]
                                      const float stops[],     // [count]
@@ -304,7 +361,8 @@ public:
     m_SavedClipRects.clear();
   }
 
-  SkSurface* makeSurface(sk_sp<GrDirectContext> context, int width, int height) {
+  SkSurface *makeSurface(sk_sp<GrDirectContext> context, int width,
+                         int height) {
     int numSamples, numStencilBits;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glGetIntegerv(GL_SAMPLES, &numSamples);
@@ -315,10 +373,8 @@ public:
     framebufferInfo.fFBOID = 0;
     framebufferInfo.fFormat = GL_RGBA8;
 
-    GrBackendRenderTarget backendRenderTarget(width, height,
-                                              numSamples,
-                                              numStencilBits,
-                                              framebufferInfo);
+    GrBackendRenderTarget backendRenderTarget(width, height, numSamples,
+                                              numStencilBits, framebufferInfo);
 
     return SkSurface::MakeFromBackendRenderTarget(
                context.get(), backendRenderTarget, kBottomLeft_GrSurfaceOrigin,
