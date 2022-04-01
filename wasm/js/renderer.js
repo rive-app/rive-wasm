@@ -273,11 +273,15 @@ Rive.onRuntimeInitialized = function () {
             }
             var width = img['width'];
             var height = img['height'];
+            var ctx = this._ctx;
+            var pattern = ctx['createPattern'](img, 'no-repeat');
+            ctx['globalCompositeOperation'] = _canvasBlend(blend);
+            ctx['globalAlpha'] = opacity;
             for (var i = 0; i < indices.length; i += 3) {
                 var vtx1 = indices[i] * 2;
                 var vtx2 = indices[i + 1] * 2;
                 var vtx3 = indices[i + 2] * 2;
-                var ctx = this._ctx;
+
                 var x0 = vtx[vtx1],
                     x1 = vtx[vtx2],
                     x2 = vtx[vtx3];
@@ -291,14 +295,15 @@ Rive.onRuntimeInitialized = function () {
                     v1 = uv[vtx2 + 1] * height,
                     v2 = uv[vtx3 + 1] * height;
 
-                // Clip triangle
+                // Issue path commands before transforming, this ensures that
+                // the fill is transformed but not our points.
                 ctx['save']();
                 ctx['beginPath']();
                 ctx['moveTo'](x0, y0);
                 ctx['lineTo'](x1, y1);
                 ctx['lineTo'](x2, y2);
                 ctx['closePath']();
-                ctx['clip']();
+                ctx['fillStyle'] = pattern;
 
                 // Compute image transform matrix (apply transform after clip).
                 var delta = u0 * v1 + v0 * u2 + u1 * v2 - v1 * u2 - v0 * u1 - u0 * v2;
@@ -316,12 +321,11 @@ Rive.onRuntimeInitialized = function () {
                     delta_b / delta, delta_e / delta,
                     delta_c / delta, delta_f / delta);
 
-                ctx['globalCompositeOperation'] = _canvasBlend(blend);
-                ctx['globalAlpha'] = opacity;
-                ctx['drawImage'](img, 0, 0);
-                ctx['globalAlpha'] = 1;
+                ctx['fill']();
+
                 ctx['restore']();
             }
+            ctx['globalAlpha'] = 1;
         },
         'clipPath': function (path) {
             this._ctx['clip'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
