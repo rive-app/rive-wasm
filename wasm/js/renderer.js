@@ -292,4 +292,7 @@ Rive.onRuntimeInitialized = function () {
             return new CanvasRenderImage();
         }
     };
+
+
+    Rive['requestAnimationFrame'] = window['requestAnimationFrame'].bind(window);
 };

@@ -106,4 +106,6 @@ Module.onRuntimeInitialized = function () {
         }
         cppClear.call(this);
     };
+
+    Module['requestAnimationFrame'] = window['requestAnimationFrame'].bind(window);
 };
