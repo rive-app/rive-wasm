@@ -305,7 +305,7 @@ Rive.onRuntimeInitialized = function () {
                 ctx['closePath']();
                 ctx['fillStyle'] = pattern;
 
-                // Compute image transform matrix (apply transform after clip).
+                // Compute image transform matrix (apply transform after submit path geometry).
                 var delta = u0 * v1 + v0 * u2 + u1 * v2 - v1 * u2 - v0 * u1 - u0 * v2;
                 var delta_a = x0 * v1 + v0 * x2 + x1 * v2 - v1 * x2 - v0 * x1 - x0 * v2;
                 var delta_b = u0 * x1 + x0 * u2 + u1 * x2 - x1 * u2 - x0 * u1 - u0 * x2;
