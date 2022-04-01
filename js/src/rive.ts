@@ -1629,7 +1629,11 @@ export class Rive {
    */
   public startRendering() {
     if (this.loaded && !this.frameRequestId) {
-      this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
+      if (this.runtime.requestAnimationFrame) {
+        this.frameRequestId = this.runtime.requestAnimationFrame(this.draw.bind(this));
+      } else {
+        this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
+      }
     }
   }
 

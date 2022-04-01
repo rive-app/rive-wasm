@@ -22,6 +22,7 @@ interface RiveOptions {
   
     load(buffer: Uint8Array): File;
     makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
+    requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
   }
   
   //////////////
