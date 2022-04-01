@@ -160,9 +160,9 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
       durations.reduce((p, n) => p + n, 0) / durations.length
     ).toFixed(4);
 
-    requestAnimationFrame(draw);
+    rive.requestAnimationFrame(draw);
   }
-  requestAnimationFrame(draw);
+  rive.requestAnimationFrame(draw);
 }
 
 async function main() {
