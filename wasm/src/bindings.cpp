@@ -2,6 +2,8 @@
 #include "GrDirectContext.h"
 #include "SkSurface.h"
 #include "gl/GrGLInterface.h"
+#include "src/core/SkIPoint16.h"
+#include "src/gpu/GrDynamicRectanizer.h"
 #endif
 #include "rive/animation/animation.hpp"
 #include "rive/animation/animation_state.hpp"
@@ -279,6 +281,7 @@ class WebGLSkiaRenderer : public rive::SkiaRenderer {
 private:
   sk_sp<GrDirectContext> m_Context;
   SkSurface *m_Surface;
+  std::vector<std::unique_ptr<rive::RenderPath>> m_SavedClipRects;
 
 public:
   WebGLSkiaRenderer(sk_sp<GrDirectContext> context, int width, int height)
@@ -298,7 +301,10 @@ public:
 
   void clear() { m_Canvas->clear(0); }
 
-  void flush() { m_Context->flush(); }
+  void flush() {
+    m_Context->flush();
+    m_SavedClipRects.clear();
+  }
 
   SkSurface* makeSurface(sk_sp<GrDirectContext> context, int width, int height) {
     int numSamples, numStencilBits;
@@ -321,6 +327,21 @@ public:
                kRGBA_8888_SkColorType, nullptr, nullptr)
         .release();
   }
+
+  void saveClipRect(float l, float t, float r, float b) {
+    save();
+    rive::RenderPath* rect = m_SavedClipRects.emplace_back(rive::makeRenderPath()).get();
+    rect->moveTo(l, t);
+    rect->lineTo(r, t);
+    rect->lineTo(r, b);
+    rect->lineTo(l, b);
+    rect->close();
+    clipPath(rect);
+  }
+
+  void restoreClipRect() {
+    restore();
+  }
 };
 
 WebGLSkiaRenderer *makeSkiaRenderer(int width, int height) {
@@ -328,6 +349,33 @@ WebGLSkiaRenderer *makeSkiaRenderer(int width, int height) {
   sk_sp<GrDirectContext> context = GrDirectContext::MakeGL(nullptr, options);
   return new WebGLSkiaRenderer(context, width, height);
 }
+
+class DynamicRectanizer {
+public:
+  DynamicRectanizer(int maxAtlasSize) :
+      m_Rectanizer(SkISize(),
+                   maxAtlasSize,
+                   GrDynamicRectanizer::RectanizerAlgorithm::kSkyline) {}
+
+  void reset(int initialWidth, int initialHeight) {
+      m_Rectanizer.reset({initialWidth, initialHeight});
+  }
+
+  int addRect(int width, int height) {
+      SkIPoint16 loc;
+      if (!m_Rectanizer.addRect(width, height, &loc)) {
+          return -1;
+      }
+      return (loc.y() << 16) | loc.x();
+  }
+
+  int drawWidth() const { return m_Rectanizer.drawBounds().width(); }
+
+  int drawHeight() const { return m_Rectanizer.drawBounds().height(); }
+
+private:
+  GrDynamicRectanizer m_Rectanizer;
+};
 #endif
 
 EMSCRIPTEN_BINDINGS(RiveWASM) {
@@ -393,9 +441,18 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
       .function("clear", &WebGLSkiaRenderer::clear)
       .function("flush", &WebGLSkiaRenderer::flush)
-      .function("resize", &WebGLSkiaRenderer::resize);
+      .function("resize", &WebGLSkiaRenderer::resize)
+      .function("saveClipRect", &WebGLSkiaRenderer::saveClipRect)
+      .function("restoreClipRect", &WebGLSkiaRenderer::restoreClipRect);
 
   function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
+
+  class_<DynamicRectanizer>("DynamicRectanizer")
+      .constructor<int>()
+      .function("reset", &DynamicRectanizer::reset)
+      .function("addRect", &DynamicRectanizer::addRect)
+      .function("drawWidth", &DynamicRectanizer::drawWidth)
+      .function("drawHeight", &DynamicRectanizer::drawHeight);
 #else
   class_<rive::Renderer>("Renderer")
       .function("save", &RendererWrapper::save, pure_virtual(),

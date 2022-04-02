@@ -293,6 +293,6 @@ Rive.onRuntimeInitialized = function () {
         }
     };
 
-
     Rive['requestAnimationFrame'] = window['requestAnimationFrame'].bind(window);
+    Rive['cancelAnimationFrame'] = window['cancelAnimationFrame'].bind(window);
 };
