@@ -1618,7 +1618,11 @@ export class Rive {
    */
   public stopRendering() {
     if (this.loaded && this.frameRequestId) {
-      cancelAnimationFrame(this.frameRequestId);
+      if (this.runtime.cancelAnimationFrame) {
+        this.runtime.cancelAnimationFrame(this.frameRequestId);
+      } else {
+        cancelAnimationFrame(this.frameRequestId);
+      }
       this.frameRequestId = null;
     }
   }

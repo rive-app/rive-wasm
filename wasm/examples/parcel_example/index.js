@@ -28,8 +28,6 @@ const RIVE_EXAMPLES = {
   },
 };
 
-const isFF = navigator.userAgent.match(/firefox|fxios/i);
-
 // Loads a default animation and displays it using the advanced api. Drag and
 // drop .riv files to see them and play their default animations.
 async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
@@ -63,7 +61,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   canvas.width = hasRandomSizes ? `${randomNum}` : "400";
   canvas.height = hasRandomSizes ? `${randomNum}` : "400";
   // Don't use the offscreen renderer for FF as it should have a context limit of 300
-  const renderer = rive.makeRenderer(canvas, !isFF);
+  const renderer = rive.makeRenderer(canvas, true);
 
   function loadFile(droppedFile) {
     const reader = new FileReader();
