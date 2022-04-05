@@ -176,10 +176,10 @@ interface RiveOptions {
   }
   
   export declare class StateMachineInstance {
-    constructor(stateMachine: StateMachine);
+    constructor(stateMachine: StateMachine, artboard: Artboard);
     inputCount(): number;
     input(i: number): SMIInput; 
-    advance(artboard: Artboard, sec: number): any;
+    advance(sec: number): any;
     stateChangedCount(): number;
     stateChangedNameByIndex(i: number): string;
     // Deletes the backing Wasm state machine instance

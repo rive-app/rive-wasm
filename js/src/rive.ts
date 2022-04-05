@@ -339,8 +339,11 @@ class StateMachine {
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: rc.StateMachine, runtime: rc.RiveCanvas, public playing: boolean) {
-    this.instance = new runtime.StateMachineInstance(stateMachine);
+  constructor(private stateMachine: rc.StateMachine,
+              runtime: rc.RiveCanvas,
+              public playing: boolean,
+              private artboard: rc.Artboard) {
+    this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
   }
 
@@ -457,7 +460,7 @@ class Animator {
             // Try to create a new state machine instance
             const sm = this.artboard.stateMachineByName(animatables[i]);
             if (sm) {
-              this.stateMachines.push(new StateMachine(sm, this.runtime, playing));
+              this.stateMachines.push(new StateMachine(sm, this.runtime, playing, this.artboard));
             }
           }
         }
@@ -1204,7 +1207,7 @@ export class Rive {
     // Advance non-paused state machines by the elapsed number of seconds
     const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
     for (const stateMachine of activeStateMachines) {
-      stateMachine.instance.advance(this.artboard, elapsedTime);
+      stateMachine.instance.advance(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
     }
 
@@ -1665,7 +1668,7 @@ export class Rive {
       for (let k = 0; k < artboard.stateMachineCount(); k++) {
         const stateMachine = artboard.stateMachineByIndex(k);
         const name = stateMachine.name;
-        const instance = new this.runtime.StateMachineInstance(stateMachine);
+    const instance = new this.runtime.StateMachineInstance(stateMachine, artboard);
         const inputContents: StateMachineInputContents[] = [];
         for (let l = 0; l < instance.inputCount(); l++) {
           const input = instance.input(l);

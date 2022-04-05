@@ -41,7 +41,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     artboard = file.defaultArtboard();
     if (hasStateMachine) {
       stateMachine = new rive.StateMachineInstance(
-        artboard.stateMachineByIndex(0)
+        artboard.stateMachineByIndex(0), artboard
       );
     } else {
       animation = new rive.LinearAnimationInstance(
@@ -126,7 +126,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     renderer.clear();
     if (artboard) {
       if (stateMachine) {
-        stateMachine.advance(artboard, elapsedSeconds);
+        stateMachine.advance(elapsedSeconds);
       }
       if (animation) {
         animation.advance(elapsedSeconds);

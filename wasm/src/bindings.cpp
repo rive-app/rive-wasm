@@ -271,9 +271,7 @@ rive::File *load(emscripten::val byteArray) {
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
   auto reader = rive::BinaryReader(rv.data(), rv.size());
-  rive::File *file = nullptr;
-  auto result = rive::File::import(reader, &file);
-  return file;
+  return rive::File::import(reader).release();
 }
 
 #ifdef RIVE_SKIA_RENDERER
@@ -700,18 +698,18 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::LinearAnimation, base<rive::Animation>>("LinearAnimation")
       .property("name", select_overload<const std::string &() const>(
                             &rive::AnimationBase::name))
-      .property("duration", select_overload<int() const>(
+      .property("duration", select_overload<uint32_t() const>(
                                 &rive::LinearAnimationBase::duration))
       .property("fps",
-                select_overload<int() const>(&rive::LinearAnimationBase::fps))
-      .property("workStart", select_overload<int() const>(
+                select_overload<uint32_t() const>(&rive::LinearAnimationBase::fps))
+      .property("workStart", select_overload<uint32_t() const>(
                                  &rive::LinearAnimationBase::workStart))
-      .property("workEnd", select_overload<int() const>(
+      .property("workEnd", select_overload<uint32_t() const>(
                                &rive::LinearAnimationBase::workEnd))
       .property("enableWorkArea",
                 select_overload<bool() const>(
                     &rive::LinearAnimationBase::enableWorkArea))
-      .property("loopValue", select_overload<int() const>(
+      .property("loopValue", select_overload<uint32_t() const>(
                                  &rive::LinearAnimationBase::loopValue))
       .property("speed", select_overload<float() const>(
                              &rive::LinearAnimationBase::speed))
@@ -731,7 +729,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
 
   class_<rive::StateMachineInstance>("StateMachineInstance")
-      .constructor<rive::StateMachine *>()
+      .constructor<rive::StateMachine *, rive::Artboard*>()
       .function("advance", &rive::StateMachineInstance::advance,
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)
