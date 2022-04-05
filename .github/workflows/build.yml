@@ -27,6 +27,8 @@ jobs:
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
       - name: Build
+        env:
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: cd js && ./build.sh
       - name: Run tests
         run: cd js && npm test

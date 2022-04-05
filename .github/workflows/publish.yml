@@ -35,6 +35,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: cd js && ./bump_all_versions.sh
       - name: Build
+        env:
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: cd js && ./build.sh
       - name: Run tests
         run: cd js && npm test
