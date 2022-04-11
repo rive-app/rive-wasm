@@ -640,7 +640,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       .function("stateMachineCount", &rive::Artboard::stateMachineCount)
       .property("bounds", &rive::Artboard::bounds)
-      .function("instance", &rive::Artboard::instance, allow_raw_pointers())
+      .function("instance",
+                optional_override([](rive::Artboard& self) -> rive::Artboard* {
+                  return self.instance().release();
+                }),
+                allow_raw_pointers())
       .property("frameOrigin",
                 select_overload<bool() const>(&rive::Artboard::frameOrigin),
                 select_overload<void(bool)>(&rive::Artboard::frameOrigin));
@@ -716,7 +720,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
 
   class_<rive::LinearAnimationInstance>("LinearAnimationInstance")
-      .constructor<rive::LinearAnimation *>()
+      .constructor<rive::LinearAnimation *, rive::Artboard*>()
       .property(
           "time",
           select_overload<float() const>(&rive::LinearAnimationInstance::time),

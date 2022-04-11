@@ -82,10 +82,10 @@ addEventListener('message', async ({ data }) => {
     // Move frame of each animation
     const animate = animations.map(name => {
         const animation = artboard.animationByName(name);
-        const instance = new rive.LinearAnimationInstance(animation);
+        const instance = new rive.LinearAnimationInstance(animation, artboard);
         return (delta: number) => {
             instance.advance(delta);
-            instance.apply(artboard, 1.0);
+            instance.apply(1.0);
         }
     });
 
