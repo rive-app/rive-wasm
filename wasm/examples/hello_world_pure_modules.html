@@ -34,7 +34,8 @@ Serve from the wasm subfolder so that the paths to the js and wasm files are cor
                     const artboard = file.defaultArtboard();
                     // now we can access the animations; let's get one called 'vibration'
                     const vibrationAnim = artboard.animationByName('idle');
-                    const vibrationInstance = new rive.LinearAnimationInstance(vibrationAnim);
+                    const vibrationInstance = new rive.LinearAnimationInstance(vibrationAnim,
+                                                                               artboard);
                     // let's grab our canvas
                     const canvas = document.getElementById('canvas');
                     const ctx = canvas.getContext('2d');
@@ -72,7 +73,7 @@ Serve from the wasm subfolder so that the paths to the js and wasm files are cor
                         // advance our animation by the elapsed time
                         vibrationInstance.advance(elapsedTime);
                         // apply the animation to the artboard 
-                        vibrationInstance.apply(artboard, 1.0);
+                        vibrationInstance.apply(1.0);
                         // advance the artboard
                         artboard.advance(elapsedTime);
 

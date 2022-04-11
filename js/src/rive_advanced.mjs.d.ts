@@ -159,14 +159,13 @@ interface RiveOptions {
     /** Time of the animation in seconds */
     time: number;
     didLoop: boolean;
-    constructor(animation: LinearAnimation);
+    constructor(animation: LinearAnimation, artboard: Artboard);
     advance(sec: number): any;
     /**
      * Apply animation on the artboard
-     * @param artboard the Artboard on which apply the frame.
      * @param mix 0-1 the strength of the animation in the animations mix.
      */
-    apply(artboard: Artboard, mix: number): any;
+    apply(mix: number): any;
     // Deletes the backing Wasm animation instance
     delete(): void;
   }

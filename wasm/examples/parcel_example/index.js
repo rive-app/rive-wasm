@@ -44,9 +44,8 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
         artboard.stateMachineByIndex(0), artboard
       );
     } else {
-      animation = new rive.LinearAnimationInstance(
-        artboard.animationByName(riveEx.animation)
-      );
+      animation = new rive.LinearAnimationInstance(artboard.animationByName(riveEx.animation),
+                                                   artboard);
     }
   }
   await loadDefault();
@@ -69,9 +68,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
       stateMachine = null;
       const file = rive.load(new Uint8Array(event.target.result));
       artboard = file.artboardByName("Truck");
-      animation = new rive.LinearAnimationInstance(
-        artboard.animationByName("idle")
-      );
+      animation = new rive.LinearAnimationInstance(artboard.animationByName("idle"), artboard);
     };
 
     reader.readAsArrayBuffer(droppedFile);
@@ -130,7 +127,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
       }
       if (animation) {
         animation.advance(elapsedSeconds);
-        animation.apply(artboard, 1);
+        animation.apply(1);
       }
       artboard.advance(elapsedSeconds);
       renderer.save();

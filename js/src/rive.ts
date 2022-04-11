@@ -222,8 +222,11 @@ class Animation {
    * @param {any} animation: runtime animation object
    * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: rc.LinearAnimation, runtime: rc.RiveCanvas, public playing: boolean) {
-    this.instance = new runtime.LinearAnimationInstance(animation);
+  constructor(private animation: rc.LinearAnimation,
+              private artboard: rc.Artboard,
+              runtime: rc.RiveCanvas,
+              public playing: boolean) {
+    this.instance = new runtime.LinearAnimationInstance(animation, artboard);
   }
 
   // Returns the animation's name
@@ -455,7 +458,7 @@ class Animator {
           // Try to create a new animation instance
           const anim = this.artboard.animationByName(animatables[i]);
           if(anim) {
-            this.animations.push(new Animation(anim, this.runtime, playing));
+            this.animations.push(new Animation(anim, this.artboard, this.runtime, playing));
           } else {
             // Try to create a new state machine instance
             const sm = this.artboard.stateMachineByName(animatables[i]);
@@ -1201,7 +1204,7 @@ export class Rive {
       if (animation.instance.didLoop) {
         animation.loopCount += 1;
       }
-      animation.instance.apply(this.artboard, 1.0);
+      animation.instance.apply(1.0);
     }
 
     // Advance non-paused state machines by the elapsed number of seconds
