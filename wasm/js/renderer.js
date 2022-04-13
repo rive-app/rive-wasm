@@ -120,25 +120,38 @@ const offscreenWebGL = new (function() {
 
         // Compute bounding box. TODO: SIMD wasm.
         const m = ctx['getTransform']();
-        let l=ctx['canvas']['width'], t=ctx['canvas']['height'], r=0, b=0;
+        let l, t, r, b;
         for (let i = 0; i < vertices.length; i += 2) {
             const x = vertices[i]*m.a + vertices[i+1]*m.c;
             const y = vertices[i]*m.b + vertices[i+1]*m.d;
-            l = Math.min(l, x);
-            t = Math.min(t, y);
-            r = Math.max(r, x);
-            b = Math.max(b, y);
+            l = i == 0 ? x : Math.min(l, x);
+            t = i == 0 ? y : Math.min(t, y);
+            r = i == 0 ? x : Math.max(r, x);
+            b = i == 0 ? y : Math.max(b, y);
         }
+        // Apply the view matrix translation.
+        l += m.e;
+        t += m.f;
+        r += m.e;
+        b += m.f;
+        // Clip to the viewport.
+        l = Math.max(l, 0);
+        t = Math.max(t, 0);
+        r = Math.min(r, ctx['canvas']['width']);
+        b = Math.min(b, ctx['canvas']['height']);
+        // Bail if the bounding box is out of view.
         if (l >= r || t >= b) {
-            // Out of view.
-            throw 'derp';//return
+            return;
         }
-        l = Math.floor(l + m.e);
-        t = Math.floor(t + m.f);
-        r = Math.ceil(r + m.e);
-        b = Math.ceil(b + m.f);
+        // Round out to an integer bounding box.
+        l = Math.floor(l);
+        t = Math.floor(t);
+        r = Math.ceil(r);
+        b = Math.ceil(b);
         const w = r - l;
         const h = b - t;
+        console.assert(w <= ctx['canvas']['width']);
+        console.assert(h <= ctx['canvas']['height']);
 
         const glWidth = _maxRecentWidth.push(w);
         const glHeight = _maxRecentHeight.push(h);
