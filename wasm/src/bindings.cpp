@@ -32,6 +32,7 @@
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
 #include "rive/transform_component.hpp"
+#include "skia_imports/include/private/SkVx.h"
 #ifdef RIVE_SKIA_RENDERER
 #include "skia_renderer.hpp"
 #include <GLES3/gl3.h>
@@ -89,6 +90,49 @@ public:
   }
 };
 
+// Computes the post-transform bounding box of an array of points in high performance WASM SIMD.
+static std::array<float, 4> bbox(const float m[6], const float* vertexData, int numVertexFloats) {
+  using float2 = skvx::Vec<2, float>;
+  using float4 = skvx::Vec<4, float>;
+
+  assert(numVertexFloats > 0);
+  assert(numVertexFloats % 2 == 0);  // numVertexFloats must be even -- 2 floats per vertex.
+
+  float4 scale = {m[0], m[3], m[0], m[3]};
+  float4 skew = {m[2], m[1], m[2], m[1]};
+  float2 translate = {m[4], m[5]};
+
+  // Compute two partial bounding boxes in parallel lanes of float4. Defer the translation until
+  // after min/max reduction.
+  float4 partialTopLefts, partialBotRights;
+  float4 v0;
+  int i;
+  // TODO: could 128-bit alignment on loads impact our speed in WASM?
+  if (!(numVertexFloats & 3)) {
+    // Even number of vertices -- number of floats is divisible by 4. Load 2 vertices initially.
+    v0 = float4::Load(vertexData);
+    i = 4;
+  } else {
+    // Odd number of vertices. Load 1 vertex initially so the rest will be divisible by 4.
+    v0 = float2::Load(vertexData).xyxy();
+    i = 2;
+  }
+  partialTopLefts = partialBotRights = v0 * scale + v0.yxwz() * skew;
+  // Crunch the remaining vertices in float4 SIMD.
+  for (; i < numVertexFloats; i += 4) {
+    float4 v = float4::Load(vertexData + i);
+    v = v * scale + v.yxwz() * skew;
+    partialTopLefts = min(partialTopLefts, v);
+    partialBotRights = max(partialBotRights, v);
+  }
+  assert(i == numVertexFloats);
+
+  // Merge the two parallel bounding boxes into one complete, translated, integer bounding box.
+  float2 topLeft = floor(min(partialTopLefts.lo, partialTopLefts.hi) + translate);
+  float2 botRight = ceil(max(partialBotRights.lo, partialBotRights.hi) + translate);
+  return {topLeft.x(), topLeft.y(), botRight.x(), botRight.y()};
+}
+
 class RendererWrapper : public wrapper<rive::Renderer> {
 public:
   EMSCRIPTEN_WRAPPER(RendererWrapper);
@@ -102,16 +146,16 @@ public:
   }
 
   void drawPath(rive::RenderPath *path, rive::RenderPaint *paint) override {
-    call<void>("drawPath", path, paint);
+    call<void>("_drawPath", path, paint);
   }
 
   void clipPath(rive::RenderPath *path) override {
-    call<void>("clipPath", path);
+    call<void>("_clipPath", path);
   }
 
   void drawImage(const rive::RenderImage *image, rive::BlendMode value,
                  float opacity) override {
-    call<void>("drawImage", image, value, opacity);
+    call<void>("_drawImage", image, value, opacity);
   }
 
   void drawImageMesh(const rive::RenderImage *image,
@@ -124,16 +168,22 @@ public:
     auto uv = CanvasBuffer::Cast(uvCoords_f32.get());
     auto indices = CanvasBuffer::Cast(indices_u16.get());
 
-    emscripten::val uvJS{
-        emscripten::typed_memory_view(uv->count(), uv->f32s())};
+    assert(uv->count() == vtx->count());
+    if (!vtx->count() || !indices->count()) {
+        return;
+    }
 
-    emscripten::val vtxJS{
-        emscripten::typed_memory_view(vtx->count(), vtx->f32s())};
+    emscripten::val uvJS{emscripten::typed_memory_view(uv->count(), uv->f32s())};
+    emscripten::val vtxJS{emscripten::typed_memory_view(vtx->count(), vtx->f32s())};
+    emscripten::val indicesJS{emscripten::typed_memory_view(indices->count(), indices->u16s())};
 
-    emscripten::val indicesJS{
-        emscripten::typed_memory_view(indices->count(), indices->u16s())};
+    // Compute the mesh's bounding box.
+    float m[6];
+    emscripten::val mJS{emscripten::typed_memory_view(6, m)};
+    call<void>("_getMatrix", mJS);
+    auto [l, t, r, b] = bbox(m, vtx->f32s(), vtx->count());
 
-    call<void>("drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS);
+    call<void>("_drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS, l, t, r, b);
   }
 };
 
