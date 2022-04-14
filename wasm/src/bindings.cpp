@@ -4,6 +4,9 @@
 #include "gl/GrGLInterface.h"
 #include "src/core/SkIPoint16.h"
 #include "src/gpu/GrDynamicRectanizer.h"
+#else
+#include "skia_imports/src/core/SkIPoint16.h"
+#include "skia_imports/src/gpu/GrDynamicRectanizer.h"
 #endif
 #include "rive/animation/animation.hpp"
 #include "rive/animation/animation_state.hpp"
@@ -453,6 +456,7 @@ WebGLSkiaRenderer *makeSkiaRenderer(int width, int height) {
   sk_sp<GrDirectContext> context = GrDirectContext::MakeGL(nullptr, options);
   return new WebGLSkiaRenderer(context, width, height);
 }
+#endif
 
 class DynamicRectanizer {
 public:
@@ -480,7 +484,6 @@ public:
 private:
   GrDynamicRectanizer m_Rectanizer;
 };
-#endif
 
 EMSCRIPTEN_BINDINGS(RiveWASM) {
   function("load", &load, allow_raw_pointers());
@@ -550,13 +553,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("restoreClipRect", &WebGLSkiaRenderer::restoreClipRect);
 
   function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
-
-  class_<DynamicRectanizer>("DynamicRectanizer")
-      .constructor<int>()
-      .function("reset", &DynamicRectanizer::reset)
-      .function("addRect", &DynamicRectanizer::addRect)
-      .function("drawWidth", &DynamicRectanizer::drawWidth)
-      .function("drawHeight", &DynamicRectanizer::drawHeight);
 #else
   class_<rive::Renderer>("Renderer")
       .function("save", &RendererWrapper::save, pure_virtual(),
@@ -937,4 +933,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .field("minY", &rive::AABB::minY)
       .field("maxX", &rive::AABB::maxX)
       .field("maxY", &rive::AABB::maxY);
+
+  class_<DynamicRectanizer>("DynamicRectanizer")
+      .constructor<int>()
+      .function("reset", &DynamicRectanizer::reset)
+      .function("addRect", &DynamicRectanizer::addRect)
+      .function("drawWidth", &DynamicRectanizer::drawWidth)
+      .function("drawHeight", &DynamicRectanizer::drawHeight);
 }

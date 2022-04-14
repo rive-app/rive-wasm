@@ -254,47 +254,12 @@ Module.onRuntimeInitialized = function () {
         }
     }
 
-    let _mainAnimationCallbackID = 0;
-    let _lastAnimationSubCallbackID = 0;
-    let _animationSubCallbacks = new Map();
-
-    Module['requestAnimationFrame'] = function(callback) {
-        if (!_mainAnimationCallbackID) {
-            _mainAnimationCallbackID = window['requestAnimationFrame'](mainAnimationCallback);
-        }
-        const id = ++_lastAnimationSubCallbackID;
-        _animationSubCallbacks.set(id, callback);
-        return id;
-    }
-
-    function mainAnimationCallback(time) {
-        // Snap off and reset the sub-callbacks first, since they might call requestAnimationFrame
-        // recursively.
-        const flushingSubCallbacks = _animationSubCallbacks;
-        _mainAnimationCallbackID = 0;
-        _lastAnimationSubCallbackID = 0;
-        _animationSubCallbacks = new Map();
-
-        // Invoke all pending animation callbacks.
-        flushingSubCallbacks.forEach((callback) => {
-            try {
-                callback(time);
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        // Flush the offscreen atlas once all canvases have been queued up.
-        flushOffscreenRenderers();
-    }
-
-    Module['cancelAnimationFrame'] = function(id) {
-        _animationSubCallbacks.delete(id);
-        if (_mainAnimationCallbackID && _animationSubCallbacks.size == 0) {
-            window['cancelAnimationFrame'](_mainAnimationCallbackID);
-            _mainAnimationCallbackID = 0;
-        }
-    }
+    const _animationCallbackHandler = new AnimationCallbackHandler();
+    Rive['requestAnimationFrame'] =
+            _animationCallbackHandler.requestAnimationFrame.bind(_animationCallbackHandler);
+    Rive['cancelAnimationFrame'] =
+            _animationCallbackHandler.cancelAnimationFrame.bind(_animationCallbackHandler);
+    _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
 
     const cppClear = Module['WebGLRenderer']['prototype']['clear'];
     Module['WebGLRenderer']['prototype']['clear'] = function () {

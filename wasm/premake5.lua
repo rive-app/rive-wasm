@@ -56,6 +56,7 @@ linkoptions {
 
 filter { "options:not skia", "options:not single_file" }
     linkoptions {
+            "--pre-js ./js/animation_callback_handler.js",
             "--pre-js ./js/max_recent_size.js",
             "--pre-js ./js/renderer.js",
             "-o %{cfg.targetdir}/canvas_advanced.mjs",
@@ -63,6 +64,7 @@ filter { "options:not skia", "options:not single_file" }
 
 filter { "options:not skia", "options:single_file" }
     linkoptions {
+            "--pre-js ./js/animation_callback_handler.js",
             "--pre-js ./js/max_recent_size.js",
             "--pre-js ./js/renderer.js",
             "-o %{cfg.targetdir}/canvas_advanced_single.mjs",
@@ -95,9 +97,14 @@ filter "options:skia"
             "-s USE_WEBGL2=1",
             "-s MIN_WEBGL_VERSION=1",
             "-s MAX_WEBGL_VERSION=2",
+            "--pre-js ./js/animation_callback_handler.js",
             "--pre-js ./js/max_recent_size.js",
             "--pre-js ./js/skia_renderer.js"
         }
+
+filter "options:not skia"
+    includedirs {"./src/skia_imports", }
+    files {"./src/skia_imports/**.cpp"}
 
 filter "options:single_file"
         linkoptions {
