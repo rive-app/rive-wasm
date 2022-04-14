@@ -159,17 +159,17 @@ const offscreenWebGL = new (function() {
             _gl.bufferData(_gl.ARRAY_BUFFER, vertexCount * 4 * 4, _gl.DYNAMIC_DRAW);
             _vertexBufferLength = vertexCount;
         }
-        _gl.bufferSubData(_gl.ARRAY_BUFFER, 0, new Float32Array(vertices), _gl.DYNAMIC_DRAW);
+        _gl.bufferSubData(_gl.ARRAY_BUFFER, 0, vertices, _gl.DYNAMIC_DRAW);
         const uvOffset = vertices.length * 2 * 4;
         _gl.vertexAttribPointer(1, 2, _gl.FLOAT, false, 0, uvOffset);
-        _gl.bufferSubData(_gl.ARRAY_BUFFER, uvOffset, new Float32Array(uv), _gl.DYNAMIC_DRAW);
+        _gl.bufferSubData(_gl.ARRAY_BUFFER, uvOffset, uv, _gl.DYNAMIC_DRAW);
 
         const indexCount = _maxRecentIndexCount.push(indices.length);
         if (_indexBufferLength != indexCount)  {
             _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, indexCount * 2, _gl.DYNAMIC_DRAW);
             _indexBufferLength = indexCount;
         }
-        _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices), _gl.DYNAMIC_DRAW);
+        _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER, 0, indices, _gl.DYNAMIC_DRAW);
 
         // Draw the top-left corner of the mesh at location (0, 0) in the WebGL canvas.
         // Post-translate the canvas2d's matrix into normalized OpenGL clip space (-1..1).
@@ -422,21 +422,45 @@ Rive.onRuntimeInitialized = function () {
     var CanvasRenderer = Rive.CanvasRenderer = Renderer.extend('Renderer', {
         '__construct': function (canvas) {
             this['__parent']['__construct'].call(this);
+            // Keep a local shadow of the matrix stack, since actual calls to the canvas2d context
+            // are deferred, but we reed this matrix data at record time.
+            this._matrixStack = [1, 0, 0, 1, 0, 0];
             this._ctx = canvas['getContext']('2d');
             this._canvas = canvas;
+            this._drawList = [];
         },
         'save': function () {
-            this._ctx['save']();
+            const i = this._matrixStack.length - 6;
+            this._matrixStack.push(...this._matrixStack.slice(i));
+            this._drawList.push(this._ctx['save'].bind(this._ctx));
         },
         'restore': function () {
-            this._ctx['restore']();
+            const i = this._matrixStack.length - 6;
+            if (i < 6) {
+                throw "restore() called without matching save().";
+            }
+            this._matrixStack.splice(i);
+            this._drawList.push(this._ctx['restore'].bind(this._ctx));
         },
-        'transform': function (matrix) {
-            this._ctx['transform'](matrix['xx'], matrix['xy'], matrix['yx'], matrix['yy'], matrix['tx'],
-                matrix['ty']);
+        'transform': function (m) {
+            const S = this._matrixStack;
+            const i = S.length - 6;
+            //            |S0  S2  S4|   |m.xx  m.yx  m.tx|
+            // S.back() = |S1  S3  S5| * |m.xy  m.yy  m.ty|
+            //            | 0   0   1|   |   0     0     1|
+            S.splice(i,
+                     6,
+                     S[i+0] * m['xx'] + S[i+2] * m['xy'],
+                     S[i+1] * m['xx'] + S[i+3] * m['xy'],
+                     S[i+0] * m['yx'] + S[i+2] * m['yy'],
+                     S[i+1] * m['yx'] + S[i+3] * m['yy'],
+                     S[i+0] * m['tx'] + S[i+2] * m['ty'] + S[i+4],
+                     S[i+1] * m['tx'] + S[i+3] * m['ty'] + S[i+5]);
+            this._drawList.push(this._ctx['transform'].bind(
+                    this._ctx, m['xx'], m['xy'], m['yx'], m['yy'], m['tx'], m['ty']));
         },
         '_drawPath': function (path, paint) {
-            paint['draw'](this._ctx, path);
+            this._drawList.push(paint['draw'].bind(paint, this._ctx, path));
         },
         '_drawImage': function (image, blend, opacity) {
             var img = image._image;
@@ -444,19 +468,20 @@ Rive.onRuntimeInitialized = function () {
                 return;
             }
             var ctx = this._ctx;
-            ctx['globalCompositeOperation'] = _canvasBlend(blend);
-            ctx['globalAlpha'] = opacity;
-            ctx['drawImage'](img, 0, 0);
-            ctx['globalAlpha'] = 1;
+            blend = _canvasBlend(blend);
+            this._drawList.push(function() {
+                ctx['globalCompositeOperation'] = blend;
+                ctx['globalAlpha'] = opacity;
+                ctx['drawImage'](img, 0, 0);
+                ctx['globalAlpha'] = 1;
+            });
         },
         '_getMatrix': function (out) {
-            const m = this._ctx['getTransform']();
-            out[0] = m.a;
-            out[1] = m.b;
-            out[2] = m.c;
-            out[3] = m.d;
-            out[4] = m.e;
-            out[5] = m.f;
+            const S = this._matrixStack;
+            const i = S.length - 6;
+            for (let j = 0; j < 6; ++j) {
+                out[j] = S[i+j];
+            }
         },
         '_drawImageMesh': function (image,
                                     blend,
@@ -468,26 +493,32 @@ Rive.onRuntimeInitialized = function () {
                                     meshMinY,
                                     meshMaxX,
                                     meshMaxY) {
-            offscreenWebGL.drawImageMesh(this._ctx,
-                                         image._texture || null,
-                                         _canvasBlend(blend),
-                                         opacity,
-                                         vtx,
-                                         uv,
-                                         indices,
-                                         meshMinX,
-                                         meshMinY,
-                                         meshMaxX,
-                                         meshMaxY);
+            this._drawList.push(offscreenWebGL.drawImageMesh.bind(offscreenWebGL,
+                                                                  this._ctx,
+                                                                  image._texture || null,
+                                                                  _canvasBlend(blend),
+                                                                  opacity,
+                                                                  new Float32Array(vtx),
+                                                                  new Float32Array(uv),
+                                                                  new Uint16Array(indices),
+                                                                  meshMinX,
+                                                                  meshMinY,
+                                                                  meshMaxX,
+                                                                  meshMaxY));
         },
         '_clipPath': function (path) {
-            this._ctx['clip'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
+            const fillRule = path._fillRule === evenOdd ? 'evenodd' : 'nonzero';
+            this._drawList.push(this._ctx['clip'].bind(this._ctx, path._path2D, fillRule));
         },
         'clear': function () {
-            this._ctx['clearRect'](0, 0, this._canvas['width'], this._canvas['height']);
+            this._drawList.push(this._ctx['clearRect'].bind(
+                    this._ctx, 0, 0, this._canvas['width'], this._canvas['height']));
         },
         'flush': function () {
-
+            for (const lambda of this._drawList) {
+                lambda();
+            }
+            this._drawList = [];
         }
     });
 
