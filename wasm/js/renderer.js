@@ -108,10 +108,10 @@ const offscreenWebGL = new (function() {
         return texture;
     }
 
-    const _maxRecentWidth = new MaxRecentSize(1000/*ms*/);
-    const _maxRecentHeight = new MaxRecentSize(1000/*ms*/);
-    const _maxRecentVertexCount = new MaxRecentSize(1000/*ms*/);
-    const _maxRecentIndexCount = new MaxRecentSize(1000/*ms*/);
+    const _maxRecentWidth = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
+    const _maxRecentHeight = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
+    const _maxRecentVertexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
+    const _maxRecentIndexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
 
     this.drawImageMesh = function(ctx, imageTexture, canvasBlend, opacity, vertices, uv, indices) {
         if (!initGL()) {
