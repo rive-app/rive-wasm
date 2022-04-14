@@ -113,45 +113,34 @@ const offscreenWebGL = new (function() {
     const _maxRecentVertexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
     const _maxRecentIndexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
 
-    this.drawImageMesh = function(ctx, imageTexture, canvasBlend, opacity, vertices, uv, indices) {
+    this.drawImageMesh = function(ctx,
+                                  imageTexture,
+                                  canvasBlend,
+                                  opacity,
+                                  vertices,
+                                  uv,
+                                  indices,
+                                  meshMinX,
+                                  meshMinY,
+                                  meshMaxX,
+                                  meshMaxY) {
         if (!initGL()) {
             return;
         }
 
-        // Compute bounding box. TODO: SIMD wasm.
-        const m = ctx['getTransform']();
-        let l, t, r, b;
-        for (let i = 0; i < vertices.length; i += 2) {
-            const x = vertices[i]*m.a + vertices[i+1]*m.c;
-            const y = vertices[i]*m.b + vertices[i+1]*m.d;
-            l = i == 0 ? x : Math.min(l, x);
-            t = i == 0 ? y : Math.min(t, y);
-            r = i == 0 ? x : Math.max(r, x);
-            b = i == 0 ? y : Math.max(b, y);
-        }
-        // Apply the view matrix translation.
-        l += m.e;
-        t += m.f;
-        r += m.e;
-        b += m.f;
-        // Clip to the viewport.
-        l = Math.max(l, 0);
-        t = Math.max(t, 0);
-        r = Math.min(r, ctx['canvas']['width']);
-        b = Math.min(b, ctx['canvas']['height']);
-        // Bail if the bounding box is out of view.
-        if (l >= r || t >= b) {
-            return;
-        }
-        // Round out to an integer bounding box.
-        l = Math.floor(l);
-        t = Math.floor(t);
-        r = Math.ceil(r);
-        b = Math.ceil(b);
+        // Clip the mesh's bounding box to its canvas.
+        const l = Math.max(meshMinX, 0);
+        const t = Math.max(meshMinY, 0);
+        const r = Math.min(meshMaxX, ctx['canvas']['width']);
+        const b = Math.min(meshMaxY, ctx['canvas']['height']);
         const w = r - l;
         const h = b - t;
         console.assert(w <= ctx['canvas']['width']);
         console.assert(h <= ctx['canvas']['height']);
+        // Bail if the bounding box was out of view.
+        if (w <= 0 || h <= 0) {
+            return;
+        }
 
         const glWidth = _maxRecentWidth.push(w);
         const glHeight = _maxRecentHeight.push(h);
@@ -184,6 +173,7 @@ const offscreenWebGL = new (function() {
 
         // Draw the top-left corner of the mesh at location (0, 0) in the WebGL canvas.
         // Post-translate the canvas2d's matrix into normalized OpenGL clip space (-1..1).
+        const m = ctx['getTransform']();
         const iw = 2 / _gl.canvas.width;
         const ih = -2 / _gl.canvas.height;
         _gl.uniform4f(_matUniform, m.a*iw, m.b*ih, m.c*iw, m.d*ih);
@@ -445,10 +435,10 @@ Rive.onRuntimeInitialized = function () {
             this._ctx['transform'](matrix['xx'], matrix['xy'], matrix['yx'], matrix['yy'], matrix['tx'],
                 matrix['ty']);
         },
-        'drawPath': function (path, paint) {
+        '_drawPath': function (path, paint) {
             paint['draw'](this._ctx, path);
         },
-        'drawImage': function (image, blend, opacity) {
+        '_drawImage': function (image, blend, opacity) {
             var img = image._image;
             if (!img) {
                 return;
@@ -459,16 +449,38 @@ Rive.onRuntimeInitialized = function () {
             ctx['drawImage'](img, 0, 0);
             ctx['globalAlpha'] = 1;
         },
-        'drawImageMesh': function (image, blend, opacity, vtx, uv, indices) {
+        '_getMatrix': function (out) {
+            const m = this._ctx['getTransform']();
+            out[0] = m.a;
+            out[1] = m.b;
+            out[2] = m.c;
+            out[3] = m.d;
+            out[4] = m.e;
+            out[5] = m.f;
+        },
+        '_drawImageMesh': function (image,
+                                    blend,
+                                    opacity,
+                                    vtx,
+                                    uv,
+                                    indices,
+                                    meshMinX,
+                                    meshMinY,
+                                    meshMaxX,
+                                    meshMaxY) {
             offscreenWebGL.drawImageMesh(this._ctx,
                                          image._texture || null,
                                          _canvasBlend(blend),
                                          opacity,
                                          vtx,
                                          uv,
-                                         indices);
+                                         indices,
+                                         meshMinX,
+                                         meshMinY,
+                                         meshMaxX,
+                                         meshMaxY);
         },
-        'clipPath': function (path) {
+        '_clipPath': function (path) {
             this._ctx['clip'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
         },
         'clear': function () {
