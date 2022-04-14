@@ -9,9 +9,13 @@ function makeMatrix(m2d) {
     return m;
 }
 
+const VTX_ARRAY = 0;
+const UV_ARRAY = 1;
+
 // Used for rendering meshes.
 const offscreenWebGL = new (function() {
     let _gl = null;
+    let _maxRTSize = 0;
     let _matUniform = null;
     let _translateUniform = null;
     let _vertexBufferLength = 0;
@@ -30,13 +34,17 @@ const offscreenWebGL = new (function() {
                 'preferLowPowerToHighPerformance': 0,
                 'failIfMajorPerformanceCaveat': 0,
                 'enableExtensionsByDefault': 1,
-                'explicitSwapControl': 0,
-                'renderViaOffscreenBackBuffer': 0
+                'explicitSwapControl': 1,
+                'renderViaOffscreenBackBuffer': 1
             });
             if (!gl) {
                 console.log("No WebGL support. Image mesh will not be drawn.");
                 return false;
             }
+
+            _maxRTSize = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+                                  gl.getParameter(gl.MAX_TEXTURE_SIZE));
+
             function compileAndAttachShader(program, shaderType, sourceCode) {
                 const shader = gl.createShader(shaderType);
                 gl.shaderSource(shader, sourceCode);
@@ -65,8 +73,8 @@ const offscreenWebGL = new (function() {
                 void main() {
                     gl_FragColor = texture2D(image, st);
                 }`);
-            gl.bindAttribLocation(program, 0, "vertex");
-            gl.bindAttribLocation(program, 1, "uv");
+            gl.bindAttribLocation(program, VTX_ARRAY, "vertex");
+            gl.bindAttribLocation(program, UV_ARRAY, "uv");
             gl.linkProgram(program);
             const log = gl.getProgramInfoLog(program);
             if (log.length > 0) {
@@ -77,15 +85,12 @@ const offscreenWebGL = new (function() {
             gl.useProgram(program);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-            gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(0);
-            gl.enableVertexAttribArray(1);  // vertexAttribPointer(1) depends on vertex length.
+            gl.enableVertexAttribArray(VTX_ARRAY);
+            gl.enableVertexAttribArray(UV_ARRAY);
 
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
 
             gl.uniform1i(gl.getUniformLocation(program, "image"), 0);
-
-            gl.enable(gl.SCISSOR_TEST);
 
             gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
@@ -93,6 +98,11 @@ const offscreenWebGL = new (function() {
         }
         return true;
     }
+
+    this.maxRTSize = function() {
+        initGL();
+        return _maxRTSize;
+    };
 
     this.createImageTexture = function(image) {
         if (!initGL()) {
@@ -108,88 +118,112 @@ const offscreenWebGL = new (function() {
         return texture;
     }
 
-    const _maxRecentWidth = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
-    const _maxRecentHeight = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
-    const _maxRecentVertexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
-    const _maxRecentIndexCount = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
+    const _maxRecentAtlasWidth = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
+    const _maxRecentAtlasHeight = new MaxRecentSize(1000/*ms*/, 8/*aligned to multiples of 256*/);
+    const _maxRecentVertexLength = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
+    const _maxRecentIndexLength = new MaxRecentSize(1000/*ms*/, 10/*aligned to multiples of 1024*/);
 
-    this.drawImageMesh = function(ctx,
-                                  imageTexture,
-                                  canvasBlend,
-                                  opacity,
-                                  vertices,
-                                  uv,
-                                  indices,
-                                  meshMinX,
-                                  meshMinY,
-                                  meshMaxX,
-                                  meshMaxY) {
+    this.drawMeshAtlas = function(atlasWidth,
+                                  atlasHeight,
+                                  meshes,
+                                  numTotalVertexFloats,
+                                  numTotalIndices) {
         if (!initGL()) {
             return;
         }
 
-        // Clip the mesh's bounding box to its canvas.
-        const l = Math.max(meshMinX, 0);
-        const t = Math.max(meshMinY, 0);
-        const r = Math.min(meshMaxX, ctx['canvas']['width']);
-        const b = Math.min(meshMaxY, ctx['canvas']['height']);
-        const w = r - l;
-        const h = b - t;
-        console.assert(w <= ctx['canvas']['width']);
-        console.assert(h <= ctx['canvas']['height']);
-        // Bail if the bounding box was out of view.
-        if (w <= 0 || h <= 0) {
-            return;
+        const canvasWidth = _maxRecentAtlasWidth.push(atlasWidth);
+        const canvasHeight = _maxRecentAtlasHeight.push(atlasHeight);
+        if (_gl.canvas.width != canvasWidth || _gl.canvas.height != canvasHeight) {
+            _gl.canvas.width = canvasWidth;
+            _gl.canvas.height = canvasHeight;
+            _gl.viewport(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
         }
-
-        const glWidth = _maxRecentWidth.push(w);
-        const glHeight = _maxRecentHeight.push(h);
-        if (_gl.canvas.width != glWidth || _gl.canvas.height != glHeight) {
-            _gl.canvas.width = glWidth;
-            _gl.canvas.height = glHeight;
-            _gl.viewport(0, 0, glWidth, glHeight);
-        }
-
-        _gl.scissor(0, glHeight - h, w, h);
+        _gl.disable(_gl.SCISSOR_TEST);
         _gl.clearColor(0, 0, 0, 0);
         _gl.clear(_gl.COLOR_BUFFER_BIT);
+        _gl.enable(_gl.SCISSOR_TEST);
 
-        const vertexCount = _maxRecentVertexCount.push(vertices.length);
-        if (_vertexBufferLength != vertexCount)  {
-            _gl.bufferData(_gl.ARRAY_BUFFER, vertexCount * 4 * 4, _gl.DYNAMIC_DRAW);
-            _vertexBufferLength = vertexCount;
+        const SIZE_OF_FLOAT = 4;
+        const SIZE_OF_U16 = 2;
+
+        // Upload all vertices.
+        const vertexBufferLength = _maxRecentVertexLength.push(numTotalVertexFloats);
+        if (_vertexBufferLength != vertexBufferLength)  {
+            _gl.bufferData(_gl.ARRAY_BUFFER,
+                           vertexBufferLength * 2/*count uv as well*/ * SIZE_OF_FLOAT,
+                           _gl.DYNAMIC_DRAW);
+            _vertexBufferLength = vertexBufferLength;
         }
-        _gl.bufferSubData(_gl.ARRAY_BUFFER, 0, vertices, _gl.DYNAMIC_DRAW);
-        const uvOffset = vertices.length * 2 * 4;
-        _gl.vertexAttribPointer(1, 2, _gl.FLOAT, false, 0, uvOffset);
-        _gl.bufferSubData(_gl.ARRAY_BUFFER, uvOffset, uv, _gl.DYNAMIC_DRAW);
-
-        const indexCount = _maxRecentIndexCount.push(indices.length);
-        if (_indexBufferLength != indexCount)  {
-            _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER, indexCount * 2, _gl.DYNAMIC_DRAW);
-            _indexBufferLength = indexCount;
+        let vOffset = 0;
+        for (const m of meshes) {
+            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.vtx, _gl.DYNAMIC_DRAW);
+            vOffset += m.vtx.length * SIZE_OF_FLOAT;
         }
-        _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER, 0, indices, _gl.DYNAMIC_DRAW);
+        console.assert(vOffset == numTotalVertexFloats * SIZE_OF_FLOAT);
 
-        // Draw the top-left corner of the mesh at location (0, 0) in the WebGL canvas.
-        // Post-translate the canvas2d's matrix into normalized OpenGL clip space (-1..1).
-        const m = ctx['getTransform']();
-        const iw = 2 / _gl.canvas.width;
-        const ih = -2 / _gl.canvas.height;
-        _gl.uniform4f(_matUniform, m.a*iw, m.b*ih, m.c*iw, m.d*ih);
-        _gl.uniform2f(_translateUniform, (m.e - l) * iw - 1, (m.f - t) * ih + 1);
+        // Upload all uv.
+        for (const m of meshes) {
+            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.uv, _gl.DYNAMIC_DRAW);
+            vOffset += m.uv.length * SIZE_OF_FLOAT;
+        }
+        console.assert(vOffset == numTotalVertexFloats * 2/*count uv as well*/ * SIZE_OF_FLOAT);
 
-        _gl.bindTexture(_gl.TEXTURE_2D, imageTexture);
+        // Upload all indices.
+        const indexBufferLength = _maxRecentIndexLength.push(numTotalIndices);
+        if (_indexBufferLength != indexBufferLength)  {
+            _gl.bufferData(_gl.ELEMENT_ARRAY_BUFFER,
+                           indexBufferLength * SIZE_OF_U16,
+                           _gl.DYNAMIC_DRAW);
+            _indexBufferLength = indexBufferLength;
+        }
+        let iOffset = 0;
+        for (const m of meshes) {
+            _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER,
+                              iOffset,
+                              m.indices,
+                              _gl.DYNAMIC_DRAW);
+            iOffset += m.indices.length * SIZE_OF_U16;
+        }
+        console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
 
-        _gl.drawElements(_gl.TRIANGLES, indices.length, _gl.UNSIGNED_SHORT, 0);
+        // Draw all meshes.
+        vOffset = iOffset = 0;
+        for (const m of meshes) {
+            _gl.bindTexture(_gl.TEXTURE_2D, m.tex);
 
-        ctx['save']();
-        ctx['resetTransform']();
-        ctx['globalCompositeOperation'] = canvasBlend;
-        ctx['globalAlpha'] = opacity;
-        ctx['drawImage'](_gl.canvas, 0, 0, w, h, l, t, w, h);
-        ctx['restore']();
+            _gl.scissor(m.atlasX,
+                        atlasHeight - m.atlasY - m.meshHeight,
+                        m.meshWidth,
+                        m.meshHeight);
+
+            // Draw the top-left corner of the mesh at location (atlasX, atlasY) in the WebGL
+            // canvas. Post-translate the canvas2d's matrix into normalized OpenGL clip space
+            // (-1..1).
+            const iw = 2 / atlasWidth;
+            const ih = -2 / atlasHeight;
+            _gl.uniform4f(_matUniform,
+                          m.mat[0] * iw,
+                          m.mat[1] * ih,
+                          m.mat[2] * iw,
+                          m.mat[3] * ih);
+            _gl.uniform2f(_translateUniform,
+                          (m.mat[4] - m.l + m.atlasX) * iw - 1,
+                          (m.mat[5] - m.t + m.atlasY) * ih + 1);
+
+            _gl.vertexAttribPointer(VTX_ARRAY, 2, _gl.FLOAT, false, 0, vOffset);
+            _gl.vertexAttribPointer(UV_ARRAY, 2, _gl.FLOAT, false, 0,
+                                    vOffset + numTotalVertexFloats * SIZE_OF_FLOAT);
+            _gl.drawElements(_gl.TRIANGLES, m.indices.length, _gl.UNSIGNED_SHORT, iOffset);
+
+            vOffset += m.vtx.length * SIZE_OF_FLOAT;
+            iOffset += m.indices.length * SIZE_OF_U16;
+        }
+        console.assert(vOffset == numTotalVertexFloats * SIZE_OF_FLOAT);
+        console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
     }
+
+    this.canvas = function() { return initGL() && _gl.canvas; }
 })();
 
 Rive.onRuntimeInitialized = function () {
@@ -419,6 +453,37 @@ Rive.onRuntimeInitialized = function () {
         }
     });
 
+    const _pendingCanvasRenderers = new Set();
+    const INITIAL_ATLAS_SIZE = 512;
+    let _rectanizer = null;
+    let _atlasMeshList = [];
+    let _atlasNumTotalVertexFloats = 0;
+    let _atlasNumTotalIndices = 0;
+
+    function flushCanvasRenderers() {
+        // Draw the mesh atlas before flushing the queued up draws to canvases.
+        if (_atlasMeshList.length > 0) {
+            offscreenWebGL.drawMeshAtlas(_rectanizer['drawWidth'](),
+                                         _rectanizer['drawHeight'](),
+                                         _atlasMeshList,
+                                         _atlasNumTotalVertexFloats,
+                                         _atlasNumTotalIndices);
+            _atlasMeshList = [];
+            _atlasNumTotalVertexFloats = 0;
+            _atlasNumTotalIndices = 0;
+            _rectanizer['reset'](INITIAL_ATLAS_SIZE, INITIAL_ATLAS_SIZE);
+        }
+        // Now that the atlas is rendered, make the pending draws to canvases, some of which may
+        // reference the atlas.
+        for (const renderer of _pendingCanvasRenderers) {
+            for (const lambda of renderer._drawList) {
+                lambda();
+            }
+            renderer._drawList = [];
+        }
+        _pendingCanvasRenderers.clear();
+    }
+
     var CanvasRenderer = Rive.CanvasRenderer = Renderer.extend('Renderer', {
         '__construct': function (canvas) {
             this['__parent']['__construct'].call(this);
@@ -439,7 +504,7 @@ Rive.onRuntimeInitialized = function () {
             if (i < 6) {
                 throw "restore() called without matching save().";
             }
-            this._matrixStack.splice(i);
+            this._matrixStack.splice(i);  // Pop off the top 6 floats from the matrix stack.
             this._drawList.push(this._ctx['restore'].bind(this._ctx));
         },
         'transform': function (m) {
@@ -468,9 +533,9 @@ Rive.onRuntimeInitialized = function () {
                 return;
             }
             var ctx = this._ctx;
-            blend = _canvasBlend(blend);
+            const canvasBlend = _canvasBlend(blend);
             this._drawList.push(function() {
-                ctx['globalCompositeOperation'] = blend;
+                ctx['globalCompositeOperation'] = canvasBlend;
                 ctx['globalAlpha'] = opacity;
                 ctx['drawImage'](img, 0, 0);
                 ctx['globalAlpha'] = 1;
@@ -493,33 +558,85 @@ Rive.onRuntimeInitialized = function () {
                                     meshMinY,
                                     meshMaxX,
                                     meshMaxY) {
-            this._drawList.push(offscreenWebGL.drawImageMesh.bind(offscreenWebGL,
-                                                                  this._ctx,
-                                                                  image._texture || null,
-                                                                  _canvasBlend(blend),
-                                                                  opacity,
-                                                                  new Float32Array(vtx),
-                                                                  new Float32Array(uv),
-                                                                  new Uint16Array(indices),
-                                                                  meshMinX,
-                                                                  meshMinY,
-                                                                  meshMaxX,
-                                                                  meshMaxY));
+            // Clip the mesh's bounding box to its canvas.
+            const maxRTSize = offscreenWebGL.maxRTSize();
+            const canvasMaxX = Math.min(this._ctx['canvas']['width'], maxRTSize);
+            const canvasMaxY = Math.min(this._ctx['canvas']['height'], maxRTSize);
+            const l = Math.max(meshMinX, 0);
+            const t = Math.max(meshMinY, 0);
+            const r = Math.min(meshMaxX, canvasMaxX);
+            const b = Math.min(meshMaxY, canvasMaxY);
+            const meshWidth = r - l;
+            const meshHeight = b - t;
+            console.assert(meshWidth <= Math.min(canvasMaxX, maxRTSize));
+            console.assert(meshHeight <= Math.min(canvasMaxY, maxRTSize));
+            // Bail if the bounding box was out of view.
+            if (meshWidth <= 0 || meshHeight <= 0) {
+                return;
+            }
+
+            // Find a slot for our mesh in the atlas.
+            if (!_rectanizer) {
+                _rectanizer = new Module['DynamicRectanizer'](maxRTSize);
+                _rectanizer['reset'](INITIAL_ATLAS_SIZE, INITIAL_ATLAS_SIZE);
+            }
+            let pos = _rectanizer['addRect'](meshWidth, meshHeight);
+            if (pos < 0) {
+                // The atlas ran out of room. Flush and try again.
+                flushCanvasRenderers();
+                _pendingCanvasRenderers.add(this);
+                pos = _rectanizer['addRect'](meshWidth, meshHeight)
+                // The atlas should always be big enough to fit at least one canvas.
+                console.assert(pos >= 0);
+            }
+            const atlasX = pos & 0xffff;
+            const atlasY = pos >> 16;
+
+            _atlasMeshList.push({mat: this._matrixStack.slice(this._matrixStack.length - 6),
+                                 tex: image._texture || null,
+                                 atlasX: atlasX,
+                                 atlasY: atlasY,
+                                 l: l,
+                                 t: t,
+                                 meshWidth: meshWidth,
+                                 meshHeight: meshHeight,
+                                 vtx: new Float32Array(vtx),
+                                 uv: new Float32Array(uv),
+                                 indices: new Uint16Array(indices)});
+            _atlasNumTotalVertexFloats += vtx.length;
+            _atlasNumTotalIndices += indices.length;
+
+            const ctx = this._ctx;
+            const canvasBlend = _canvasBlend(blend);
+            this._drawList.push(function() {
+                ctx['save']();
+                ctx['resetTransform']();
+                ctx['globalCompositeOperation'] = canvasBlend;
+                ctx['globalAlpha'] = opacity;
+                ctx['drawImage'](offscreenWebGL.canvas(),
+                                 atlasX,
+                                 atlasY,
+                                 meshWidth,
+                                 meshHeight,
+                                 l,
+                                 t,
+                                 meshWidth,
+                                 meshHeight);
+                ctx['restore']();
+            });
         },
         '_clipPath': function (path) {
             const fillRule = path._fillRule === evenOdd ? 'evenodd' : 'nonzero';
             this._drawList.push(this._ctx['clip'].bind(this._ctx, path._path2D, fillRule));
         },
         'clear': function () {
+            // Add ourselves to the list of deferred canvases. This works here because clear aways
+            // gets called first.
+            _pendingCanvasRenderers.add(this);
             this._drawList.push(this._ctx['clearRect'].bind(
                     this._ctx, 0, 0, this._canvas['width'], this._canvas['height']));
         },
-        'flush': function () {
-            for (const lambda of this._drawList) {
-                lambda();
-            }
-            this._drawList = [];
-        }
+        'flush': function () {}
     });
 
     Rive.makeRenderer = function (canvas) {
@@ -539,6 +656,10 @@ Rive.onRuntimeInitialized = function () {
         }
     };
 
-    Rive['requestAnimationFrame'] = window['requestAnimationFrame'].bind(window);
-    Rive['cancelAnimationFrame'] = window['cancelAnimationFrame'].bind(window);
+    const _animationCallbackHandler = new AnimationCallbackHandler();
+    Rive['requestAnimationFrame'] =
+            _animationCallbackHandler.requestAnimationFrame.bind(_animationCallbackHandler);
+    Rive['cancelAnimationFrame'] =
+            _animationCallbackHandler.cancelAnimationFrame.bind(_animationCallbackHandler);
+    _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
 };
