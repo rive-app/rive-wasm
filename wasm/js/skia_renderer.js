@@ -122,15 +122,8 @@ Module.onRuntimeInitialized = function () {
     function nextlog2(n) { return n <= 0 ? 0 : 32 - Math.clz32(n - 1); }
     function nextpow2(n) { return 1 << nextlog2(n); }
 
-    // Rounds n to the next multiple of pow2.
-    function alignUp(n, pow2) {
-        const mask = pow2 - 1;
-        console.assert((pow2 & mask) == 0);  // Verify that pow2 is indeed a power of 2.
-        return (n + mask) & ~mask;
-    }
-
-    const _atlasMaxRecentWidth = new MaxRecentSize(1000 /*1 second*/);
-    const _atlasMaxRecentHeight = new MaxRecentSize(1000 /*1 second*/);
+    const _atlasMaxRecentWidth = new MaxRecentSize(1000/*1sec*/, 8/*aligned to multiples of 256*/);
+    const _atlasMaxRecentHeight = new MaxRecentSize(1000/*1sec*/, 8/*aligned to multiples of 256*/);
 
     // Draws the offscreen renderers all together in a single atlas.
     function flushOffscreenRenderers() {
@@ -198,10 +191,8 @@ Module.onRuntimeInitialized = function () {
             //   * or the largest atlas dimensions we have used over the past second.
             //
             // Take whichever of those is larger and round it up to the nearest multiple of 512.
-            const atlasWidth = alignUp(_atlasMaxRecentWidth.push(rectanizer['drawWidth']()),
-                                       Math.min(512, maxRTSize));
-            const atlasHeight = alignUp(_atlasMaxRecentHeight.push(rectanizer['drawHeight']()),
-                                        Math.min(512, maxRTSize));
+            const atlasWidth = _atlasMaxRecentWidth.push(rectanizer['drawWidth']());
+            const atlasHeight = _atlasMaxRecentHeight.push(rectanizer['drawHeight']());
             console.assert(atlasWidth >= rectanizer['drawWidth']());
             console.assert(atlasHeight >= rectanizer['drawHeight']());
             console.assert(atlasWidth <= maxRTSize);
