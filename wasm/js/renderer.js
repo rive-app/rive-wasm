@@ -144,6 +144,9 @@ const offscreenWebGL = new (function() {
         _gl.clear(_gl.COLOR_BUFFER_BIT);
         _gl.enable(_gl.SCISSOR_TEST);
 
+        // Sort the meshes into a draw order that minimizes the cost of GL state changes.
+        meshes.sort((a, b) => b.sortKey - a.sortKey);
+
         const SIZE_OF_FLOAT = 4;
         const SIZE_OF_U16 = 2;
 
@@ -188,14 +191,25 @@ const offscreenWebGL = new (function() {
         console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
 
         // Draw all meshes.
+        let boundTextureID = 0;
+        let hasScissor = true;
         vOffset = iOffset = 0;
         for (const m of meshes) {
-            _gl.bindTexture(_gl.TEXTURE_2D, m.tex);
+            if (m.image._uniqueID != boundTextureID) {
+                _gl.bindTexture(_gl.TEXTURE_2D, m.image._texture || null);
+                boundTextureID = m.image._uniqueID;
+            }
 
-            _gl.scissor(m.atlasX,
-                        canvasHeight - m.atlasY - m.meshHeight,
-                        m.meshWidth,
-                        m.meshHeight);
+            if (m.needsScissor) {
+                _gl.scissor(m.atlasX,
+                            canvasHeight - m.atlasY - m.meshHeight,
+                            m.meshWidth,
+                            m.meshHeight);
+                hasScissor = true;
+            } else if (hasScissor) {
+                _gl.scissor(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
+                hasScissor = false;
+            }
 
             // Draw the top-left corner of the mesh at location (atlasX, atlasY) in the WebGL
             // canvas. Post-translate the canvas2d's matrix into normalized OpenGL clip space
@@ -243,9 +257,12 @@ Rive.onRuntimeInitialized = function () {
     const evenOdd = FillRule.evenOdd;
     const nonZero = FillRule.nonZero;
 
+    let _nextImageUniqueID = 1;
     var CanvasRenderImage = RenderImage.extend('CanvasRenderImage', {
         '__construct': function () {
             this['__parent']['__construct'].call(this);
+            this._uniqueID = _nextImageUniqueID;
+            _nextImageUniqueID = ((_nextImageUniqueID + 1) & 0x7fffffff) || 1;
         },
         'decode': function (bytes) {
             var cri = this;
@@ -562,12 +579,18 @@ Rive.onRuntimeInitialized = function () {
             const maxRTSize = offscreenWebGL.maxRTSize();
             const canvasMaxX = Math.min(this._ctx['canvas']['width'], maxRTSize);
             const canvasMaxY = Math.min(this._ctx['canvas']['height'], maxRTSize);
-            const l = Math.max(meshMinX, 0);
-            const t = Math.max(meshMinY, 0);
-            const r = Math.min(meshMaxX, canvasMaxX);
-            const b = Math.min(meshMaxY, canvasMaxY);
-            const meshWidth = r - l;
-            const meshHeight = b - t;
+            const needsScissor = meshMinX < 0 ||
+                                 meshMinY < 0 ||
+                                 meshMaxX > canvasMaxX ||
+                                 meshMaxY > canvasMaxY;
+            if (needsScissor) {
+                meshMinX = Math.max(meshMinX, 0);
+                meshMinY = Math.max(meshMinY, 0);
+                meshMaxX = Math.min(meshMaxX, canvasMaxX);
+                meshMaxY = Math.min(meshMaxY, canvasMaxY);
+            }
+            const meshWidth = meshMaxX - meshMinX;
+            const meshHeight = meshMaxY - meshMinY;
             console.assert(meshWidth <= Math.min(canvasMaxX, maxRTSize));
             console.assert(meshHeight <= Math.min(canvasMaxY, maxRTSize));
             // Bail if the bounding box was out of view.
@@ -593,16 +616,21 @@ Rive.onRuntimeInitialized = function () {
             const atlasY = pos >> 16;
 
             _atlasMeshList.push({mat: this._matrixStack.slice(this._matrixStack.length - 6),
-                                 tex: image._texture || null,
+                                 image: image,
                                  atlasX: atlasX,
                                  atlasY: atlasY,
-                                 l: l,
-                                 t: t,
+                                 l: meshMinX,
+                                 t: meshMinY,
                                  meshWidth: meshWidth,
                                  meshHeight: meshHeight,
                                  vtx: new Float32Array(vtx),
                                  uv: new Float32Array(uv),
-                                 indices: new Uint16Array(indices)});
+                                 indices: new Uint16Array(indices),
+                                 needsScissor: needsScissor,
+                                 // Create a sortKey with more expensive state in higher order bits.
+                                 // This will produce an ordering that minimizes the cost of GL
+                                 // state changes.
+                                 sortKey: (image._uniqueID << 1) | (needsScissor ? 1 : 0)});
             _atlasNumTotalVertexFloats += vtx.length;
             _atlasNumTotalIndices += indices.length;
 
@@ -618,8 +646,8 @@ Rive.onRuntimeInitialized = function () {
                                  atlasY,
                                  meshWidth,
                                  meshHeight,
-                                 l,
-                                 t,
+                                 meshMinX,
+                                 meshMinY,
                                  meshWidth,
                                  meshHeight);
                 ctx['restore']();
