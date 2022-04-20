@@ -137,8 +137,8 @@ const offscreenWebGL = new (function() {
         if (_gl.canvas.width != canvasWidth || _gl.canvas.height != canvasHeight) {
             _gl.canvas.width = canvasWidth;
             _gl.canvas.height = canvasHeight;
-            _gl.viewport(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
         }
+        _gl.viewport(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
         _gl.disable(_gl.SCISSOR_TEST);
         _gl.clearColor(0, 0, 0, 0);
         _gl.clear(_gl.COLOR_BUFFER_BIT);
@@ -193,7 +193,7 @@ const offscreenWebGL = new (function() {
             _gl.bindTexture(_gl.TEXTURE_2D, m.tex);
 
             _gl.scissor(m.atlasX,
-                        atlasHeight - m.atlasY - m.meshHeight,
+                        canvasHeight - m.atlasY - m.meshHeight,
                         m.meshWidth,
                         m.meshHeight);
 
