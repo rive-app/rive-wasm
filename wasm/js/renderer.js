@@ -15,6 +15,7 @@ const UV_ARRAY = 1;
 // Used for rendering meshes.
 const offscreenWebGL = new (function() {
     let _gl = null;
+    let _webglVersion = 0;
     let _maxRTSize = 0;
     let _matUniform = null;
     let _translateUniform = null;
@@ -24,7 +25,7 @@ const offscreenWebGL = new (function() {
     const initGL = function() {
         if (!_gl) {
             const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl', {
+            const contextAttribs = {
                 'alpha': 1,
                 'depth': 0,
                 'stencil': 0,
@@ -36,10 +37,19 @@ const offscreenWebGL = new (function() {
                 'enableExtensionsByDefault': 1,
                 'explicitSwapControl': 1,
                 'renderViaOffscreenBackBuffer': 1
-            });
-            if (!gl) {
-                console.log("No WebGL support. Image mesh will not be drawn.");
-                return false;
+            };
+            // Prefer webgl2 so we can use mipmaps on now-power-2 mesh textures.
+            let gl = canvas.getContext('webgl2', contextAttribs);
+            if (gl) {
+                _webglVersion = 2;
+            } else {
+                gl = canvas.getContext('webgl', contextAttribs);
+                if (gl) {
+                    _webglVersion = 1;
+                } else {
+                    console.log("No WebGL support. Image mesh will not be drawn.");
+                    return false;
+                }
             }
 
             _maxRTSize = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
@@ -111,10 +121,15 @@ const offscreenWebGL = new (function() {
         const texture = _gl.createTexture();
         _gl.bindTexture(_gl.TEXTURE_2D, texture);
         _gl.texImage2D(_gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, image);
-        _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
-        _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
         _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_S, _gl.CLAMP_TO_EDGE);
         _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_T, _gl.CLAMP_TO_EDGE);
+        _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
+        if (_webglVersion == 2) {
+            _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR_MIPMAP_LINEAR);
+            _gl.generateMipmap(_gl.TEXTURE_2D);
+        } else {
+            _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
+        }
         return texture;
     }
 
@@ -160,14 +175,14 @@ const offscreenWebGL = new (function() {
         }
         let vOffset = 0;
         for (const m of meshes) {
-            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.vtx, _gl.DYNAMIC_DRAW);
+            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.vtx);
             vOffset += m.vtx.length * SIZE_OF_FLOAT;
         }
         console.assert(vOffset == numTotalVertexFloats * SIZE_OF_FLOAT);
 
         // Upload all uv.
         for (const m of meshes) {
-            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.uv, _gl.DYNAMIC_DRAW);
+            _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.uv);
             vOffset += m.uv.length * SIZE_OF_FLOAT;
         }
         console.assert(vOffset == numTotalVertexFloats * 2/*count uv as well*/ * SIZE_OF_FLOAT);
@@ -182,10 +197,7 @@ const offscreenWebGL = new (function() {
         }
         let iOffset = 0;
         for (const m of meshes) {
-            _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER,
-                              iOffset,
-                              m.indices,
-                              _gl.DYNAMIC_DRAW);
+            _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER, iOffset, m.indices);
             iOffset += m.indices.length * SIZE_OF_U16;
         }
         console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
@@ -202,9 +214,9 @@ const offscreenWebGL = new (function() {
 
             if (m.needsScissor) {
                 _gl.scissor(m.atlasX,
-                            canvasHeight - m.atlasY - m.meshHeight,
-                            m.meshWidth,
-                            m.meshHeight);
+                            canvasHeight - m.atlasY - m.heightInAtlas,
+                            m.widthInAtlas,
+                            m.heightInAtlas);
                 hasScissor = true;
             } else if (hasScissor) {
                 _gl.scissor(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
@@ -212,18 +224,18 @@ const offscreenWebGL = new (function() {
             }
 
             // Draw the top-left corner of the mesh at location (atlasX, atlasY) in the WebGL
-            // canvas. Post-translate the canvas2d's matrix into normalized OpenGL clip space
-            // (-1..1).
+            // canvas, scaled by (scaleX, scaleY).
+            // Post-transform the canvas2d's matrix into normalized OpenGL clip space (-1..1).
             const iw = 2 / atlasWidth;
             const ih = -2 / atlasHeight;
             _gl.uniform4f(_matUniform,
-                          m.mat[0] * iw,
-                          m.mat[1] * ih,
-                          m.mat[2] * iw,
-                          m.mat[3] * ih);
+                          m.mat[0] * iw * m.scaleX,
+                          m.mat[1] * ih * m.scaleY,
+                          m.mat[2] * iw * m.scaleX,
+                          m.mat[3] * ih * m.scaleY);
             _gl.uniform2f(_translateUniform,
-                          (m.mat[4] - m.l + m.atlasX) * iw - 1,
-                          (m.mat[5] - m.t + m.atlasY) * ih + 1);
+                          m.mat[4] * iw * m.scaleX + iw * (m.atlasX - m.meshX * m.scaleX) - 1,
+                          m.mat[5] * ih * m.scaleY + ih * (m.atlasY - m.meshY * m.scaleY) + 1);
 
             _gl.vertexAttribPointer(VTX_ARRAY, 2, _gl.FLOAT, false, 0, vOffset);
             _gl.vertexAttribPointer(UV_ARRAY, 2, _gl.FLOAT, false, 0,
@@ -575,27 +587,41 @@ Rive.onRuntimeInitialized = function () {
                                     meshMinY,
                                     meshMaxX,
                                     meshMaxY) {
-            // Clip the mesh's bounding box to its canvas.
-            const maxRTSize = offscreenWebGL.maxRTSize();
-            const canvasMaxX = Math.min(this._ctx['canvas']['width'], maxRTSize);
-            const canvasMaxY = Math.min(this._ctx['canvas']['height'], maxRTSize);
-            const needsScissor = meshMinX < 0 ||
-                                 meshMinY < 0 ||
-                                 meshMaxX > canvasMaxX ||
-                                 meshMaxY > canvasMaxY;
-            if (needsScissor) {
-                meshMinX = Math.max(meshMinX, 0);
-                meshMinY = Math.max(meshMinY, 0);
-                meshMaxX = Math.min(meshMaxX, canvasMaxX);
-                meshMaxY = Math.min(meshMaxY, canvasMaxY);
-            }
+            const canvasWidth = this._ctx['canvas']['width'];
+            const canvasHeight = this._ctx['canvas']['height'];
             const meshWidth = meshMaxX - meshMinX;
             const meshHeight = meshMaxY - meshMinY;
-            console.assert(meshWidth <= Math.min(canvasMaxX, maxRTSize));
-            console.assert(meshHeight <= Math.min(canvasMaxY, maxRTSize));
+
+            // Clip the mesh's bounding box to its canvas.
+            meshMinX = Math.max(meshMinX, 0);
+            meshMinY = Math.max(meshMinY, 0);
+            meshMaxX = Math.min(meshMaxX, canvasWidth);
+            meshMaxY = Math.min(meshMaxY, canvasHeight);
+            const meshClippedWidth = meshMaxX - meshMinX;
+            const meshClippedHeight = meshMaxY - meshMinY;
+            console.assert(meshClippedWidth <= Math.min(meshWidth, canvasWidth));
+            console.assert(meshClippedHeight <= Math.min(meshHeight, canvasHeight));
             // Bail if the bounding box was out of view.
-            if (meshWidth <= 0 || meshHeight <= 0) {
+            if (meshClippedWidth <= 0 || meshClippedHeight <= 0) {
                 return;
+            }
+            const needsScissor = meshClippedWidth < meshWidth || meshClippedHeight < meshHeight;
+
+            // TODO: downscale the mesh in the atlas when it is larger than the underlying texture.
+            let scaleX = 1;
+            let scaleY = 1;
+            let widthInAtlas = Math.ceil(meshClippedWidth * scaleX);
+            let heightInAtlas = Math.ceil(meshClippedHeight * scaleY);
+
+            // Don't draw larger than the max render target size.
+            const maxRTSize = offscreenWebGL.maxRTSize();
+            if (widthInAtlas > maxRTSize) {
+                scaleX *= maxRTSize / widthInAtlas;
+                widthInAtlas = maxRTSize;
+            }
+            if (heightInAtlas > maxRTSize) {
+                scaleY *= maxRTSize / heightInAtlas;
+                heightInAtlas = maxRTSize;
             }
 
             // Find a slot for our mesh in the atlas.
@@ -603,12 +629,12 @@ Rive.onRuntimeInitialized = function () {
                 _rectanizer = new Module['DynamicRectanizer'](maxRTSize);
                 _rectanizer['reset'](INITIAL_ATLAS_SIZE, INITIAL_ATLAS_SIZE);
             }
-            let pos = _rectanizer['addRect'](meshWidth, meshHeight);
+            let pos = _rectanizer['addRect'](widthInAtlas, heightInAtlas);
             if (pos < 0) {
                 // The atlas ran out of room. Flush and try again.
                 flushCanvasRenderers();
                 _pendingCanvasRenderers.add(this);
-                pos = _rectanizer['addRect'](meshWidth, meshHeight)
+                pos = _rectanizer['addRect'](widthInAtlas, heightInAtlas)
                 // The atlas should always be big enough to fit at least one canvas.
                 console.assert(pos >= 0);
             }
@@ -619,10 +645,12 @@ Rive.onRuntimeInitialized = function () {
                                  image: image,
                                  atlasX: atlasX,
                                  atlasY: atlasY,
-                                 l: meshMinX,
-                                 t: meshMinY,
-                                 meshWidth: meshWidth,
-                                 meshHeight: meshHeight,
+                                 meshX: meshMinX,
+                                 meshY: meshMinY,
+                                 widthInAtlas: widthInAtlas,
+                                 heightInAtlas: heightInAtlas,
+                                 scaleX: scaleX,
+                                 scaleY: scaleY,
                                  vtx: new Float32Array(vtx),
                                  uv: new Float32Array(uv),
                                  indices: new Uint16Array(indices),
@@ -644,12 +672,12 @@ Rive.onRuntimeInitialized = function () {
                 ctx['drawImage'](offscreenWebGL.canvas(),
                                  atlasX,
                                  atlasY,
-                                 meshWidth,
-                                 meshHeight,
+                                 widthInAtlas,
+                                 heightInAtlas,
                                  meshMinX,
                                  meshMinY,
-                                 meshWidth,
-                                 meshHeight);
+                                 meshClippedWidth,
+                                 meshClippedHeight);
                 ctx['restore']();
             });
         },
