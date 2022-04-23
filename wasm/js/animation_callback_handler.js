@@ -4,6 +4,8 @@ function AnimationCallbackHandler() {
     let _mainAnimationCallbackID = 0;
     let _lastAnimationSubCallbackID = 0;
     let _animationSubCallbacks = new Map();
+    let _fpsCounter = null;
+    let _fpsDiv = null;
 
     this.requestAnimationFrame = function(callback) {
         if (!_mainAnimationCallbackID) {
@@ -41,6 +43,61 @@ function AnimationCallbackHandler() {
         });
 
         this.onAfterCallbacks();
+
+        if (_fpsCounter) {
+            _fpsCounter.frameComplete();
+        }
+    }
+
+    this.enableFPSCounter = function(fpsCallback) {
+        if (_fpsDiv) {
+            document.body.remove(_fpsDiv);
+            _fpsDiv = null;
+        }
+
+        // If the caller didn't provide a callback, add simple div to the top right corner to dump
+        // the fps.
+        if (!fpsCallback) {
+            _fpsDiv = document.createElement('div');
+            _fpsDiv.style.backgroundColor = 'black';
+            _fpsDiv.style.position = 'fixed';
+            _fpsDiv.style.right = 0;
+            _fpsDiv.style.top = 0;
+            _fpsDiv.style.color = 'white';
+            _fpsDiv.style.padding = '4px';
+            _fpsDiv.innerHTML = 'RIVE FPS';
+            fpsCallback = function(fps) {
+                _fpsDiv.innerHTML = 'RIVE FPS ' + fps.toFixed(1);
+            };
+            document.body.appendChild(_fpsDiv);
+        }
+
+        _fpsCounter = new (function() {
+            let _frames = 0;
+            let _startMS = 0;
+            this.frameComplete = function() {
+                const now = performance.now();
+                if (!_startMS) {
+                    _startMS = now;
+                    _frames = 0;
+                } else {
+                    ++_frames;
+                    const milliseconds = now - _startMS;
+                    if (milliseconds > 1000) {  // Update every 1 second.
+                        fpsCallback(_frames * 1000 / milliseconds);
+                        _frames = _startMS = 0;
+                    }
+                }
+            };
+        })();
+    }
+
+    this.disableFPSCounter = function() {
+        if (_fpsDiv) {
+            document.body.remove(_fpsDiv);
+            _fpsDiv = null;
+        }
+        _fpsCounter = null;
     }
 
     // Override this member to get a call once all post-animation-callbacks have been invoked.

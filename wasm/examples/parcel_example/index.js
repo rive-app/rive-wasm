@@ -100,9 +100,6 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   let lastTime = 0;
   let artboard, stateMachine, animation;
 
-  const times = [];
-  const durations = [];
-
   function draw(time) {
     if (!lastTime) {
       lastTime = time;
@@ -110,15 +107,6 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     const elapsedMs = time - lastTime;
     const elapsedSeconds = elapsedMs / 1000;
     lastTime = time;
-
-    const before = performance.now();
-    // Update fps
-    while (times.length > 0 && times[0] <= time - 1000) {
-      times.shift();
-      durations.shift();
-    }
-    times.push(before);
-    document.getElementById("fps-value").innerText = times.length;
 
     renderer.clear();
     if (artboard) {
@@ -147,14 +135,6 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     }
     renderer.flush();
 
-    // Update frame time
-    const after = performance.now();
-    durations.push(after - before);
-    // Use average of all recent durations
-    document.getElementById("framems-value").innerText = (
-      durations.reduce((p, n) => p + n, 0) / durations.length
-    ).toFixed(4);
-
     rive.requestAnimationFrame(draw);
   }
   rive.requestAnimationFrame(draw);
@@ -167,6 +147,7 @@ async function main() {
   const numCanvases = parseInt(params.numCanvases || 0) || 19;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
+  rive.enableFPSCounter();
   for (let i = 0; i < numCanvases; i++) {
     await renderRiveAnimation({ rive, num: i, hasRandomSizes });
   }
