@@ -734,6 +734,11 @@ export interface EventListener {
   callback: EventCallback,
 }
 
+/**
+ * FPS Reporting through callbacks sent to the WASM runtime
+ */
+export type FPSCallback = (fps: number) => void;
+
 // Manages Rive events and listeners
 class EventManager {
 
@@ -1645,6 +1650,21 @@ export class Rive {
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
       }
     }
+  }
+
+  /**
+   * Enables frames-per-second (FPS) reporting for the runtime
+   * @param fpsCallback - Callback from the runtime during the RAF loop that supplies the FPS value
+   */
+  public enableFPSCounter(fpsCallback?: FPSCallback) {
+    this.runtime.enableFPSCounter(fpsCallback);
+  }
+
+  /**
+   * Disables frames-per-second (FPS) reporting for the runtime
+   */
+  public disableFPSCounter() {
+    this.runtime.disableFPSCounter();
   }
 
   /**

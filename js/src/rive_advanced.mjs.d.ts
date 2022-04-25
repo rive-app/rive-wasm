@@ -24,6 +24,8 @@ interface RiveOptions {
     makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
     requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
     cancelAnimationFrame(requestID: number): void;
+    enableFPSCounter(cb: (fps: number) => void): void;
+    disableFPSCounter(): void;
   }
   
   //////////////
