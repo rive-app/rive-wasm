@@ -719,5 +719,6 @@ Rive.onRuntimeInitialized = function () {
             _animationCallbackHandler.cancelAnimationFrame.bind(_animationCallbackHandler);
     Rive['enableFPSCounter'] =
             _animationCallbackHandler.enableFPSCounter.bind(_animationCallbackHandler);
+    Rive['disableFPSCounter'] = _animationCallbackHandler.disableFPSCounter;
     _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
 };
