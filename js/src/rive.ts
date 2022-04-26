@@ -1654,6 +1654,7 @@ export class Rive {
 
   /**
    * Enables frames-per-second (FPS) reporting for the runtime
+   * If no callback is provided, Rive will append a fixed-position div at the top-right corner of the page with the FPS reading
    * @param fpsCallback - Callback from the runtime during the RAF loop that supplies the FPS value
    */
   public enableFPSCounter(fpsCallback?: FPSCallback) {
