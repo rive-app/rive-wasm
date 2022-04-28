@@ -261,7 +261,9 @@ Module.onRuntimeInitialized = function () {
             _animationCallbackHandler.cancelAnimationFrame.bind(_animationCallbackHandler);
     Rive['enableFPSCounter'] =
             _animationCallbackHandler.enableFPSCounter.bind(_animationCallbackHandler);
-    _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
+    if (_offscreenGL) {
+        _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
+    }
 
     const cppClear = Module['WebGLRenderer']['prototype']['clear'];
     Module['WebGLRenderer']['prototype']['clear'] = function () {
