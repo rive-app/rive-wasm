@@ -127,6 +127,9 @@ Module.onRuntimeInitialized = function () {
 
     // Draws the offscreen renderers all together in a single atlas.
     function flushOffscreenRenderers() {
+        if (!_offscreenGL) {
+            return;
+        }
         const maxRTSize = _offscreenGL._maxRTSize;
 
         // Gather some atlas stats and transfer the pending renders to a sortable array.
@@ -261,9 +264,7 @@ Module.onRuntimeInitialized = function () {
             _animationCallbackHandler.cancelAnimationFrame.bind(_animationCallbackHandler);
     Rive['enableFPSCounter'] =
             _animationCallbackHandler.enableFPSCounter.bind(_animationCallbackHandler);
-    if (_offscreenGL) {
-        _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
-    }
+    _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
 
     const cppClear = Module['WebGLRenderer']['prototype']['clear'];
     Module['WebGLRenderer']['prototype']['clear'] = function () {
