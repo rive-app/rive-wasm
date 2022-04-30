@@ -26,7 +26,6 @@
 #include "rive/component.hpp"
 #include "rive/constraints/constraint.hpp"
 #include "rive/core.hpp"
-#include "rive/core/binary_reader.hpp"
 #include "rive/file.hpp"
 #include "rive/layout.hpp"
 #include "rive/math/mat2d.hpp"
@@ -302,11 +301,12 @@ class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
 
-  bool decode(rive::Span<const uint8_t> bytes) override {
-    emscripten::val byteArray = emscripten::val(
-        emscripten::typed_memory_view(bytes.size(), bytes.data()));
-    return call<bool>("decode", byteArray);
-  }
+  // bool decode(rive::Span<const uint8_t> bytes) override {
+    // TODO: NEED TO MOVE THIS TO FACTORY
+  //   emscripten::val byteArray = emscripten::val(
+  //       emscripten::typed_memory_view(bytes.size(), bytes.data()));
+  //   return call<bool>("decode", byteArray);
+  // }
   void size(int width, int height) {
     m_Width = width;
     m_Height = height;
@@ -318,59 +318,80 @@ public:
     return nullptr;
   }
 };
-namespace rive {
-
-template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
-  return rcp<RenderBuffer>(
-      new CanvasBuffer(span.data(), span.size(), sizeof(T)));
-}
-
-rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferF32(Span<const float> data) {
-  return make_buffer(data);
-}
-rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
-      new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
-}
-
-rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
-      new RadialGradientShader(colors, stops, count, cx, cy, radius));
-}
-
-RenderPaint *makeRenderPaint() {
-  val renderPaint =
-      val::module_property("renderFactory").call<val>("makeRenderPaint");
-  return renderPaint.as<RenderPaint *>(allow_raw_pointers());
-}
-
-RenderPath *makeRenderPath() {
-  val renderPath =
-      val::module_property("renderFactory").call<val>("makeRenderPath");
-  return renderPath.as<RenderPath *>(allow_raw_pointers());
-}
-
-RenderImage *makeRenderImage() {
-  val renderImage =
-      val::module_property("renderFactory").call<val>("makeRenderImage");
-  return renderImage.as<RenderImage *>(allow_raw_pointers());
-}
-} // namespace rive
 #endif
+
+namespace rive {
+  template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
+    return rcp<RenderBuffer>(
+        new CanvasBuffer(span.data(), span.size(), sizeof(T)));
+  }
+  
+  class RiveJSFactory : public Factory {
+
+    rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) override {
+        return make_buffer(data);
+    }
+    rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) override {
+        return make_buffer(data);
+    }
+    rcp<RenderBuffer> makeBufferF32(Span<const float> data) override {
+        return make_buffer(data);
+    }
+    rcp<RenderShader> makeLinearGradient(float sx, float sy,
+                                        float ex, float ey,
+                                        const ColorInt colors[],    // [count]
+                                        const float stops[],        // [count]
+                                        int count,
+                                        RenderTileMode,
+                                        const Mat2D* localMatrix = nullptr) override {
+        return rcp<RenderShader>(
+            new LinearGradientShader(colors, stops, count, sx, sy, ex, ey)
+        );
+    }
+
+    rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
+                                        const ColorInt colors[],    // [count]
+                                        const float stops[],        // [count]
+                                        int count,
+                                        RenderTileMode,
+                                        const Mat2D* localMatrix = nullptr) override {
+        return rcp<RenderShader>(
+            new RadialGradientShader(colors, stops, count, cx, cy, radius)
+        );
+    }
+
+    std::unique_ptr<RenderPaint> makeRenderPaint() override {
+        val renderPaint =
+            val::module_property("renderFactory").call<val>("makeRenderPaint");
+        return renderPaint.as<std::unique_ptr<RenderPaint>>(allow_raw_pointers());
+    }
+
+    std::unique_ptr<RenderPath> makeRenderPath(Span<const Vec2D> points,
+                                            Span<const uint8_t> verbs,
+                                            FillRule) override {
+        val renderPath =
+            val::module_property("renderFactory").call<val>("makeRenderPath");
+        return renderPath.as<std::unique_ptr<RenderPath>>(allow_raw_pointers());
+    }
+
+    // TODO: This was the logic from decode, should this still be called decode?
+    std::unique_ptr<RenderImage> decodeImage(Span<const uint8_t>) override {
+      // val byteArray = val(
+      //     emscripten::typed_memory_view(bytes.size(), bytes.data()));
+      // val renderImage =
+      //     val::module_property("renderFactory").call<val>("makeRenderImage");
+      // return call<bool>("decode", byteArray);
+    }
+
+    std::unique_ptr<RenderPath> makeEmptyRenderPath() override {
+      val renderEmptyPath =
+        val::module_property("renderFactory").call<val>("makeEmptyRenderPath");
+      
+      return renderEmptyPath.as<std::unique_ptr<RenderPath>>(allow_raw_pointers());
+    }
+  };
+  } // namespace end
+static rive::RiveJSFactory myFactory;
 
 rive::File *load(emscripten::val byteArray) {
   std::vector<unsigned char> rv;
@@ -380,8 +401,8 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  auto reader = rive::BinaryReader(rv.data(), rv.size());
-  return rive::File::import(reader).release();
+
+  return rive::File::import(rive::toSpan(rv), &myFactory).release();
 }
 
 #ifdef RIVE_SKIA_RENDERER
@@ -566,7 +587,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("clipPath", &RendererWrapper::clipPath, pure_virtual(),
                 allow_raw_pointers())
       .function("align", &rive::Renderer::align)
-      .function("computeAlignment", &rive::Renderer::computeAlignment)
+      .function("computeAlignment", &rive::computeAlignment)
       .allow_subclass<RendererWrapper>("RendererWrapper");
 
   class_<rive::RenderPath>("RenderPath")
@@ -641,8 +662,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
   class_<rive::RenderImage>("RenderImage")
-      .function("decode", &RenderImageWrapper::decode, pure_virtual(),
-                allow_raw_pointers())
+      // .function("decode", &RenderImageWrapper::decode, pure_virtual(),
+      //           allow_raw_pointers())
       .function("size", &RenderImageWrapper::size)
       .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 #endif
@@ -661,10 +682,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 select_overload<void(float)>(&rive::Mat2D::tx))
       .property("ty", select_overload<float() const>(&rive::Mat2D::ty),
                 select_overload<void(float)>(&rive::Mat2D::ty))
-      .function("invert", optional_override([](rive::Mat2D &self,
-                                               rive::Mat2D &result) -> bool {
-                  return rive::Mat2D::invert(result, self);
-                }))
+      .function("invert",
+        select_overload<bool(rive::Mat2D *) const>(&rive::Mat2D::invert),
+        allow_raw_pointers()
+      )
       .function("multiply",
                 optional_override([](rive::Mat2D &self, rive::Mat2D &result,
                                      rive::Mat2D &other) -> void {
@@ -672,21 +693,24 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 }));
 
   class_<rive::File>("File")
-      .function(
-          "defaultArtboard",
-          select_overload<rive::Artboard *() const>(&rive::File::artboard),
-          allow_raw_pointers())
+      .function("defaultArtboard",
+        optional_override([](rive::File &self) -> rive::ArtboardInstance* {
+          return self.artboardAt(0).release();
+        }),
+        allow_raw_pointers())
       .function("artboardByName",
-                select_overload<rive::Artboard *(std::string) const>(
-                    &rive::File::artboard),
-                allow_raw_pointers())
+        optional_override([](rive::File &self, std::string name) -> rive::ArtboardInstance* {
+          return self.artboardNamed(name).release();
+        }),
+        allow_raw_pointers())
       .function("artboardByIndex",
-                select_overload<rive::Artboard *(size_t) const>(
-                    &rive::File::artboard),
-                allow_raw_pointers())
+        optional_override([](rive::File &self, std::size_t idx) -> rive::ArtboardInstance* {
+          return self.artboardAt(idx).release();
+        }),
+        allow_raw_pointers())
       .function("artboardCount", &rive::File::artboardCount);
 
-  class_<rive::Artboard>("Artboard")
+  class_<rive::ArtboardInstance>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
       .function("flattenPath",
                 optional_override(
@@ -706,50 +730,54 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
 #endif
       .property("name", select_overload<const std::string &() const>(
-                            &rive::Artboard::name))
-      .function("advance", &rive::Artboard::advance)
+                            &rive::ArtboardInstance::name))
+      .function("advance", &rive::ArtboardInstance::advance)
       .function(
           "draw",
-          optional_override([](rive::Artboard &self, rive::Renderer *renderer) {
-            return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
+          optional_override([](rive::ArtboardInstance &self, rive::Renderer *renderer) {
+            return self.draw(renderer, rive::ArtboardInstance::DrawOption::kNormal);
           }),
           allow_raw_pointers())
       .function("transformComponent",
-                &rive::Artboard::find<rive::TransformComponent>,
+                &rive::ArtboardInstance::find<rive::TransformComponent>,
                 allow_raw_pointers())
-      .function("node", &rive::Artboard::find<rive::Node>, allow_raw_pointers())
-      .function("bone", &rive::Artboard::find<rive::Bone>, allow_raw_pointers())
-      .function("rootBone", &rive::Artboard::find<rive::RootBone>,
+      .function("node", &rive::ArtboardInstance::find<rive::Node>, allow_raw_pointers())
+      .function("bone", &rive::ArtboardInstance::find<rive::Bone>, allow_raw_pointers())
+      .function("rootBone", &rive::ArtboardInstance::find<rive::RootBone>,
                 allow_raw_pointers())
       // Animations
       .function("animationByIndex",
-                select_overload<rive::LinearAnimation *(size_t) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
+        optional_override([](rive::ArtboardInstance &self, std::size_t idx) -> rive::LinearAnimationInstance* {
+          return self.animationAt(idx).release();
+        }),
+        allow_raw_pointers())
       .function("animationByName",
-                select_overload<rive::LinearAnimation *(std::string) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
-      .function("animationCount", &rive::Artboard::animationCount)
+        optional_override([](rive::ArtboardInstance &self, std::string name) -> rive::LinearAnimationInstance* {
+          return self.animationNamed(name).release();
+        }),
+        allow_raw_pointers())
+      .function("animationCount", &rive::ArtboardInstance::animationCount)
       // State machines
       .function("stateMachineByIndex",
-                select_overload<rive::StateMachine *(size_t) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
+        optional_override([](rive::ArtboardInstance &self, std::size_t idx) -> rive::StateMachineInstance* {
+          return self.stateMachineAt(idx).release();
+        }),
+        allow_raw_pointers())
       .function("stateMachineByName",
-                select_overload<rive::StateMachine *(std::string) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
-      .function("stateMachineCount", &rive::Artboard::stateMachineCount)
-      .property("bounds", &rive::Artboard::bounds)
+        optional_override([](rive::ArtboardInstance &self, std::string name) -> rive::StateMachineInstance* {
+          return self.stateMachineNamed(name).release();
+        }),
+        allow_raw_pointers())
+      .function("stateMachineCount", &rive::ArtboardInstance::stateMachineCount)
+      .property("bounds", &rive::ArtboardInstance::bounds)
       .function("instance",
-                optional_override([](rive::Artboard& self) -> rive::Artboard* {
+                optional_override([](rive::ArtboardInstance& self) -> rive::ArtboardInstance* {
                   return self.instance().release();
                 }),
                 allow_raw_pointers())
       .property("frameOrigin",
-                select_overload<bool() const>(&rive::Artboard::frameOrigin),
-                select_overload<void(bool)>(&rive::Artboard::frameOrigin));
+                select_overload<bool() const>(&rive::ArtboardInstance::frameOrigin),
+                select_overload<void(bool)>(&rive::ArtboardInstance::frameOrigin));
 
   class_<rive::TransformComponent>("TransformComponent")
       .property(
@@ -797,29 +825,29 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 select_overload<float() const>(&rive::TransformComponent::y),
                 select_overload<void(float)>(&rive::RootBone::y));
 
-  class_<rive::Animation>("Animation")
-      .property("name", select_overload<const std::string &() const>(
-                            &rive::AnimationBase::name));
+  // class_<rive::Animation>("Animation")
+  //     .property("name", select_overload<const std::string &() const>(
+  //                           &rive::AnimationBase::name));
 
-  class_<rive::LinearAnimation, base<rive::Animation>>("LinearAnimation")
-      .property("name", select_overload<const std::string &() const>(
-                            &rive::AnimationBase::name))
-      .property("duration", select_overload<uint32_t() const>(
-                                &rive::LinearAnimationBase::duration))
-      .property("fps",
-                select_overload<uint32_t() const>(&rive::LinearAnimationBase::fps))
-      .property("workStart", select_overload<uint32_t() const>(
-                                 &rive::LinearAnimationBase::workStart))
-      .property("workEnd", select_overload<uint32_t() const>(
-                               &rive::LinearAnimationBase::workEnd))
-      .property("enableWorkArea",
-                select_overload<bool() const>(
-                    &rive::LinearAnimationBase::enableWorkArea))
-      .property("loopValue", select_overload<uint32_t() const>(
-                                 &rive::LinearAnimationBase::loopValue))
-      .property("speed", select_overload<float() const>(
-                             &rive::LinearAnimationBase::speed))
-      .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
+  // class_<rive::LinearAnimation, base<rive::Animation>>("LinearAnimation")
+  //     .property("name", select_overload<const std::string &() const>(
+  //                           &rive::AnimationBase::name))
+  //     .property("duration", select_overload<uint32_t() const>(
+  //                               &rive::LinearAnimationBase::duration))
+  //     .property("fps",
+  //               select_overload<uint32_t() const>(&rive::LinearAnimationBase::fps))
+  //     .property("workStart", select_overload<uint32_t() const>(
+  //                                &rive::LinearAnimationBase::workStart))
+  //     .property("workEnd", select_overload<uint32_t() const>(
+  //                              &rive::LinearAnimationBase::workEnd))
+  //     .property("enableWorkArea",
+  //               select_overload<bool() const>(
+  //                   &rive::LinearAnimationBase::enableWorkArea))
+  //     .property("loopValue", select_overload<uint32_t() const>(
+  //                                &rive::LinearAnimationBase::loopValue))
+  //     .property("speed", select_overload<float() const>(
+  //                            &rive::LinearAnimationBase::speed))
+  //     .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
 
   class_<rive::LinearAnimationInstance>("LinearAnimationInstance")
       .constructor<rive::LinearAnimation *, rive::Artboard*>()
@@ -832,10 +860,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("apply", &rive::LinearAnimationInstance::apply,
                 allow_raw_pointers());
 
-  class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
-
+  // class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
   class_<rive::StateMachineInstance>("StateMachineInstance")
-      .constructor<rive::StateMachine *, rive::Artboard*>()
+      // .constructor<rive::StateMachine *, rive::Artboard*>()
       .function("advance", &rive::StateMachineInstance::advance,
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)
@@ -843,6 +870,24 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       .function("stateChangedCount",
                 &rive::StateMachineInstance::stateChangedCount)
+      .function("pointerUp",
+        optional_override([](rive::StateMachineInstance &self,
+                             float x, float y) -> void {
+          self.pointerUp(rive::Vec2D(x, y));
+        }),
+        allow_raw_pointers())
+      .function("pointerDown",
+        optional_override([](rive::StateMachineInstance &self,
+                             float x, float y) -> void {
+          self.pointerDown(rive::Vec2D(x, y));
+        }),
+        allow_raw_pointers())
+      .function("pointerMove",
+      optional_override([](rive::StateMachineInstance &self,
+                             float x, float y) -> void {
+          self.pointerMove(rive::Vec2D(x, y));
+        }),
+        allow_raw_pointers())
       .function(
           "stateChangedNameByIndex",
           optional_override([](rive::StateMachineInstance &self,

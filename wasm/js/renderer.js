@@ -289,7 +289,7 @@ Rive.onRuntimeInitialized = function () {
                 cri._texture = offscreenWebGL.createImageTexture(image);
                 cri["size"](image.width, image.height);
             };
-
+            // return image;
         }
     });
 
