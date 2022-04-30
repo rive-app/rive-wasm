@@ -207,11 +207,10 @@ export class RuntimeLoader {
 
 // #region animations
 
-// Wraps animations and instances from the runtime and keeps track of playback
+// Wraps animation instances from the runtime and keeps track of playback
 // state
 class Animation {
   public loopCount: number = 0;
-  public readonly instance: rc.LinearAnimationInstance;
 
   // Time to which the animation should move to on the next render
   public scrubTo: number | null = null;
@@ -220,14 +219,10 @@ class Animation {
    * Constructs a new animation
    * @constructor
    * @param {any} animation: runtime animation object
-   * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: rc.LinearAnimation,
-              private artboard: rc.Artboard,
+  constructor(public readonly animation: rc.LinearAnimationInstance,
               runtime: rc.RiveCanvas,
-              public playing: boolean) {
-    this.instance = new runtime.LinearAnimationInstance(animation, artboard);
-  }
+              public playing: boolean) {}
 
   // Returns the animation's name
   public get name(): string {
@@ -236,12 +231,12 @@ class Animation {
 
   // Returns the animation's current time
   public get time(): number {
-      return this.instance.time;
+      return this.animation.time;
   }
 
   // Sets the animation's current time
   public set time(value: number) {
-      this.instance.time = value;
+      this.animation.time = value;
   }
 
   // Returns the animation's loop type
@@ -256,10 +251,10 @@ class Animation {
    */
   public advance(time: number) {
     if (this.scrubTo === null) {
-      this.instance.advance(time);
+      this.animation.advance(time);
     } else {
-      this.instance.time = 0;
-      this.instance.advance(this.scrubTo);
+      this.animation.time = 0;
+      this.animation.advance(this.scrubTo);
       this.scrubTo = null;
     }
   }
@@ -273,7 +268,7 @@ class Animation {
    * animation is no more.
    */
   public cleanup() {
-    this.instance.delete();
+    this.animation.delete();
   }
 }
 
@@ -333,20 +328,13 @@ class StateMachine {
   public readonly inputs: StateMachineInput[] = [];
 
   /**
-   * Runtime state machine instance
-   */
-  public readonly instance: rc.StateMachineInstance;
-
-  /**
    * @constructor
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: rc.StateMachine,
+  constructor(public readonly stateMachine: rc.StateMachineInstance,
               runtime: rc.RiveCanvas,
-              public playing: boolean,
-              private artboard: rc.Artboard) {
-    this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
+              public playing: boolean) {
     this.initInputs(runtime);
   }
 
@@ -359,8 +347,8 @@ class StateMachine {
    */
   public get statesChanged(): string[] {
     const names: string[] = [];
-    for (let i = 0; i < this.instance.stateChangedCount(); i++) {
-      names.push(this.instance.stateChangedNameByIndex(i));
+    for (let i = 0; i < this.stateMachine.stateChangedCount(); i++) {
+      names.push(this.stateMachine.stateChangedNameByIndex(i));
     }
     return names;
   }
@@ -371,8 +359,8 @@ class StateMachine {
    */
   private initInputs(runtime: rc.RiveCanvas): void {
     // Fetch the inputs from the runtime if we don't have them
-    for (let i = 0; i < this.instance.inputCount(); i++) {
-      const input = this.instance.input(i);
+    for (let i = 0; i < this.stateMachine.inputCount(); i++) {
+      const input = this.stateMachine.input(i);
       this.inputs.push(this.mapRuntimeInput(input, runtime));
     }
   }
@@ -398,7 +386,7 @@ class StateMachine {
    * state machine is no more.
    */
      public cleanup() {
-      this.instance.delete();
+      this.stateMachine.delete();
     }
 }
 
@@ -458,12 +446,12 @@ class Animator {
           // Try to create a new animation instance
           const anim = this.artboard.animationByName(animatables[i]);
           if(anim) {
-            this.animations.push(new Animation(anim, this.artboard, this.runtime, playing));
+            this.animations.push(new Animation(anim, this.runtime, playing));
           } else {
             // Try to create a new state machine instance
             const sm = this.artboard.stateMachineByName(animatables[i]);
             if (sm) {
-              this.stateMachines.push(new StateMachine(sm, this.runtime, playing, this.artboard));
+              this.stateMachines.push(new StateMachine(sm, this.runtime, playing));
             }
           }
         }
@@ -1120,8 +1108,7 @@ export class Rive {
       return;
     }
 
-    // Instance the artboard
-    this.artboard = rootArtboard.instance();
+    this.artboard = rootArtboard;
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
@@ -1206,17 +1193,16 @@ export class Rive {
       .sort((first, second) => first.needsScrub ? -1 : 1);
     for (const animation of activeAnimations) {
       animation.advance(elapsedTime);
-      if (animation.instance.didLoop) {
+      if (animation.animation.didLoop) {
         animation.loopCount += 1;
       }
-      animation.instance.apply(1.0);
+      animation.animation.apply(1.0);
     }
 
     // Advance non-paused state machines by the elapsed number of seconds
     const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
     for (const stateMachine of activeStateMachines) {
-      stateMachine.instance.advance(elapsedTime);
-      // stateMachine.instance.apply(this.artboard);
+      stateMachine.stateMachine.advance(elapsedTime);
     }
 
     // Once the animations have been applied to the artboard, advance it
@@ -1473,7 +1459,7 @@ export class Rive {
     }
     const animationNames: string[] = [];
     for (let i = 0; i < this.artboard.animationCount(); i++) {
-      animationNames.push(this.artboard.animationByIndex(i).name);
+      animationNames.push(this.artboard.animationNameAt(i));
     }
     return animationNames;
   }
@@ -1488,7 +1474,7 @@ export class Rive {
     }
     const stateMachineNames: string[] = [];
     for (let i = 0; i < this.artboard.stateMachineCount(); i++) {
-      stateMachineNames.push(this.artboard.stateMachineByIndex(i).name);
+      stateMachineNames.push(this.artboard.stateMachineNameAt(i));
     }
     return stateMachineNames;
   }
@@ -1692,10 +1678,9 @@ export class Rive {
       for (let k = 0; k < artboard.stateMachineCount(); k++) {
         const stateMachine = artboard.stateMachineByIndex(k);
         const name = stateMachine.name;
-    const instance = new this.runtime.StateMachineInstance(stateMachine, artboard);
         const inputContents: StateMachineInputContents[] = [];
-        for (let l = 0; l < instance.inputCount(); l++) {
-          const input = instance.input(l);
+        for (let l = 0; l < stateMachine.inputCount(); l++) {
+          const input = stateMachine.input(l);
           inputContents.push({name: input.name, type: input.type});
         }
         artboardContents.stateMachines.push({name: name, inputs: inputContents});

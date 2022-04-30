@@ -13,7 +13,6 @@
 #include "rive/animation/any_state.hpp"
 #include "rive/animation/entry_state.hpp"
 #include "rive/animation/exit_state.hpp"
-#include "rive/animation/linear_animation.hpp"
 #include "rive/animation/linear_animation_instance.hpp"
 #include "rive/animation/state_machine_bool.hpp"
 #include "rive/animation/state_machine_input_instance.hpp"
@@ -26,7 +25,6 @@
 #include "rive/component.hpp"
 #include "rive/constraints/constraint.hpp"
 #include "rive/core.hpp"
-#include "rive/core/binary_reader.hpp"
 #include "rive/file.hpp"
 #include "rive/layout.hpp"
 #include "rive/math/mat2d.hpp"
@@ -380,8 +378,7 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  auto reader = rive::BinaryReader(rv.data(), rv.size());
-  return rive::File::import(reader).release();
+  return rive::File::import(rive::toSpan(rv)).release();
 }
 
 #ifdef RIVE_SKIA_RENDERER
@@ -543,8 +540,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("drawPath", &rive::Renderer::drawPath, allow_raw_pointers())
       .function("clipPath", &rive::Renderer::clipPath, allow_raw_pointers())
       .function("align", &rive::Renderer::align, allow_raw_pointers())
-      .function("computeAlignment", &rive::Renderer::computeAlignment,
-                allow_raw_pointers());
+      .function("computeAlignment", &rive::computeAlignment);
   class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
       .function("clear", &WebGLSkiaRenderer::clear)
       .function("flush", &WebGLSkiaRenderer::flush)
@@ -566,7 +562,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("clipPath", &RendererWrapper::clipPath, pure_virtual(),
                 allow_raw_pointers())
       .function("align", &rive::Renderer::align)
-      .function("computeAlignment", &rive::Renderer::computeAlignment)
+      .function("computeAlignment", &rive::computeAlignment)
       .allow_subclass<RendererWrapper>("RendererWrapper");
 
   class_<rive::RenderPath>("RenderPath")
@@ -674,19 +670,23 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::File>("File")
       .function(
           "defaultArtboard",
-          select_overload<rive::Artboard *() const>(&rive::File::artboard),
-          allow_raw_pointers())
+                optional_override([](rive::File& self) -> rive::ArtboardInstance* {
+                  return self.artboardAt(0).release();
+                }),
+                allow_raw_pointers())
       .function("artboardByName",
-                select_overload<rive::Artboard *(std::string) const>(
-                    &rive::File::artboard),
+                optional_override([](rive::File& self, std::string name) -> rive::ArtboardInstance* {
+                  return self.artboardNamed(name).release();
+                }),
                 allow_raw_pointers())
       .function("artboardByIndex",
-                select_overload<rive::Artboard *(size_t) const>(
-                    &rive::File::artboard),
+                optional_override([](rive::File& self, size_t index) -> rive::ArtboardInstance* {
+                  return self.artboardAt(index).release();
+                }),
                 allow_raw_pointers())
       .function("artboardCount", &rive::File::artboardCount);
 
-  class_<rive::Artboard>("Artboard")
+  class_<rive::ArtboardInstance>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
       .function("flattenPath",
                 optional_override(
@@ -706,11 +706,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
 #endif
       .property("name", select_overload<const std::string &() const>(
-                            &rive::Artboard::name))
-      .function("advance", &rive::Artboard::advance)
+                            &rive::ArtboardInstance::name))
+      .function("advance", &rive::ArtboardInstance::advance)
       .function(
           "draw",
-          optional_override([](rive::Artboard &self, rive::Renderer *renderer) {
+          optional_override([](rive::ArtboardInstance &self, rive::Renderer *renderer) {
             return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
           }),
           allow_raw_pointers())
@@ -723,33 +723,42 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       // Animations
       .function("animationByIndex",
-                select_overload<rive::LinearAnimation *(size_t) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
-      .function("animationByName",
-                select_overload<rive::LinearAnimation *(std::string) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
-      .function("animationCount", &rive::Artboard::animationCount)
-      // State machines
-      .function("stateMachineByIndex",
-                select_overload<rive::StateMachine *(size_t) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
-      .function("stateMachineByName",
-                select_overload<rive::StateMachine *(std::string) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
-      .function("stateMachineCount", &rive::Artboard::stateMachineCount)
-      .property("bounds", &rive::Artboard::bounds)
-      .function("instance",
-                optional_override([](rive::Artboard& self) -> rive::Artboard* {
-                  return self.instance().release();
+                optional_override([](rive::ArtboardInstance& self, size_t index) -> rive::LinearAnimationInstance* {
+                  return self.animationAt(index).release();
                 }),
                 allow_raw_pointers())
+      .function("animationByName",
+                optional_override([](rive::ArtboardInstance& self, std::string name) -> rive::LinearAnimationInstance* {
+                  return self.animationNamed(name).release();
+                }),
+                allow_raw_pointers())
+      .function("animationNameAt",
+                optional_override([](rive::ArtboardInstance& self, size_t index) -> std::string {
+                  return self.animationNameAt(index);
+                }),
+                allow_raw_pointers())
+      .function("animationCount", &rive::ArtboardInstance::animationCount)
+      // State machines
+      .function("stateMachineByIndex",
+                optional_override([](rive::ArtboardInstance& self, size_t index) -> rive::StateMachineInstance* {
+                  return self.stateMachineAt(index).release();
+                }),
+                allow_raw_pointers())
+      .function("stateMachineByName",
+                optional_override([](rive::ArtboardInstance& self, std::string name) -> rive::StateMachineInstance* {
+                  return self.stateMachineNamed(name).release();
+                }),
+                allow_raw_pointers())
+      .function("stateMachineCount", &rive::ArtboardInstance::stateMachineCount)
+      .function("stateMachineNameAt",
+                optional_override([](rive::ArtboardInstance& self, size_t index) -> std::string {
+                  return self.stateMachineNameAt(index);
+                }),
+                allow_raw_pointers())
+      .property("bounds", &rive::ArtboardInstance::bounds)
       .property("frameOrigin",
-                select_overload<bool() const>(&rive::Artboard::frameOrigin),
-                select_overload<void(bool)>(&rive::Artboard::frameOrigin));
+                select_overload<bool() const>(&rive::ArtboardInstance::frameOrigin),
+                select_overload<void(bool)>(&rive::ArtboardInstance::frameOrigin));
 
   class_<rive::TransformComponent>("TransformComponent")
       .property(
@@ -797,32 +806,35 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 select_overload<float() const>(&rive::TransformComponent::y),
                 select_overload<void(float)>(&rive::RootBone::y));
 
-  class_<rive::Animation>("Animation")
-      .property("name", select_overload<const std::string &() const>(
-                            &rive::AnimationBase::name));
-
-  class_<rive::LinearAnimation, base<rive::Animation>>("LinearAnimation")
-      .property("name", select_overload<const std::string &() const>(
-                            &rive::AnimationBase::name))
-      .property("duration", select_overload<uint32_t() const>(
-                                &rive::LinearAnimationBase::duration))
-      .property("fps",
-                select_overload<uint32_t() const>(&rive::LinearAnimationBase::fps))
-      .property("workStart", select_overload<uint32_t() const>(
-                                 &rive::LinearAnimationBase::workStart))
-      .property("workEnd", select_overload<uint32_t() const>(
-                               &rive::LinearAnimationBase::workEnd))
-      .property("enableWorkArea",
-                select_overload<bool() const>(
-                    &rive::LinearAnimationBase::enableWorkArea))
-      .property("loopValue", select_overload<uint32_t() const>(
-                                 &rive::LinearAnimationBase::loopValue))
-      .property("speed", select_overload<float() const>(
-                             &rive::LinearAnimationBase::speed))
-      .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
-
   class_<rive::LinearAnimationInstance>("LinearAnimationInstance")
-      .constructor<rive::LinearAnimation *, rive::Artboard*>()
+      .property("name", select_overload<std::string() const>(
+                            &rive::LinearAnimationInstance::name))
+      .property("duration", select_overload<uint32_t() const>(
+                                &rive::LinearAnimationInstance::duration))
+      .property("fps",
+                select_overload<uint32_t() const>(&rive::LinearAnimationInstance::fps))
+      .function("workStart",
+          optional_override([](rive::LinearAnimationInstance &self) -> uint32_t {
+            return self.animation()->workStart();
+          }),
+          allow_raw_pointers())
+      .function("workEnd",
+          optional_override([](rive::LinearAnimationInstance &self) -> uint32_t {
+            return self.animation()->workEnd();
+          }),
+          allow_raw_pointers())
+      .function("enableWorkArea",
+          optional_override([](rive::LinearAnimationInstance &self) -> bool {
+            return self.animation()->enableWorkArea();
+          }),
+          allow_raw_pointers())
+      .function("loopValue",
+          optional_override([](rive::LinearAnimationInstance &self) -> uint32_t {
+            return self.animation()->loopValue();
+          }),
+          allow_raw_pointers())
+      .property("speed", select_overload<float() const>(
+                             &rive::LinearAnimationInstance::speed))
       .property(
           "time",
           select_overload<float() const>(&rive::LinearAnimationInstance::time),
@@ -832,10 +844,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("apply", &rive::LinearAnimationInstance::apply,
                 allow_raw_pointers());
 
-  class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
-
   class_<rive::StateMachineInstance>("StateMachineInstance")
-      .constructor<rive::StateMachine *, rive::Artboard*>()
       .function("advance", &rive::StateMachineInstance::advance,
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)

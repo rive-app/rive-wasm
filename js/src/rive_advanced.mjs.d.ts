@@ -107,21 +107,27 @@ interface RiveOptions {
   export declare class Artboard {
     get name(): string;
     get bounds(): AABB;
-    instance(): Artboard;
-    // Deletes the backing wasm artboard instance
-    delete(): void;
+
     advance(sec: number): any;
     draw(renderer: CanvasRenderer): void;
-    animationByName(name: string): LinearAnimation;
-    animationByIndex(index: number): LinearAnimation;
+
     animationCount(): number;
-    stateMachineByName(name: string): StateMachine;
-    stateMachineByIndex(index: number): StateMachine;
+    animationNameAt(index: number): string;
+    animationByName(name: string): LinearAnimationInstance;
+    animationByIndex(index: number): LinearAnimationInstance;
+
     stateMachineCount(): number;
+    stateMachineNameAt(index: number): string;
+    stateMachineByName(name: string): StateMachineInstance;
+    stateMachineByIndex(index: number): StateMachineInstance;
+
     bone(name: string): Bone;
     node(name: string): Node;
     rootBone(name: string): RootBone;
     transformComponent(name: string): TransformComponent;
+
+    // Deletes the backing wasm artboard instance
+    delete(): void;
   }
   
   export declare class Bone extends TransformComponent {
@@ -147,7 +153,12 @@ interface RiveOptions {
   ///////////////
   // Animation //
   ///////////////
-  export declare class LinearAnimation {
+  export declare class LinearAnimationInstance {
+    /** Time of the animation in seconds */
+    time: number;
+    didLoop: boolean;
+
+    advance(sec: number): any;
     get name(): string;
     get duration(): number;
     get fps(): number;
@@ -155,34 +166,20 @@ interface RiveOptions {
     get workEnd(): number;
     get loopValue(): number;
     get speed(): number;
-    apply(artboard: Artboard, time: number, mix: number): void;
-  }
-  export declare class LinearAnimationInstance {
-    /** Time of the animation in seconds */
-    time: number;
-    didLoop: boolean;
-    constructor(animation: LinearAnimation, artboard: Artboard);
-    advance(sec: number): any;
-    /**
-     * Apply animation on the artboard
-     * @param mix 0-1 the strength of the animation in the animations mix.
-     */
-    apply(mix: number): any;
+    apply(mix: number): void;
+
     // Deletes the backing Wasm animation instance
     delete(): void;
   }
   
-  export declare class StateMachine {
-    get name(): string;
-  }
-  
   export declare class StateMachineInstance {
-    constructor(stateMachine: StateMachine, artboard: Artboard);
+    get name(): string;
     inputCount(): number;
     input(i: number): SMIInput; 
     advance(sec: number): any;
     stateChangedCount(): number;
     stateChangedNameByIndex(i: number): string;
+  
     // Deletes the backing Wasm state machine instance
     delete(): void;
   }
