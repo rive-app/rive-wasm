@@ -1120,8 +1120,7 @@ export class Rive {
       return;
     }
 
-    // Instance the artboard
-    this.artboard = rootArtboard.instance();
+    this.artboard = rootArtboard;
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
