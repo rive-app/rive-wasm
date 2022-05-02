@@ -99,15 +99,16 @@ interface RiveOptions {
   // File //
   //////////
   export declare class File {
-    defaultArtboard(): Artboard;
-    artboardByName(name: string): Artboard;
-    artboardByIndex(index: number): Artboard;
+    defaultArtboard(): Artboard;              // rive::ArtboardInstance
+    artboardByName(name: string): Artboard;   // rive::ArtboardInstance
+    artboardByIndex(index: number): Artboard; // rive::ArtboardInstance
     artboardCount(): number;
   }
+
+  // This wraps rive::ArtboardInstance*
   export declare class Artboard {
     get name(): string;
     get bounds(): AABB;
-    instance(): Artboard;
     // Deletes the backing wasm artboard instance
     delete(): void;
     advance(sec: number): any;

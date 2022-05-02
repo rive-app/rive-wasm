@@ -674,16 +674,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::File>("File")
       .function(
           "defaultArtboard",
-          select_overload<rive::Artboard *() const>(&rive::File::artboard),
+          optional_override([](rive::File& self) -> rive::Artboard* {
+            return self.artboardAt(0).release();
+          }),
           allow_raw_pointers())
       .function("artboardByName",
-                select_overload<rive::Artboard *(std::string) const>(
-                    &rive::File::artboard),
-                allow_raw_pointers())
+          optional_override([](rive::File& self, std::string name) -> rive::Artboard* {
+            return self.artboardNamed(name).release();
+          }),
+          allow_raw_pointers())
       .function("artboardByIndex",
-                select_overload<rive::Artboard *(size_t) const>(
-                    &rive::File::artboard),
-                allow_raw_pointers())
+          optional_override([](rive::File& self, size_t index) -> rive::Artboard* {
+            return self.artboardAt(index).release();
+          }),
+          allow_raw_pointers())
       .function("artboardCount", &rive::File::artboardCount);
 
   class_<rive::Artboard>("Artboard")
