@@ -319,6 +319,19 @@ Note that in a our next major version, this may be turned on by default.
 
 ## Examples
 
+### Testing the high-level JS API
+To run the example in `js/examples/_frameworks/parcel_example_canvas`, which displays a number of Rive animations using the high-level API for a number of Rive files:
+
+1. Pre-requisite: Ensure you have the `canvas` build locally (this is located in `js/npm/canvas`)
+- You can get by running the `./build.sh` script at `js/build.sh`
+- Make sure you're set up following the contribution/setup steps in the [wasm docs](#wasm-and-contributing)
+
+2. Install: `cd` into the `parcel_example_canvas` directory and run `npm i` to install dependencies
+3. Start: Run `npm start` which should bring up a server via the parcel-bundler, at `http://localhost:1234`
+
+Note that this references the local build for the high-level `@rive-app/canvas` dependency.
+
+### Testing the WASM/advanced API
 To run the example in `wasm/examples/parcel_example` which shows how to build a render loop with the low-level API for a number of Rive files, as well as how Rive can work with the Parcel zero-config build tool:
 
 1. Pre-requisite: Ensure you have the `webgl_advanced_single` build locally (this is located in `js/npm/webgl_advanced_single`)
