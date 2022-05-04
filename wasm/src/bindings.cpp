@@ -380,8 +380,7 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  auto reader = rive::BinaryReader(rv.data(), rv.size());
-  return rive::File::import(reader).release();
+  return rive::File::import(rive::toSpan(rv)).release();
 }
 
 #ifdef RIVE_SKIA_RENDERER
@@ -674,23 +673,23 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::File>("File")
       .function(
           "defaultArtboard",
-          optional_override([](rive::File& self) -> rive::Artboard* {
+          optional_override([](rive::File& self) -> rive::ArtboardInstance* {
             return self.artboardAt(0).release();
           }),
           allow_raw_pointers())
       .function("artboardByName",
-          optional_override([](rive::File& self, std::string name) -> rive::Artboard* {
+          optional_override([](const rive::File& self, const std::string& name) -> rive::ArtboardInstance* {
             return self.artboardNamed(name).release();
           }),
           allow_raw_pointers())
       .function("artboardByIndex",
-          optional_override([](rive::File& self, size_t index) -> rive::Artboard* {
+          optional_override([](const rive::File& self, size_t index) -> rive::ArtboardInstance* {
             return self.artboardAt(index).release();
           }),
           allow_raw_pointers())
       .function("artboardCount", &rive::File::artboardCount);
 
-  class_<rive::Artboard>("Artboard")
+  class_<rive::ArtboardInstance>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
       .function("flattenPath",
                 optional_override(
@@ -711,10 +710,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
 #endif
       .property("name", select_overload<const std::string &() const>(
                             &rive::Artboard::name))
-      .function("advance", &rive::Artboard::advance)
+      .function("advance",
+          optional_override([](rive::ArtboardInstance& self, double seconds) -> bool {
+            return self.advance(seconds);
+        }),
+        allow_raw_pointers())
       .function(
           "draw",
-          optional_override([](rive::Artboard &self, rive::Renderer *renderer) {
+          optional_override([](rive::ArtboardInstance &self, rive::Renderer *renderer) {
             return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
           }),
           allow_raw_pointers())
@@ -727,30 +730,38 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 allow_raw_pointers())
       // Animations
       .function("animationByIndex",
-                select_overload<rive::LinearAnimation *(size_t) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
+          optional_override([](rive::ArtboardInstance& self, size_t index) -> rive::LinearAnimation* {
+            return self.animation(index);
+        }),
+        allow_raw_pointers())
       .function("animationByName",
-                select_overload<rive::LinearAnimation *(std::string) const>(
-                    &rive::Artboard::animation),
-                allow_raw_pointers())
-      .function("animationCount", &rive::Artboard::animationCount)
+          optional_override([](rive::ArtboardInstance& self, const std::string& name) -> rive::LinearAnimation* {
+            return self.animation(name);
+        }),
+        allow_raw_pointers())
+      .function("animationCount",
+          optional_override([](rive::ArtboardInstance& self) -> size_t {
+            return self.animationCount();
+        }))
       // State machines
       .function("stateMachineByIndex",
-                select_overload<rive::StateMachine *(size_t) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
+          optional_override([](rive::ArtboardInstance& self, size_t index) -> rive::StateMachine* {
+            return self.stateMachine(index);
+          }),
+          allow_raw_pointers())
       .function("stateMachineByName",
-                select_overload<rive::StateMachine *(std::string) const>(
-                    &rive::Artboard::stateMachine),
-                allow_raw_pointers())
-      .function("stateMachineCount", &rive::Artboard::stateMachineCount)
-      .property("bounds", &rive::Artboard::bounds)
-      .function("instance",
-                optional_override([](rive::Artboard& self) -> rive::Artboard* {
-                  return self.instance().release();
-                }),
-                allow_raw_pointers())
+          optional_override([](rive::ArtboardInstance& self, const std::string& name) -> rive::StateMachine* {
+            return self.stateMachine(name);
+          }),
+          allow_raw_pointers())
+      .function("stateMachineCount",
+          optional_override([](rive::ArtboardInstance& self) -> size_t {
+            return self.stateMachineCount();
+        }))
+      .property("bounds",
+          optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
+            return self.bounds();
+          }))
       .property("frameOrigin",
                 select_overload<bool() const>(&rive::Artboard::frameOrigin),
                 select_overload<void(bool)>(&rive::Artboard::frameOrigin));
@@ -826,7 +837,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("apply", &rive::LinearAnimation::apply, allow_raw_pointers());
 
   class_<rive::LinearAnimationInstance>("LinearAnimationInstance")
-      .constructor<rive::LinearAnimation *, rive::Artboard*>()
+      .constructor<rive::LinearAnimation *, rive::ArtboardInstance*>()
       .property(
           "time",
           select_overload<float() const>(&rive::LinearAnimationInstance::time),
@@ -839,7 +850,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
   class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
 
   class_<rive::StateMachineInstance>("StateMachineInstance")
-      .constructor<rive::StateMachine *, rive::Artboard*>()
+      .constructor<rive::StateMachine *, rive::ArtboardInstance*>()
       .function("advance", &rive::StateMachineInstance::advance,
                 allow_raw_pointers())
       .function("inputCount", &rive::StateMachineInstance::inputCount)
