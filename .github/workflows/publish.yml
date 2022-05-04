@@ -50,4 +50,4 @@ jobs:
           git config --local user.email 'hello@rive.app'
           git config --local user.name ${{ github.actor }}
       - name: Add & commit version files
-        run: git add npm/**/package.json && git commit -m "Updating versions in package jsons" && git push
+        run: cd js && git add npm/**/package.json && git commit -m "Updating versions in package jsons" && git push
