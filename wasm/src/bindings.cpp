@@ -856,6 +856,21 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("inputCount", &rive::StateMachineInstance::inputCount)
       .function("input", &rive::StateMachineInstance::input,
                 allow_raw_pointers())
+      .function("pointerDown",
+          optional_override([](rive::StateMachineInstance& self,
+                               double x, double y) {
+            self.pointerDown(rive::Vec2D((float)x, (float)y));
+          }))
+      .function("pointerMove",
+          optional_override([](rive::StateMachineInstance& self,
+                               double x, double y) {
+            self.pointerMove(rive::Vec2D((float)x, (float)y));
+          }))
+      .function("pointerUp",
+          optional_override([](rive::StateMachineInstance& self,
+                               double x, double y) {
+            self.pointerUp(rive::Vec2D((float)x, (float)y));
+          }))
       .function("stateChangedCount",
                 &rive::StateMachineInstance::stateChangedCount)
       .function(

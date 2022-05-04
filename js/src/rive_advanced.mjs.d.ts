@@ -184,6 +184,12 @@ interface RiveOptions {
     advance(sec: number): any;
     stateChangedCount(): number;
     stateChangedNameByIndex(i: number): string;
+
+    // Call with coordinates in Artboard space
+    pointerDown(x: number, y: number): void;
+    pointerMove(x: number, y: number): void;
+    pointerUp(x: number, y: number): void;
+  
     // Deletes the backing Wasm state machine instance
     delete(): void;
   }
