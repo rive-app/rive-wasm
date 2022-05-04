@@ -1025,3 +1025,21 @@ test('Artboards can be reset back to their starting state', done => {
 });
 
 // #endregion
+
+test('Statemachines have pointer events', done => {
+  rive.RuntimeLoader.awaitInstance().then((runtime) => {
+    const file = runtime.load(new Uint8Array(stateMachineFileBuffer));
+    const ab = file.artboardByIndex(0);
+    const sm = ab.stateMachineByIndex(0);
+    const smi = new runtime.StateMachineInstance(sm, ab);
+
+    smi.pointerDown(0, 0);
+    smi.pointerMove(0, 0);
+    smi.pointerUp(0, 0);
+
+    smi.delete();
+    ab.delete();
+  //  file.delete();  // todo: need to expose delete() on file
+    done();
+  });
+});
