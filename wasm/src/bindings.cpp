@@ -301,75 +301,87 @@ void RadialGradientShader::passToJS(const RenderPaintWrapper &wrapper) {
 class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
-
+/*
   bool decode(rive::Span<const uint8_t> bytes) override {
     emscripten::val byteArray = emscripten::val(
         emscripten::typed_memory_view(bytes.size(), bytes.data()));
     return call<bool>("decode", byteArray);
   }
+*/
   void size(int width, int height) {
     m_Width = width;
     m_Height = height;
   }
-
   rive::rcp<rive::RenderShader>
   makeShader(rive::RenderTileMode tx, rive::RenderTileMode ty,
              const rive::Mat2D *localMatrix) const override {
     return nullptr;
   }
 };
-namespace rive {
 
-template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
-  return rcp<RenderBuffer>(
+#include "rive/factory.hpp"
+
+template <typename T> rive::rcp<rive::RenderBuffer> make_buffer(rive::Span<T> span) {
+  return rive::rcp<rive::RenderBuffer>(
       new CanvasBuffer(span.data(), span.size(), sizeof(T)));
 }
 
-rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferF32(Span<const float> data) {
-  return make_buffer(data);
-}
-rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
+class JSFactory : public rive::Factory {
+public:
+  rive::rcp<rive::RenderBuffer> makeBufferU16(rive::Span<const uint16_t> data) override {
+    return make_buffer(data);
+  }
+  rive::rcp<rive::RenderBuffer> makeBufferU32(rive::Span<const uint32_t> data) override {
+    return make_buffer(data);
+  }
+  rive::rcp<rive::RenderBuffer> makeBufferF32(rive::Span<const float> data) override {
+    return make_buffer(data);
+  }
+  rive::rcp<rive::RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
+                                      const rive::ColorInt colors[], // [count]
+                                      const float stops[],     // [count]
+                                      int count, rive::RenderTileMode,
+                                      const rive::Mat2D *localMatrix) override {
+    return rive::rcp<rive::RenderShader>(
       new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
-}
-
-rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
+  }
+  rive::rcp<rive::RenderShader> makeRadialGradient(float cx, float cy, float radius,
+                                       const rive::ColorInt colors[], // [count]
+                                       const float stops[],     // [count]
+                                       int count, rive::RenderTileMode,
+                                       const rive::Mat2D *localMatrix) override {
+    return rive::rcp<rive::RenderShader>(
       new RadialGradientShader(colors, stops, count, cx, cy, radius));
-}
-
-RenderPaint *makeRenderPaint() {
-  val renderPaint =
+  }
+  std::unique_ptr<rive::RenderPaint> makeRenderPaint() override {
+    val renderPaint =
       val::module_property("renderFactory").call<val>("makeRenderPaint");
-  return renderPaint.as<RenderPaint *>(allow_raw_pointers());
-}
-
-RenderPath *makeRenderPath() {
-  val renderPath =
+    auto rp = renderPaint.as<renderPaint *>(allow_raw_pointers());
+    return std::unique_ptr<rive::RenderPaint>(rp);
+  }
+  std::unique_ptr<rive::RenderPath> makeEmptyRenderPath() override {
+    val renderPath =
       val::module_property("renderFactory").call<val>("makeRenderPath");
-  return renderPath.as<RenderPath *>(allow_raw_pointers());
-}
+    auto rp = renderPath.as<RenderPath *>(allow_raw_pointers());
+    return std::unique_ptr<rive::RenderPaint(rp);
+  }
+  std::unique_ptr<rive::RenderImage> decodeImage(rive::Span<const uint8_t> bytes) override {
+/*
+    emscripten::val byteArray = emscripten::val(
+        emscripten::typed_memory_view(bytes.size(), bytes.data()));
+    return call<bool>("decode", byteArray);
 
-RenderImage *makeRenderImage() {
-  val renderImage =
+    auto skimage = SkImage::MakeFromEncoded();
+    val renderImage =
       val::module_property("renderFactory").call<val>("makeRenderImage");
-  return renderImage.as<RenderImage *>(allow_raw_pointers());
-}
-} // namespace rive
+    auto ri = renderImage.as<RenderImage *>(allow_raw_pointers());
+    return std::unique_ptr<RenderImage>(ri);
+    */
+   return nullptr;
+  }
+};
+static JSFactory gJSFactory;
+
 #endif
 
 rive::File *load(emscripten::val byteArray) {
@@ -380,7 +392,7 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  return rive::File::import(rive::toSpan(rv)).release();
+  return rive::File::import(rive::toSpan(rv), &gJSFactory).release();
 }
 
 #ifdef RIVE_SKIA_RENDERER
