@@ -1050,9 +1050,13 @@ export class Rive {
       }
     
       // Load Rive data from a source uri or a data buffer
-      this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay).catch(e => {
-        console.error(e);
-      });
+      this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay)
+        .then(() => {
+          this.handleTouchEvents();
+        })
+        .catch(e => {
+          console.error(e);
+        });
     }).catch(e => {
       console.error(e);
     });
@@ -1450,6 +1454,65 @@ export class Rive {
       this.startRendering();
       this.resizeToCanvas();
     }
+  }
+
+  public handleTouchEvents() {
+    if (!this.canvas || !this.animator.stateMachines.length || !this.renderer || !this.runtime) {
+      return;
+    }
+
+    const activeStateMachines =
+      this.animator.stateMachines.filter((sm: StateMachine) => sm.playing);
+    
+    function mouseCallback(event: MouseEvent) {
+      const boundingRect = (event.target as HTMLCanvasElement).getBoundingClientRect();
+
+      const canvasX = event.clientX - boundingRect.left;
+      const canvasY = event.clientY - boundingRect.top;
+      const fit = this._layout.runtimeFit(this.runtime);
+      const alignment = this._layout.runtimeAlignment(this.runtime);
+      const forwardMatrix = this.runtime.computeAlignment(fit, alignment, {
+        minX: 0,
+        minY: 0,
+        maxX: this.canvas.width,
+        maxY: this.canvas.height,
+      }, this.artboard.bounds);
+      let invertedMatrix = new this.runtime.Mat2D();
+      forwardMatrix.invert(invertedMatrix);
+      const canvasCoordinatesVector = new this.runtime.Vec2D(canvasX, canvasY);
+      const transformedVector = this.runtime.mapXY(invertedMatrix, canvasCoordinatesVector);
+      const transformedX = transformedVector.x();
+      const transformedY = transformedVector.y();
+
+      switch (event.type) {
+        // Pointer moving/hovering on the canvas
+        case 'mousemove': {
+          for (const stateMachine of activeStateMachines) {
+            stateMachine.instance.pointerMove(transformedX, transformedY);
+          }
+          break;
+        }
+        // Pointer click initiated but not released yet on the canvas
+        case 'mousedown': {
+          for (const stateMachine of activeStateMachines) {
+            stateMachine.instance.pointerDown(transformedX, transformedY);
+          }
+          break;
+        }
+        // Pointer click released on the canvas
+        case 'mouseup': {
+          for (const stateMachine of activeStateMachines) {
+            stateMachine.instance.pointerUp(transformedX, transformedY);
+          }
+          break;
+        }
+        default:
+      }
+    }
+
+    this.canvas.addEventListener("mousemove", mouseCallback.bind(this));
+    this.canvas.addEventListener("mousedown", mouseCallback.bind(this));
+    this.canvas.addEventListener("mouseup", mouseCallback.bind(this));
   }
 
   // Returns the animation source, which may be undefined

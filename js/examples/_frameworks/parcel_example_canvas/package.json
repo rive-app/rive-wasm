@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@rive-app/canvas": "file:../../../npm/canvas",
-    "@rive-app/webgl": "1.0.44",
+    "@rive-app/webgl": "file:../../../npm/webgl",
     "parcel-plugin-asset-copier": "^1.1.0",
     "src": "^1.1.2"
   }

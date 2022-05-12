@@ -39,11 +39,6 @@ Module.onRuntimeInitialized = function () {
             this._drawList.push(_offscreenGL['align'].bind(_offscreenGL, fit, align, from, to));
         };
 
-        this['computeAlignment'] = function (mat2d, fit, align, from, to) {
-            this._drawList.push(_offscreenGL['computeAlignment'].bind(
-                    _offscreenGL, mat2d, fit, align, from, to));
-        };
-
         this['flush'] = function () {
             console.assert(this._saveCount == 0);
             _pendingOffscreenRenderers.add(this);

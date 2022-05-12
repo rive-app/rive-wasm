@@ -383,6 +383,14 @@ rive::File *load(emscripten::val byteArray) {
   return rive::File::import(rive::toSpan(rv)).release();
 }
 
+rive::Mat2D computeAlignment(rive::Fit fit, rive::Alignment alignment, rive::AABB orig, rive::AABB dest) {
+  return rive::computeAlignment(fit, alignment, orig, dest);
+}
+
+rive::Vec2D mapXY(rive::Mat2D invertedMatrix, rive::Vec2D canvasVector) {
+  return invertedMatrix * canvasVector;
+}
+
 #ifdef RIVE_SKIA_RENDERER
 class WebGLSkiaRenderer : public rive::SkiaRenderer {
 private:
@@ -486,6 +494,8 @@ private:
 
 EMSCRIPTEN_BINDINGS(RiveWASM) {
   function("load", &load, allow_raw_pointers());
+  function("computeAlignment", &computeAlignment);
+  function("mapXY", &mapXY);
 
 #ifdef ENABLE_QUERY_FLAT_VERTICES
   class_<rive::FlattenedPath>("FlattenedPath")
@@ -541,9 +551,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("transform", &rive::Renderer::transform, allow_raw_pointers())
       .function("drawPath", &rive::Renderer::drawPath, allow_raw_pointers())
       .function("clipPath", &rive::Renderer::clipPath, allow_raw_pointers())
-      .function("align", &rive::Renderer::align, allow_raw_pointers())
-      .function("computeAlignment", &rive::Renderer::computeAlignment,
-                allow_raw_pointers());
+      .function("align", &rive::Renderer::align, allow_raw_pointers());
   class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
       .function("clear", &WebGLSkiaRenderer::clear)
       .function("flush", &WebGLSkiaRenderer::flush)
@@ -565,7 +573,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("clipPath", &RendererWrapper::clipPath, pure_virtual(),
                 allow_raw_pointers())
       .function("align", &rive::Renderer::align)
-      .function("computeAlignment", &rive::Renderer::computeAlignment)
       .allow_subclass<RendererWrapper>("RendererWrapper");
 
   class_<rive::RenderPath>("RenderPath")
@@ -645,6 +652,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
       .function("size", &RenderImageWrapper::size)
       .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 #endif
+
+  class_<rive::Vec2D>("Vec2D")
+    .constructor<float, float>()
+    .function("x", &rive::Vec2D::x)
+    .function("y", &rive::Vec2D::y);
 
   class_<rive::Mat2D>("Mat2D")
       .constructor<>()

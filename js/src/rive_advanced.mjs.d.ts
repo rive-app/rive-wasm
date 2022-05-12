@@ -22,6 +22,8 @@ interface RiveOptions {
   
     load(buffer: Uint8Array): File;
     makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
+    computeAlignment(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): Mat2D;
+    mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
     requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
     cancelAnimationFrame(requestID: number): void;
     enableFPSCounter(cb: (fps: number) => void): void;
@@ -310,5 +312,11 @@ interface RiveOptions {
     yy: number;
     tx: number;
     ty: number;
+    invert(mat: Mat2D): void;
+  }
+
+  export declare class Vec2D {
+    x(): void;
+    y(): void;
   }
   
