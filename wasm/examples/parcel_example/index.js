@@ -1,5 +1,6 @@
 import "regenerator-runtime";
 import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
+import {registerTouchInteractions} from '../../../js/src/utils';
 // import RiveCanvas from '../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs';
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
@@ -74,62 +75,17 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   // Don't use the offscreen renderer for FF as it should have a context limit of 300
   const renderer = rive.makeRenderer(canvas, true);
 
+  // Register cursor mouse actions to trigger Rive touch interactions
   const activeStateMachines = stateMachine ? [stateMachine] : [];
-  function mouseCallback(event) {
-    const boundingRect = (event.target).getBoundingClientRect();
-
-    const canvasX = event.clientX - boundingRect.left;
-    const canvasY = event.clientY - boundingRect.top;
-    const fwdMatrix = rive.computeAlignment(rive.Fit.contain, rive.Alignment.center, {
-      minX: 0,
-      minY: 0,
-      maxX: canvas.width,
-      maxY: canvas.height,
-    }, artboard.bounds);
-    let invertedMatrix = new rive.Mat2D();
-    fwdMatrix.invert(invertedMatrix);
-    const newVector = new rive.Vec2D(canvasX, canvasY);
-    const transformedVector = new rive.mapXY(invertedMatrix, newVector);
-    const transformedX = transformedVector.x();
-    const transformedY = transformedVector.y();
-
-    switch (event.type) {
-      // Pointer moving/hovering on the canvas
-      case 'mousemove': {
-        for (const stateMachine of activeStateMachines) {
-          if (stateMachine.pointerMove) {
-            stateMachine.pointerMove(transformedX, transformedY);
-          }
-        }
-        break;
-      }
-      // Pointer click initiated but not released yet on the canvas
-      case 'mousedown': {
-        for (const stateMachine of activeStateMachines) {
-          if (stateMachine.pointerDown) {
-            stateMachine.pointerDown(transformedX, transformedY);
-          }
-        }
-        break;
-      }
-      // Pointer click released on the canvas
-      case 'mouseup': {
-        for (const stateMachine of activeStateMachines) {
-          if (stateMachine.pointerUp) {
-            stateMachine.pointerUp(transformedX, transformedY);
-          }
-        }
-        break;
-      }
-      default:
-    }
-  }
-
-  canvas.addEventListener("mousemove", mouseCallback.bind(this));
-
-  canvas.addEventListener("mousedown", mouseCallback.bind(this));
-
-  canvas.addEventListener("mouseup", mouseCallback.bind(this));
+  registerTouchInteractions({
+    canvas,
+    artboard,
+    stateMachines: activeStateMachines,
+    renderer,
+    rive,
+    fit: rive.Fit.contain,
+    alignment: rive.Alignment.center,
+  });
 
   function loadFile(droppedFile) {
     const reader = new FileReader();
@@ -213,11 +169,11 @@ async function main() {
   const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop),
   });
-  const numCanvases = parseInt(params.numCanvases || 0) || 19;
+  const numCanvases = parseInt(params.numCanvases || 0) || 10;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
-  // rive.enableFPSCounter();
-  for (let i = 0; i < 2; i++) {
+  rive.enableFPSCounter();
+  for (let i = 0; i < numCanvases; i++) {
     await renderRiveAnimation({ rive, num: i, hasRandomSizes });
   }
 }
