@@ -1,0 +1,1 @@
+export {registerTouchInteractions} from './registerTouchInteractions';
