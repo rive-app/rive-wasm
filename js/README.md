@@ -359,6 +359,12 @@ npx http-server
 
 and then navigate to the examples, e.g.: `http://localhost:8000/examples/hello_world/index.html`.
 
+## Testing
+
+There is a suite of tests against the high-level API and various classes defined there. To run the test suite:
+1. Build WASM locally (see [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm))
+2. Run `npm run test` to run the Jest test suite
+
 ## WASM and Contributing
 
 If you're looking for information on our low-level Web Assembly ([WASM](https://developer.mozilla.org/en-US/docs/WebAssembly)) runtime, or you're interested in contributing and building this repo locally, please check out [these docs](https://github.com/rive-app/rive-wasm/tree/master/wasm).

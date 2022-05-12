@@ -5,25 +5,37 @@ import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
+import BallAnimation from './ball.riv';
+import SwitchAnimation from './switch_event_example.riv';
 import "./main.css";
 
 const randomNum = Math.ceil(Math.random() * 100 * 5) + 100;
 const RIVE_EXAMPLES = {
   0: {
-    riveFile: TruckAnimation,
+    riveFile: BallAnimation,
     hasStateMachine: true,
-    stateMachine: "",
+    stateMachine: "Main State Machine",
   },
   1: {
     riveFile: TapeMeshAnimation,
     animation: "Animation 1",
   },
   2: {
-    riveFile: AvatarAnimation,
-    animation: "idle",
+    riveFile: SwitchAnimation,
+    hasStateMachine: true,
+    stateMachine: "Main State Machine",
   },
   3: {
     riveFile: BirdAnimation,
+    animation: "idle",
+  },
+  4: {
+    riveFile: TruckAnimation,
+    hasStateMachine: true,
+    stateMachine: "",
+  },
+  5: {
+    riveFile: AvatarAnimation,
     animation: "idle",
   },
 };
@@ -61,6 +73,63 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   canvas.height = hasRandomSizes ? `${randomNum}` : "400";
   // Don't use the offscreen renderer for FF as it should have a context limit of 300
   const renderer = rive.makeRenderer(canvas, true);
+
+  const activeStateMachines = stateMachine ? [stateMachine] : [];
+  function mouseCallback(event) {
+    const boundingRect = (event.target).getBoundingClientRect();
+
+    const canvasX = event.clientX - boundingRect.left;
+    const canvasY = event.clientY - boundingRect.top;
+    const fwdMatrix = rive.computeAlignment(rive.Fit.contain, rive.Alignment.center, {
+      minX: 0,
+      minY: 0,
+      maxX: canvas.width,
+      maxY: canvas.height,
+    }, artboard.bounds);
+    let invertedMatrix = new rive.Mat2D();
+    fwdMatrix.invert(invertedMatrix);
+    const newVector = new rive.Vec2D(canvasX, canvasY);
+    const transformedVector = new rive.mapXY(invertedMatrix, newVector);
+    const transformedX = transformedVector.x();
+    const transformedY = transformedVector.y();
+
+    switch (event.type) {
+      // Pointer moving/hovering on the canvas
+      case 'mousemove': {
+        for (const stateMachine of activeStateMachines) {
+          if (stateMachine.pointerMove) {
+            stateMachine.pointerMove(transformedX, transformedY);
+          }
+        }
+        break;
+      }
+      // Pointer click initiated but not released yet on the canvas
+      case 'mousedown': {
+        for (const stateMachine of activeStateMachines) {
+          if (stateMachine.pointerDown) {
+            stateMachine.pointerDown(transformedX, transformedY);
+          }
+        }
+        break;
+      }
+      // Pointer click released on the canvas
+      case 'mouseup': {
+        for (const stateMachine of activeStateMachines) {
+          if (stateMachine.pointerUp) {
+            stateMachine.pointerUp(transformedX, transformedY);
+          }
+        }
+        break;
+      }
+      default:
+    }
+  }
+
+  canvas.addEventListener("mousemove", mouseCallback.bind(this));
+
+  canvas.addEventListener("mousedown", mouseCallback.bind(this));
+
+  canvas.addEventListener("mouseup", mouseCallback.bind(this));
 
   function loadFile(droppedFile) {
     const reader = new FileReader();
@@ -147,8 +216,8 @@ async function main() {
   const numCanvases = parseInt(params.numCanvases || 0) || 19;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
-  rive.enableFPSCounter();
-  for (let i = 0; i < numCanvases; i++) {
+  // rive.enableFPSCounter();
+  for (let i = 0; i < 2; i++) {
     await renderRiveAnimation({ rive, num: i, hasRandomSizes });
   }
 }

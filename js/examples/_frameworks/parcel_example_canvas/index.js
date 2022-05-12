@@ -1,19 +1,22 @@
 import "regenerator-runtime";
-import { Rive, Fit } from "@rive-app/canvas";
+import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
+import BallAnimation from "./ball.riv";
+import SwitchAnimation from "./switch_event_example.riv";
 
 const RIVE_EXAMPLES = {
   0: {
-    riveFile: TruckAnimation,
+    riveFile: SwitchAnimation,
     hasStateMachine: true,
-    stateMachine: "drive",
+    stateMachine: "Main State Machine",
   },
   1: {
-    riveFile: TapeMeshAnimation,
-    animation: "Animation 1",
+    riveFile: BallAnimation,
+    hasStateMachine: true,
+    stateMachine: "Main State Machine",
   },
   2: {
     riveFile: AvatarAnimation,
@@ -22,6 +25,15 @@ const RIVE_EXAMPLES = {
   3: {
     riveFile: BirdAnimation,
     animation: "idle",
+  },
+  4: {
+    riveFile: TruckAnimation,
+    hasStateMachine: true,
+    stateMachine: "drive",
+  },
+  5: {
+    riveFile: TapeMeshAnimation,
+    animation: "Animation 1",
   },
 };
 
@@ -44,11 +56,14 @@ async function main(num) {
     buffer: bytes,
     autoplay: true,
     canvas: el,
-    fit: Fit.cover,
+    layout: new Layout({
+      fit: Fit.Cover,
+      alignment: Alignment.Center,
+    }),
     ...(riveEx.hasStateMachine && {stateMachines: riveEx.stateMachine}),
   });
 }
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 6; i++) {
   main(i);
 }
