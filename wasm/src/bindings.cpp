@@ -396,7 +396,6 @@ class WebGLSkiaRenderer : public rive::SkiaRenderer {
 private:
   sk_sp<GrDirectContext> m_Context;
   SkSurface *m_Surface;
-  std::vector<std::unique_ptr<rive::RenderPath>> m_SavedClipRects;
 
 public:
   WebGLSkiaRenderer(sk_sp<GrDirectContext> context, int width, int height)
@@ -418,7 +417,6 @@ public:
 
   void flush() {
     m_Context->flush();
-    m_SavedClipRects.clear();
   }
 
   SkSurface *makeSurface(sk_sp<GrDirectContext> context, int width,
@@ -444,13 +442,13 @@ public:
 
   void saveClipRect(float l, float t, float r, float b) {
     save();
-    rive::RenderPath* rect = m_SavedClipRects.emplace_back(rive::makeRenderPath()).get();
+    std::unique_ptr<rive::RenderPath> rect(rive::makeRenderPath());
     rect->moveTo(l, t);
     rect->lineTo(r, t);
     rect->lineTo(r, b);
     rect->lineTo(l, b);
     rect->close();
-    clipPath(rect);
+    clipPath(rect.get());
   }
 
   void restoreClipRect() {
