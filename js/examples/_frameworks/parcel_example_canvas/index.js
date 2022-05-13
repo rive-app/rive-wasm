@@ -1,5 +1,6 @@
 import "regenerator-runtime";
 import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
+//import { Rive, Fit, Alignment, Layout } from "@rive-app/webgl";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
