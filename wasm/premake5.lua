@@ -9,7 +9,7 @@ targetdir ((os.getenv("OUT_DIR") or "build") .. "/bin/%{cfg.buildcfg}")
 objdir ((os.getenv("OUT_DIR") or "build") .. "/obj/%{cfg.buildcfg}")
 includedirs {"./submodules/rive-cpp/include"}
 
-files {"./submodules/rive-cpp/src/**.cpp", "./src/bindings.cpp"}
+files {"./submodules/rive-cpp/src/**.cpp", "./src/*.cpp"}
 
 buildoptions {
             "-Oz", 
