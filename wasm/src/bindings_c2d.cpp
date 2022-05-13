@@ -2,7 +2,9 @@
 
 #ifndef RIVE_SKIA_RENDERER
 
+#include "rive/factory.hpp"
 #include "rive/renderer.hpp"
+#include "rive/math/path_types.hpp"
 
 #include "skia_imports/include/private/SkVx.h"
 
@@ -254,11 +256,12 @@ class RenderImageWrapper : public wrapper<rive::RenderImage> {
 public:
   EMSCRIPTEN_WRAPPER(RenderImageWrapper);
 
-  bool decode(rive::Span<const uint8_t> bytes) override {
+  bool decode(rive::Span<const uint8_t> bytes) {
     emscripten::val byteArray = emscripten::val(
         emscripten::typed_memory_view(bytes.size(), bytes.data()));
     return call<bool>("decode", byteArray);
   }
+
   void size(int width, int height) {
     m_Width = width;
     m_Height = height;
@@ -278,50 +281,94 @@ template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
       new CanvasBuffer(span.data(), span.size(), sizeof(T)));
 }
 
-rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) {
-  return make_buffer(data);
-}
-rcp<RenderBuffer> makeBufferF32(Span<const float> data) {
-  return make_buffer(data);
-}
-rcp<RenderShader> makeLinearGradient(float sx, float sy, float ex, float ey,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
-      new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
-}
+class C2DFactory : public Factory {
+    rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) override {
+        return make_buffer(data);
+    }
+    rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) override {
+        return make_buffer(data);
+    }
+    rcp<RenderBuffer> makeBufferF32(Span<const float> data) override {
+        return make_buffer(data);
+    }
 
-rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
-                                     const ColorInt colors[], // [count]
-                                     const float stops[],     // [count]
-                                     int count, RenderTileMode,
-                                     const Mat2D *localMatrix) {
-  return rcp<RenderShader>(
-      new RadialGradientShader(colors, stops, count, cx, cy, radius));
-}
+    rcp<RenderShader> makeLinearGradient(float sx, float sy,
+                                         float ex, float ey,
+                                         const ColorInt colors[],    // [count]
+                                         const float stops[],        // [count]
+                                         int count,
+                                         RenderTileMode,
+                                         const Mat2D* localMatrix) override {
+      return rcp<RenderShader>(
+        new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
+    }
+    rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
+                                         const ColorInt colors[],    // [count]
+                                         const float stops[],        // [count]
+                                         int count,
+                                         RenderTileMode,
+                                         const Mat2D* localMatrix) override {
+      return rcp<RenderShader>(
+        new RadialGradientShader(colors, stops, count, cx, cy, radius));
+    }
+    
+    std::unique_ptr<RenderPath> makeRenderPath(Span<const Vec2D> points,
+                                               Span<const uint8_t> verbs,
+                                               FillRule fr) override {
+      val renderPath =
+        val::module_property("renderFactory").call<val>("makeRenderPath");
+      auto ptr = renderPath.as<RenderPath *>(allow_raw_pointers());
+      
+      // It might be faster to do this on the JS side, and just pass up the arrays...
+      // for now, we do it one segment at a time (each turns into an up-call to JS)
+      ptr->fillRule(fr);
+      const Vec2D* pts = points.data();
+      for (auto v : verbs) {
+        switch ((PathVerb)v) {
+          case PathVerb::move: ptr->move(*pts++); break;
+          case PathVerb::line: ptr->line(*pts++); break;
+          case PathVerb::cubic: ptr->cubic(pts[0], pts[1], pts[2]); pts += 3; break;
+          case PathVerb::close: ptr->close(); break;
+          default: assert(false); // unexpected verb
+        }
+      }
+      assert(pts - points.data() == points.size());
+    
+      return std::unique_ptr<RenderPath>(ptr);
+    }
 
-RenderPaint *makeRenderPaint() {
-  val renderPaint =
-      val::module_property("renderFactory").call<val>("makeRenderPaint");
-  return renderPaint.as<RenderPaint *>(allow_raw_pointers());
-}
+    std::unique_ptr<RenderPath> makeEmptyRenderPath() override {
+      val renderPath =
+        val::module_property("renderFactory").call<val>("makeRenderPath");
+      auto ptr = renderPath.as<RenderPath *>(allow_raw_pointers());
+      return std::unique_ptr<RenderPath>(ptr);
+    }
+  
+    std::unique_ptr<RenderPaint> makeRenderPaint() override {
+      val renderPaint =
+        val::module_property("renderFactory").call<val>("makeRenderPaint");
+      auto ptr = renderPaint.as<RenderPaint *>(allow_raw_pointers());
+      return std::unique_ptr<RenderPaint>(ptr);
+    }
+  
+    std::unique_ptr<RenderImage> decodeImage(Span<const uint8_t> bytes) override {
+      // TODO: seems like we should change the constructor the the JS RenderImage to
+      //       be pased the byteArray, and have it decode (or fail) right away.
+      //       It could just return null to us for its object if it failed.
+      //   ... that would avoid that tricky cast to RenderImageWrapper*
+    
+      val renderImage =
+        val::module_property("renderFactory").call<val>("makeRenderImage");
 
-RenderPath *makeRenderPath() {
-  val renderPath =
-      val::module_property("renderFactory").call<val>("makeRenderPath");
-  return renderPath.as<RenderPath *>(allow_raw_pointers());
-}
+      auto ptr = renderImage.as<RenderImageWrapper *>(allow_raw_pointers());
+      if (!ptr->decode(bytes)) {
+ //       delete ptr;
+ //       ptr = nullptr;
+      }
+      return std::unique_ptr<RenderImage>(ptr);
+    }
+};
 
-RenderImage *makeRenderImage() {
-  val renderImage =
-      val::module_property("renderFactory").call<val>("makeRenderImage");
-  return renderImage.as<RenderImage *>(allow_raw_pointers());
-}
 } // namespace rive
 
 EMSCRIPTEN_BINDINGS(RiveWASM_C2D) {
@@ -411,11 +458,15 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D) {
       .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
   class_<rive::RenderImage>("RenderImage")
-      .function("decode", &RenderImageWrapper::decode, pure_virtual(),
-                allow_raw_pointers())
+//      .function("decode", &RenderImageWrapper::decode, pure_virtual(), allow_raw_pointers())
       .function("size", &RenderImageWrapper::size)
       .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 
+}
+
+static rive::C2DFactory gC2DFactory;
+rive::Factory* jsFactory() {
+  return &gC2DFactory;
 }
 
 #endif // not RIVE_SKIA_RENDERER
