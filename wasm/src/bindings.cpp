@@ -26,7 +26,6 @@
 #include "rive/shapes/path.hpp"
 #include "rive/transform_component.hpp"
 
-// How much of Skia does this bring in (for our code size?)
 #include "src/core/SkIPoint16.h"
 #include "src/gpu/GrDynamicRectanizer.h"
 
@@ -39,6 +38,9 @@
 #include <vector>
 
 using namespace emscripten;
+
+// Returns the global factory (either c2d or skia backed)
+extern rive::Factory* jsFactory();
 
 // We had to do this because binding the core class const defined types directly
 // caused wasm-ld linker issues. See
@@ -60,7 +62,7 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  return rive::File::import(rive::toSpan(rv)).release();
+  return rive::File::import(rive::toSpan(rv), jsFactory()).release();
 }
 
 rive::Mat2D computeAlignment(rive::Fit fit, rive::Alignment alignment, rive::AABB orig, rive::AABB dest) {
@@ -171,7 +173,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
                 select_overload<void(float)>(&rive::Mat2D::ty))
       .function("invert", optional_override([](rive::Mat2D &self,
                                                rive::Mat2D &result) -> bool {
-                  return rive::Mat2D::invert(result, self);
+                  return self.invert(&result);
                 }))
       .function("multiply",
                 optional_override([](rive::Mat2D &self, rive::Mat2D &result,

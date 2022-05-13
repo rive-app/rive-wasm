@@ -3,9 +3,11 @@
 #ifdef RIVE_SKIA_RENDERER
 
 #include "GrDirectContext.h"
+#include "SkCanvas.h"
 #include "SkSurface.h"
 #include "gl/GrGLInterface.h"
 
+#include "skia_factory.hpp"
 #include "skia_renderer.hpp"
 #include <GLES3/gl3.h>
 
@@ -16,6 +18,11 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+
+static rive::SkiaFactory gSkiaFactory;
+rive::Factory* jsFactory() {
+  return &gSkiaFactory;
+}
 
 using namespace emscripten;
 
@@ -69,7 +76,7 @@ public:
 
   void saveClipRect(float l, float t, float r, float b) {
     save();
-    std::unique_ptr<rive::RenderPath> rect(rive::makeRenderPath());
+    std::unique_ptr<rive::RenderPath> rect(jsFactory()->makeEmptyRenderPath());
     rect->moveTo(l, t);
     rect->lineTo(r, t);
     rect->lineTo(r, b);
