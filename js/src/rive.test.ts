@@ -1,5 +1,6 @@
 import * as rc from './rive_advanced.mjs';
 import * as rive from './rive';
+import getTestAnimationBuffer from './test/test-riv-bytes/long-artboard-name';
 
 // #region helper functions
 
@@ -404,6 +405,19 @@ test('Artboards can be fetched by name', done => {
       done();
     },
     onLoadError: () => expect(false).toBeTruthy(),
+  });
+});
+
+test('Artboards can be fetched with a long name', done => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: (arrayToArrayBuffer(getTestAnimationBuffer())),
+    artboard: 'Really Long  Artboard Name with Double Spaces',
+    onLoad: () => {
+      expect(r).toBeDefined();
+      done();
+    },
   });
 });
 
