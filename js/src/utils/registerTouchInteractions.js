@@ -14,17 +14,17 @@ export const registerTouchInteractions = ({
   if (!canvas || !stateMachines.length || !renderer || !rive || !artboard) {
     return;
   }
-    
+
     const mouseCallback = (event) => {
-      const boundingRect = event.target.getBoundingClientRect();
+      const boundingRect = event.currentTarget.getBoundingClientRect();
 
       const canvasX = event.clientX - boundingRect.left;
       const canvasY = event.clientY - boundingRect.top;
       const forwardMatrix = rive.computeAlignment(fit, alignment, {
         minX: 0,
         minY: 0,
-        maxX: canvas.width,
-        maxY: canvas.height,
+        maxX: boundingRect.width,
+        maxY: boundingRect.height,
       }, artboard.bounds);
       let invertedMatrix = new rive.Mat2D();
       forwardMatrix.invert(invertedMatrix);
