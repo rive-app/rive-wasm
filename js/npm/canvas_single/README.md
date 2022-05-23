@@ -10,6 +10,6 @@ An easy-to-use high-level Rive API using a backing [CanvasRenderingContext2D](ht
 - Extremely small download size
 - Great for displaying many animated canvases concurrently on the screen. This is ideal for when you want to render lists or grids of Rive animations on the screen, as there is no context limit by the browser (as opposed to WebGL)
 - Support for simple vector graphics animations, raster, and mesh deformations
-- Web Assembly (WASM) backing dependency is part of the JS bundle; no need for any WASM request
+- Web Assembly (WASM) backing dependency is part of the JS bundle; there is no need to make a request to load it in at runtime
 
 [Getting Started](https://github.com/rive-app/rive-wasm#getting-started)

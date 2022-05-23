@@ -10,7 +10,7 @@ npm install @rive-app/webgl-single
 An easy-to-use high-level Rive API using the [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderer. This runtime will support Rive's upcoming advanced rendering features which may not be available to the Canvas renderers. Some benefits of this package:
 - Highest fidelity with edit-time experience.
 - Support for future advanced rendering features
-- Web Assembly (WASM) is part of the JS bundle; no need to make a request to load it in at runtime
+- Web Assembly (WASM) is part of the JS bundle; there is no need to make a request to load it in at runtime
 
 **A note about WebGL:** Most browsers limit the number of concurrent WebGL contexts by page/domain. Using Rive, this means that the browser limit impacts the number of new Rive({...}) instances created. See the README docs for the `useOffscreenRenderer` option that may assist in working around this limitation.
 
