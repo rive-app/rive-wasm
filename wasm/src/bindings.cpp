@@ -154,8 +154,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
 
   class_<rive::Vec2D>("Vec2D")
     .constructor<float, float>()
-    .function("x", &rive::Vec2D::x)
-    .function("y", &rive::Vec2D::y);
+    .function("x", optional_override([](rive::Vec2D self) -> float { return self.x; }))
+    .function("y", optional_override([](rive::Vec2D self) -> float { return self.y; }));
 
   class_<rive::Mat2D>("Mat2D")
       .constructor<>()
