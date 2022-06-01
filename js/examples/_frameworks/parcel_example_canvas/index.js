@@ -7,6 +7,7 @@ import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
 import BallAnimation from "./ball.riv";
 import SwitchAnimation from "./switch_event_example.riv";
+import NestedDefaultAnimation from "./nested_default.riv";
 
 const RIVE_EXAMPLES = {
   0: {
@@ -36,6 +37,11 @@ const RIVE_EXAMPLES = {
     riveFile: TapeMeshAnimation,
     animation: "Animation 1",
   },
+  6: {
+    riveFile: NestedDefaultAnimation,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  }
 };
 
 async function loadFile(num) {
@@ -65,6 +71,6 @@ async function main(num) {
   });
 }
 
-for (let i = 0; i < 6; i++) {
+for (let i = 0; i < 7; i++) {
   main(i);
 }
