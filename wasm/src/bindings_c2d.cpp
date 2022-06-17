@@ -296,7 +296,7 @@ class C2DFactory : public Factory {
                                          float ex, float ey,
                                          const ColorInt colors[],    // [count]
                                          const float stops[],        // [count]
-                                         int count,
+                                         size_t count,
                                          RenderTileMode,
                                          const Mat2D* localMatrix) override {
       return rcp<RenderShader>(
@@ -305,7 +305,7 @@ class C2DFactory : public Factory {
     rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
                                          const ColorInt colors[],    // [count]
                                          const float stops[],        // [count]
-                                         int count,
+                                         size_t count,
                                          RenderTileMode,
                                          const Mat2D* localMatrix) override {
       return rcp<RenderShader>(
