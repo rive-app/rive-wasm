@@ -432,8 +432,11 @@ Rive.onRuntimeInitialized = function () {
         'completeGradient': function () {
 
         },
-
-        'draw': function (ctx, path) {
+        // https://github.com/rive-app/rive/issues/3816: The fill rule (and only the fill rule) on a
+        // path object can mutate before flush(). To work around this, we capture the fill rule at
+        // draw time. It's a little awkward having a fill rule here even though we might be a
+        // stroke, so we probably want to rework this.
+        'draw': function (ctx, path2D, fillRule) {
             let _style = this._style;
             let _value = this._value;
             let _gradient = this._gradient;
@@ -472,11 +475,11 @@ Rive.onRuntimeInitialized = function () {
                     ctx['lineWidth'] = this._thickness;
                     ctx['lineCap'] = this._cap;
                     ctx['lineJoin'] = this._join;
-                    ctx['stroke'](path._path2D);
+                    ctx['stroke'](path2D);
                     break;
                 case fill:
                     ctx['fillStyle'] = _value;
-                    ctx['fill'](path._path2D, path._fillRule === evenOdd ? 'evenodd' : 'nonzero');
+                    ctx['fill'](path2D, fillRule);
                     break;
             }
         }
@@ -554,7 +557,8 @@ Rive.onRuntimeInitialized = function () {
                     this._ctx, m['xx'], m['xy'], m['yx'], m['yy'], m['tx'], m['ty']));
         },
         '_drawPath': function (path, paint) {
-            this._drawList.push(paint['draw'].bind(paint, this._ctx, path));
+            const fillRule = path._fillRule === evenOdd ? 'evenodd' : 'nonzero';
+            this._drawList.push(paint['draw'].bind(paint, this._ctx, path._path2D, fillRule));
         },
         '_drawImage': function (image, blend, opacity) {
             var img = image._image;
