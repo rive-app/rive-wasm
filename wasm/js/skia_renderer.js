@@ -261,6 +261,11 @@ Module.onRuntimeInitialized = function () {
             _animationCallbackHandler.enableFPSCounter.bind(_animationCallbackHandler);
     _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
 
+    let load = Rive["load"];
+    Rive["load"] = function (bytes) {
+      return Promise.resolve(load(bytes));
+    };
+    
     const cppClear = Module['WebGLRenderer']['prototype']['clear'];
     Module['WebGLRenderer']['prototype']['clear'] = function () {
         // Resize Skia surface if the canvas size changed.

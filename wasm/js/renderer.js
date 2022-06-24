@@ -277,6 +277,8 @@ Rive.onRuntimeInitialized = function () {
             _nextImageUniqueID = ((_nextImageUniqueID + 1) & 0x7fffffff) || 1;
         },
         'decode': function (bytes) {
+            let context = loadContext;
+            context.total++;
             var cri = this;
             var image = new Image();
             image.src = URL.createObjectURL(
@@ -288,6 +290,15 @@ Rive.onRuntimeInitialized = function () {
                 cri._image = image;
                 cri._texture = offscreenWebGL.createImageTexture(image);
                 cri["size"](image.width, image.height);
+
+                context.loaded++;
+                if (context.loaded === context.total) {
+                    const ready = context.ready;
+                    if (ready) {
+                        ready();
+                        context.ready = null;
+                    }
+                }
             };
 
         }
@@ -714,6 +725,26 @@ Rive.onRuntimeInitialized = function () {
         makeRenderImage: function () {
             return new CanvasRenderImage();
         }
+    };
+
+
+    let load = Rive["load"];
+    let loadContext = null;
+    Rive["load"] = function (bytes) {
+        return new Promise(function (resolve, reject) {
+            let result = null;
+            loadContext = {
+                total: 0,
+                loaded: 0,
+                ready: function () {
+                    resolve(result);
+                },
+            };
+            result = load(bytes);
+            if (loadContext.total == 0) {
+                resolve(result);
+            }
+        });
     };
 
     const _animationCallbackHandler = new AnimationCallbackHandler();

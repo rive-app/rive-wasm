@@ -50,7 +50,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     const bytes = await (
       await fetch(new Request(riveEx.riveFile))
     ).arrayBuffer();
-    const file = rive.load(new Uint8Array(bytes));
+    const file = await rive.load(new Uint8Array(bytes));
     artboard = file.defaultArtboard();
     if (hasStateMachine) {
       stateMachine = new rive.StateMachineInstance(
