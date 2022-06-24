@@ -1,13 +1,13 @@
 import "regenerator-runtime";
 import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
-import {registerTouchInteractions} from '../../../js/src/utils';
+import { registerTouchInteractions } from "../../../js/src/utils";
 // import RiveCanvas from '../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs';
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
-import BallAnimation from './ball.riv';
-import SwitchAnimation from './switch_event_example.riv';
+import BallAnimation from "./ball.riv";
+import SwitchAnimation from "./switch_event_example.riv";
 import "./main.css";
 
 const randomNum = Math.ceil(Math.random() * 100 * 5) + 100;
@@ -54,11 +54,14 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     artboard = file.defaultArtboard();
     if (hasStateMachine) {
       stateMachine = new rive.StateMachineInstance(
-        artboard.stateMachineByIndex(0), artboard
+        artboard.stateMachineByIndex(0),
+        artboard
       );
     } else {
-      animation = new rive.LinearAnimationInstance(artboard.animationByName(riveEx.animation),
-                                                   artboard);
+      animation = new rive.LinearAnimationInstance(
+        artboard.animationByName(riveEx.animation),
+        artboard
+      );
     }
   }
   await loadDefault();
@@ -93,7 +96,10 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
       stateMachine = null;
       const file = rive.load(new Uint8Array(event.target.result));
       artboard = file.artboardByName("Truck");
-      animation = new rive.LinearAnimationInstance(artboard.animationByName("idle"), artboard);
+      animation = new rive.LinearAnimationInstance(
+        artboard.animationByName("idle"),
+        artboard
+      );
     };
 
     reader.readAsArrayBuffer(droppedFile);
