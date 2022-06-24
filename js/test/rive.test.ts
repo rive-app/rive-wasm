@@ -1041,8 +1041,8 @@ test('Artboards can be reset back to their starting state', done => {
 // #endregion
 
 test('Statemachines have pointer events', done => {
-  rive.RuntimeLoader.awaitInstance().then((runtime) => {
-    const file = runtime.load(new Uint8Array(stateMachineFileBuffer));
+  rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
+    const file = await runtime.load(new Uint8Array(stateMachineFileBuffer));
     const ab = file.artboardByIndex(0);
     const sm = ab.stateMachineByIndex(0);
     const smi = new runtime.StateMachineInstance(sm, ab);
