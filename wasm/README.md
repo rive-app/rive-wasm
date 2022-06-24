@@ -10,6 +10,10 @@ Rive's low level web runtime. Use this over the high level JS runtime if you nee
 
 `build_all_wasm.sh` will build all the various permutations of the Rive WASM modules necessary to build rive-js.
 
+# Code Formatting
+
+The C++ code is formatted using ClangFormat. The JS code is formatted using Prettier. Configuration files are included for both. VSCode will pick them up directly if you have the Prettier and ClangFormat extensions installed.
+
 # Renderers
 
 Rive renders to an HTML Canvas element. A Context 2D renderer and WebGL renderer are both available. The Context 2D renderer doesn't support raster meshes.
