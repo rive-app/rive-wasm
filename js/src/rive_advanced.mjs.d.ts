@@ -20,7 +20,7 @@ interface RiveOptions {
     StrokeCap: typeof StrokeCap;
     StrokeJoin: typeof StrokeJoin;
   
-    load(buffer: Uint8Array): File;
+    load(buffer: Uint8Array): Promise<File>;
     makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
     computeAlignment(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): Mat2D;
     mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
