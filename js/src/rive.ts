@@ -458,7 +458,7 @@ class Animator {
        } else {
           // Try to create a new animation instance
           const anim = this.artboard.animationByName(animatables[i]);
-          if(anim) {
+          if (anim) {
             this.animations.push(new Animation(anim, this.artboard, this.runtime, playing));
           } else {
             // Try to create a new state machine instance
@@ -503,7 +503,7 @@ class Animator {
    * @param animatables names of the animations and state machines to pause
    * @returns a list of names of the animations and state machines paused
    */
-     public pause(animatables: string[]): string[] {
+    public pause(animatables: string[]): string[] {
       return this.add(animatables, false);
     }
 
@@ -1209,13 +1209,16 @@ export class Rive {
       onSecond?.();
     }
 
+    const isFirstFrame = time - this.lastRenderTime === 0;
+
     // Calculate the elapsed time between frames in seconds
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
 
-    // Advance non-paused animations by the elapsed number of seconds
-    // Also advance any animations that require scrubbing
-    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub)
+    // - Advance non-paused animations by the elapsed number of seconds
+    // - Advance any animations that require scrubbing
+    // - Advance to the first frame even when autoplay is false
+    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub || isFirstFrame)
       // The scrubbed animations must be applied first to prevent weird artifacts
       // if the playing animations conflict with the scrubbed animating attribuates.
       .sort((first, second) => first.needsScrub ? -1 : 1);
@@ -1227,8 +1230,9 @@ export class Rive {
       animation.instance.apply(1.0);
     }
 
-    // Advance non-paused state machines by the elapsed number of seconds
-    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
+    // - Advance non-paused state machines by the elapsed number of seconds
+    // - Advance to the first frame even when autoplay is false
+    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing || isFirstFrame);
     for (const stateMachine of activeStateMachines) {
       stateMachine.instance.advance(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
