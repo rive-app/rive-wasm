@@ -488,8 +488,6 @@ class Animator {
             const sm = this.artboard.stateMachineByName(animatables[i]);
             if (sm) {
               const newStateMachine = new StateMachine(sm, this.runtime, playing, this.artboard);
-              // Display the first frame of the specified state machine
-              newStateMachine.advance(0);
               this.stateMachines.push(newStateMachine);
             }
           }
