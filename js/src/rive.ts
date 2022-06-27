@@ -265,6 +265,17 @@ class Animation {
     }
   }
 
+  /**
+   * Apply interpolated keyframe values to the artboard. This should be called after calling
+   * .advance() on an animation instance so that new values are applied to properties.
+   * 
+   * Note: This does not advance the artboard, which updates all objects on the artboard
+   * @param mix - Mix value for the animation from 0 to 1
+   */
+  public apply(mix: number) {
+    this.instance.apply(mix);
+  }
+
   public get needsScrub(): boolean {
     return this.scrubTo !== null;
   }
@@ -367,6 +378,14 @@ class StateMachine {
   }
 
   /**
+   * Advances the state machine instance by a given time.
+   * @param time - the time to advance the animation by in seconds
+   */
+  public advance(time: number) {
+    this.instance.advance(time);
+  }
+
+  /**
    * Fetches references to the state machine's inputs and caches them
    * @param runtime an instance of the runtime; needed for the SMIInput types
    */
@@ -459,12 +478,19 @@ class Animator {
           // Try to create a new animation instance
           const anim = this.artboard.animationByName(animatables[i]);
           if (anim) {
-            this.animations.push(new Animation(anim, this.artboard, this.runtime, playing));
+            const newAnimation = new Animation(anim, this.artboard, this.runtime, playing);
+            // Display the first frame of the specified animation
+            newAnimation.advance(0);
+            newAnimation.apply(1.0);
+            this.animations.push(newAnimation);
           } else {
             // Try to create a new state machine instance
             const sm = this.artboard.stateMachineByName(animatables[i]);
             if (sm) {
-              this.stateMachines.push(new StateMachine(sm, this.runtime, playing, this.artboard));
+              const newStateMachine = new StateMachine(sm, this.runtime, playing, this.artboard);
+              // Display the first frame of the specified state machine
+              newStateMachine.advance(0);
+              this.stateMachines.push(newStateMachine);
             }
           }
         }
@@ -1209,8 +1235,6 @@ export class Rive {
       onSecond?.();
     }
 
-    const isFirstFrame = time - this.lastRenderTime === 0;
-
     // Calculate the elapsed time between frames in seconds
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
@@ -1218,7 +1242,7 @@ export class Rive {
     // - Advance non-paused animations by the elapsed number of seconds
     // - Advance any animations that require scrubbing
     // - Advance to the first frame even when autoplay is false
-    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub || isFirstFrame)
+    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub)
       // The scrubbed animations must be applied first to prevent weird artifacts
       // if the playing animations conflict with the scrubbed animating attribuates.
       .sort((first, second) => first.needsScrub ? -1 : 1);
@@ -1227,14 +1251,14 @@ export class Rive {
       if (animation.instance.didLoop) {
         animation.loopCount += 1;
       }
-      animation.instance.apply(1.0);
+      animation.apply(1.0);
     }
 
     // - Advance non-paused state machines by the elapsed number of seconds
     // - Advance to the first frame even when autoplay is false
-    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing || isFirstFrame);
+    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
     for (const stateMachine of activeStateMachines) {
-      stateMachine.instance.advance(elapsedTime);
+      stateMachine.advance(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
     }
 
