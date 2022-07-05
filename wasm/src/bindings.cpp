@@ -200,7 +200,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
           allow_raw_pointers())
       .function("artboardCount", &rive::File::artboardCount);
 
-  class_<rive::ArtboardInstance>("Artboard")
+  class_<rive::Artboard>("ArtboardBase");
+  class_<rive::ArtboardInstance, base<rive::Artboard>>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
       .function("flattenPath",
                 optional_override(

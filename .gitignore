@@ -65,4 +65,4 @@ node_modules
 /js/npm/webgl/rive.wasm
 /js/npm/webgl/rive.d.ts
 /js/npm/webgl/rive_advanced.mjs.d.ts
-/wasm/examples/parcel_example/docs
+/wasm/examples/**/docs
