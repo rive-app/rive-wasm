@@ -642,6 +642,9 @@ Rive.onRuntimeInitialized = function () {
         )
       );
     },
+    "rotate": function (angle) {
+      this._drawList.push(this._ctx["rotate"].bind(this._ctx, angle));
+    },
     "_drawPath": function (path, paint) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
       this._drawList.push(
@@ -801,6 +804,16 @@ Rive.onRuntimeInitialized = function () {
       );
     },
     "flush": function () {},
+    "translate": function (x, y) {
+      this.transform({
+        "xx": 1,
+        "xy": 0,
+        "yx": 0,
+        "yy": 1,
+        "tx": x,
+        "ty": y,
+      });
+    },
   }));
 
   Rive.makeRenderer = function (canvas) {
