@@ -643,7 +643,16 @@ Rive.onRuntimeInitialized = function () {
       );
     },
     "rotate": function (angle) {
-      this._drawList.push(this._ctx["rotate"].bind(this._ctx, angle));
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+      this.transform({
+        "xx": cos,
+        "xy": sin,
+        "yx": -sin,
+        "yy": cos,
+        "tx": 0,
+        "ty": 0,
+      });
     },
     "_drawPath": function (path, paint) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
