@@ -22,8 +22,10 @@
   ],
   "license": "MIT",
   "files": [
-    "canvas_advanced_single.mjs"
+    "canvas_advanced_single.mjs",
+    "rive_advanced.mjs.d.ts"
   ],
+  "types": "rive_advanced.mjs.d.ts",
   "dependencies": {},
   "browser": {
     "fs": false,
