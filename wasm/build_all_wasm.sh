@@ -48,12 +48,14 @@ OUT_DIR=build/canvas_advanced ./build_wasm.sh release
 cp build/canvas_advanced/bin/release/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
 cp build/canvas_advanced/bin/release/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
 cp build/canvas_advanced/bin/release/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced/rive_advanced.mjs.d.ts
 
 echo 
 echo "::::: building @rive-app/canvas_advanced_single"
 echo 
 OUT_DIR=build/canvas_advanced_single ./build_wasm.sh -s release
 cp build/canvas_advanced_single/bin/release/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_single/rive_advanced.mjs.d.ts
 
 echo 
 echo "::::: building @rive-app/webgl_advanced"

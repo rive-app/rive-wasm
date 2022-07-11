@@ -1,5 +1,27 @@
-import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
+import RiveCanvas, {
+  Artboard,
+  SMIInput,
+  StateMachineInstance,
+} from "@rive-app/canvas-advanced-single";
 import Centaur from "./centaur.riv";
+
+interface AppleInstanceData {
+  x: number;
+  y: number;
+  artboard: Artboard;
+  machine: StateMachineInstance;
+  explodeTrigger: SMIInput;
+}
+
+interface ArrowInstanceData {
+  artboard: Artboard;
+  translation: {
+    x: number;
+    y: number;
+  };
+  heading: { x: number; y: number };
+  time: number;
+}
 
 const appleRadius = 40;
 const appleRadiusSquared = appleRadius * appleRadius;
@@ -24,8 +46,8 @@ async function main() {
   // artboard space is worldspace.
   arrow.frameOrigin = false;
   const target = character.node("Look");
-  const arrows = new Set();
-  const apples = new Set();
+  const arrows = new Set<ArrowInstanceData>();
+  const apples = new Set<AppleInstanceData>();
 
   const minApples = 1;
   const maxApples = 5;
@@ -223,7 +245,6 @@ async function main() {
     }
 
     renderer.save();
-    // const characterTranslate = new rive.Mat2D(1, 0, 0, 1, characterX, 0);
     renderer.translate(characterX, 0);
 
     character.draw(renderer);
@@ -246,7 +267,6 @@ async function main() {
         }
       }
       renderer.save();
-      // const arrowTranslate = new rive.Mat2D(1, 0, 0, 1, translation.x, translation.y);
       renderer.translate(translation.x, translation.y);
       renderer.rotate(Math.atan2(heading.y, heading.x));
       artboard.draw(renderer);
@@ -271,7 +291,6 @@ async function main() {
       const { artboard, machine, x, y } = appleInstance;
 
       renderer.save();
-      // const appleTranslate = new rive.Mat2D(1, 0, 0, 1, x, y);
       renderer.translate(x, y);
       machine.advance(elapsedSeconds);
       const stateChangeCount = machine.stateChangedCount();

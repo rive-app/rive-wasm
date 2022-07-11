@@ -2,7 +2,7 @@ interface RiveOptions {
     locateFile(file: string): string
   }
   
-  declare function Rive(options: RiveOptions): Promise<RiveCanvas>;
+  declare function Rive(options?: RiveOptions): Promise<RiveCanvas>;
   export default Rive;
   
   export interface RiveCanvas {
@@ -10,6 +10,9 @@ interface RiveOptions {
     CanvasRenderer: typeof CanvasRenderer;
     LinearAnimationInstance: typeof LinearAnimationInstance;
     StateMachineInstance: typeof StateMachineInstance;
+    Mat2D: typeof Mat2D;
+    Vec2D: typeof Vec2D;
+    AABB: AABB;
     SMIInput: typeof SMIInput;
     renderFactory: CanvasRenderFactory;
   
@@ -21,7 +24,7 @@ interface RiveOptions {
     StrokeJoin: typeof StrokeJoin;
   
     load(buffer: Uint8Array): Promise<File>;
-    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer: boolean) : CanvasRenderer;
+    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer?: boolean) : CanvasRenderer;
     computeAlignment(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): Mat2D;
     mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
     requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
@@ -42,6 +45,8 @@ interface RiveOptions {
     clipPath(path: RenderPath): void;
     clear(): void;
     flush(): void;
+    translate(x: number, y: number): void;
+    rotate(angle: number): void;
   }
   
   export declare class RenderPathWrapper {
@@ -111,15 +116,17 @@ interface RiveOptions {
   export declare class Artboard {
     get name(): string;
     get bounds(): AABB;
+    get frameOrigin(): boolean;
+    set frameOrigin(val: boolean);
     // Deletes the backing wasm artboard instance
     delete(): void;
     advance(sec: number): any;
     draw(renderer: CanvasRenderer): void;
-    animationByName(name: string): LinearAnimation;
-    animationByIndex(index: number): LinearAnimation;
+    animationByName(name: string): LinearAnimationInstance;
+    animationByIndex(index: number): LinearAnimationInstance;
     animationCount(): number;
-    stateMachineByName(name: string): StateMachine;
-    stateMachineByIndex(index: number): StateMachine;
+    stateMachineByName(name: string): StateMachineInstance;
+    stateMachineByIndex(index: number): StateMachineInstance;
     stateMachineCount(): number;
     bone(name: string): Bone;
     node(name: string): Node;
@@ -145,12 +152,15 @@ interface RiveOptions {
     rotation: number;
     scaleX: number;
     scaleY: number;
+    worldTransform(): Mat2D;
+    parentWorldTransform(result: Mat2D): void;
   }
   
   ///////////////
   // Animation //
   ///////////////
-  export declare class LinearAnimation {
+  export declare class LinearAnimationInstance {
+    constructor(animation: LinearAnimationInstance, artboard: Artboard);
     get name(): string;
     get duration(): number;
     get fps(): number;
@@ -158,13 +168,9 @@ interface RiveOptions {
     get workEnd(): number;
     get loopValue(): number;
     get speed(): number;
-    apply(artboard: Artboard, time: number, mix: number): void;
-  }
-  export declare class LinearAnimationInstance {
     /** Time of the animation in seconds */
     time: number;
     didLoop: boolean;
-    constructor(animation: LinearAnimation, artboard: Artboard);
     advance(sec: number): any;
     /**
      * Apply animation on the artboard
@@ -175,12 +181,9 @@ interface RiveOptions {
     delete(): void;
   }
   
-  export declare class StateMachine {
-    get name(): string;
-  }
-  
   export declare class StateMachineInstance {
-    constructor(stateMachine: StateMachine, artboard: Artboard);
+    constructor(stateMachine: StateMachineInstance, artboard: Artboard);
+    get name(): string;
     inputCount(): number;
     input(i: number): SMIInput; 
     advance(sec: number): any;
@@ -312,7 +315,7 @@ interface RiveOptions {
     yy: number;
     tx: number;
     ty: number;
-    invert(mat: Mat2D): void;
+    invert(mat: Mat2D): boolean;
   }
 
   export declare class Vec2D {

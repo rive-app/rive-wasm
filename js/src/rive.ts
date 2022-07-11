@@ -223,7 +223,7 @@ class Animation {
    * @param {any} animation: runtime animation object
    * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: rc.LinearAnimation,
+  constructor(private animation: rc.LinearAnimationInstance,
               private artboard: rc.Artboard,
               runtime: rc.RiveCanvas,
               public playing: boolean) {
@@ -354,7 +354,7 @@ class StateMachine {
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: rc.StateMachine,
+  constructor(private stateMachine: rc.StateMachineInstance,
               runtime: rc.RiveCanvas,
               public playing: boolean,
               private artboard: rc.Artboard) {
