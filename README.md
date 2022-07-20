@@ -44,7 +44,7 @@ Rive can be used in all major browsers. We're constantly working to improve perf
 
 ## Examples
 
-Check out our Storybook instance that shows how to use the library in small examples, along with code snippets! This includes examples using the basic component, as well as the convenient hooks exported to take advantage of state machines.
+Check out some of the `examples/` projects in this codebase, as well as some of the CodeSandboxes below to see examples of using `rive-wasm`:
 
 ### High-level API usage
 
