@@ -12,7 +12,7 @@ export type VoidCallback = () => void;
 enum PlaybackState {
   Play = 0,
   Pause,
-  Stop
+  Stop,
 }
 
 /**
@@ -30,7 +30,7 @@ export enum Fit {
   FitWidth = 'fitWidth',
   FitHeight = 'fitHeight',
   None = 'none',
-  ScaleDown = 'scaleDown'
+  ScaleDown = 'scaleDown',
 }
 
 // Alignment options for the canvas
@@ -43,22 +43,21 @@ export enum Alignment {
   CenterRight = 'centerRight',
   BottomLeft = 'bottomLeft',
   BottomCenter = 'bottomCenter',
-  BottomRight = 'bottomRight'
+  BottomRight = 'bottomRight',
 }
 
 // Interface for the Layout static method contructor
 export interface LayoutParameters {
-  fit?: Fit,
-  alignment?: Alignment,
-  minX?: number,
-  minY?: number,
-  maxX?: number,
-  maxY?: number
+  fit?: Fit;
+  alignment?: Alignment;
+  minX?: number;
+  minY?: number;
+  maxX?: number;
+  maxY?: number;
 }
 
 // Alignment options for Rive animations in a HTML canvas
 export class Layout {
-
   // Runtime fit and alignment are accessed every frame, so we cache their
   // values to save cycles
   private cachedRuntimeFit: rc.Fit;
@@ -81,22 +80,38 @@ export class Layout {
   }
 
   // Alternative constructor to build a Layout from an interface/object
-  static new({ fit, alignment, minX, minY, maxX, maxY }: LayoutParameters): Layout {
-    console.warn('This function is deprecated: please use `new Layout({})` instead');
+  static new({
+    fit,
+    alignment,
+    minX,
+    minY,
+    maxX,
+    maxY,
+  }: LayoutParameters): Layout {
+    console.warn(
+      'This function is deprecated: please use `new Layout({})` instead'
+    );
     return new Layout({ fit, alignment, minX, minY, maxX, maxY });
   }
 
   /**
    * Makes a copy of the layout, replacing any specified parameters
    */
-  public copyWith({ fit, alignment, minX, minY, maxX, maxY }: LayoutParameters): Layout {
+  public copyWith({
+    fit,
+    alignment,
+    minX,
+    minY,
+    maxX,
+    maxY,
+  }: LayoutParameters): Layout {
     return new Layout({
       fit: fit ?? this.fit,
       alignment: alignment ?? this.alignment,
       minX: minX ?? this.minX,
       minY: minY ?? this.minY,
       maxX: maxX ?? this.maxX,
-      maxY: maxY ?? this.maxY
+      maxY: maxY ?? this.maxY,
     });
   }
 
@@ -122,14 +137,22 @@ export class Layout {
     if (this.cachedRuntimeAlignment) return this.cachedRuntimeAlignment;
 
     let alignment;
-    if (this.alignment === Alignment.TopLeft) alignment = rive.Alignment.topLeft;
-    else if (this.alignment === Alignment.TopCenter) alignment = rive.Alignment.topCenter;
-    else if (this.alignment === Alignment.TopRight) alignment = rive.Alignment.topRight;
-    else if (this.alignment === Alignment.CenterLeft) alignment = rive.Alignment.centerLeft;
-    else if (this.alignment === Alignment.CenterRight) alignment = rive.Alignment.centerRight;
-    else if (this.alignment === Alignment.BottomLeft) alignment = rive.Alignment.bottomLeft;
-    else if (this.alignment === Alignment.BottomCenter) alignment = rive.Alignment.bottomCenter;
-    else if (this.alignment === Alignment.BottomRight) alignment = rive.Alignment.bottomRight;
+    if (this.alignment === Alignment.TopLeft)
+      alignment = rive.Alignment.topLeft;
+    else if (this.alignment === Alignment.TopCenter)
+      alignment = rive.Alignment.topCenter;
+    else if (this.alignment === Alignment.TopRight)
+      alignment = rive.Alignment.topRight;
+    else if (this.alignment === Alignment.CenterLeft)
+      alignment = rive.Alignment.centerLeft;
+    else if (this.alignment === Alignment.CenterRight)
+      alignment = rive.Alignment.centerRight;
+    else if (this.alignment === Alignment.BottomLeft)
+      alignment = rive.Alignment.bottomLeft;
+    else if (this.alignment === Alignment.BottomCenter)
+      alignment = rive.Alignment.bottomCenter;
+    else if (this.alignment === Alignment.BottomRight)
+      alignment = rive.Alignment.bottomRight;
     else alignment = rive.Alignment.center;
 
     this.cachedRuntimeAlignment = alignment;
@@ -147,7 +170,6 @@ export type RuntimeCallback = (rive: rc.RiveCanvas) => void;
 // Runtime singleton; use getInstance to provide a callback that returns the
 // Rive runtime
 export class RuntimeLoader {
-
   // Singleton helpers
   private static runtime: rc.RiveCanvas;
   // Flag to indicate that loading has started/completed
@@ -155,19 +177,19 @@ export class RuntimeLoader {
   // List of callbacks for the runtime that come in while loading
   private static callBackQueue: RuntimeCallback[] = [];
   // Instance of the Rive runtime
-  private static rive: rc.RiveCanvas;  
+  private static rive: rc.RiveCanvas;
   // Path to the Wasm file; default path works for testing only;
   // if embedded wasm is used then this is never used.
   private static wasmURL: string = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
 
   // Class is never instantiated
-  private constructor() { }
+  private constructor() {}
 
   // Loads the runtime
   private static loadRuntime(): void {
     rc.default({
       // Loads Wasm bundle
-      locateFile: (_: string) => RuntimeLoader.wasmURL
+      locateFile: (_: string) => RuntimeLoader.wasmURL,
     }).then((rive: rc.RiveCanvas) => {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
@@ -223,10 +245,12 @@ class Animation {
    * @param {any} animation: runtime animation object
    * @param {any} instance: runtime animation instance object
    */
-  constructor(private animation: rc.LinearAnimationInstance,
-              private artboard: rc.Artboard,
-              runtime: rc.RiveCanvas,
-              public playing: boolean) {
+  constructor(
+    private animation: rc.LinearAnimationInstance,
+    private artboard: rc.Artboard,
+    runtime: rc.RiveCanvas,
+    public playing: boolean
+  ) {
     this.instance = new runtime.LinearAnimationInstance(animation, artboard);
   }
 
@@ -237,12 +261,12 @@ class Animation {
 
   // Returns the animation's current time
   public get time(): number {
-      return this.instance.time;
+    return this.instance.time;
   }
 
   // Sets the animation's current time
   public set time(value: number) {
-      this.instance.time = value;
+    this.instance.time = value;
   }
 
   // Returns the animation's loop type
@@ -268,7 +292,7 @@ class Animation {
   /**
    * Apply interpolated keyframe values to the artboard. This should be called after calling
    * .advance() on an animation instance so that new values are applied to properties.
-   * 
+   *
    * Note: This does not advance the artboard, which updates all objects on the artboard
    * @param mix - Mix value for the animation from 0 to 1
    */
@@ -303,8 +327,10 @@ export enum StateMachineInputType {
  * An input for a state machine
  */
 export class StateMachineInput {
-
-  constructor(public readonly type: StateMachineInputType, private runtimeInput: rc.SMIInput) { }
+  constructor(
+    public readonly type: StateMachineInputType,
+    private runtimeInput: rc.SMIInput
+  ) {}
 
   /**
    * Returns the name of the input
@@ -338,7 +364,6 @@ export class StateMachineInput {
 }
 
 class StateMachine {
-
   /**
    * Caches the inputs from the runtime
    */
@@ -354,10 +379,12 @@ class StateMachine {
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
    */
-  constructor(private stateMachine: rc.StateMachineInstance,
-              runtime: rc.RiveCanvas,
-              public playing: boolean,
-              private artboard: rc.Artboard) {
+  constructor(
+    private stateMachine: rc.StateMachineInstance,
+    runtime: rc.RiveCanvas,
+    public playing: boolean,
+    private artboard: rc.Artboard
+  ) {
     this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
   }
@@ -399,17 +426,27 @@ class StateMachine {
 
   /**
    * Maps a runtime input to it's appropriate type
-   * @param input 
+   * @param input
    */
-  private mapRuntimeInput(input: rc.SMIInput, runtime: rc.RiveCanvas): StateMachineInput {
+  private mapRuntimeInput(
+    input: rc.SMIInput,
+    runtime: rc.RiveCanvas
+  ): StateMachineInput {
     if (input.type === runtime.SMIInput.bool) {
-      return new StateMachineInput(StateMachineInputType.Boolean, input.asBool());
-    }
-    else if (input.type === runtime.SMIInput.number) {
-      return new StateMachineInput(StateMachineInputType.Number, input.asNumber());
-    }
-    else if (input.type === runtime.SMIInput.trigger) {
-      return new StateMachineInput(StateMachineInputType.Trigger, input.asTrigger());
+      return new StateMachineInput(
+        StateMachineInputType.Boolean,
+        input.asBool()
+      );
+    } else if (input.type === runtime.SMIInput.number) {
+      return new StateMachineInput(
+        StateMachineInputType.Number,
+        input.asNumber()
+      );
+    } else if (input.type === runtime.SMIInput.trigger) {
+      return new StateMachineInput(
+        StateMachineInputType.Trigger,
+        input.asTrigger()
+      );
     }
   }
 
@@ -417,9 +454,9 @@ class StateMachine {
    * Deletes the backing Wasm state machine instance; once this is called, this
    * state machine is no more.
    */
-     public cleanup() {
-      this.instance.delete();
-    }
+  public cleanup() {
+    this.instance.delete();
+  }
 }
 
 // #endregion
@@ -430,7 +467,6 @@ class StateMachine {
  * Manages animation
  */
 class Animator {
-
   /**
    * Constructs a new animator
    * @constructor
@@ -444,7 +480,8 @@ class Animator {
     private artboard: rc.Artboard,
     private eventManager: EventManager,
     public readonly animations: Animation[] = [],
-    public readonly stateMachines: StateMachine[] = []) {}
+    public readonly stateMachines: StateMachine[] = []
+  ) {}
 
   /**
    * Adds animations and state machines by their names. If names are shared
@@ -453,16 +490,20 @@ class Animator {
    * @param animatable the name(s) of animations and state machines to add
    * @returns a list of names of the playing animations and state machines
    */
-  public add(animatables: string | string[], playing: boolean, fireEvent = true): string[] {
+  public add(
+    animatables: string | string[],
+    playing: boolean,
+    fireEvent = true
+  ): string[] {
     animatables = mapToStringArray(animatables);
     // If animatables is empty, play or pause everything
     if (animatables.length === 0) {
-      this.animations.forEach(a => a.playing = playing);
-      this.stateMachines.forEach(m => m.playing = playing);
+      this.animations.forEach((a) => (a.playing = playing));
+      this.stateMachines.forEach((m) => (m.playing = playing));
     } else {
       // Play/pause already instanced items, or create new instances
-      const instancedAnimationNames = this.animations.map(a => a.name);
-      const instancedMachineNames = this.stateMachines.map(m => m.name);
+      const instancedAnimationNames = this.animations.map((a) => a.name);
+      const instancedMachineNames = this.stateMachines.map((m) => m.name);
       for (const i in animatables) {
         const aIndex = instancedAnimationNames.indexOf(animatables[i]);
         const mIndex = instancedMachineNames.indexOf(animatables[i]);
@@ -474,11 +515,16 @@ class Animator {
             // State machine is instanced, play/pause it
             this.stateMachines[mIndex].playing = playing;
           }
-       } else {
+        } else {
           // Try to create a new animation instance
           const anim = this.artboard.animationByName(animatables[i]);
           if (anim) {
-            const newAnimation = new Animation(anim, this.artboard, this.runtime, playing);
+            const newAnimation = new Animation(
+              anim,
+              this.artboard,
+              this.runtime,
+              playing
+            );
             // Display the first frame of the specified animation
             newAnimation.advance(0);
             newAnimation.apply(1.0);
@@ -487,7 +533,12 @@ class Animator {
             // Try to create a new state machine instance
             const sm = this.artboard.stateMachineByName(animatables[i]);
             if (sm) {
-              const newStateMachine = new StateMachine(sm, this.runtime, playing, this.artboard);
+              const newStateMachine = new StateMachine(
+                sm,
+                this.runtime,
+                playing,
+                this.artboard
+              );
               this.stateMachines.push(newStateMachine);
             }
           }
@@ -521,47 +572,51 @@ class Animator {
     return this.add(animatables, true);
   }
 
-    /**
+  /**
    * Pauses named animations and state machines, or everything if nothing is
    * specified
    * @param animatables names of the animations and state machines to pause
    * @returns a list of names of the animations and state machines paused
    */
-    public pause(animatables: string[]): string[] {
-      return this.add(animatables, false);
-    }
+  public pause(animatables: string[]): string[] {
+    return this.add(animatables, false);
+  }
 
-    /**
-     * Set time of named animations
-     * @param animations names of the animations to scrub
-     * @param value time scrub value, a floating point number to which the playhead is jumped
-     * @returns a list of names of the animations that were scrubbed
-     */
-    public scrub(animatables: string[], value: number): string[] {
-      const forScrubbing = this.animations.filter(a => animatables.includes(a.name));
-      forScrubbing.forEach(a => a.scrubTo = value);
-      return forScrubbing.map(a => a.name);
-    }
+  /**
+   * Set time of named animations
+   * @param animations names of the animations to scrub
+   * @param value time scrub value, a floating point number to which the playhead is jumped
+   * @returns a list of names of the animations that were scrubbed
+   */
+  public scrub(animatables: string[], value: number): string[] {
+    const forScrubbing = this.animations.filter((a) =>
+      animatables.includes(a.name)
+    );
+    forScrubbing.forEach((a) => (a.scrubTo = value));
+    return forScrubbing.map((a) => a.name);
+  }
 
   /**
    * Returns a list of names of all animations and state machines currently
    * playing
    */
   public get playing(): string[] {
-    return this.animations.filter(a => a.playing).map(a => a.name).concat(
-           this.stateMachines.filter(m => m.playing).map(m => m.name)
-    );
+    return this.animations
+      .filter((a) => a.playing)
+      .map((a) => a.name)
+      .concat(this.stateMachines.filter((m) => m.playing).map((m) => m.name));
   }
 
   /**
    * Returns a list of names of all animations and state machines currently
    * paused
    */
-     public get paused(): string[] {
-      return this.animations.filter(a => !a.playing).map(a => a.name).concat(
-             this.stateMachines.filter(m => !m.playing).map(m => m.name)
-      );
-    }
+  public get paused(): string[] {
+    return this.animations
+      .filter((a) => !a.playing)
+      .map((a) => a.name)
+      .concat(this.stateMachines.filter((m) => !m.playing).map((m) => m.name));
+  }
 
   /**
    * Stops and removes all named animations and state machines
@@ -575,34 +630,35 @@ class Animator {
     let removedNames: string[] = [];
     // Stop everything
     if (animatables.length === 0) {
-      removedNames = this.animations.map(a => a.name).concat(
-        this.stateMachines.map(m => m.name)
-      );
+      removedNames = this.animations
+        .map((a) => a.name)
+        .concat(this.stateMachines.map((m) => m.name));
       // Clean up before emptying the arrays
-      this.animations.forEach(a => a.cleanup());
-      this.stateMachines.forEach(m => m.cleanup());
+      this.animations.forEach((a) => a.cleanup());
+      this.stateMachines.forEach((m) => m.cleanup());
       // Empty out the arrays
       this.animations.splice(0, this.animations.length);
       this.stateMachines.splice(0, this.stateMachines.length);
     } else {
       // Remove only the named animations/state machines
-      const animationsToRemove = this.animations.filter(
-        a => animatables.includes(a.name)
+      const animationsToRemove = this.animations.filter((a) =>
+        animatables.includes(a.name)
       );
-      
-      animationsToRemove.forEach(a => {
+
+      animationsToRemove.forEach((a) => {
         a.cleanup();
         this.animations.splice(this.animations.indexOf(a), 1);
       });
-      const machinesToRemove = this.stateMachines.filter(
-        m => animatables.includes(m.name)
+      const machinesToRemove = this.stateMachines.filter((m) =>
+        animatables.includes(m.name)
       );
-      machinesToRemove.forEach(m => {
+      machinesToRemove.forEach((m) => {
         m.cleanup();
         this.stateMachines.splice(this.stateMachines.indexOf(m), 1);
       });
-      removedNames = animationsToRemove.map(a => a.name).concat(
-        machinesToRemove.map(m => m.name));
+      removedNames = animationsToRemove
+        .map((a) => a.name)
+        .concat(machinesToRemove.map((m) => m.name));
     }
 
     this.eventManager.fire({
@@ -618,16 +674,20 @@ class Animator {
    * Returns true if at least one animation is active
    */
   public get isPlaying(): boolean {
-    return this.animations.reduce((acc, curr) => acc || curr.playing, false)
-        || this.stateMachines.reduce((acc, curr) => acc || curr.playing, false);
+    return (
+      this.animations.reduce((acc, curr) => acc || curr.playing, false) ||
+      this.stateMachines.reduce((acc, curr) => acc || curr.playing, false)
+    );
   }
 
   /**
    * Returns true if all animations are paused and there's at least one animation
    */
   public get isPaused(): boolean {
-    return !this.isPlaying && 
-           (this.animations.length > 0 || this.stateMachines.length > 0);  
+    return (
+      !this.isPlaying &&
+      (this.animations.length > 0 || this.stateMachines.length > 0)
+    );
   }
 
   /**
@@ -641,15 +701,23 @@ class Animator {
    * If there are no animations or state machines, add the first one found
    * @returns the name of the animation or state machine instanced
    */
-   public atLeastOne(playing: boolean, fireEvent = true): string {
+  public atLeastOne(playing: boolean, fireEvent = true): string {
     let instancedName: string;
     if (this.animations.length === 0 && this.stateMachines.length === 0) {
-      if(this.artboard.animationCount() > 0) {
+      if (this.artboard.animationCount() > 0) {
         // Add the first animation
-        this.add([instancedName = this.artboard.animationByIndex(0).name], playing, fireEvent);
-      } else if(this.artboard.stateMachineCount() > 0) {
+        this.add(
+          [(instancedName = this.artboard.animationByIndex(0).name)],
+          playing,
+          fireEvent
+        );
+      } else if (this.artboard.stateMachineCount() > 0) {
         // Add the first state machine
-        this.add([instancedName = this.artboard.stateMachineByIndex(0).name], playing, fireEvent);
+        this.add(
+          [(instancedName = this.artboard.stateMachineByIndex(0).name)],
+          playing,
+          fireEvent
+        );
       }
     }
     return instancedName;
@@ -659,17 +727,16 @@ class Animator {
    * Checks if any animations have looped and if so, fire the appropriate event
    */
   public handleLooping() {
-    for (const animation of this.animations.filter(a => a.playing)) {
+    for (const animation of this.animations.filter((a) => a.playing)) {
       // Emit if the animation looped
       if (animation.loopValue === 0 && animation.loopCount) {
         animation.loopCount = 0;
         // This is a one-shot; if it has ended, delete the instance
         this.stop(animation.name);
-      }
-      else if (animation.loopValue === 1 && animation.loopCount) {
+      } else if (animation.loopValue === 1 && animation.loopCount) {
         this.eventManager.fire({
           type: EventType.Loop,
-          data: { animation: animation.name, type: LoopType.Loop }
+          data: { animation: animation.name, type: LoopType.Loop },
         });
         animation.loopCount = 0;
       }
@@ -679,7 +746,7 @@ class Animator {
       else if (animation.loopValue === 2 && animation.loopCount > 1) {
         this.eventManager.fire({
           type: EventType.Loop,
-          data: { animation: animation.name, type: LoopType.PingPong }
+          data: { animation: animation.name, type: LoopType.PingPong },
         });
         animation.loopCount = 0;
       }
@@ -692,8 +759,8 @@ class Animator {
    */
   public handleStateChanges() {
     const statesChanged: string[] = [];
-    for (const stateMachine of this.stateMachines.filter(sm => sm.playing)) {
-     statesChanged.push(...stateMachine.statesChanged);
+    for (const stateMachine of this.stateMachines.filter((sm) => sm.playing)) {
+      statesChanged.push(...stateMachine.statesChanged);
     }
     if (statesChanged.length > 0) {
       this.eventManager.fire({
@@ -702,7 +769,6 @@ class Animator {
       });
     }
   }
-
 }
 
 // #endregion
@@ -713,29 +779,29 @@ class Animator {
  * Supported event types triggered in Rive
  */
 export enum EventType {
-  Load        = 'load',
-  LoadError   = 'loaderror',
-  Play        = 'play',
-  Pause       = 'pause',
-  Stop        = 'stop',
-  Loop        = 'loop',
-  Draw        = 'draw',
+  Load = 'load',
+  LoadError = 'loaderror',
+  Play = 'play',
+  Pause = 'pause',
+  Stop = 'stop',
+  Loop = 'loop',
+  Draw = 'draw',
   StateChange = 'statechange',
 }
 
 // Event fired by Rive
 export interface Event {
-  type: EventType,
-  data?: string | string[] | LoopEvent,
+  type: EventType;
+  data?: string | string[] | LoopEvent;
 }
 
 /**
  * Looping types: one-shot, loop, and ping-pong
  */
 export enum LoopType {
-  OneShot = 'oneshot',  // has value 0 in runtime
-  Loop = 'loop',        // has value 1 in runtime
-  PingPong = 'pingpong' // has value 2 in runtime
+  OneShot = 'oneshot', // has value 0 in runtime
+  Loop = 'loop', // has value 1 in runtime
+  PingPong = 'pingpong', // has value 2 in runtime
 }
 
 /**
@@ -755,8 +821,8 @@ export type EventCallback = (event: Event) => void;
  * Event listeners registered with the event manager
  */
 export interface EventListener {
-  type: EventType,
-  callback: EventCallback,
+  type: EventType;
+  callback: EventCallback;
 }
 
 /**
@@ -766,12 +832,11 @@ export type FPSCallback = (fps: number) => void;
 
 // Manages Rive events and listeners
 class EventManager {
-
-  constructor(private listeners: EventListener[] = []) { }
+  constructor(private listeners: EventListener[] = []) {}
 
   // Gets listeners of specified type
   private getListeners(type: EventType): EventListener[] {
-    return this.listeners.filter(e => e.type === type);
+    return this.listeners.filter((e) => e.type === type);
   }
 
   // Adds a listener
@@ -819,9 +884,7 @@ class EventManager {
   // Fires an event
   public fire(event: Event): void {
     const eventListeners = this.getListeners(event.type);
-    eventListeners.forEach(
-      listener => listener.callback(event)
-    );
+    eventListeners.forEach((listener) => listener.callback(event));
   }
 }
 
@@ -832,15 +895,15 @@ class EventManager {
 // A task in the queue; will fire the action when the queue is processed; will
 // also optionally fire an event.
 export interface Task {
-  action: VoidCallback,
-  event?: Event,
+  action: VoidCallback;
+  event?: Event;
 }
 
 // Manages a queue of tasks
 class TaskQueueManager {
   private queue: Task[] = [];
 
-  constructor(private eventManager: EventManager) { }
+  constructor(private eventManager: EventManager) {}
 
   // Adds a task top the queue
   public add(task: Task): void {
@@ -865,73 +928,72 @@ class TaskQueueManager {
 
 // Interface for the Rive static method contructor
 export interface RiveParameters {
-  canvas: HTMLCanvasElement | OffscreenCanvas, // canvas is required
-  src?: string, // one of src or buffer is required
-  buffer?: ArrayBuffer, // one of src or buffer is required
-  artboard?: string,
-  animations?: string | string[],
-  stateMachines?: string | string[],
-  layout?: Layout,
-  autoplay?: boolean,
-  useOffscreenRenderer?: boolean,
-  onLoad?: EventCallback,
-  onLoadError?: EventCallback,
-  onPlay?: EventCallback,
-  onPause?: EventCallback,
-  onStop?: EventCallback,
-  onLoop?: EventCallback,
-  onStateChange?: EventCallback,
+  canvas: HTMLCanvasElement | OffscreenCanvas; // canvas is required
+  src?: string; // one of src or buffer is required
+  buffer?: ArrayBuffer; // one of src or buffer is required
+  artboard?: string;
+  animations?: string | string[];
+  stateMachines?: string | string[];
+  layout?: Layout;
+  autoplay?: boolean;
+  useOffscreenRenderer?: boolean;
+  onLoad?: EventCallback;
+  onLoadError?: EventCallback;
+  onPlay?: EventCallback;
+  onPause?: EventCallback;
+  onStop?: EventCallback;
+  onLoop?: EventCallback;
+  onStateChange?: EventCallback;
   /**
    * @deprecated Use `onLoad()` instead
    */
-  onload?: EventCallback,
+  onload?: EventCallback;
   /**
    * @deprecated Use `onLoadError()` instead
    */
-  onloaderror?: EventCallback,
+  onloaderror?: EventCallback;
   /**
    * @deprecated Use `onPoad()` instead
    */
-  onplay?: EventCallback,
+  onplay?: EventCallback;
   /**
    * @deprecated Use `onPause()` instead
    */
-  onpause?: EventCallback,
+  onpause?: EventCallback;
   /**
    * @deprecated Use `onStop()` instead
    */
-  onstop?: EventCallback,
+  onstop?: EventCallback;
   /**
    * @deprecated Use `onLoop()` instead
    */
-  onloop?: EventCallback,
+  onloop?: EventCallback;
   /**
    * @deprecated Use `onStateChange()` instead
    */
-  onstatechange?: EventCallback,
+  onstatechange?: EventCallback;
 }
 
 // Interface to Rive.load function
 export interface RiveLoadParameters {
-  src?: string,
-  buffer?: ArrayBuffer,
-  autoplay?: boolean,
-  artboard?: string,
-  animations?: string | string[],
-  stateMachines?: string | string[],
-  useOffscreenRenderer?: boolean,
+  src?: string;
+  buffer?: ArrayBuffer;
+  autoplay?: boolean;
+  artboard?: string;
+  animations?: string | string[];
+  stateMachines?: string | string[];
+  useOffscreenRenderer?: boolean;
 }
 
 // Interface ot Rive.reset function
 export interface RiveResetParameters {
-  artboard?: string,
-  animations?: string | string[],
-  stateMachines?: string | string[],
-  autoplay?: boolean,
+  artboard?: string;
+  animations?: string | string[];
+  stateMachines?: string | string[];
+  autoplay?: boolean;
 }
 
 export class Rive {
-
   // Canvas in which to render the artboard
   private readonly canvas: HTMLCanvasElement | OffscreenCanvas;
 
@@ -974,6 +1036,9 @@ export class Rive {
   // Runtime artboard
   private artboard: rc.Artboard | null = null;
 
+  // place to clear up event listeners
+  private eventCleanup: Function | null = null;
+
   // Runtime file
   private file: rc.File;
 
@@ -1009,18 +1074,22 @@ export class Rive {
     if (params.onPause) this.on(EventType.Pause, params.onPause);
     if (params.onStop) this.on(EventType.Stop, params.onStop);
     if (params.onLoop) this.on(EventType.Loop, params.onLoop);
-    if (params.onStateChange) this.on(EventType.StateChange, params.onStateChange);
-    
+    if (params.onStateChange)
+      this.on(EventType.StateChange, params.onStateChange);
+
     /**
      * @deprecated Use camelCase'd versions instead.
      */
     if (params.onload && !params.onLoad) this.on(EventType.Load, params.onload);
-    if (params.onloaderror && !params.onLoadError) this.on(EventType.LoadError, params.onloaderror);
+    if (params.onloaderror && !params.onLoadError)
+      this.on(EventType.LoadError, params.onloaderror);
     if (params.onplay && !params.onPlay) this.on(EventType.Play, params.onplay);
-    if (params.onpause && !params.onPause) this.on(EventType.Pause, params.onpause);
+    if (params.onpause && !params.onPause)
+      this.on(EventType.Pause, params.onpause);
     if (params.onstop && !params.onStop) this.on(EventType.Stop, params.onstop);
     if (params.onloop && !params.onLoop) this.on(EventType.Loop, params.onloop);
-    if (params.onstatechange && !params.onStateChange) this.on(EventType.StateChange, params.onstatechange);
+    if (params.onstatechange && !params.onStateChange)
+      this.on(EventType.StateChange, params.onstatechange);
 
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
@@ -1038,12 +1107,22 @@ export class Rive {
 
   // Alternative constructor to build a Rive instance from an interface/object
   public static new(params: RiveParameters): Rive {
-    console.warn('This function is deprecated: please use `new Rive({})` instead');
+    console.warn(
+      'This function is deprecated: please use `new Rive({})` instead'
+    );
     return new Rive(params);
   }
 
   // Initializes the Rive object either from constructor or load()
-  private init({ src, buffer, animations, stateMachines, artboard, autoplay = false, useOffscreenRenderer = false }: RiveLoadParameters): void {
+  private init({
+    src,
+    buffer,
+    animations,
+    stateMachines,
+    artboard,
+    autoplay = false,
+    useOffscreenRenderer = false,
+  }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
 
@@ -1063,39 +1142,51 @@ export class Rive {
     this.readyForPlaying = false;
 
     // Ensure the runtime is loaded
-    RuntimeLoader.awaitInstance().then((runtime) => {
-      this.runtime = runtime;
+    RuntimeLoader.awaitInstance()
+      .then((runtime) => {
+        this.runtime = runtime;
 
-      // Get the canvas where you want to render the animation and create a renderer
-      this.renderer = this.runtime.makeRenderer(this.canvas, useOffscreenRenderer);
+        // Get the canvas where you want to render the animation and create a renderer
+        this.renderer = this.runtime.makeRenderer(
+          this.canvas,
+          useOffscreenRenderer
+        );
 
-      // Initial size adjustment based on devicePixelRatio if no width/height are specified explicitly
-      if (!(this.canvas.width || this.canvas.height)) {
-        this.resizeDrawingSurfaceToCanvas();
-      }
-    
-      // Load Rive data from a source uri or a data buffer
-      this.initData(artboard, startingAnimationNames, startingStateMachineNames, autoplay)
-        .then(() => {
-          const activeStateMachineInstances = (this.animator.stateMachines || [])
-            .filter(sm => sm.playing)
-            .map(sm => sm.instance);
-          registerTouchInteractions({
-            canvas: this.canvas,
-            artboard: this.artboard,
-            stateMachines: activeStateMachineInstances,
-            renderer: this.renderer,
-            rive: this.runtime,
-            fit: this._layout.runtimeFit(this.runtime),
-            alignment: this._layout.runtimeAlignment(this.runtime),
+        // Initial size adjustment based on devicePixelRatio if no width/height are specified explicitly
+        if (!(this.canvas.width || this.canvas.height)) {
+          this.resizeDrawingSurfaceToCanvas();
+        }
+
+        // Load Rive data from a source uri or a data buffer
+        this.initData(
+          artboard,
+          startingAnimationNames,
+          startingStateMachineNames,
+          autoplay
+        )
+          .then(() => {
+            const activeStateMachineInstances = (
+              this.animator.stateMachines || []
+            )
+              .filter((sm) => sm.playing)
+              .map((sm) => sm.instance);
+            this.eventCleanup = registerTouchInteractions({
+              canvas: this.canvas,
+              artboard: this.artboard,
+              stateMachines: activeStateMachineInstances,
+              renderer: this.renderer,
+              rive: this.runtime,
+              fit: this._layout.runtimeFit(this.runtime),
+              alignment: this._layout.runtimeAlignment(this.runtime),
+            });
+          })
+          .catch((e) => {
+            console.error(e);
           });
-        })
-        .catch(e => {
-          console.error(e);
-        });
-    }).catch(e => {
-      console.error(e);
-    });
+      })
+      .catch((e) => {
+        console.error(e);
+      });
   }
 
   // Initializes runtime with Rive data and preps for playing
@@ -1114,13 +1205,18 @@ export class Rive {
 
     if (this.file) {
       // Initialize and draw frame
-      this.initArtboard(artboardName, animationNames, stateMachineNames, autoplay);
+      this.initArtboard(
+        artboardName,
+        animationNames,
+        stateMachineNames,
+        autoplay
+      );
 
       // Everything's set up, emit a load event
       this.loaded = true;
       this.eventManager.fire({
         type: EventType.Load,
-        data: this.src ?? 'buffer'
+        data: this.src ?? 'buffer',
       });
 
       // Flag ready for playback commands and clear the task queue; this order
@@ -1146,12 +1242,11 @@ export class Rive {
     stateMachineNames: string[],
     autoplay: boolean
   ): void {
-
     // Fetch the artboard
-    const rootArtboard = artboardName ?
-      this.file.artboardByName(artboardName) :
-      this.file.defaultArtboard();
-    
+    const rootArtboard = artboardName
+      ? this.file.artboardByName(artboardName)
+      : this.file.defaultArtboard();
+
     // Check we have a working artboard
     if (!rootArtboard) {
       const msg = 'Invalid artboard name or no default artboard';
@@ -1170,8 +1265,11 @@ export class Rive {
     }
 
     // Initialize the animator
-    this.animator = new Animator(this.runtime, this.artboard, this.eventManager);
-
+    this.animator = new Animator(
+      this.runtime,
+      this.artboard,
+      this.eventManager
+    );
 
     // Initialize the animations; as loaded hasn't happened yet, we need to
     // suppress firing the play/pause events until the load event has fired. To
@@ -1190,7 +1288,7 @@ export class Rive {
       event: {
         type: autoplay ? EventType.Play : EventType.Pause,
         data: instanceNames,
-      }
+      },
     });
   }
 
@@ -1227,7 +1325,7 @@ export class Rive {
     }
 
     // Handle the onSecond callback
-    this.renderSecondTimer += (time - this.lastRenderTime);
+    this.renderSecondTimer += time - this.lastRenderTime;
     if (this.renderSecondTimer > 5000) {
       this.renderSecondTimer = 0;
       onSecond?.();
@@ -1240,10 +1338,11 @@ export class Rive {
     // - Advance non-paused animations by the elapsed number of seconds
     // - Advance any animations that require scrubbing
     // - Advance to the first frame even when autoplay is false
-    const activeAnimations = this.animator.animations.filter(a => a.playing || a.needsScrub)
+    const activeAnimations = this.animator.animations
+      .filter((a) => a.playing || a.needsScrub)
       // The scrubbed animations must be applied first to prevent weird artifacts
       // if the playing animations conflict with the scrubbed animating attribuates.
-      .sort((first, second) => first.needsScrub ? -1 : 1);
+      .sort((first, second) => (first.needsScrub ? -1 : 1));
     for (const animation of activeAnimations) {
       animation.advance(elapsedTime);
       if (animation.instance.didLoop) {
@@ -1254,7 +1353,9 @@ export class Rive {
 
     // - Advance non-paused state machines by the elapsed number of seconds
     // - Advance to the first frame even when autoplay is false
-    const activeStateMachines = this.animator.stateMachines.filter(a => a.playing);
+    const activeStateMachines = this.animator.stateMachines.filter(
+      (a) => a.playing
+    );
     for (const stateMachine of activeStateMachines) {
       stateMachine.advance(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
@@ -1264,7 +1365,7 @@ export class Rive {
     // by the elapsed time.
     this.artboard.advance(elapsedTime);
 
-    const {renderer} = this;
+    const { renderer } = this;
     // Canvas must be wiped to prevent artifacts
     renderer.clear();
     renderer.save();
@@ -1314,7 +1415,7 @@ export class Rive {
    * Align the renderer
    */
   private alignRenderer(): void {
-    const {renderer, runtime, _layout, artboard} = this;
+    const { renderer, runtime, _layout, artboard } = this;
     // Align things up safe in the knowledge we can restore if changed
     renderer.align(
       _layout.runtimeFit(runtime),
@@ -1323,13 +1424,13 @@ export class Rive {
         minX: _layout.minX,
         minY: _layout.minY,
         maxX: _layout.maxX,
-        maxY: _layout.maxY
+        maxY: _layout.maxY,
       },
       artboard.bounds
     );
   }
 
-  public get fps () {
+  public get fps() {
     return this.durations.length;
   }
 
@@ -1337,7 +1438,9 @@ export class Rive {
     if (this.durations.length === 0) {
       return 0;
     }
-    return (this.durations.reduce((a, b) => a + b, 0) / this.durations.length).toFixed(4);
+    return (
+      this.durations.reduce((a, b) => a + b, 0) / this.durations.length
+    ).toFixed(4);
   }
 
   /**
@@ -1348,6 +1451,9 @@ export class Rive {
    * might happen.
    */
   public cleanup() {
+    if (this.eventCleanup !== null) {
+      this.eventCleanup();
+    }
     this.artboard.delete();
     // TODO: delete animation and state machine instances
   }
@@ -1386,10 +1492,10 @@ export class Rive {
 
     // If the file's not loaded, early out, nothing to pause
     if (!this.readyForPlaying) {
-        this.taskQueue.add({
-            action: () => this.scrub(animationNames, value),
-        });
-        return;
+      this.taskQueue.add({
+        action: () => this.scrub(animationNames, value),
+      });
+      return;
     }
 
     // Scrub the animation time; we draw a single frame here so that if
@@ -1431,9 +1537,14 @@ export class Rive {
     this.cleanup();
 
     // Reinitialize an artboard instance with the state
-    this.initArtboard(artBoardName, animationNames, stateMachineNames, autoplay);
+    this.initArtboard(
+      artBoardName,
+      animationNames,
+      stateMachineNames,
+      autoplay
+    );
+    this.taskQueue.process();
   }
-
 
   // Loads a new Rive file, keeping listeners in place
   public load(params: RiveLoadParameters): void {
@@ -1464,7 +1575,7 @@ export class Rive {
     return this._layout;
   }
 
-  /** 
+  /**
    * Sets the layout bounds to the current canvas size; this is typically called
    * when the canvas is resized
    */
@@ -1473,7 +1584,7 @@ export class Rive {
       minX: 0,
       minY: 0,
       maxX: this.canvas.width,
-      maxY: this.canvas.height
+      maxY: this.canvas.height,
     });
   }
 
@@ -1485,7 +1596,7 @@ export class Rive {
    */
   public resizeDrawingSurfaceToCanvas() {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
-      const {width, height} = this.canvas.getBoundingClientRect();
+      const { width, height } = this.canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
@@ -1545,7 +1656,9 @@ export class Rive {
     if (!this.loaded) {
       return;
     }
-    const stateMachine = this.animator.stateMachines.find(m => m.name === name);
+    const stateMachine = this.animator.stateMachines.find(
+      (m) => m.name === name
+    );
     return stateMachine?.inputs;
   }
 
@@ -1556,8 +1669,8 @@ export class Rive {
       return [];
     }
     return this.animator.stateMachines
-      .filter(m => m.playing)
-      .map(m => m.name);
+      .filter((m) => m.playing)
+      .map((m) => m.name);
   }
 
   // Returns a list of playing animation names
@@ -1566,11 +1679,8 @@ export class Rive {
     if (!this.loaded) {
       return [];
     }
-    return this.animator.animations
-      .filter(a => a.playing)
-      .map(a => a.name);
+    return this.animator.animations.filter((a) => a.playing).map((a) => a.name);
   }
-
 
   // Returns a list of paused animation names
   public get pausedAnimationNames(): string[] {
@@ -1579,8 +1689,8 @@ export class Rive {
       return [];
     }
     return this.animator.animations
-      .filter(a => !a.playing)
-      .map(a => a.name);
+      .filter((a) => !a.playing)
+      .map((a) => a.name);
   }
 
   /**
@@ -1593,8 +1703,8 @@ export class Rive {
       return [];
     }
     return this.animator.stateMachines
-      .filter(m => !m.playing)
-      .map(m => m.name);
+      .filter((m) => !m.playing)
+      .map((m) => m.name);
   }
 
   /**
@@ -1686,7 +1796,9 @@ export class Rive {
   public startRendering() {
     if (this.loaded && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
-        this.frameRequestId = this.runtime.requestAnimationFrame(this.draw.bind(this));
+        this.frameRequestId = this.runtime.requestAnimationFrame(
+          this.draw.bind(this)
+        );
       } else {
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
       }
@@ -1733,13 +1845,19 @@ export class Rive {
       for (let k = 0; k < artboard.stateMachineCount(); k++) {
         const stateMachine = artboard.stateMachineByIndex(k);
         const name = stateMachine.name;
-    const instance = new this.runtime.StateMachineInstance(stateMachine, artboard);
+        const instance = new this.runtime.StateMachineInstance(
+          stateMachine,
+          artboard
+        );
         const inputContents: StateMachineInputContents[] = [];
         for (let l = 0; l < instance.inputCount(); l++) {
           const input = instance.input(l);
-          inputContents.push({name: input.name, type: input.type});
+          inputContents.push({ name: input.name, type: input.type });
         }
-        artboardContents.stateMachines.push({name: name, inputs: inputContents});
+        artboardContents.stateMachines.push({
+          name: name,
+          inputs: inputContents,
+        });
       }
       riveContents.artboards.push(artboardContents);
     }
@@ -1780,14 +1898,13 @@ interface RiveFileContents {
   artboards?: ArtboardContents[];
 }
 
-
 // Loads Rive data from a URI via fetch.
 const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
   const req = new Request(src);
   const res = await fetch(req);
   const buffer = await res.arrayBuffer();
   return buffer;
-}
+};
 
 // #endregion
 
@@ -1804,7 +1921,7 @@ let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
   }
   // If obj is undefined, return empty array
   return [];
-}
+};
 
 // #endregion
 
@@ -1814,6 +1931,6 @@ let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
 export const Testing = {
   EventManager: EventManager,
   TaskQueueManager: TaskQueueManager,
-}
+};
 
 // #endregion
