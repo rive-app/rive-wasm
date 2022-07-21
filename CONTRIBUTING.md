@@ -54,7 +54,7 @@ cd ../../..
 
 If you want to work on the exposed high-level API, `cd` into the `js/src` folder at the top level.
 
-There's two main files to be concerned with when making changes:
+There are two main files to be concerned with when making changes:
 - `rive.ts` - The main file defining the API exposed to consumers
   - Loads the WASM file that powers this runtime under the hood
   - Defines the `Rive` class which allows for instantiating the Rive file, loading animations, state machines, and exposing of methods to control such things
@@ -63,7 +63,7 @@ There's two main files to be concerned with when making changes:
   - Defines types for the low-level API classes and functions
   - These are exported in the high-level API packages, as well as low-level ones too
 
-There's some utils defined in the `src` folder as well. When working on the main JS runtime, you'll probably be working in the `rive.ts` file. When you make changes, you can create a new build by simply running the following command inside the `js/` folder:
+There are some utils defined in the `src` folder as well. When working on the main JS runtime, you'll probably be working in the `rive.ts` file. When you make changes, you can create a new build by simply running the following command inside the `js/` folder:
 
 ```sh
 # Webpack creates the build
@@ -72,7 +72,7 @@ npm run build
 
 #### Running the example application
 
-There's a few example projects that use the high-level API and reference the local builds. Use these projects to help test any changes made to ensure no breaking functionality.
+There are a few example projects that use the high-level API and reference the local builds. Use these projects to help test any changes made to ensure no breaking functionality.
 
 1. `cd` into `js/examples/_frameworks/parcel_example_canvas` to run a simple Rive gallery app
 2. Run `npm i` inside that parcel-based project to install the dependencies for the example app
@@ -98,7 +98,7 @@ The `build.sh` script makes all the WASM submodules for different packages; this
 
 #### Running the example application
 
-There's a few example projects that use the low-level APIs and reference the local builds.
+There are a few example projects that use the low-level APIs and reference the local builds.
 
 1. `cd` into `wasm/examples/parcel_example` to run a simple Rive gallery app similar to the high-level example app, but constructing a render loop manually
 2. Run `npm i` inside that parcel-based project to install the dependencies for the example app
