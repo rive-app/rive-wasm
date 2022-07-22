@@ -1086,6 +1086,45 @@ test('Artboards can be reset back to their starting state', (done) => {
 
 // #endregion
 
+// #region remove mouse events
+
+test('Mouse events are removed from canvas when reset', (done) => {
+  const canvas = document.createElement('canvas');
+  let resetMe = true;
+
+  // Start up a looping animation
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: 'MyArtboard',
+    stateMachines: 'StateMachine',
+    onStateChange: () => {
+      // lets make sure we're moving so we got things registered
+      if (resetMe) {
+        resetMe = false;
+        r.reset({
+          artboard: 'MyArtboard',
+          stateMachines: 'StateMachine',
+          autoplay: true,
+        });
+      }
+      if (!resetMe) {
+        try {
+          // This will fake a mouse event, and trigger their event handlers
+          // If those are illegal, we'll crash
+          canvas.dispatchEvent(new Event('mousedown'));
+        } catch (err) {
+          done(err);
+        }
+        done();
+      }
+    },
+  });
+});
+
+// #endregion
+
 test('Statemachines have pointer events', (done) => {
   rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
     const file = await runtime.load(new Uint8Array(stateMachineFileBuffer));
