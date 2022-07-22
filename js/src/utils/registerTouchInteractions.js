@@ -12,7 +12,7 @@ export const registerTouchInteractions = ({
   alignment,
 }) => {
   if (!canvas || !stateMachines.length || !renderer || !rive || !artboard) {
-    return;
+    return null;
   }
 
   const mouseCallback = (event) => {
