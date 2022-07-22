@@ -10,7 +10,7 @@ function AnimationCallbackHandler() {
     this.requestAnimationFrame = function(callback) {
         if (!_mainAnimationCallbackID) {
             _mainAnimationCallbackID =
-                    window['requestAnimationFrame'](mainAnimationCallback.bind(this));
+                    requestAnimationFrame(mainAnimationCallback.bind(this));
         }
         const id = ++_lastAnimationSubCallbackID;
         _animationSubCallbacks.set(id, callback);
@@ -20,7 +20,7 @@ function AnimationCallbackHandler() {
     this.cancelAnimationFrame = function(id) {
         _animationSubCallbacks.delete(id);
         if (_mainAnimationCallbackID && _animationSubCallbacks.size == 0) {
-            window['cancelAnimationFrame'](_mainAnimationCallbackID);
+            cancelAnimationFrame(_mainAnimationCallbackID);
             _mainAnimationCallbackID = 0;
         }
     }
