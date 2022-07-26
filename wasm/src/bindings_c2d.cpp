@@ -5,6 +5,7 @@
 #include "rive/factory.hpp"
 #include "rive/renderer.hpp"
 #include "rive/math/path_types.hpp"
+#include "utils/factory_utils.hpp"
 
 #include "skia_imports/include/private/SkVx.h"
 
@@ -17,35 +18,6 @@
 #include <vector>
 
 using namespace emscripten;
-
-class CanvasBuffer : public rive::RenderBuffer {
-  const size_t m_ElemSize;
-  void *m_Buffer;
-
-public:
-  CanvasBuffer(const void *src, size_t count, size_t elemSize)
-      : RenderBuffer(count), m_ElemSize(elemSize) {
-    size_t bytes = count * elemSize;
-    m_Buffer = malloc(bytes);
-    memcpy(m_Buffer, src, bytes);
-  }
-
-  ~CanvasBuffer() { free(m_Buffer); }
-
-  const float *f32s() const {
-    assert(m_ElemSize == sizeof(float));
-    return static_cast<const float *>(m_Buffer);
-  }
-
-  const uint16_t *u16s() const {
-    assert(m_ElemSize == sizeof(uint16_t));
-    return static_cast<const uint16_t *>(m_Buffer);
-  }
-
-  static const CanvasBuffer *Cast(const rive::RenderBuffer *buffer) {
-    return reinterpret_cast<const CanvasBuffer *>(buffer);
-  }
-};
 
 // Computes the post-transform bounding box of an array of points in high performance WASM SIMD.
 static std::array<float, 4> bbox(const float m[6], const float* vertexData, int numVertexFloats) {
@@ -121,9 +93,9 @@ public:
                      rive::rcp<rive::RenderBuffer> indices_u16,
                      rive::BlendMode value, float opacity) override {
 
-    auto vtx = CanvasBuffer::Cast(vertices_f32.get());
-    auto uv = CanvasBuffer::Cast(uvCoords_f32.get());
-    auto indices = CanvasBuffer::Cast(indices_u16.get());
+    auto vtx = rive::DataRenderBuffer::Cast(vertices_f32.get());
+    auto uv = rive::DataRenderBuffer::Cast(uvCoords_f32.get());
+    auto indices = rive::DataRenderBuffer::Cast(indices_u16.get());
 
     assert(uv->count() == vtx->count());
     if (!vtx->count() || !indices->count()) {
@@ -266,54 +238,39 @@ public:
     m_Width = width;
     m_Height = height;
   }
-
-  rive::rcp<rive::RenderShader>
-  makeShader(rive::RenderTileMode tx, rive::RenderTileMode ty,
-             const rive::Mat2D *localMatrix) const override {
-    return nullptr;
-  }
 };
 
 namespace rive {
 
-template <typename T> rcp<RenderBuffer> make_buffer(Span<T> span) {
-  return rcp<RenderBuffer>(
-      new CanvasBuffer(span.data(), span.size(), sizeof(T)));
-}
-
 class C2DFactory : public Factory {
     rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) override {
-        return make_buffer(data);
+        return rive::DataRenderBuffer::Make(data);
     }
     rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) override {
-        return make_buffer(data);
+        return rive::DataRenderBuffer::Make(data);
     }
     rcp<RenderBuffer> makeBufferF32(Span<const float> data) override {
-        return make_buffer(data);
+        return rive::DataRenderBuffer::Make(data);
     }
 
     rcp<RenderShader> makeLinearGradient(float sx, float sy,
                                          float ex, float ey,
                                          const ColorInt colors[],    // [count]
                                          const float stops[],        // [count]
-                                         size_t count,
-                                         RenderTileMode,
-                                         const Mat2D* localMatrix) override {
+                                         size_t count) override {
       return rcp<RenderShader>(
         new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
     }
     rcp<RenderShader> makeRadialGradient(float cx, float cy, float radius,
                                          const ColorInt colors[],    // [count]
                                          const float stops[],        // [count]
-                                         size_t count,
-                                         RenderTileMode,
-                                         const Mat2D* localMatrix) override {
+                                         size_t count) override {
       return rcp<RenderShader>(
         new RadialGradientShader(colors, stops, count, cx, cy, radius));
     }
     
     std::unique_ptr<RenderPath> makeRenderPath(Span<const Vec2D> points,
-                                               Span<const uint8_t> verbs,
+                                               Span<const PathVerb> verbs,
                                                FillRule fr) override {
       val renderPath =
         val::module_property("renderFactory").call<val>("makeRenderPath");
