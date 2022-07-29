@@ -1454,12 +1454,8 @@ export class Rive {
     if (this.eventCleanup !== null) {
       this.eventCleanup();
     }
-    // Stop rAF loop if still continuing, and delete all animation and state machine
-    // instances
-    if (this.frameRequestId) {
-      this.stopRendering();
-      this.stop();
-    }
+    // Delete all animation and state machine instances
+    this.stop();
     if (this.artboard) {
       this.artboard.delete();
       this.artboard = null;
@@ -1541,7 +1537,6 @@ export class Rive {
     const autoplay = params?.autoplay ?? false;
 
     // Stop everything and clean up
-    this.stop();
     this.cleanup();
 
     // Reinitialize an artboard instance with the state
@@ -1802,7 +1797,7 @@ export class Rive {
    * renderer is already active, then this will have zero effect.
    */
   public startRendering() {
-    if (this.loaded && !this.frameRequestId) {
+    if (this.loaded && this.artboard && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
         this.frameRequestId = this.runtime.requestAnimationFrame(
           this.draw.bind(this)
