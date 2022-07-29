@@ -1454,8 +1454,16 @@ export class Rive {
     if (this.eventCleanup !== null) {
       this.eventCleanup();
     }
-    this.artboard.delete();
-    // TODO: delete animation and state machine instances
+    // Stop rAF loop if still continuing, and delete all animation and state machine
+    // instances
+    if (this.frameRequestId) {
+      this.stopRendering();
+      this.stop();
+    }
+    if (this.artboard) {
+      this.artboard.delete();
+      this.artboard = null;
+    }
   }
 
   // Plays specified animations; if none specified, it unpauses everything.
@@ -1614,7 +1622,7 @@ export class Rive {
    * Returns the name of the active artboard
    */
   public get activeArtboard(): string {
-    return this.artboard.name;
+    return this.artboard ? this.artboard.name : "";
   }
 
   // Returns a list of animation names on the chosen artboard

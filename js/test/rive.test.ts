@@ -1142,3 +1142,23 @@ test('Statemachines have pointer events', (done) => {
     done();
   });
 });
+
+// #region cleanup
+
+test('Rive deletes instances on the cleanup', (done) => {
+  const canvas = document.createElement('canvas');
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: 'MyArtboard',
+    onLoad: () => {
+      expect(r.activeArtboard).toBe('MyArtboard');
+      r.cleanup();
+      expect(r.activeArtboard).toBe('');
+      done();
+    },
+  });
+});
+
+// #endregion
