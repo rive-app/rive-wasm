@@ -85,13 +85,13 @@ filter "options:skia"
     defines {"RIVE_SKIA_RENDERER"}
     buildoptions { "-DSK_GL", "-DSK_SUPPORT_GPU=1" }
     includedirs {"./submodules/rive-cpp/skia/renderer/include", 
-                "./submodules/rive-cpp/skia/dependencies/skia-experimental",
-                "./submodules/rive-cpp/skia/dependencies/skia-experimental/include/core",
-                "./submodules/rive-cpp/skia/dependencies/skia-experimental/include/effects",
-                "./submodules/rive-cpp/skia/dependencies/skia-experimental/include/gpu",
-                "./submodules/rive-cpp/skia/dependencies/skia-experimental/include/config"}
+                "./submodules/rive-cpp/skia/dependencies/skia_rive_optimized",
+                "./submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/core",
+                "./submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/effects",
+                "./submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/gpu",
+                "./submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/config"}
     files {"./submodules/rive-cpp/skia/renderer/src/**.cpp"}
-    libdirs {"submodules/rive-cpp/skia/dependencies/skia-experimental/out/wasm/"}
+    libdirs {"submodules/rive-cpp/skia/dependencies/skia_rive_optimized/out/wasm/"}
     links {"skia", "GL"}
     linkoptions {
             "-s USE_WEBGL2=1",
