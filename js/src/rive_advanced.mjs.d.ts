@@ -243,7 +243,8 @@ interface RiveOptions {
      */
     delete(): void;
     /**
-     * Advances the Artboard instance by the set amount of seconds
+     * Advances the Artboard instance by the set amount of seconds. This method updates each object in the Artboard with any changes that animations apply on properties of the objects.
+     * This should be called after calling `advance()` of a LinearAnimationInstance or StateMachineInstance
      * @param sec - Scrub the Artboard instance by a number of seconds
      */
     advance(sec: number): any;
@@ -380,12 +381,17 @@ interface RiveOptions {
      */
     didLoop: boolean;
     /**
-     * Advances/scrubs the LinearAnimationInstance by the set amount of seconds
+     * Advances/scrubs the LinearAnimationInstance by the set amount of seconds. Note that this only moves the "time" in the animation, but does not apply changes to the properties in the Artboard.
+     * This must be called before the `apply()` method of LinearAnimationInstance.
+     * 
      * @param sec - Scrub the animation instance by a number of seconds
      */
     advance(sec: number): any;
     /**
      * Apply a mixing value on the animation instance. This is useful if you are looking to blend multiple animations together and want to dictate a strength for each of the animations played back.
+     * This also applies new values to properties of objects on the Artboard according to the keys of the animation.
+     * This must be called after the `advance()` method of `LinearAnimationInstance`
+     *  
      * @param mix 0-1 the strength of the animation in the animations mix.
      */
     apply(mix: number): any;
@@ -421,7 +427,7 @@ interface RiveOptions {
      */
     input(i: number): SMIInput;
     /**
-     * Advances/scrubs the StateMachineInstance by the set amount of seconds
+     * Advances/scrubs the StateMachineInstance by the set amount of seconds. Note that this does not apply changes to the properties of objects in the Artboard yet.
      * @param sec - Scrub the state machine instance by a number of seconds
      */
     advance(sec: number): any;
