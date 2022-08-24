@@ -1,10 +1,15 @@
 interface RiveOptions {
-    locateFile(file: string): string
+    locateFile(file: string): string;
   }
-  
+
   declare function Rive(options?: RiveOptions): Promise<RiveCanvas>;
   export default Rive;
-  
+
+  /**
+   * RiveCanvas is the main export object that contains references to different Rive classes to help
+   * build the Rive render loop for low-level API usage. In addition, this contains multiple methods that help
+   * aid in setup, such as loading in a Rive file, creating the renderer, and starting/finishing the render loop (requestAnimationFrame)
+   */
   export interface RiveCanvas {
     Alignment: AlignmentFactory;
     CanvasRenderer: typeof CanvasRenderer;
@@ -15,50 +20,121 @@ interface RiveOptions {
     AABB: AABB;
     SMIInput: typeof SMIInput;
     renderFactory: CanvasRenderFactory;
-  
+
     BlendMode: typeof BlendMode;
     FillRule: typeof FillRule;
     Fit: typeof Fit;
     RenderPaintStyle: typeof RenderPaintStyle;
     StrokeCap: typeof StrokeCap;
     StrokeJoin: typeof StrokeJoin;
-  
+
+    /**
+     * Loads a Rive file for the runtime and returns a Rive-specific File class
+     *
+     * @param buffer - Array buffer of a Rive file
+     * @returns A Promise for a Rive File class
+     */
     load(buffer: Uint8Array): Promise<File>;
-    makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, useOffscreenRenderer?: boolean) : CanvasRenderer;
-    computeAlignment(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): Mat2D;
+
+    /**
+     * Creates the renderer to draw the Rive on the provided canvas element
+     *
+     * @param canvas - Canvas to draw the Rive on
+     * @param useOffscreenRenderer - Option for those using the WebGL-variant of the Rive JS library. This uses an offscreen renderer to draw on the canvas, allowing for multiple Rives/canvases on a given screen. It is highly recommended to set this to `true` when using with the `@rive-app/webgl` package
+     * @returns A Rive CanvasRenderer class
+     */
+    makeRenderer(
+      canvas: HTMLCanvasElement | OffscreenCanvas,
+      useOffscreenRenderer?: boolean
+    ): CanvasRenderer;
+
+    /**
+     * Computes how the Rive is laid out onto the canvas
+     * @param {Fit} fit - Fit enum (i.e Fit.contain)
+     * @param alignment - Alignment enum (i.e Alignment.center)
+     * @param frame - AABB object representing the bounds of the canvas frame
+     * @param content - AABB object representing the bounds of what to draw the Rive onto (i.e an artboard's size)
+     * @returns Mat2D - A Mat2D view matrix
+     */
+    computeAlignment(
+      fit: Fit,
+      alignment: Alignment,
+      frame: AABB,
+      content: AABB
+    ): Mat2D;
     mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
+    /**
+     * A Rive-specific requestAnimationFrame function; this should be used over the global requestAnimationFrame function.
+     * @param cb - Callback function to call with an elapsed timestamp
+     * @returns number - An ID of the requestAnimationFrame request
+     */
     requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
+    /**
+     * A Rive-specific cancelAnimationFrame function; this should be used over the global cancelAnimationFrame function.
+     * @param requestID - ID of the requestAnimationFrame request to cancel
+     */
     cancelAnimationFrame(requestID: number): void;
+    /**
+     * Debugging tool to showcase the FPS in the corner of the screen
+     */
     enableFPSCounter(cb: (fps: number) => void): void;
+    /**
+     * Debugging tool to remove the FPS counter that displays from enableFPSCounter
+     */
     disableFPSCounter(): void;
   }
-  
+
   //////////////
   // RENDERER //
   //////////////
-  
+
+  /**
+   * Rive wrapper around a rendering context for a canvas element, implementing a subset of the APIs from the rendering context interface
+   */
   export declare class RendererWrapper {
+    /**
+     * Saves the state of the canvas and pushes it onto a stack
+     *
+     * For the underlying API, check https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/save
+     */
     save(): void;
+    /**
+     * Restores the most recent state of the canvas saved on the stack
+     *
+     * For the underlying API, check https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/restore
+     */
     restore(): void;
     transform(tranform: Mat2D): void;
     drawPath(path: RenderPath, paint: RenderPaint): void;
     clipPath(path: RenderPath): void;
+    /**
+     * Calls the context's clearRect() function to clear the entire canvas
+     *
+     * For the underlying API, check https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
+     */
     clear(): void;
     flush(): void;
     translate(x: number, y: number): void;
     rotate(angle: number): void;
   }
-  
+
   export declare class RenderPathWrapper {
     reset(): void;
     addPath(path: CommandPath, transform: Mat2D): void;
     fillRule(value: FillRule): void;
-    moveTo(x: number, y: number): void
-    lineTo(x: number, y: number): void
-    cubicTo(ox: number, oy: number, ix: number, iy: number, x: number, y: number): void;
+    moveTo(x: number, y: number): void;
+    lineTo(x: number, y: number): void;
+    cubicTo(
+      ox: number,
+      oy: number,
+      ix: number,
+      iy: number,
+      x: number,
+      y: number
+    ): void;
     close(): void;
   }
-  
+
   export declare class RenderPaintWrapper {
     color(value: number): void;
     thickness(value: number): void;
@@ -71,83 +147,199 @@ interface RiveOptions {
     addStop(color: number, stop: number): void;
     completeGradient(): void;
   }
-  
+
+  /**
+   * Renderer returned when Rive makes a renderer via `makeRenderer()`
+   */
   export declare class Renderer extends RendererWrapper {
-    align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void
+    /**
+     * Aligns the Rive content on the canvas space
+     * @param fit - Fit enum value
+     * @param alignment - Alignment enum value
+     * @param frame - Bounds of the canvas space
+     * @param content - Bounds of the Rive content
+     */
+    align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void;
   }
-  
-  export declare class CommandPath { }
-  
-  export declare class RenderPath extends RenderPathWrapper { }
-  
-  export declare class RenderPaint extends RenderPaintWrapper { }
-  
-  
+
+  export declare class CommandPath {}
+
+  export declare class RenderPath extends RenderPathWrapper {}
+
+  export declare class RenderPaint extends RenderPaintWrapper {}
+
   /////////////////////
   // CANVAS RENDERER //
   /////////////////////
-  
   export declare class CanvasRenderer extends Renderer {
-    constructor(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D);
+    constructor(
+      ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+    );
   }
-  
+
   export declare class CanvasRenderPaint extends RenderPaint {
-    draw(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, path: RenderPath): void;
+    draw(
+      ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+      path: RenderPath
+    ): void;
   }
-  
-  export declare class CanvasRenderPath extends RenderPath { }
-  
+
+  export declare class CanvasRenderPath extends RenderPath {}
+
   export interface CanvasRenderFactory {
     makeRenderPaint(): CanvasRenderPaint;
     makeRenderPath(): CanvasRenderPath;
   }
-  
+
   //////////
   // File //
   //////////
+  /**
+   * Rive-specific File class that provides a number of functions to load instances of Artboards
+   */
   export declare class File {
-    defaultArtboard(): Artboard;              // rive::ArtboardInstance
-    artboardByName(name: string): Artboard;   // rive::ArtboardInstance
+    /**
+     * Returns the first Artboard found in the Rive file as a new Artboard instance
+     * @returns An Artboard instance
+     */
+    defaultArtboard(): Artboard; // rive::ArtboardInstance
+    /**
+     * Returns the named Artboard found in the Rive file as a new Artboard instance
+     * @param name - Name of the Artboard to create an instance for
+     */
+    artboardByName(name: string): Artboard; // rive::ArtboardInstance
+    /**
+     * Returns a new Artboard instance for the Artboard at the given index in the Rive file
+     * @param index - Index of the Artboard in the file to create an Artboard instance for
+     */
     artboardByIndex(index: number): Artboard; // rive::ArtboardInstance
+    /**
+     * Returns the number of Artboards in the Rive File
+     * @returns Number of artboards in the Rive file
+     */
     artboardCount(): number;
   }
 
-  // This wraps rive::ArtboardInstance*
+  /**
+   * Rive class representing an Artboard instance. Use this class to create instances for LinearAnimations, StateMachines, Nodes, Bones, and more.
+   * This Artboard instance should also be advanced in the drawing render loop.
+   *
+   * Important: Make sure to delete this instance when it's no longer in use via the `delete()` method. This deletes the underlying c++ reference and
+   * frees up the backing WASM object. This can be done in cases where the user navigates away from the page with this animation, the canvas is unmounted, etc.
+   */
   export declare class Artboard {
+    /**
+     * Get the name of this Artboard instance
+     */
     get name(): string;
+    /**
+     * Get the bounds of this Artboard instance
+     */
     get bounds(): AABB;
     get frameOrigin(): boolean;
     set frameOrigin(val: boolean);
-    // Deletes the backing wasm artboard instance
+    /**
+     * Deletes the underlying instance created via the WASM. It's important to clean up this instance when no longer in use
+     */
     delete(): void;
+    /**
+     * Advances the Artboard instance by the set amount of seconds
+     * @param sec - Scrub the Artboard instance by a number of seconds
+     */
     advance(sec: number): any;
+    /**
+     * Draws the artboard with a given rendering context.
+     * @param renderer - Renderer context to draw with
+     */
     draw(renderer: CanvasRenderer): void;
+    /**
+     * Creates a LinearAnimationinstance for the animation with the given name
+     * @param name - Name of the animation to create an instance for
+     * @returns A new LinearAnimationInstance object
+     */
     animationByName(name: string): LinearAnimationInstance;
+    /**
+     * Creates a LinearAnimationinstance for the animation with the given index
+     * @param index - Index of the animation to create an instance for
+     * @returns A new LinearAnimationInstance object
+     */
     animationByIndex(index: number): LinearAnimationInstance;
+    /**
+     * Returns the number of animations in the artboard
+     * @returns Number of animations on the Artboard
+     */
     animationCount(): number;
+    /**
+     * Creates a StateMachineInstance for the state machine with the given name
+     * @param name - Name of the state machine to create an instance for
+     * @returns A new StateMachineInstance object
+     */
     stateMachineByName(name: string): StateMachineInstance;
+    /**
+     * Creates a StateMachineInstance for the state machine with the given index
+     * @param index - Index of the state machine to create an instance for
+     * @returns A new StateMachineInstance object
+     */
     stateMachineByIndex(index: number): StateMachineInstance;
+    /**
+     * Returns the number of state machines in the artboard
+     * @returns Number of state machines on the Artboard
+     */
     stateMachineCount(): number;
+    /**
+     * Returns a reference for a Bone object of a given name
+     * @param name - Name of the Bone to grab a reference to
+     */
     bone(name: string): Bone;
+    /**
+     * Returns a reference for a Node object of a given name from the Artboard hierarchy
+     * @param name - Name of the Node from the Artboard hierarchy to grab a reference to
+     */
     node(name: string): Node;
+    /**
+     * Returns a reference for a root Bone object of a given name
+     * @param name - Name of the root Bone to grab a reference to
+     */
     rootBone(name: string): RootBone;
+    /**
+     * Returns a reference for a transform component object of a given name
+     * @param name - Name of the transform component to grab a reference to
+     */
     transformComponent(name: string): TransformComponent;
   }
-  
+
   export declare class Bone extends TransformComponent {
+    /**
+     * Length of the bone
+     */
     length: number;
   }
-  
+
   export declare class RootBone extends Bone {
+    /**
+     * X coordinate of the position on the RootBone
+     */
     x: number;
+    /**
+     * Y coordinate of the position on the RootBone
+     */
     y: number;
   }
-  
+
+  /**
+   * Representation of a node in the Artboard hierarchy (i.e group, shape, etc.)
+   */
   export declare class Node extends TransformComponent {
+    /**
+     * X coordinate of the position on the Node
+     */
     x: number;
+    /**
+     * Y coordinate of the position on the RootBone
+     */
     y: number;
   }
-  
+
   export declare class TransformComponent {
     rotation: number;
     scaleX: number;
@@ -155,11 +347,22 @@ interface RiveOptions {
     worldTransform(): Mat2D;
     parentWorldTransform(result: Mat2D): void;
   }
-  
+
   ///////////////
   // Animation //
   ///////////////
+  /**
+   * Rive class representing a LinearAnimation instance. Use this class to advance and control a particular animation in the render loop (i.e speed, scrub, mix, etc.).
+   *
+   * Important: Make sure to delete this instance when it's no longer in use via the `delete()` method. This deletes the underlying c++ reference and
+   * frees up the backing WASM object. This can be done in cases where the user navigates away from the page with this animation, the canvas is unmounted, etc.
+   */
   export declare class LinearAnimationInstance {
+    /**
+     * Create a new LinearAnimationInstance reference
+     * @param animation - A LinearAnimationInstance retrieved via the Artboard (i.e `artboard.animationByName('foo')`)
+     * @param artboard - The Artboard instance for this animation
+     */
     constructor(animation: LinearAnimationInstance, artboard: Artboard);
     get name(): string;
     get duration(): number;
@@ -168,68 +371,135 @@ interface RiveOptions {
     get workEnd(): number;
     get loopValue(): number;
     get speed(): number;
-    /** Time of the animation in seconds */
+    /**
+     * Number of seconds the animation has advanced by
+     */
     time: number;
+    /**
+     * Flag to determine if the animation looped (this is reset when the loop restarts)
+     */
     didLoop: boolean;
+    /**
+     * Advances/scrubs the LinearAnimationInstance by the set amount of seconds
+     * @param sec - Scrub the animation instance by a number of seconds
+     */
     advance(sec: number): any;
     /**
-     * Apply animation on the artboard
+     * Apply a mixing value on the animation instance. This is useful if you are looking to blend multiple animations together and want to dictate a strength for each of the animations played back.
      * @param mix 0-1 the strength of the animation in the animations mix.
      */
     apply(mix: number): any;
-    // Deletes the backing Wasm animation instance
+    /**
+     * Deletes the underlying instance created via the WASM. It's important to clean up this instance when no longer in use
+     */
     delete(): void;
   }
-  
+
+  /**
+   * Rive class representing a StateMachine instance. Use this class to advance and control a particular state machine in the render loop (i.e scrub, grab state machine inputs, set up listener events, etc.).
+   *
+   * Important: Make sure to delete this instance when it's no longer in use via the `delete()` method. This deletes the underlying c++ reference and
+   * frees up the backing WASM object. This can be done in cases where the user navigates away from the page with this animation, the canvas is unmounted, etc.
+   */
   export declare class StateMachineInstance {
+    /**
+     * Create a new StateMachineInstance reference
+     * @param stateMachine - A StateMachineInstance retrieved via the Artboard (i.e `artboard.stateMachineByName('foo')`)
+     * @param artboard - The Artboard instance for this state machine
+     */
     constructor(stateMachine: StateMachineInstance, artboard: Artboard);
     get name(): string;
+    /**
+     * Returns the number of inputs associated with this state machine
+     * @returns Number of inputs
+     */
     inputCount(): number;
-    input(i: number): SMIInput; 
+    /**
+     * Returns the SMIInput at the given index
+     * @param i - Index to retrieve the state machine input at
+     * @returns SMIInput reference
+     */
+    input(i: number): SMIInput;
+    /**
+     * Advances/scrubs the StateMachineInstance by the set amount of seconds
+     * @param sec - Scrub the state machine instance by a number of seconds
+     */
     advance(sec: number): any;
+    /**
+     * Returns the number of states changed while the state machine played
+     * @returns Number of states changed in the duration of the state machine played
+     */
     stateChangedCount(): number;
+    /**
+     * Returns the name of the state/animation transitioned to, given the index in the array of state changes in total
+     * @param i
+     * @returns Name of the state/animation transitioned to
+     */
     stateChangedNameByIndex(i: number): string;
 
-    // Call with coordinates in Artboard space
+    /**
+     * Registers a coordinate where the pointer down listener watches for in the Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of interest at a given moment.
+     * @param x - X coordinate
+     * @param y - Y coordinate
+     */
     pointerDown(x: number, y: number): void;
+    /**
+     * Registers a coordinate where the pointer move listener watches for in the Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of interest at a given moment.
+     * @param x - X coordinate
+     * @param y - Y coordinate
+     */
     pointerMove(x: number, y: number): void;
+    /**
+     * Registers a coordinate where the pointer up listener watches for in the Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of interest at a given moment.
+     * @param x - X coordinate
+     * @param y - Y coordinate
+     */
     pointerUp(x: number, y: number): void;
-  
-    // Deletes the backing Wasm state machine instance
+
+    /**
+     * Deletes the underlying instance created via the WASM. It's important to clean up this instance when no longer in use
+     */
     delete(): void;
   }
-  
+
   export declare class SMIInput {
+    // TODO: Keep only the base SMIInput properties and make SMIBool, SMINumber, SMITriger extend it
     static bool: number;
     static number: number;
     static trigger: number;
-  
+
+    /**
+     * Getter for name of the state machine input
+     */
     get name(): string;
     get type(): number;
+    /**
+     * Getter for value of the state machine input
+     */
     get value(): boolean | number | undefined;
+    /**
+     * Setter for value of the state machine input
+     */
     set value(val: boolean | number | undefined);
+    /**
+     * Fires a trigger input on a state machine
+     */
     fire(): void;
     asBool(): SMIInput;
     asNumber(): SMIInput;
     asTrigger(): SMIInput;
   }
-  
-  export declare class SMIBool {
-  
-  }
-  
-  export declare class SMINumber {
-    
-  }
-  
-  export declare class SMITrigger {
-    
-  }
-  
+
+  export declare class SMIBool {}
+
+  export declare class SMINumber {}
+
+  export declare class SMITrigger {}
+
   ///////////
   // ENUMS //
   ///////////
-  
+
   export enum Fit {
     fill,
     contain,
@@ -239,17 +509,17 @@ interface RiveOptions {
     none,
     scaleDown,
   }
-  
+
   export enum RenderPaintStyle {
     fill,
     stroke,
   }
-  
+
   export enum FillRule {
     nonZero,
     evenOdd,
   }
-  
+
   export enum StrokeCap {
     butt,
     round,
@@ -260,7 +530,7 @@ interface RiveOptions {
     round,
     bevel,
   }
-  
+
   export enum BlendMode {
     srcOver = 3,
     screen = 14,
@@ -279,16 +549,16 @@ interface RiveOptions {
     color = 27,
     luminosity = 28,
   }
-  
+
   ///////////
   // UTILS //
   ///////////
-  
+
   export declare class Alignment {
     get x(): number;
     get y(): number;
   }
-  
+
   export declare class AlignmentFactory {
     get topLeft(): Alignment;
     get topCenter(): Alignment;
@@ -300,14 +570,23 @@ interface RiveOptions {
     get bottomCenter(): Alignment;
     get bottomRight(): Alignment;
   }
-  
+
+  /**
+   * Axis-aligned bounding box
+   */
   export interface AABB {
     minX: number;
     minY: number;
     maxX: number;
     maxY: number;
   }
-  
+
+  /**
+   * Matrix described by the following:
+   *    xx yx tx
+   *  [ xy yy ty ]
+   *    0  0  1
+   */
   export declare class Mat2D {
     xx: number;
     xy: number;
@@ -315,11 +594,24 @@ interface RiveOptions {
     yy: number;
     tx: number;
     ty: number;
+    /**
+     * Returns whether or not a matrix could be inverted, and if yes, sets the resulting Mat2D into the passed-in `mat` parameter
+     * @param mat - Reference Mat2D to store the newly inverted matrix into if successful
+     * @returns True if the matrix could be inverted
+     */
     invert(mat: Mat2D): boolean;
   }
 
+  /**
+   * Rive Vector class
+   */
   export declare class Vec2D {
+    /**
+     * Returns the x coordinate of the vector
+     */
     x(): void;
+    /**
+     * Returns the y coordinate of the vector
+     */
     y(): void;
   }
-  
