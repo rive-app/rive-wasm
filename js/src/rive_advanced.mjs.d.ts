@@ -69,22 +69,24 @@ export interface RiveCanvas {
   ): Mat2D;
   mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
   /**
-   * A Rive-specific requestAnimationFrame function; this should be used over the global
+   * A Rive-specific requestAnimationFrame function; this must be used instead of the global
    * requestAnimationFrame function.
    * @param cb - Callback function to call with an elapsed timestamp
    * @returns number - An ID of the requestAnimationFrame request
    */
   requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
   /**
-   * A Rive-specific cancelAnimationFrame function; this should be used over the global
+   * A Rive-specific cancelAnimationFrame function; this must be used instead of the global
    * cancelAnimationFrame function.
    * @param requestID - ID of the requestAnimationFrame request to cancel
    */
   cancelAnimationFrame(requestID: number): void;
   /**
-   * Debugging tool to showcase the FPS in the corner of the screen
+   * Debugging tool to showcase the FPS in the corner of the screen as a new div. If a callback
+   * function is provided, this function passes the fps count to the callback so the client can
+   * decide what to do with that data.
    */
-  enableFPSCounter(cb: (fps: number) => void): void;
+  enableFPSCounter(cb?: (fps: number) => void): void;
   /**
    * Debugging tool to remove the FPS counter that displays from enableFPSCounter
    */
@@ -304,7 +306,9 @@ export declare class Artboard {
    */
   stateMachineCount(): number;
   /**
-   * Returns a reference for a Bone object of a given name
+   * Returns a reference for a Bone object of a given name.
+   * Learn more: https://help.rive.app/editor/manipulating-shapes/bones
+   * 
    * @param name - Name of the Bone to grab a reference to
    */
   bone(name: string): Bone;
@@ -450,7 +454,7 @@ export declare class StateMachineInstance {
    */
   inputCount(): number;
   /**
-   * Returns the SMIInput at the given index
+   * Returns the state machine input at the given index
    * @param i - Index to retrieve the state machine input at
    * @returns SMIInput reference
    */
@@ -475,18 +479,19 @@ export declare class StateMachineInstance {
   stateChangedNameByIndex(i: number): string;
 
   /**
-   * Registers a coordinate where the pointer down listener watches for in the Artboard space.
-   * Internally, Rive may advance a state machine if the listener coordinate is of interest at a
-   * given moment.
+   * Notifies the state machine that the pointer has pressed down at the given coordinate in
+   * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
+   * interest at a given moment.
    * 
    * @param x - X coordinate
    * @param y - Y coordinate
    */
   pointerDown(x: number, y: number): void;
   /**
-   * Registers a coordinate where the pointer move listener watches for in the Artboard space.
-   * Internally, Rive may advance a state machine if the listener coordinate is of interest at a
-   * given moment.
+   * Notifies the state machine that the pointer has pressed down at the given coordinate in
+   * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
+   * interest at a given moment.
+   * 
    * @param x - X coordinate
    * @param y - Y coordinate
    */
@@ -627,10 +632,10 @@ export interface AABB {
 }
 
 /**
- * Matrix described by the following:
- *    xx yx tx
- *  [ xy yy ty ]
- *    0  0  1
+ * Column-major matrix described by the following:
+ *  | xx  yx  tx |
+ *  | xy  yy  ty |
+ *  |  0   0   1 |
  */
 export declare class Mat2D {
   xx: number;
