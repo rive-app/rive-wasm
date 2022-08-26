@@ -82,9 +82,9 @@ export interface RiveCanvas {
    */
   cancelAnimationFrame(requestID: number): void;
   /**
-   * Debugging tool to showcase the FPS in the corner of the screen as a new div. If a callback
-   * function is provided, this function passes the fps count to the callback so the client can
-   * decide what to do with that data.
+   * Debugging tool to showcase the FPS in the corner of the screen in a new div. If a callback
+   * function is provided, this function passes the FPS count to the callback instead of creating a
+   * new div so the client can decide what to do with that data.
    */
   enableFPSCounter(cb?: (fps: number) => void): void;
   /**
@@ -488,7 +488,7 @@ export declare class StateMachineInstance {
    */
   pointerDown(x: number, y: number): void;
   /**
-   * Notifies the state machine that the pointer has pressed down at the given coordinate in
+   * Notifies the state machine that the pointer has moved to the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
    * interest at a given moment.
    * 
@@ -497,9 +497,9 @@ export declare class StateMachineInstance {
    */
   pointerMove(x: number, y: number): void;
   /**
-   * Registers a coordinate where the pointer up listener watches for in the Artboard space.
-   * Internally, Rive may advance a state machine if the listener coordinate is of interest at a
-   * given moment.
+   * Notifies the state machine that the pointer has released at the given coordinate in
+   * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
+   * interest at a given moment.
    * @param x - X coordinate
    * @param y - Y coordinate
    */
