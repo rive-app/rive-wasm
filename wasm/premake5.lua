@@ -38,6 +38,7 @@ linkoptions {
             "-s NO_EXIT_RUNTIME=1", 
             "-s STRICT=1", 
             "-flto",
+            "-s DYNAMIC_EXECUTION=0",
             "-s ALLOW_MEMORY_GROWTH=1", 
             "-s DISABLE_EXCEPTION_CATCHING=1", 
             "-s WASM=1", 
