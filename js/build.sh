@@ -8,11 +8,9 @@ set -e
 mkdir -p dist
 
 # copy the rive wasm js and type definitions files to build dir
-if [ ! -f ../wasm/publish/rive.mjs ]; then 
-    pushd ../wasm
-    ./build_all_wasm.sh
-    popd
-fi
+pushd ../wasm
+./build_all_wasm.sh
+popd
 
 # run web-pack
 npm run build

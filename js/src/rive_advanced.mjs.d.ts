@@ -658,12 +658,13 @@ export declare class Mat2D {
  * Rive Vector class
  */
 export declare class Vec2D {
+  constructor(x: number, y: number);
   /**
    * Returns the x coordinate of the vector
    */
-  x(): void;
+  x(): number;
   /**
    * Returns the y coordinate of the vector
    */
-  y(): void;
+  y(): number;
 }
