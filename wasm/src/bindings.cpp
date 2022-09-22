@@ -154,6 +154,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM) {
 
   class_<rive::Vec2D>("Vec2D")
     .constructor<float, float>()
+    // TODO: For next major verison, make these properties instead of methods to match
+    // patterns on other math-based Rive classes, such as Mat2D
     .function("x", optional_override([](rive::Vec2D self) -> float { return self.x; }))
     .function("y", optional_override([](rive::Vec2D self) -> float { return self.y; }));
 

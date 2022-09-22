@@ -43,21 +43,21 @@ export const registerTouchInteractions = ({
 
     switch (event.type) {
       // Pointer moving/hovering on the canvas
-      case 'mousemove': {
+      case "mousemove": {
         for (const stateMachine of stateMachines) {
           stateMachine.pointerMove(transformedX, transformedY);
         }
         break;
       }
       // Pointer click initiated but not released yet on the canvas
-      case 'mousedown': {
+      case "mousedown": {
         for (const stateMachine of stateMachines) {
           stateMachine.pointerDown(transformedX, transformedY);
         }
         break;
       }
       // Pointer click released on the canvas
-      case 'mouseup': {
+      case "mouseup": {
         for (const stateMachine of stateMachines) {
           stateMachine.pointerUp(transformedX, transformedY);
         }
@@ -67,12 +67,12 @@ export const registerTouchInteractions = ({
     }
   };
   const callback = mouseCallback.bind(this);
-  canvas.addEventListener('mousemove', callback);
-  canvas.addEventListener('mousedown', callback);
-  canvas.addEventListener('mouseup', callback);
+  canvas.addEventListener("mousemove", callback);
+  canvas.addEventListener("mousedown", callback);
+  canvas.addEventListener("mouseup", callback);
   return () => {
-    canvas.removeEventListener('mousemove', callback);
-    canvas.removeEventListener('mousedown', callback);
-    canvas.removeEventListener('mouseup', callback);
+    canvas.removeEventListener("mousemove", callback);
+    canvas.removeEventListener("mousedown", callback);
+    canvas.removeEventListener("mouseup", callback);
   };
 };
