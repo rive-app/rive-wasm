@@ -62,7 +62,7 @@ rive::File *load(emscripten::val byteArray) {
 
   emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
   memoryView.call<void>("set", byteArray);
-  return rive::File::import(rive::toSpan(rv), jsFactory()).release();
+  return rive::File::import(rv, jsFactory()).release();
 }
 
 rive::Mat2D computeAlignment(rive::Fit fit, rive::Alignment alignment, rive::AABB orig, rive::AABB dest) {
