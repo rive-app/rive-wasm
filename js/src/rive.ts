@@ -1460,8 +1460,6 @@ export class Rive {
     this.renderer.delete();
     // Delete the rive file
     this.file.delete();
-    // Cleanup anything remaining on the runtime.
-    this.runtime.cleanup();
   }
 
   /**
