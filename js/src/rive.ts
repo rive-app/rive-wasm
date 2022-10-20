@@ -1,6 +1,6 @@
-import * as rc from './rive_advanced.mjs';
-import * as packageData from 'package.json';
-import { registerTouchInteractions } from './utils';
+import * as rc from "./rive_advanced.mjs";
+import * as packageData from "package.json";
+import { registerTouchInteractions } from "./utils";
 
 /**
  * Generic type for a parameterless void callback
@@ -24,26 +24,26 @@ export interface Bounds extends rc.AABB {}
 
 // Fit options for the canvas
 export enum Fit {
-  Cover = 'cover',
-  Contain = 'contain',
-  Fill = 'fill',
-  FitWidth = 'fitWidth',
-  FitHeight = 'fitHeight',
-  None = 'none',
-  ScaleDown = 'scaleDown',
+  Cover = "cover",
+  Contain = "contain",
+  Fill = "fill",
+  FitWidth = "fitWidth",
+  FitHeight = "fitHeight",
+  None = "none",
+  ScaleDown = "scaleDown",
 }
 
 // Alignment options for the canvas
 export enum Alignment {
-  Center = 'center',
-  TopLeft = 'topLeft',
-  TopCenter = 'topCenter',
-  TopRight = 'topRight',
-  CenterLeft = 'centerLeft',
-  CenterRight = 'centerRight',
-  BottomLeft = 'bottomLeft',
-  BottomCenter = 'bottomCenter',
-  BottomRight = 'bottomRight',
+  Center = "center",
+  TopLeft = "topLeft",
+  TopCenter = "topCenter",
+  TopRight = "topRight",
+  CenterLeft = "centerLeft",
+  CenterRight = "centerRight",
+  BottomLeft = "bottomLeft",
+  BottomCenter = "bottomCenter",
+  BottomRight = "bottomRight",
 }
 
 // Interface for the Layout static method contructor
@@ -89,7 +89,7 @@ export class Layout {
     maxY,
   }: LayoutParameters): Layout {
     console.warn(
-      'This function is deprecated: please use `new Layout({})` instead'
+      "This function is deprecated: please use `new Layout({})` instead"
     );
     return new Layout({ fit, alignment, minX, minY, maxX, maxY });
   }
@@ -779,14 +779,14 @@ class Animator {
  * Supported event types triggered in Rive
  */
 export enum EventType {
-  Load = 'load',
-  LoadError = 'loaderror',
-  Play = 'play',
-  Pause = 'pause',
-  Stop = 'stop',
-  Loop = 'loop',
-  Draw = 'draw',
-  StateChange = 'statechange',
+  Load = "load",
+  LoadError = "loaderror",
+  Play = "play",
+  Pause = "pause",
+  Stop = "stop",
+  Loop = "loop",
+  Draw = "draw",
+  StateChange = "statechange",
 }
 
 // Event fired by Rive
@@ -799,9 +799,9 @@ export interface Event {
  * Looping types: one-shot, loop, and ping-pong
  */
 export enum LoopType {
-  OneShot = 'oneshot', // has value 0 in runtime
-  Loop = 'loop', // has value 1 in runtime
-  PingPong = 'pingpong', // has value 2 in runtime
+  OneShot = "oneshot", // has value 0 in runtime
+  Loop = "loop", // has value 1 in runtime
+  PingPong = "pingpong", // has value 2 in runtime
 }
 
 /**
@@ -1053,7 +1053,7 @@ export class Rive {
 
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
-    'Rive source file or data buffer required';
+    "Rive source file or data buffer required";
 
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
@@ -1108,7 +1108,7 @@ export class Rive {
   // Alternative constructor to build a Rive instance from an interface/object
   public static new(params: RiveParameters): Rive {
     console.warn(
-      'This function is deprecated: please use `new Rive({})` instead'
+      "This function is deprecated: please use `new Rive({})` instead"
     );
     return new Rive(params);
   }
@@ -1216,7 +1216,7 @@ export class Rive {
       this.loaded = true;
       this.eventManager.fire({
         type: EventType.Load,
-        data: this.src ?? 'buffer',
+        data: this.src ?? "buffer",
       });
 
       // Flag ready for playback commands and clear the task queue; this order
@@ -1228,7 +1228,7 @@ export class Rive {
 
       return Promise.resolve();
     } else {
-      const msg = 'Problem loading file; may be corrupt!';
+      const msg = "Problem loading file; may be corrupt!";
       console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);
@@ -1249,7 +1249,7 @@ export class Rive {
 
     // Check we have a working artboard
     if (!rootArtboard) {
-      const msg = 'Invalid artboard name or no default artboard';
+      const msg = "Invalid artboard name or no default artboard";
       console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return;
@@ -1259,7 +1259,7 @@ export class Rive {
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
-      const msg = 'Artboard has no animations';
+      const msg = "Artboard has no animations";
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       throw msg;
     }
@@ -1444,13 +1444,34 @@ export class Rive {
   }
 
   /**
+   * Cleans up all Wasm-generated objects that need to be manually destroyed:
+   * artboard instances, animation instances, state machine instances,
+   * renderer instance, file and runtime.
+   *
+   * Once this is called, you will need to initialise a new instance of the
+   * Rive class
+   */
+  public cleanup() {
+    // Stop the renderer if it hasn't already been stopped.
+    this.stopRendering();
+    // Clean up any artboard, animation or state machine instances.
+    this.cleanupInstances();
+    // Delete the renderer
+    this.renderer.delete();
+    // Delete the rive file
+    this.file.delete();
+    // Cleanup anything remaining on the runtime.
+    this.runtime.cleanup();
+  }
+
+  /**
    * Cleans up any Wasm-generated objects that need to be manually destroyed:
    * artboard instances, animation instances, state machine instances.
    *
    * Once this is called, things will need to be reinitialized or bad things
    * might happen.
    */
-  public cleanup() {
+  public cleanupInstances() {
     if (this.eventCleanup !== null) {
       this.eventCleanup();
     }
@@ -1537,7 +1558,7 @@ export class Rive {
     const autoplay = params?.autoplay ?? false;
 
     // Stop everything and clean up
-    this.cleanup();
+    this.cleanupInstances();
 
     // Reinitialize an artboard instance with the state
     this.initArtboard(
@@ -1917,7 +1938,7 @@ const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
  * Utility function to ensure an object is a string array
  */
 let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
-  if (typeof obj === 'string') {
+  if (typeof obj === "string") {
     return [obj];
   } else if (obj instanceof Array) {
     return obj;
