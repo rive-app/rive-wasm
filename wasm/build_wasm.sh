@@ -43,3 +43,11 @@ elif [ "$OPTION" = "release" ]; then
 else
     premake5 gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make -j$NCPU
 fi
+
+# If you want to run the leak checker with debug symbols, copy
+# canvas_advanced.wasm to the parcel example's assets folder. Commented out for
+# now as it should only happen if you're not building single and the canvas
+# version.
+# ----
+# du build/bin/debug/canvas_advanced.wasm
+# cp build/bin/debug/canvas_advanced.wasm examples/parcel_example/assets/canvas_advanced.wasm

@@ -874,4 +874,10 @@ Rive.onRuntimeInitialized = function () {
   );
   Rive["disableFPSCounter"] = _animationCallbackHandler.disableFPSCounter;
   _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
+
+  Rive["cleanup"] = function () {
+    if (_rectanizer) {
+      _rectanizer.delete();
+    }
+  };
 };
