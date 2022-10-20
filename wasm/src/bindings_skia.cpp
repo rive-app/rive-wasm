@@ -6,6 +6,7 @@
 #include "SkCanvas.h"
 #include "SkSurface.h"
 #include "gl/GrGLInterface.h"
+#include "js_alignment.hpp"
 
 #include "skia_factory.hpp"
 #include "skia_renderer.hpp"
@@ -116,7 +117,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
                                        const rive::AABB& frame,
                                        const rive::AABB& content) {
                       self.align(fit, convertAlignment(alignment), frame, content);
-                  })) class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
+                  }));
+    class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
         .function("clear", &WebGLSkiaRenderer::clear)
         .function("flush", &WebGLSkiaRenderer::flush)
         .function("resize", &WebGLSkiaRenderer::resize)
