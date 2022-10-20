@@ -91,6 +91,12 @@ export interface RiveCanvas {
    * Debugging tool to remove the FPS counter that displays from enableFPSCounter
    */
   disableFPSCounter(): void;
+
+  /**
+   * Cleans up any WASM-generate objects that need to be destroyed manually.
+   * This should be called when you wish to remove a rive animation from view.
+   */
+  cleanup(): void;
 }
 
 //////////////
@@ -126,6 +132,7 @@ export declare class RendererWrapper {
    * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
    */
   clear(): void;
+  delete(): void;
   flush(): void;
   translate(x: number, y: number): void;
   rotate(angle: number): void;
@@ -231,6 +238,8 @@ export declare class File {
    * @returns Number of artboards in the Rive file
    */
   artboardCount(): number;
+
+  delete(): void;
 }
 
 /**
@@ -308,7 +317,7 @@ export declare class Artboard {
   /**
    * Returns a reference for a Bone object of a given name.
    * Learn more: https://help.rive.app/editor/manipulating-shapes/bones
-   * 
+   *
    * @param name - Name of the Bone to grab a reference to
    */
   bone(name: string): Bone;
@@ -415,7 +424,7 @@ export declare class LinearAnimationInstance {
   /**
    * Apply a mixing value on the animation instance. This is useful if you are looking to blend
    * multiple animations together and want to dictate a strength for each of the animations played
-   * back. This also applies new values to properties of objects on the Artboard according to the 
+   * back. This also applies new values to properties of objects on the Artboard according to the
    * keys of the animation.
    * This must be called after the `advance()` method of `LinearAnimationInstance`
    *
@@ -482,7 +491,7 @@ export declare class StateMachineInstance {
    * Notifies the state machine that the pointer has pressed down at the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
    * interest at a given moment.
-   * 
+   *
    * @param x - X coordinate
    * @param y - Y coordinate
    */
@@ -491,7 +500,7 @@ export declare class StateMachineInstance {
    * Notifies the state machine that the pointer has moved to the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
    * interest at a given moment.
-   * 
+   *
    * @param x - X coordinate
    * @param y - Y coordinate
    */
@@ -647,7 +656,7 @@ export declare class Mat2D {
   /**
    * Returns whether or not a matrix could be inverted, and if yes, sets the resulting Mat2D into
    * the passed-in `mat` parameter
-   * 
+   *
    * @param mat - Reference Mat2D to store the newly inverted matrix into if successful
    * @returns True if the matrix could be inverted
    */
