@@ -41,6 +41,11 @@ export const registerTouchInteractions = ({
     const transformedX = transformedVector.x();
     const transformedY = transformedVector.y();
 
+    transformedVector.delete();
+    invertedMatrix.delete();
+    canvasCoordinatesVector.delete();
+    forwardMatrix.delete();
+
     switch (event.type) {
       // Pointer moving/hovering on the canvas
       case "mousemove": {
