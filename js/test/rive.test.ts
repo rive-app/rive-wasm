@@ -1,6 +1,6 @@
-import * as rc from '../src/rive_advanced.mjs.js';
-import * as rive from '../src/rive';
-import getLongArtboardNameBuffer from './test-rive-buffers/longArtboardName';
+import * as rc from "../src/rive_advanced.mjs.js";
+import * as rive from "../src/rive";
+import getLongArtboardNameBuffer from "./test-rive-buffers/longArtboardName";
 
 // #region helper functions
 
@@ -167,8 +167,8 @@ const stateMachineFileBuffer = arrayToArrayBuffer(stateMachineFileBytes);
 
 beforeEach(() => {
   // Suppress console.warn and console.error
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "warn").mockImplementation(() => {});
 });
 
 afterEach(() => {});
@@ -177,7 +177,7 @@ afterEach(() => {});
 
 // #region layout
 
-test('Layouts can be created with different fits and alignments', (): void => {
+test("Layouts can be created with different fits and alignments", (): void => {
   let layout = new rive.Layout({
     fit: rive.Fit.Contain,
     alignment: rive.Alignment.TopRight,
@@ -195,7 +195,7 @@ test('Layouts can be created with different fits and alignments', (): void => {
   expect(layout.maxY).toBe(101);
 });
 
-test('Layouts can be created with named parameters', (): void => {
+test("Layouts can be created with named parameters", (): void => {
   let layout = new rive.Layout({
     minX: 1,
     alignment: rive.Alignment.TopRight,
@@ -213,7 +213,7 @@ test('Layouts can be created with named parameters', (): void => {
   expect(layout.maxY).toBe(101);
 });
 
-test('Layouts have sensible defaults', (): void => {
+test("Layouts have sensible defaults", (): void => {
   let layout = new rive.Layout();
   expect(layout).toBeDefined();
   expect(layout.fit).toBe(rive.Fit.Contain);
@@ -224,7 +224,7 @@ test('Layouts have sensible defaults', (): void => {
   expect(layout.maxY).toBe(0);
 });
 
-test('Layouts provide runtime fit and alignment values', async () => {
+test("Layouts provide runtime fit and alignment values", async () => {
   const runtime: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   let layout = new rive.Layout({
     fit: rive.Fit.FitWidth,
@@ -232,8 +232,9 @@ test('Layouts provide runtime fit and alignment values', async () => {
   });
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fitWidth);
-  expect(layout.runtimeAlignment(runtime).x).toBe(-1);
-  expect(layout.runtimeAlignment(runtime).y).toBe(1);
+  // Now we use JSAlignment, tests not longer required
+  // expect(layout.runtimeAlignment(runtime).x).toBe(-1);
+  // expect(layout.runtimeAlignment(runtime).y).toBe(1);
 
   layout = new rive.Layout({
     fit: rive.Fit.Fill,
@@ -241,11 +242,11 @@ test('Layouts provide runtime fit and alignment values', async () => {
   });
   expect(layout).toBeDefined();
   expect(layout.runtimeFit(runtime)).toBe(runtime.Fit.fill);
-  expect(layout.runtimeAlignment(runtime).x).toBe(1);
-  expect(layout.runtimeAlignment(runtime).y).toBe(-1);
+  // expect(layout.runtimeAlignment(runtime).x).toBe(1);
+  // expect(layout.runtimeAlignment(runtime).y).toBe(-1);
 });
 
-test('Layouts can be copied with overridden values', (): void => {
+test("Layouts can be copied with overridden values", (): void => {
   let layout = new rive.Layout({
     fit: rive.Fit.ScaleDown,
     alignment: rive.Alignment.BottomRight,
@@ -273,7 +274,7 @@ test('Layouts can be copied with overridden values', (): void => {
 
 // #region runtime loading
 
-test('Runtime can be loaded using callbacks', async (done) => {
+test("Runtime can be loaded using callbacks", async (done) => {
   let callback1: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     expect(runtime.Fit.none).toBeDefined();
@@ -295,7 +296,7 @@ test('Runtime can be loaded using callbacks', async (done) => {
   setTimeout(() => rive.RuntimeLoader.getInstance(callback3), 500);
 });
 
-test('Runtime can be loaded using promises', async (done) => {
+test("Runtime can be loaded using promises", async (done) => {
   let rive1: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   expect(rive1).toBeDefined();
   expect(rive1.Fit.none).toBeDefined();
@@ -318,7 +319,7 @@ test('Runtime can be loaded using promises', async (done) => {
 
 // #region event
 
-test('Events can be subscribed and unsubscribed to and fired', () => {
+test("Events can be subscribed and unsubscribed to and fired", () => {
   const manager = new rive.Testing.EventManager();
   expect(manager).toBeDefined();
 
@@ -327,40 +328,40 @@ test('Events can be subscribed and unsubscribed to and fired', () => {
     type: rive.EventType.Load,
     callback: (e: rive.Event) => {
       expect(e.type).toBe(rive.EventType.Load);
-      expect(e.data).toBe('fired');
+      expect(e.data).toBe("fired");
       mockFired();
     },
   };
 
   manager.add(listener);
-  manager.fire({ type: rive.EventType.Load, data: 'fired' });
+  manager.fire({ type: rive.EventType.Load, data: "fired" });
   expect(mockFired).toBeCalledTimes(1);
 
   manager.remove(listener);
-  manager.fire({ type: rive.EventType.Load, data: 'fired' });
+  manager.fire({ type: rive.EventType.Load, data: "fired" });
   expect(mockFired).toBeCalledTimes(1);
 
   manager.add(listener);
-  manager.fire({ type: rive.EventType.Load, data: 'fired' });
+  manager.fire({ type: rive.EventType.Load, data: "fired" });
   expect(mockFired).toBeCalledTimes(2);
 });
 
-test('Creating loop event accepts enum and string values', (): void => {
+test("Creating loop event accepts enum and string values", (): void => {
   let loopEvent: rive.LoopEvent = {
-    animation: 'test animation',
+    animation: "test animation",
     type: rive.LoopType.PingPong,
   };
-  expect(loopEvent.type).toBe('pingpong');
+  expect(loopEvent.type).toBe("pingpong");
 
-  loopEvent = { animation: 'test animation', type: rive.LoopType.OneShot };
-  expect(loopEvent.type).toBe('oneshot');
+  loopEvent = { animation: "test animation", type: rive.LoopType.OneShot };
+  expect(loopEvent.type).toBe("oneshot");
 });
 
 // #endregion
 
 // #region task queue
 
-test('Tasks are queued and run when processed', () => {
+test("Tasks are queued and run when processed", () => {
   const eventManager = new rive.Testing.EventManager();
   const taskManager = new rive.Testing.TaskQueueManager(eventManager);
 
@@ -369,12 +370,12 @@ test('Tasks are queued and run when processed', () => {
     type: rive.EventType.Play,
     callback: (e: rive.Event) => {
       expect(e.type).toBe(rive.EventType.Play);
-      expect(e.data).toBe('play');
+      expect(e.data).toBe("play");
       mockFired();
     },
   };
   eventManager.add(listener);
-  const event: rive.Event = { type: rive.EventType.Play, data: 'play' };
+  const event: rive.Event = { type: rive.EventType.Play, data: "play" };
 
   const mockAction: rive.VoidCallback = jest.fn();
   const task: rive.Task = { event: event, action: mockAction };
@@ -395,16 +396,16 @@ test('Tasks are queued and run when processed', () => {
 
 // #region creating Rive objects
 
-test('Rive objects require a src url or byte buffer', () => {
-  const canvas = document.createElement('canvas');
+test("Rive objects require a src url or byte buffer", () => {
+  const canvas = document.createElement("canvas");
   const badConstructor = () => {
     new rive.Rive({ canvas: canvas });
   };
   expect(badConstructor).toThrow(Error);
 });
 
-test('Rive objects initialize correctly', (done) => {
-  const canvas = document.createElement('canvas');
+test("Rive objects initialize correctly", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
@@ -416,8 +417,8 @@ test('Rive objects initialize correctly', (done) => {
   });
 });
 
-test('Corrupt Rive file cause explosions', (done) => {
-  const canvas = document.createElement('canvas');
+test("Corrupt Rive file cause explosions", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: corruptRiveFileBuffer,
@@ -430,12 +431,12 @@ test('Corrupt Rive file cause explosions', (done) => {
 
 // #region artboards
 
-test('Artboards can be fetched by name', (done) => {
-  const canvas = document.createElement('canvas');
+test("Artboards can be fetched by name", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    artboard: 'Artboard2',
+    artboard: "Artboard2",
     onLoad: () => {
       expect(r).toBeDefined();
       done();
@@ -444,12 +445,12 @@ test('Artboards can be fetched by name', (done) => {
   });
 });
 
-test('Artboards can be fetched with a long name', (done) => {
-  const canvas = document.createElement('canvas');
+test("Artboards can be fetched with a long name", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: arrayToArrayBuffer(getLongArtboardNameBuffer()),
-    artboard: 'Really Long  Artboard Name with Double Spaces',
+    artboard: "Really Long  Artboard Name with Double Spaces",
     onLoad: () => {
       expect(r).toBeDefined();
       done();
@@ -457,12 +458,12 @@ test('Artboards can be fetched with a long name', (done) => {
   });
 });
 
-test('Rive explodes when given an invalid artboard name', (done) => {
-  const canvas = document.createElement('canvas');
+test("Rive explodes when given an invalid artboard name", (done) => {
+  const canvas = document.createElement("canvas");
   new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    artboard: 'BadArtboard',
+    artboard: "BadArtboard",
     onLoad: () => expect(false).toBeTruthy(),
     onLoadError: () => {
       // We should get here
@@ -471,11 +472,11 @@ test('Rive explodes when given an invalid artboard name', (done) => {
   });
 });
 
-test('Artboard bounds can be retrieved from a loaded Rive file', (done) => {
-  const canvas = document.createElement('canvas');
+test("Artboard bounds can be retrieved from a loaded Rive file", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
-    artboard: 'MyArtboard',
+    artboard: "MyArtboard",
     buffer: stateMachineFileBuffer,
     onLoad: () => {
       const bounds = r.bounds;
@@ -493,8 +494,8 @@ test('Artboard bounds can be retrieved from a loaded Rive file', (done) => {
 
 // #region playbackstates
 
-test('Playback state for new Rive objects is pause', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playback state for new Rive objects is pause", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
@@ -507,8 +508,8 @@ test('Playback state for new Rive objects is pause', (done) => {
   });
 });
 
-test('Playback state for auto-playing new Rive objects is play', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playback state for auto-playing new Rive objects is play", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
@@ -533,8 +534,8 @@ test('Playback state for auto-playing new Rive objects is play', (done) => {
 
 // #region Firing events
 
-test('Playing a ping-pong animation will fire a loop event', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing a ping-pong animation will fire a loop event", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
@@ -555,8 +556,8 @@ test('Playing a ping-pong animation will fire a loop event', (done) => {
   });
 });
 
-test('Playing a loop animation will fire a loop event', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing a loop animation will fire a loop event", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
@@ -577,8 +578,8 @@ test('Playing a loop animation will fire a loop event', (done) => {
   });
 });
 
-test('Playing a one-shot animation will fire a stop event', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing a one-shot animation will fire a stop event", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
@@ -597,8 +598,8 @@ test('Playing a one-shot animation will fire a stop event', (done) => {
   });
 });
 
-test('Stop events are received', (done) => {
-  const canvas = document.createElement('canvas');
+test("Stop events are received", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
@@ -613,8 +614,8 @@ test('Stop events are received', (done) => {
   });
 });
 
-test('Events can be unsubscribed from', (done) => {
-  const canvas = document.createElement('canvas');
+test("Events can be unsubscribed from", (done) => {
+  const canvas = document.createElement("canvas");
 
   const stopCallback = (event: rive.Event) =>
     // We should never reach this
@@ -634,8 +635,8 @@ test('Events can be unsubscribed from', (done) => {
   setTimeout(() => done(), 200);
 });
 
-test('Events of a single type can be mass unsubscribed', (done) => {
-  const canvas = document.createElement('canvas');
+test("Events of a single type can be mass unsubscribed", (done) => {
+  const canvas = document.createElement("canvas");
 
   const loopCallback1 = (event: rive.Event) => expect(false).toBeTruthy();
   const loopCallback2 = (event: rive.Event) => expect(false).toBeTruthy();
@@ -661,8 +662,8 @@ test('Events of a single type can be mass unsubscribed', (done) => {
   setTimeout(() => r.stop(), 200);
 });
 
-test('All events can be mass unsubscribed', (done) => {
-  const canvas = document.createElement('canvas');
+test("All events can be mass unsubscribed", (done) => {
+  const canvas = document.createElement("canvas");
 
   const loopCallback1 = (event: rive.Event) => expect(false).toBeTruthy();
   const loopCallback2 = (event: rive.Event) => expect(false).toBeTruthy();
@@ -695,8 +696,8 @@ test('All events can be mass unsubscribed', (done) => {
 
 // #region playback control
 
-test('Playing animations can be manually started and stopped', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing animations can be manually started and stopped", (done) => {
+  const canvas = document.createElement("canvas");
 
   const r = new rive.Rive({
     canvas: canvas,
@@ -727,8 +728,8 @@ test('Playing animations can be manually started and stopped', (done) => {
   });
 });
 
-test('Playing animations can be manually started, paused, and restarted', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing animations can be manually started, paused, and restarted", (done) => {
+  const canvas = document.createElement("canvas");
   let hasLooped = false;
 
   const r = new rive.Rive({
@@ -770,8 +771,8 @@ test('Playing animations can be manually started, paused, and restarted', (done)
 
 // #region loading files
 
-test('Multiple files can be loaded and played', (done) => {
-  const canvas = document.createElement('canvas');
+test("Multiple files can be loaded and played", (done) => {
+  const canvas = document.createElement("canvas");
   let loopOccurred = false;
   let firstLoadOccurred = false;
 
@@ -810,8 +811,8 @@ test('Multiple files can be loaded and played', (done) => {
   });
 });
 
-test('Layout is set to canvas dimensions if not specified', (done) => {
-  const canvas = document.createElement('canvas');
+test("Layout is set to canvas dimensions if not specified", (done) => {
+  const canvas = document.createElement("canvas");
   canvas.width = 400;
   canvas.height = 300;
 
@@ -832,8 +833,8 @@ test('Layout is set to canvas dimensions if not specified', (done) => {
 
 // #region Rive properties
 
-test('Rive file contents can be read', (done) => {
-  const canvas = document.createElement('canvas');
+test("Rive file contents can be read", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
@@ -842,31 +843,31 @@ test('Rive file contents can be read', (done) => {
       expect(contents).toBeDefined();
       expect(contents.artboards).toBeDefined();
       expect(contents.artboards).toHaveLength(2);
-      expect(contents.artboards[0].name).toBe('MyArtboard');
-      expect(contents.artboards[1].name).toBe('Artboard2');
+      expect(contents.artboards[0].name).toBe("MyArtboard");
+      expect(contents.artboards[1].name).toBe("Artboard2");
       expect(contents.artboards[0].animations).toBeDefined();
       expect(contents.artboards[0].animations).toHaveLength(6);
       expect(contents.artboards[0].animations[0]).toBe(
-        'WorkAreaPingPongAnimation'
+        "WorkAreaPingPongAnimation"
       );
       expect(contents.artboards[0].stateMachines).toBeDefined();
       expect(contents.artboards[0].stateMachines).toHaveLength(1);
-      expect(contents.artboards[0].stateMachines[0].name).toBe('StateMachine');
+      expect(contents.artboards[0].stateMachines[0].name).toBe("StateMachine");
       expect(contents.artboards[0].stateMachines[0].inputs).toHaveLength(3);
       expect(contents.artboards[0].stateMachines[0].inputs[0].name).toBe(
-        'MyNum'
+        "MyNum"
       );
       expect(contents.artboards[0].stateMachines[0].inputs[0].type).toBe(
         rive.StateMachineInputType.Number
       );
       expect(contents.artboards[0].stateMachines[0].inputs[1].name).toBe(
-        'MyBool'
+        "MyBool"
       );
       expect(contents.artboards[0].stateMachines[0].inputs[1].type).toBe(
         rive.StateMachineInputType.Boolean
       );
       expect(contents.artboards[0].stateMachines[0].inputs[2].name).toBe(
-        'MyTrig'
+        "MyTrig"
       );
       expect(contents.artboards[0].stateMachines[0].inputs[2].type).toBe(
         rive.StateMachineInputType.Trigger
@@ -880,26 +881,26 @@ test('Rive file contents can be read', (done) => {
 
 // #region state machine
 
-test('State machine names can be retrieved', (done) => {
-  const canvas = document.createElement('canvas');
+test("State machine names can be retrieved", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     onLoad: () => {
       const stateMachineNames = r.stateMachineNames;
       expect(stateMachineNames).toHaveLength(1);
-      expect(stateMachineNames[0]).toBe('StateMachine');
+      expect(stateMachineNames[0]).toBe("StateMachine");
       done();
     },
   });
 });
 
-test('State machines can be instanced', (done) => {
-  const canvas = document.createElement('canvas');
+test("State machines can be instanced", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    stateMachines: 'StateMachine',
+    stateMachines: "StateMachine",
     onPause: () => {
       expect(r.pausedStateMachineNames).toHaveLength(1);
       done();
@@ -907,22 +908,22 @@ test('State machines can be instanced', (done) => {
   });
 });
 
-test('Instanced state machine inputs can be retrieved', (done) => {
-  const canvas = document.createElement('canvas');
+test("Instanced state machine inputs can be retrieved", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    stateMachines: 'StateMachine',
+    stateMachines: "StateMachine",
     onPause: () => {
-      let stateMachineInputs = r.stateMachineInputs('BadName');
+      let stateMachineInputs = r.stateMachineInputs("BadName");
       expect(stateMachineInputs).toBeUndefined();
-      stateMachineInputs = r.stateMachineInputs('StateMachine');
+      stateMachineInputs = r.stateMachineInputs("StateMachine");
       expect(stateMachineInputs).toHaveLength(3);
 
       expect(stateMachineInputs[0].type).toBe(
         rive.StateMachineInputType.Number
       );
-      expect(stateMachineInputs[0].name).toBe('MyNum');
+      expect(stateMachineInputs[0].name).toBe("MyNum");
       expect(stateMachineInputs[0].value).toBe(0);
       stateMachineInputs[0].value = 12;
       expect(stateMachineInputs[0].value).toBe(12);
@@ -930,7 +931,7 @@ test('Instanced state machine inputs can be retrieved', (done) => {
       expect(stateMachineInputs[1].type).toBe(
         rive.StateMachineInputType.Boolean
       );
-      expect(stateMachineInputs[1].name).toBe('MyBool');
+      expect(stateMachineInputs[1].name).toBe("MyBool");
       expect(stateMachineInputs[1].value).toBe(false);
       stateMachineInputs[1].value = true;
       expect(stateMachineInputs[1].value).toBe(true);
@@ -938,7 +939,7 @@ test('Instanced state machine inputs can be retrieved', (done) => {
       expect(stateMachineInputs[2].type).toBe(
         rive.StateMachineInputType.Trigger
       );
-      expect(stateMachineInputs[2].name).toBe('MyTrig');
+      expect(stateMachineInputs[2].name).toBe("MyTrig");
       expect(stateMachineInputs[2].value).toBeUndefined();
       expect(stateMachineInputs[2].fire()).toBeUndefined();
 
@@ -947,14 +948,14 @@ test('Instanced state machine inputs can be retrieved', (done) => {
   });
 });
 
-test('Playing state machines can be manually started, paused, and restarted', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing state machines can be manually started, paused, and restarted", (done) => {
+  const canvas = document.createElement("canvas");
   let hasPaused = false;
 
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    stateMachines: 'StateMachine',
+    stateMachines: "StateMachine",
     onLoad: () => {
       // Nothing should be playing whenever a file is loaded
       expect(r.isStopped).toBeFalsy();
@@ -977,25 +978,25 @@ test('Playing state machines can be manually started, paused, and restarted', (d
   });
 });
 
-test('Playing state machines report when states have changed', (done) => {
-  const canvas = document.createElement('canvas');
+test("Playing state machines report when states have changed", (done) => {
+  const canvas = document.createElement("canvas");
   let state = 0;
 
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    artboard: 'MyArtboard',
-    stateMachines: 'StateMachine',
+    artboard: "MyArtboard",
+    stateMachines: "StateMachine",
     autoplay: true,
     onPlay: () => {
       // Expect the correct animation to be playing
       expect(r.playingStateMachineNames).toHaveLength(1);
-      expect(r.playingStateMachineNames[0]).toBe('StateMachine');
+      expect(r.playingStateMachineNames[0]).toBe("StateMachine");
       // Check the inputs are correct
       const inputs = r.stateMachineInputs(r.playingStateMachineNames[0]);
       expect(inputs).toHaveLength(3);
-      expect(inputs[1].name).toBe('MyBool');
-      expect(inputs[2].name).toBe('MyTrig');
+      expect(inputs[1].name).toBe("MyBool");
+      expect(inputs[2].name).toBe("MyTrig");
     },
     onStateChange: ({ type: type, data: stateNames }) => {
       const inputs = r.stateMachineInputs(r.playingStateMachineNames[0]);
@@ -1003,19 +1004,19 @@ test('Playing state machines report when states have changed', (done) => {
       if (state === 0) {
         // console.log(`State: ${(stateNames as string[])[0]}`);
         expect(stateNames).toHaveLength(1);
-        expect((stateNames as string[])[0]).toBe('LoopingAnimation');
+        expect((stateNames as string[])[0]).toBe("LoopingAnimation");
 
         state++;
         inputs[2].fire();
       } else if (state === 1) {
         expect(stateNames).toHaveLength(1);
-        expect((stateNames as string[])[0]).toBe('PingPongAnimation');
+        expect((stateNames as string[])[0]).toBe("PingPongAnimation");
 
         state++;
         inputs[1].value = true;
       } else if (state === 2) {
         expect(stateNames).toHaveLength(1);
-        expect((stateNames as string[])[0]).toBe('exit');
+        expect((stateNames as string[])[0]).toBe("exit");
 
         done();
       }
@@ -1027,8 +1028,8 @@ test('Playing state machines report when states have changed', (done) => {
 
 // #region scrubbing
 
-test('An animation can be played and scrubbed without altering playback state', (done) => {
-  const canvas = document.createElement('canvas');
+test("An animation can be played and scrubbed without altering playback state", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
@@ -1055,8 +1056,8 @@ test('An animation can be played and scrubbed without altering playback state', 
 
 // #region reseting
 
-test('Artboards can be reset back to their starting state', (done) => {
-  const canvas = document.createElement('canvas');
+test("Artboards can be reset back to their starting state", (done) => {
+  const canvas = document.createElement("canvas");
 
   // Track the nr of loops
   let loopCount: number = 0;
@@ -1068,7 +1069,7 @@ test('Artboards can be reset back to their starting state', (done) => {
     autoplay: true,
     onLoad: () => {
       // Default artboard should be selected
-      expect(r.activeArtboard).toBe('New Artboard');
+      expect(r.activeArtboard).toBe("New Artboard");
       // This should only ever happen once
       expect(loopCount).toBe(0);
     },
@@ -1088,8 +1089,8 @@ test('Artboards can be reset back to their starting state', (done) => {
 
 // #region remove mouse events
 
-test('Mouse events are removed from canvas when reset', (done) => {
-  const canvas = document.createElement('canvas');
+test("Mouse events are removed from canvas when reset", (done) => {
+  const canvas = document.createElement("canvas");
   let resetMe = true;
 
   // Start up a looping animation
@@ -1097,15 +1098,15 @@ test('Mouse events are removed from canvas when reset', (done) => {
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     autoplay: true,
-    artboard: 'MyArtboard',
-    stateMachines: 'StateMachine',
+    artboard: "MyArtboard",
+    stateMachines: "StateMachine",
     onStateChange: () => {
       // lets make sure we're moving so we got things registered
       if (resetMe) {
         resetMe = false;
         r.reset({
-          artboard: 'MyArtboard',
-          stateMachines: 'StateMachine',
+          artboard: "MyArtboard",
+          stateMachines: "StateMachine",
           autoplay: true,
         });
       }
@@ -1113,7 +1114,7 @@ test('Mouse events are removed from canvas when reset', (done) => {
         try {
           // This will fake a mouse event, and trigger their event handlers
           // If those are illegal, we'll crash
-          canvas.dispatchEvent(new Event('mousedown'));
+          canvas.dispatchEvent(new Event("mousedown"));
         } catch (err) {
           done(err);
         }
@@ -1125,7 +1126,7 @@ test('Mouse events are removed from canvas when reset', (done) => {
 
 // #endregion
 
-test('Statemachines have pointer events', (done) => {
+test("Statemachines have pointer events", (done) => {
   rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
     const file = await runtime.load(new Uint8Array(stateMachineFileBuffer));
     const ab = file.artboardByIndex(0);
@@ -1145,17 +1146,17 @@ test('Statemachines have pointer events', (done) => {
 
 // #region cleanup
 
-test('Rive deletes instances on the cleanup', (done) => {
-  const canvas = document.createElement('canvas');
+test("Rive deletes instances on the cleanup", (done) => {
+  const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     autoplay: true,
-    artboard: 'MyArtboard',
+    artboard: "MyArtboard",
     onLoad: () => {
-      expect(r.activeArtboard).toBe('MyArtboard');
+      expect(r.activeArtboard).toBe("MyArtboard");
       r.cleanup();
-      expect(r.activeArtboard).toBe('');
+      expect(r.activeArtboard).toBe("");
       done();
     },
   });
