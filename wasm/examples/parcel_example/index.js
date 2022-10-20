@@ -1,5 +1,7 @@
 import "regenerator-runtime";
-import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
+// import RiveCanvas from "../../build/bin/debug/canvas_advanced_single.mjs";
+import RiveCanvas from "../../build/bin/debug/canvas_advanced.mjs";
+// import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 import { registerTouchInteractions } from "../../../js/src/utils";
 // import RiveCanvas from '../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs';
 import AvatarAnimation from "./look.riv";
@@ -178,10 +180,89 @@ async function main() {
   const numCanvases = parseInt(params.numCanvases || 0) || 10;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
+
+  // Optionally perform leak checks right after rive is initialized.
+  // await checkForLeaks(rive);
+
   rive.enableFPSCounter();
   for (let i = 0; i < numCanvases; i++) {
     await renderRiveAnimation({ rive, num: i, hasRandomSizes });
   }
+}
+
+async function checkForLeaks(rive) {
+  const riveEx = RIVE_EXAMPLES[0];
+  const { hasStateMachine } = riveEx;
+  var stateMachine, animation;
+  const bytes = await (await fetch(new Request(riveEx.riveFile))).arrayBuffer();
+  const file = await rive.load(new Uint8Array(bytes));
+  const artboard = file.defaultArtboard();
+  artboard.advance(0);
+  if (hasStateMachine) {
+    stateMachine = new rive.StateMachineInstance(
+      artboard.stateMachineByIndex(0),
+      artboard
+    );
+  } else {
+    animation = new rive.LinearAnimationInstance(
+      artboard.animationByName(riveEx.animation),
+      artboard
+    );
+  }
+  const num = 0;
+  let canvas = document.getElementById(`canvas${num}`);
+  if (!canvas) {
+    const body = document.querySelector("body");
+    canvas = document.createElement("canvas");
+    canvas.id = `canvas${num}`;
+    body.appendChild(canvas);
+  }
+  canvas.width = "400";
+  canvas.height = "400";
+  // Don't use the offscreen renderer for FF as it should have a context limit of 300
+  const renderer = rive.makeRenderer(canvas, true);
+  var elapsedSeconds = 0.0167;
+  // Render 20 frames.
+  for (var i = 0; i < 100; i++) {
+    renderer.clear();
+    if (artboard) {
+      if (stateMachine) {
+        stateMachine.advance(elapsedSeconds);
+      }
+      if (animation) {
+        animation.advance(elapsedSeconds);
+        animation.apply(1);
+      }
+      artboard.advance(elapsedSeconds);
+      renderer.save();
+      renderer.align(
+        rive.Fit.contain,
+        rive.Alignment.center,
+        {
+          minX: 0,
+          minY: 0,
+          maxX: canvas.width,
+          maxY: canvas.height,
+        },
+        artboard.bounds
+      );
+      artboard.draw(renderer);
+      renderer.restore();
+    }
+    renderer.flush();
+  }
+
+  renderer.delete();
+  if (stateMachine) {
+    stateMachine.delete();
+  }
+  if (animation) {
+    animation.delete();
+  }
+  file.delete();
+  rive.cleanup();
+  // Report any leaks.
+  rive.doLeakCheck();
 }
 
 main();

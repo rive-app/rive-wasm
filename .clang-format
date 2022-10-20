@@ -1,0 +1,73 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+TabWidth: 4
+BreakBeforeBraces: Allman
+IndentCaseLabels: true
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+NamespaceIndentation: None
+AccessModifierOffset: -4
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ColumnLimit: 100
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortCaseLabelsOnASingleLine: false
+PenaltyReturnTypeOnItsOwnLine: 100
+BreakBeforeBraces: Custom
+SortIncludes: false
+BraceWrapping:
+  AfterEnum: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterNamespace: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterObjCDeclaration: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  AfterCaseLabel: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+---
+Language: ObjC
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+NamespaceIndentation: All
+AccessModifierOffset: -4
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ColumnLimit: 100
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Custom
+SortIncludes: false
+BraceWrapping:
+  AfterEnum: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterNamespace: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterObjCDeclaration: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  AfterCaseLabel: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
