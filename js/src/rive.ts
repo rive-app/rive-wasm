@@ -7,18 +7,10 @@ import { registerTouchInteractions } from "./utils";
  */
 export type VoidCallback = () => void;
 
-// Tracks playback states; numbers map to the runtime's numerical values
-// i.e. play: 0, pause: 1, stop: 2
-enum PlaybackState {
-  Play = 0,
-  Pause,
-  Stop,
-}
-
 /**
- * Interface for artboard bounds
+ * Type for artboard bounds
  */
-export interface Bounds extends rc.AABB {}
+export type Bounds = rc.AABB;
 
 // #region layout
 
@@ -173,14 +165,14 @@ export class RuntimeLoader {
   // Singleton helpers
   private static runtime: rc.RiveCanvas;
   // Flag to indicate that loading has started/completed
-  private static isLoading: boolean = false;
+  private static isLoading = false;
   // List of callbacks for the runtime that come in while loading
   private static callBackQueue: RuntimeCallback[] = [];
   // Instance of the Rive runtime
   private static rive: rc.RiveCanvas;
   // Path to the Wasm file; default path works for testing only;
   // if embedded wasm is used then this is never used.
-  private static wasmURL: string = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
+  private static wasmURL = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
 
   // Class is never instantiated
   private constructor() {}
@@ -189,7 +181,7 @@ export class RuntimeLoader {
   private static loadRuntime(): void {
     rc.default({
       // Loads Wasm bundle
-      locateFile: (_: string) => RuntimeLoader.wasmURL,
+      locateFile: () => RuntimeLoader.wasmURL,
     }).then((rive: rc.RiveCanvas) => {
       RuntimeLoader.runtime = rive;
       // Fire all the callbacks
@@ -215,7 +207,7 @@ export class RuntimeLoader {
 
   // Provides a runtime instance via a promise
   public static awaitInstance(): Promise<rc.RiveCanvas> {
-    return new Promise<rc.RiveCanvas>((resolve, reject) =>
+    return new Promise<rc.RiveCanvas>((resolve) =>
       RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => resolve(rive))
     );
   }
@@ -233,7 +225,7 @@ export class RuntimeLoader {
 // Wraps animations and instances from the runtime and keeps track of playback
 // state
 class Animation {
-  public loopCount: number = 0;
+  public loopCount = 0;
   public readonly instance: rc.LinearAnimationInstance;
 
   // Time to which the animation should move to on the next render
@@ -895,7 +887,7 @@ class EventManager {
 // A task in the queue; will fire the action when the queue is processed; will
 // also optionally fire an event.
 export interface Task {
-  action: VoidCallback;
+  action?: VoidCallback;
   event?: Event;
 }
 
@@ -914,7 +906,9 @@ class TaskQueueManager {
   public process(): void {
     while (this.queue.length > 0) {
       const task = this.queue.shift();
-      task?.action();
+      if (task?.action) {
+        task.action();
+      }
       if (task?.event) {
         this.eventManager.fire(task.event);
       }
@@ -1008,7 +1002,7 @@ export class Rive {
 
   // Flag to indicate if the layout has changed; used by the renderer to know
   // when to align
-  private _updateLayout: boolean = true;
+  private _updateLayout = true;
 
   // The runtime renderer
   private renderer: rc.Renderer;
@@ -1019,7 +1013,7 @@ export class Rive {
   private isRendererActive = true;
 
   // Tracks if a Rive file is loaded
-  private loaded: boolean = false;
+  private loaded = false;
 
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
@@ -1028,7 +1022,7 @@ export class Rive {
    * animations and autoplay has been sorted out. This applies to play, pause,
    * and start.
    */
-  private readyForPlaying: boolean = false;
+  private readyForPlaying = false;
 
   // Wasm runtime
   private runtime: rc.RiveCanvas;
@@ -1037,7 +1031,7 @@ export class Rive {
   private artboard: rc.Artboard | null = null;
 
   // place to clear up event listeners
-  private eventCleanup: Function | null = null;
+  private eventCleanup: VoidCallback | null = null;
 
   // Runtime file
   private file: rc.File;
@@ -1058,7 +1052,7 @@ export class Rive {
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
-  public frameCount: number = 0;
+  public frameCount = 0;
 
   constructor(params: RiveParameters) {
     this.canvas = params.canvas;
@@ -1152,7 +1146,8 @@ export class Rive {
           useOffscreenRenderer
         );
 
-        // Initial size adjustment based on devicePixelRatio if no width/height are specified explicitly
+        // Initial size adjustment based on devicePixelRatio if no width/height are
+        // specified explicitly
         if (!(this.canvas.width || this.canvas.height)) {
           this.resizeDrawingSurfaceToCanvas();
         }
@@ -1284,7 +1279,6 @@ export class Rive {
     }
     // Queue up firing the playback events
     this.taskQueue.add({
-      action: () => {},
       event: {
         type: autoplay ? EventType.Play : EventType.Pause,
         data: instanceNames,
@@ -1305,9 +1299,10 @@ export class Rive {
   private frameRequestId: number | null;
 
   /**
-   * Used be draw to track when a second of active rendering time has passed. Used for debugging purposes
+   * Used be draw to track when a second of active rendering time has passed.
+   * Used for debugging purposes
    */
-  private renderSecondTimer: number = 0;
+  private renderSecondTimer = 0;
 
   /**
    * Draw rendering loop; renders animation frames at the correct time interval.
@@ -1342,7 +1337,7 @@ export class Rive {
       .filter((a) => a.playing || a.needsScrub)
       // The scrubbed animations must be applied first to prevent weird artifacts
       // if the playing animations conflict with the scrubbed animating attribuates.
-      .sort((first, second) => (first.needsScrub ? -1 : 1));
+      .sort((first) => (first.needsScrub ? -1 : 1));
     for (const animation of activeAnimations) {
       animation.advance(elapsedTime);
       if (animation.instance.didLoop) {
@@ -1613,8 +1608,8 @@ export class Rive {
   /**
    * Accounts for devicePixelRatio as a multiplier to render the size of the canvas drawing surface.
    * Uses the size of the backing canvas to set new width/height attributes. Need to re-render
-   * and resize the layout to match the new drawing surface afterwards. Useful function for consumers
-   * to include in a window resize listener
+   * and resize the layout to match the new drawing surface afterwards.
+   * Useful function for consumers to include in a window resize listener
    */
   public resizeDrawingSurfaceToCanvas() {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
@@ -1829,7 +1824,8 @@ export class Rive {
 
   /**
    * Enables frames-per-second (FPS) reporting for the runtime
-   * If no callback is provided, Rive will append a fixed-position div at the top-right corner of the page with the FPS reading
+   * If no callback is provided, Rive will append a fixed-position div at the top-right corner of
+   * the page with the FPS reading
    * @param fpsCallback - Callback from the runtime during the RAF loop that supplies the FPS value
    */
   public enableFPSCounter(fpsCallback?: FPSCallback) {
@@ -1935,7 +1931,7 @@ const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
 /*
  * Utility function to ensure an object is a string array
  */
-let mapToStringArray = (obj?: string[] | string | undefined): string[] => {
+const mapToStringArray = (obj?: string[] | string | undefined): string[] => {
   if (typeof obj === "string") {
     return [obj];
   } else if (obj instanceof Array) {

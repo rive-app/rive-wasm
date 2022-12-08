@@ -1,1 +1,1 @@
-export {registerTouchInteractions} from './registerTouchInteractions';
+export { registerTouchInteractions } from "./registerTouchInteractions";
