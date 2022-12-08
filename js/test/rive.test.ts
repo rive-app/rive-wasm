@@ -22,7 +22,7 @@ const arrayToArrayBuffer = (array: number[]): ArrayBuffer => {
 
 const printProperties = (obj: any): void => {
   let propValue;
-  for (let propName in obj) {
+  for (const propName in obj) {
     propValue = obj[propName];
 
     console.log(propName, propValue);
@@ -178,7 +178,7 @@ afterEach(() => {});
 // #region layout
 
 test("Layouts can be created with different fits and alignments", (): void => {
-  let layout = new rive.Layout({
+  const layout = new rive.Layout({
     fit: rive.Fit.Contain,
     alignment: rive.Alignment.TopRight,
     minX: 1,
@@ -196,7 +196,7 @@ test("Layouts can be created with different fits and alignments", (): void => {
 });
 
 test("Layouts can be created with named parameters", (): void => {
-  let layout = new rive.Layout({
+  const layout = new rive.Layout({
     minX: 1,
     alignment: rive.Alignment.TopRight,
     minY: 2,
@@ -214,7 +214,7 @@ test("Layouts can be created with named parameters", (): void => {
 });
 
 test("Layouts have sensible defaults", (): void => {
-  let layout = new rive.Layout();
+  const layout = new rive.Layout();
   expect(layout).toBeDefined();
   expect(layout.fit).toBe(rive.Fit.Contain);
   expect(layout.alignment).toBe(rive.Alignment.Center);
@@ -275,17 +275,17 @@ test("Layouts can be copied with overridden values", (): void => {
 // #region runtime loading
 
 test("Runtime can be loaded using callbacks", async (done) => {
-  let callback1: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
+  const callback1: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     expect(runtime.Fit.none).toBeDefined();
     expect(runtime.Fit.cover).toBeDefined();
     expect(runtime.Fit.none).not.toBe(runtime.Fit.cover);
   };
 
-  let callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void =>
+  const callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void =>
     expect(runtime).toBeDefined();
 
-  let callback3: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
+  const callback3: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     done();
   };
@@ -297,18 +297,18 @@ test("Runtime can be loaded using callbacks", async (done) => {
 });
 
 test("Runtime can be loaded using promises", async (done) => {
-  let rive1: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
+  const rive1: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   expect(rive1).toBeDefined();
   expect(rive1.Fit.none).toBeDefined();
   expect(rive1.Fit.cover).toBeDefined();
   expect(rive1.Fit.none).not.toBe(rive1.Fit.cover);
 
-  let rive2 = await rive.RuntimeLoader.awaitInstance();
+  const rive2 = await rive.RuntimeLoader.awaitInstance();
   expect(rive2).toBeDefined;
   expect(rive2).toBe(rive1);
 
   setTimeout(async () => {
-    let rive3 = await rive.RuntimeLoader.awaitInstance();
+    const rive3 = await rive.RuntimeLoader.awaitInstance();
     expect(rive3).toBeDefined;
     expect(rive3).toBe(rive2);
     done();
@@ -1060,7 +1060,7 @@ test("Artboards can be reset back to their starting state", (done) => {
   const canvas = document.createElement("canvas");
 
   // Track the nr of loops
-  let loopCount: number = 0;
+  let loopCount = 0;
 
   // Start up a looping animation
   const r = new rive.Rive({

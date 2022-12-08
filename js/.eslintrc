@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "prettier",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["prettier", "jsdoc", "@typescript-eslint"],
+  "rules": {
+    "prettier/prettier": ["error"],
+    "no-empty-function": "off",
+    "@typescript-eslint/no-empty-function": [
+      "error",
+      { "allow": ["private-constructors"] }
+    ],
+    "max-len": ["error", { "comments": 100, "code": 100 }]
+  }
+}
