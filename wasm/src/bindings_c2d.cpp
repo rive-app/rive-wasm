@@ -77,7 +77,25 @@ public:
 
     void restore() override { call<void>("restore"); }
 
-    void transform(const rive::Mat2D& transform) override { call<void>("transform", transform); }
+    void transform(const rive::Mat2D& transform) override
+    {
+        call<void>("transform",
+                   transform.xx(),
+                   transform.xy(),
+                   transform.yx(),
+                   transform.yy(),
+                   transform.tx(),
+                   transform.ty());
+    }
+
+    void align(RendererWrapper& self,
+               rive::Fit fit,
+               JsAlignment alignment,
+               rive::AABB foo,
+               rive::AABB bar)
+    {
+        self.transform(computeAlignment(fit, convertAlignment(alignment), foo, bar));
+    }
 
     void drawPath(rive::RenderPath* path, rive::RenderPaint* paint) override
     {
@@ -132,7 +150,13 @@ public:
 
     void addRenderPath(rive::RenderPath* path, const rive::Mat2D& transform) override
     {
-        call<void>("addPath", path, transform);
+        float xx = transform.xx();
+        float xy = transform.xy();
+        float yx = transform.yx();
+        float yy = transform.yy();
+        float tx = transform.tx();
+        float ty = transform.ty();
+        call<void>("addPath", path, xx, xy, yx, yy, tx, ty);
     }
     void fillRule(rive::FillRule value) override { call<void>("fillRule", value); }
 
@@ -381,13 +405,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("drawPath", &RendererWrapper::drawPath, pure_virtual(), allow_raw_pointers())
         .function("clipPath", &RendererWrapper::clipPath, pure_virtual(), allow_raw_pointers())
         .function("align",
-                  optional_override([](rive::Renderer& self,
-                                       rive::Fit fit,
-                                       JsAlignment alignment,
-                                       const rive::AABB& frame,
-                                       const rive::AABB& content) {
-                      self.align(fit, convertAlignment(alignment), frame, content);
-                  }))
+                  optional_override(
+                      [](RendererWrapper& self,
+                         rive::Fit fit,
+                         JsAlignment alignment,
+                         const rive::AABB& foo,
+                         const rive::AABB& bar) { self.align(self, fit, alignment, foo, bar); }),
+                  allow_raw_pointers())
         .allow_subclass<RendererWrapper>("RendererWrapper");
 
     class_<rive::RenderPath>("RenderPath")

@@ -128,6 +128,7 @@ do
     buildoptions {
         '-g2',
         '-fsanitize=address'
+        -- '-fsanitize=leak'
     }
     linkoptions {
         '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
@@ -136,6 +137,7 @@ do
         '-s DEMANGLE_SUPPORT=1',
         '-g2',
         '-fsanitize=address'
+        -- '-fsanitize=leak',
     }
 end
 

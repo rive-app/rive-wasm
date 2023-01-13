@@ -1,11 +1,11 @@
-function makeMatrix(m2d) {
+function makeMatrix(xx, xy, yx, yy, tx, ty) {
   const m = new DOMMatrix();
-  m.a = m2d["xx"];
-  m.b = m2d["xy"];
-  m.c = m2d["yx"];
-  m.d = m2d["yy"];
-  m.e = m2d["tx"];
-  m.f = m2d["ty"];
+  m.a = xx;
+  m.b = xy;
+  m.c = yx;
+  m.d = yy;
+  m.e = tx;
+  m.f = ty;
   return m;
 }
 
@@ -406,8 +406,8 @@ Rive.onRuntimeInitialized = function () {
     "reset": function () {
       this._path2D = new Path2D();
     },
-    "addPath": function (path, m2d) {
-      this._path2D["addPath"](path._path2D, makeMatrix(m2d));
+    "addPath": function (path, xx, xy, yx, yy, tx, ty) {
+      this._path2D["addPath"](path._path2D, makeMatrix(xx, xy, yx, yy, tx, ty));
     },
     "fillRule": function (fillRule) {
       this._fillRule = fillRule;
@@ -614,45 +614,30 @@ Rive.onRuntimeInitialized = function () {
       this._matrixStack.splice(i); // Pop off the top 6 floats from the matrix stack.
       this._drawList.push(this._ctx["restore"].bind(this._ctx));
     },
-    "transform": function (m) {
+    "transform": function (xx, xy, yx, yy, tx, ty) {
       const S = this._matrixStack;
       const i = S.length - 6;
-      //            |S0  S2  S4|   |m.xx  m.yx  m.tx|
-      // S.back() = |S1  S3  S5| * |m.xy  m.yy  m.ty|
-      //            | 0   0   1|   |   0     0     1|
+      //            |S0  S2  S4|   |xx  yx  tx|
+      // S.back() = |S1  S3  S5| * |xy  yy  ty|
+      //            | 0   0   1|   | 0   0   1|
       S.splice(
         i,
         6,
-        S[i + 0] * m["xx"] + S[i + 2] * m["xy"],
-        S[i + 1] * m["xx"] + S[i + 3] * m["xy"],
-        S[i + 0] * m["yx"] + S[i + 2] * m["yy"],
-        S[i + 1] * m["yx"] + S[i + 3] * m["yy"],
-        S[i + 0] * m["tx"] + S[i + 2] * m["ty"] + S[i + 4],
-        S[i + 1] * m["tx"] + S[i + 3] * m["ty"] + S[i + 5]
+        S[i + 0] * xx + S[i + 2] * xy,
+        S[i + 1] * xx + S[i + 3] * xy,
+        S[i + 0] * yx + S[i + 2] * yy,
+        S[i + 1] * yx + S[i + 3] * yy,
+        S[i + 0] * tx + S[i + 2] * ty + S[i + 4],
+        S[i + 1] * tx + S[i + 3] * ty + S[i + 5]
       );
       this._drawList.push(
-        this._ctx["transform"].bind(
-          this._ctx,
-          m["xx"],
-          m["xy"],
-          m["yx"],
-          m["yy"],
-          m["tx"],
-          m["ty"]
-        )
+        this._ctx["transform"].bind(this._ctx, xx, xy, yx, yy, tx, ty)
       );
     },
     "rotate": function (angle) {
       const sin = Math.sin(angle);
       const cos = Math.cos(angle);
-      this.transform({
-        "xx": cos,
-        "xy": sin,
-        "yx": -sin,
-        "yy": cos,
-        "tx": 0,
-        "ty": 0,
-      });
+      this.transform(cos, sin, -sin, cos, 0, 0);
     },
     "_drawPath": function (path, paint) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
@@ -814,14 +799,7 @@ Rive.onRuntimeInitialized = function () {
     },
     "flush": function () {},
     "translate": function (x, y) {
-      this.transform({
-        "xx": 1,
-        "xy": 0,
-        "yx": 0,
-        "yy": 1,
-        "tx": x,
-        "ty": y,
-      });
+      this.transform(1, 0, 0, 1, x, y);
     },
   }));
 
