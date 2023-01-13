@@ -1,9 +1,9 @@
 import "regenerator-runtime";
 // import RiveCanvas from "../../build/bin/debug/canvas_advanced_single.mjs";
-import RiveCanvas from "../../build/bin/debug/canvas_advanced.mjs";
+// import RiveCanvas from "../../build/bin/debug/canvas_advanced.mjs";
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 import { registerTouchInteractions } from "../../../js/src/utils";
-// import RiveCanvas from '../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs';
+import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
@@ -92,44 +92,6 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     alignment: rive.Alignment.center,
   });
 
-  function loadFile(droppedFile) {
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      stateMachine = null;
-      const file = rive.load(new Uint8Array(event.target.result));
-      artboard = file.artboardByName("Truck");
-      animation = new rive.LinearAnimationInstance(
-        artboard.animationByName("idle"),
-        artboard
-      );
-    };
-
-    reader.readAsArrayBuffer(droppedFile);
-  }
-
-  document.body.addEventListener("dragover", function (ev) {
-    ev.preventDefault();
-  });
-  document.body.addEventListener("drop", function (ev) {
-    ev.preventDefault();
-
-    if (ev.dataTransfer.items) {
-      // Use DataTransferItemList interface to access the file(s)
-      for (var i = 0; i < ev.dataTransfer.items.length; i++) {
-        // If dropped items aren't files, reject them
-        if (ev.dataTransfer.items[i].kind === "file") {
-          loadFile(ev.dataTransfer.items[i].getAsFile());
-          break;
-        }
-      }
-    } else {
-      for (var i = 0; i < ev.dataTransfer.files.length; i++) {
-        loadFile(ev.dataTransfer.files[i]);
-        break;
-      }
-    }
-  });
-
   let lastTime = 0;
   let artboard, stateMachine, animation;
 
@@ -177,7 +139,7 @@ async function main() {
   const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop),
   });
-  const numCanvases = parseInt(params.numCanvases || 0) || 10;
+  const numCanvases = parseInt(params.numCanvases || 0) || 20;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
 
@@ -223,7 +185,7 @@ async function checkForLeaks(rive) {
   const renderer = rive.makeRenderer(canvas, true);
   var elapsedSeconds = 0.0167;
   // Render 20 frames.
-  for (var i = 0; i < 100; i++) {
+  for (var i = 0; i < 1000; i++) {
     renderer.clear();
     if (artboard) {
       if (stateMachine) {
@@ -259,10 +221,14 @@ async function checkForLeaks(rive) {
   if (animation) {
     animation.delete();
   }
+  if (artboard) {
+    artboard.delete();
+  }
   file.delete();
   rive.cleanup();
   // Report any leaks.
   rive.doLeakCheck();
+  console.log("END");
 }
 
 main();
