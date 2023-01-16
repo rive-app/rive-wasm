@@ -95,7 +95,7 @@ const offscreenWebGL = new (function () {
       gl.bindAttribLocation(program, UV_ARRAY, "uv");
       gl.linkProgram(program);
       const log = gl.getProgramInfoLog(program);
-      if (log.length > 0) {
+      if (log.trim().length > 0) {
         throw log;
       }
       _matUniform = gl.getUniformLocation(program, "mat");
