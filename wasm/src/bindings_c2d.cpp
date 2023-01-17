@@ -88,13 +88,9 @@ public:
                    transform.ty());
     }
 
-    void align(RendererWrapper& self,
-               rive::Fit fit,
-               JsAlignment alignment,
-               rive::AABB foo,
-               rive::AABB bar)
+    void align(rive::Fit fit, JsAlignment alignment, const rive::AABB& foo, const rive::AABB& bar)
     {
-        self.transform(computeAlignment(fit, convertAlignment(alignment), foo, bar));
+        transform(computeAlignment(fit, convertAlignment(alignment), foo, bar));
     }
 
     void drawPath(rive::RenderPath* path, rive::RenderPaint* paint) override
@@ -404,14 +400,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("transform", &RendererWrapper::transform, pure_virtual(), allow_raw_pointers())
         .function("drawPath", &RendererWrapper::drawPath, pure_virtual(), allow_raw_pointers())
         .function("clipPath", &RendererWrapper::clipPath, pure_virtual(), allow_raw_pointers())
-        .function("align",
-                  optional_override(
-                      [](RendererWrapper& self,
-                         rive::Fit fit,
-                         JsAlignment alignment,
-                         const rive::AABB& foo,
-                         const rive::AABB& bar) { self.align(self, fit, alignment, foo, bar); }),
-                  allow_raw_pointers())
+        .function("align", &RendererWrapper::align, pure_virtual(), allow_raw_pointers())
         .allow_subclass<RendererWrapper>("RendererWrapper");
 
     class_<rive::RenderPath>("RenderPath")
