@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "npx webpack watch",
-    "release": "release-it -- major --ci --dry-run --release-version --changelog",
+    "release": "release-it",
     "lint": "eslint ./src --fix",
     "build": "npx webpack",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
