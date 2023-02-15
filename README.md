@@ -28,7 +28,7 @@ This library allows full control over Rive files with a high-level API for hooki
 
 :blue_book: [General help docs](https://help.rive.app/)
 
-🛠 [Resources for building in Rive](https://rive.app/resources/)
+🛠 [Learning Rive](https://rive.app/learn-rive)
 
 ## Getting Started
 
@@ -51,15 +51,18 @@ Check out some of the `examples/` projects in this codebase, as well as some of 
 - [Simple displaying animation](https://codesandbox.io/s/rive-plain-js-sandbox-1ddrc?file=/src/index.js)
 - [Rive with Listeners](https://codesandbox.io/s/rivewithlisteners-242drk)
 - [Rive with State Machines](https://codesandbox.io/s/rive-web-state-machine-example-v33h3o)
-- [Accessibility concerns blog](https://blog.rive.app/accessible-web-animations-aria-live-regions/)
 
 ### Low-level API usage
 
-- [Constructing a render loop](https://github.com/rive-app/rive-wasm/tree/master/wasm/examples/parcel_example)
+- [Constructing a render loop](https://codesandbox.io/s/rive-canvas-advanced-api-basketball-rgted8)
   - [Source code](https://github.com/rive-app/rive-wasm/tree/master/wasm/examples/parcel_example)
 - [Centaur game](https://codesandbox.io/s/rive-canvas-advanced-api-centaur-example-exh2os?file=/src/index.ts)
   - [Source code](https://github.com/rive-app/rive-wasm/tree/master/wasm/examples/centaur_game)
   - [Rive community post](https://rive.app/community/1202-2351-the-centaur-and-the-apples/) - Inspect and download the accompanying Rive file for this example in the Rive community
+
+### Awesome Rive
+
+For even more examples and resources on using Rive at runtime or in other tools, checkout the [awesome-rive](https://github.com/rive-app/awesome-rive) repo.
 
 ## Migration Guides
 
