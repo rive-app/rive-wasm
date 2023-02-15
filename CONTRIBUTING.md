@@ -45,8 +45,8 @@ git checkout origin/master
 cd ../../..
 ```
 
-4. Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). We build against 3.1.29 in rive-wasm
-5. Install [Premake5](https://premake.github.io/) and add it to your path
+4. Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). We build against `v3.1.29` in rive-wasm, so make sure to install and activate that version.
+5. Install [Premake5](https://premake.github.io/) and add it to your PATH
 
 6. `cd` back into the `js` folder and run `./build.sh` from your terminal/shell to build the latest WASM and builds for JS API's (high and low level) into the `npm/` folder. This may take some time, grab a coffee! This should finish with Webpack building the JS bundles for the high-level API packages (more on that below)
 
