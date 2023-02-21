@@ -261,11 +261,25 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   }),
                   allow_raw_pointers())
         .function("transformComponent",
-                  &rive::Artboard::find<rive::TransformComponent>,
+                  optional_override([](rive::ArtboardInstance& self, const std::string& name) {
+                      return self.find<rive::TransformComponent>(name);
+                  }),
                   allow_raw_pointers())
-        .function("node", &rive::Artboard::find<rive::Node>, allow_raw_pointers())
-        .function("bone", &rive::Artboard::find<rive::Bone>, allow_raw_pointers())
-        .function("rootBone", &rive::Artboard::find<rive::RootBone>, allow_raw_pointers())
+        .function("node",
+                  optional_override([](rive::ArtboardInstance& self, const std::string& name) {
+                      return self.find<rive::Node>(name);
+                  }),
+                  allow_raw_pointers())
+        .function("bone",
+                  optional_override([](rive::ArtboardInstance& self, const std::string& name) {
+                      return self.find<rive::Bone>(name);
+                  }),
+                  allow_raw_pointers())
+        .function("rootBone",
+                  optional_override([](rive::ArtboardInstance& self, const std::string& name) {
+                      return self.find<rive::RootBone>(name);
+                  }),
+                  allow_raw_pointers())
         // Animations
         .function("animationByIndex",
                   optional_override(
