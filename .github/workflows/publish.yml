@@ -1,15 +1,15 @@
 name: Publish to NPM
 on:
   workflow_dispatch:
-  inputs:
-    major:
-      description: "Major"
-      type: boolean
-      default: false
-    minor:
-      description: "Minor"
-      type: boolean
-      default: false
+    inputs:
+      major:
+        description: "Major"
+        type: boolean
+        default: false
+      minor:
+        description: "Minor"
+        type: boolean
+        default: false
 jobs:
   merge_job:
     runs-on: ubuntu-latest
@@ -38,25 +38,26 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
       - if: ${{ inputs.major == true }}
         name: Major Release - Bump version number, update changelog, push and tag
-        run: npm run release -- major --ci --dry-run --release-version --changelog
-        working-directory: ../../js
+        run: npm run release:major
+        working-directory: ./js
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
-      # - name: Bump Version
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #   run: cd js && ./bump_all_versions.sh
-      # - name: Build
-      #   env:
-      #     PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
-      #   run: cd js && ./build.sh
-      # - name: Run tests
-      #   run: cd js && npm test
-      # - name: Try Publish
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #   run: cd js && ./publish_all.sh --access public
-      # - name: Setup Git config
-      #   run: |
-      #     git config --local user.email 'hello@rive.app'
-      #     git config --local user.name ${{ github.actor }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - if: ${{inputs.major == false && inputs.minor == true}}
+        name: Minor release - Bump version number, update changelog, push and tag
+        run: npm run release:minor
+        working-directory: ./js
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - if: ${{inputs.major == false && inputs.minor == false}}
+        name: Patch release - Bump version number, update changelog, push and tag
+        run: npm run release:patch
+        working-directory: ./js
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Setup Git config
+        run: |
+          git config --local user.email 'hello@rive.app'
+          git config --local user.name ${{ github.actor }}

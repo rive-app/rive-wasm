@@ -1,5 +1,18 @@
 {
   "npm": {
     "publish": false
+  },
+  "git": {
+    "addUntrackedFiles": true,
+    "commitMessage": "chore: tag ${version}",
+    "requireCleanWorkingDir": false
+  },
+  "hooks": {
+    "after:version:bump": [
+      "npm run copyVersions",
+      "npm run build:all",
+      "npm test",
+      "npm run publish:all"
+    ]
   }
 }
