@@ -6,7 +6,6 @@ for dir in ./npm/*; do
     pushd $dir > /dev/null
     repo_name=`echo $dir | sed 's:.*/::' | sed 's/_/-/g'`
     echo Bumping version of $repo_name
-    echo $0
-    # ../../bump_version.sh $repo_name
+    ../../bump_version.sh $repo_name $1
     popd > /dev/null
 done

@@ -1,7 +1,7 @@
 {
   "name": "@rive-app/canvas",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.102",
   "description": "Helper for building rive-api combinations (multiple separate packages).",
   "homepage": "https://rive.app",
   "repository": {
@@ -11,8 +11,14 @@
   "scripts": {
     "dev": "npx webpack watch",
     "release": "release-it",
+    "release:patch": "npm run release -- --ci --dry-run --changelog",
+    "release:minor": "npm run release -- minor --ci --dry-run --release-version --changelog",
+    "release:major": "npm run release -- major --ci --dry-run --release-version --changelog",
     "lint": "eslint ./src --fix",
     "build": "npx webpack",
+    "build:all": "./build.sh",
+    "copyVersions": "./bump_all_versions.sh $npm_package_version",
+    "publish:all": "./publish_all.sh --access public",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
     "test": "jest"
   },

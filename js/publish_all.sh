@@ -5,6 +5,6 @@ set -e
 for dir in ./npm/*; do
     pushd $dir > /dev/null
     echo Publishing `echo $dir | sed 's:.*/::'`
-    npm publish $@
+    # npm publish $@
     popd > /dev/null
 done
