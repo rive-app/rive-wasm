@@ -1,0 +1,9 @@
+{
+  "npm": {
+    "publish": false
+  },
+  "git": {
+    "tag": false,
+    "requireCleanWorkingDir": false
+  }
+}

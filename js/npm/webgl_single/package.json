@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/webgl-single",
-  "version": "1.0.0",
+  "version": "1.0.102",
   "description": "Rive's webgl based web api with bundled wasm.",
   "main": "rive.js",
   "homepage": "https://rive.app",
@@ -12,6 +12,15 @@
     "rive",
     "animation"
   ],
+  "scripts": {
+    "release": "release-it",
+    "release:patch": "npm run release -- --ci --dry-run --release-version --changelog",
+    "release:minor": "npm run release -- minor --ci --dry-run --release-version --changelog",
+    "release:major": "npm run release -- major --ci --dry-run --release-version --changelog"
+  },
+  "devDependencies": {
+    "release-it": "^14.14.3"
+  },
   "author": "Rive",
   "contributors": [
     "Luigi Rosso <luigi@rive.app> (https://rive.app)",
