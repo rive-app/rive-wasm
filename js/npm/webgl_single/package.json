@@ -12,15 +12,6 @@
     "rive",
     "animation"
   ],
-  "scripts": {
-    "release": "release-it",
-    "release:patch": "npm run release -- --ci --dry-run --release-version --changelog",
-    "release:minor": "npm run release -- minor --ci --dry-run --release-version --changelog",
-    "release:major": "npm run release -- major --ci --dry-run --release-version --changelog"
-  },
-  "devDependencies": {
-    "release-it": "^14.14.3"
-  },
   "author": "Rive",
   "contributors": [
     "Luigi Rosso <luigi@rive.app> (https://rive.app)",
