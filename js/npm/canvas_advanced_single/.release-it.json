@@ -1,0 +1,9 @@
+{
+  "npm": {
+    "skipChecks": true
+  },
+  "git": {
+    "tag": false,
+    "requireCleanWorkingDir": false
+  }
+}

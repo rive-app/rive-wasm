@@ -1,0 +1,9 @@
+{
+  "npm": {
+    "publish": false
+  },
+  "git": {
+    "commitMessage": "chore: Tag ${version}",
+    "requireCleanWorkingDir": false
+  }
+}
