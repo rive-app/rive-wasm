@@ -58,7 +58,6 @@
     "@babel/plugin-transform-modules-commonjs": "^7.14.0",
     "@babel/preset-env": "^7.14.4",
     "@babel/preset-typescript": "^7.13.0",
-    "@release-it/bumper": "^2.0.0",
     "@types/jest": "^26.0.23",
     "@types/offscreencanvas": "^2019.7.0",
     "@typescript-eslint/eslint-plugin": "^5.35.1",
