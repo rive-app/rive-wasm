@@ -8,15 +8,6 @@
     "type": "git",
     "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
   },
-  "scripts": {
-    "release": "release-it",
-    "release:patch": "npm run release -- --ci --dry-run --release-version --changelog",
-    "release:minor": "npm run release -- minor --ci --dry-run --release-version --changelog",
-    "release:major": "npm run release -- major --ci --dry-run --release-version --changelog"
-  },
-  "devDependencies": {
-    "release-it": "^14.14.3"
-  },
   "keywords": [
     "rive",
     "animation"
