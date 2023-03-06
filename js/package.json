@@ -17,7 +17,7 @@
     "lint": "eslint ./src --fix",
     "build": "npx webpack",
     "build:all": "./build.sh",
-    "copyVersions": "./bump_all_versions.sh $npm_package_version",
+    "bumpVersions": "./bump_all_versions.sh $npm_package_version",
     "publish:all": "./publish_all.sh --access public",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
     "test": "jest"
