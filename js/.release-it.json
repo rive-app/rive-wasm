@@ -9,7 +9,7 @@
   },
   "hooks": {
     "after:version:bump": [
-      "npm run copyVersions",
+      "npm run bumpVersions",
       "npm run build:all",
       "npm test",
       "npm run publish:all"
