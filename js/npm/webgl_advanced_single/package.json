@@ -24,6 +24,7 @@
   "files": [
     "webgl_advanced_single.mjs"
   ],
+  "types": "rive_advanced.mjs.d.ts",
   "dependencies": {},
   "browser": {
     "fs": false,
