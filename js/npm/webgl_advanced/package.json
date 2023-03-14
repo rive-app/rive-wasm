@@ -25,6 +25,7 @@
     "webgl_advanced.mjs",
     "rive.wasm"
   ],
+  "types": "rive_advanced.mjs.d.ts",
   "dependencies": {},
   "browser": {
     "fs": false,

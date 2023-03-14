@@ -64,9 +64,11 @@ OUT_DIR=build/webgl_advanced ./build_wasm.sh -r skia release
 cp build/webgl_advanced/bin/release/webgl_advanced.mjs ../js/npm/webgl_advanced/webgl_advanced.mjs
 cp build/webgl_advanced/bin/release/webgl_advanced.wasm ../js/npm/webgl_advanced/rive.wasm
 cp build/webgl_advanced/bin/release/webgl_advanced.wasm ../js/npm/webgl/rive.wasm
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced/rive_advanced.mjs.d.ts
 
 echo 
 echo "::::: building @rive-app/webgl_advanced_single"
 echo 
 OUT_DIR=build/webgl_advanced_single ./build_wasm.sh -r skia -s release
 cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced_single/rive_advanced.mjs.d.ts
