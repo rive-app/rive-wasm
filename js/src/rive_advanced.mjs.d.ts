@@ -661,6 +661,11 @@ export declare class Mat2D {
    * @returns True if the matrix could be inverted
    */
   invert(mat: Mat2D): boolean;
+
+  /**
+   * Deletes the underlying CPP object created for this instance
+   */
+  delete(): void;
 }
 
 /**
@@ -676,4 +681,9 @@ export declare class Vec2D {
    * Returns the y coordinate of the vector
    */
   y(): number;
+
+  /**
+   * Deletes the underlying CPP object created for this instance
+   */
+  delete(): void;
 }
