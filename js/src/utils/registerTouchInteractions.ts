@@ -10,6 +10,46 @@ export interface TouchInteractionsParams {
   alignment: rc.Alignment;
 }
 
+interface ClientCoordinates {
+  clientX: number;
+  clientY: number;
+}
+
+/**
+ * Returns the clientX and clientY properties from touch or mouse events. Also
+ * calls preventDefault() on the event if it is a touchstart or touchmove to prevent
+ * scrolling the page on mobile devices
+ * @param event - Either a TouchEvent or a MouseEvent
+ * @returns - Coordinates of the clientX and clientY properties from the touch/mouse event
+ */
+const getClientCoordinates = (
+  event: MouseEvent | TouchEvent
+): ClientCoordinates => {
+  if (
+    ["touchstart", "touchmove"].indexOf(event.type) > -1 &&
+    (event as TouchEvent).touches?.length
+  ) {
+    event.preventDefault();
+    return {
+      clientX: (event as TouchEvent).touches[0].clientX,
+      clientY: (event as TouchEvent).touches[0].clientY,
+    };
+  } else if (
+    event.type === "touchend" &&
+    (event as TouchEvent).changedTouches?.length
+  ) {
+    return {
+      clientX: (event as TouchEvent).changedTouches[0].clientX,
+      clientY: (event as TouchEvent).changedTouches[0].clientY,
+    };
+  } else {
+    return {
+      clientX: (event as MouseEvent).clientX,
+      clientY: (event as MouseEvent).clientY,
+    };
+  }
+};
+
 /**
  * Registers mouse move/up/down callback handlers on the canvas to send meaningful coordinates to
  * the state machine pointer move/up/down functions based on cursor interaction
@@ -39,27 +79,12 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
-    let canvasX;
-    let canvasY;
-    if (
-      ["touchstart", "touchmove"].indexOf(event.type) > -1 &&
-      (event as TouchEvent).touches?.length
-    ) {
-      canvasX = (event as TouchEvent).touches[0].clientX - boundingRect.left;
-      canvasY = (event as TouchEvent).touches[0].clientY - boundingRect.top;
-      event.preventDefault();
-    } else if (
-      event.type === "touchend" &&
-      (event as TouchEvent).changedTouches?.length
-    ) {
-      canvasX =
-        (event as TouchEvent).changedTouches[0].clientX - boundingRect.left;
-      canvasY =
-        (event as TouchEvent).changedTouches[0].clientY - boundingRect.top;
-    } else {
-      canvasX = (event as MouseEvent).clientX - boundingRect.left;
-      canvasY = (event as MouseEvent).clientY - boundingRect.top;
+    const { clientX, clientY } = getClientCoordinates(event);
+    if (!clientX && !clientY) {
+      return;
     }
+    const canvasX = clientX - boundingRect.left;
+    const canvasY = clientY - boundingRect.top;
     const forwardMatrix = rive.computeAlignment(
       fit,
       alignment,
