@@ -403,7 +403,7 @@ Rive.onRuntimeInitialized = function () {
       this["__parent"]["__construct"].call(this);
       this._path2D = new Path2D();
     },
-    "reset": function () {
+    "rewind": function () {
       this._path2D = new Path2D();
     },
     "addPath": function (path, xx, xy, yx, yy, tx, ty) {
