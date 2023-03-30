@@ -22,6 +22,10 @@ jobs:
         with:
           version: 3.1.29
           actions-cache-folder: "emsdk-cache"
+      - name: Setup Git config
+        run: |
+          git config --local user.email 'hello@rive.app'
+          git config --local user.name ${{ github.actor }}
       - uses: actions/setup-node@v2
         with:
           node-version: "12.x"
@@ -41,6 +45,7 @@ jobs:
         run: npm run release:major
         working-directory: ./js
         env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: ${{inputs.major == false && inputs.minor == true}}
@@ -48,6 +53,7 @@ jobs:
         run: npm run release:minor
         working-directory: ./js
         env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: ${{inputs.major == false && inputs.minor == false}}
@@ -55,9 +61,6 @@ jobs:
         run: npm run release:patch
         working-directory: ./js
         env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Setup Git config
-        run: |
-          git config --local user.email 'hello@rive.app'
-          git config --local user.name ${{ github.actor }}
