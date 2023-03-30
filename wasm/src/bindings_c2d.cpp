@@ -142,7 +142,7 @@ class RenderPathWrapper : public wrapper<rive::RenderPath>
 public:
     EMSCRIPTEN_WRAPPER(RenderPathWrapper);
 
-    void reset() override { call<void>("reset"); }
+    void rewind() override { call<void>("rewind"); }
 
     void addRenderPath(rive::RenderPath* path, const rive::Mat2D& transform) override
     {
@@ -404,7 +404,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .allow_subclass<RendererWrapper>("RendererWrapper");
 
     class_<rive::RenderPath>("RenderPath")
-        .function("reset", &RenderPathWrapper::reset, pure_virtual(), allow_raw_pointers())
+        .function("rewind", &RenderPathWrapper::rewind, pure_virtual(), allow_raw_pointers())
         .function("addPath",
                   &RenderPathWrapper::addRenderPath,
                   pure_virtual(),
