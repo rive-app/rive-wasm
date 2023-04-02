@@ -1162,4 +1162,15 @@ test("Rive deletes instances on the cleanup", (done) => {
   });
 });
 
+test("Rive doesn't error out when cleaning up if the file is not set yet", () => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: "MyArtboard",
+  });
+  r.cleanup();
+});
+
 // #endregion
