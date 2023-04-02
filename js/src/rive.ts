@@ -1452,9 +1452,9 @@ export class Rive {
     // Clean up any artboard, animation or state machine instances.
     this.cleanupInstances();
     // Delete the renderer
-    this.renderer.delete();
+    this.renderer?.delete();
     // Delete the rive file
-    this.file.delete();
+    this.file?.delete();
   }
 
   /**
