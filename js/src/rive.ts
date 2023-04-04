@@ -1453,8 +1453,10 @@ export class Rive {
     this.cleanupInstances();
     // Delete the renderer
     this.renderer?.delete();
+    this.renderer = null;
     // Delete the rive file
     this.file?.delete();
+    this.file = null;
   }
 
   /**
