@@ -5,12 +5,14 @@
 #include "rive/animation/exit_state.hpp"
 #include "rive/animation/linear_animation.hpp"
 #include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/nested_state_machine.hpp"
 #include "rive/animation/state_machine_bool.hpp"
 #include "rive/animation/state_machine_input_instance.hpp"
 #include "rive/animation/state_machine_instance.hpp"
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
 #include "rive/artboard.hpp"
+#include "rive/nested_artboard.hpp"
 #include "rive/bones/bone.hpp"
 #include "rive/bones/root_bone.hpp"
 #include "rive/component.hpp"
@@ -103,6 +105,29 @@ rive::Vec2D mapXY(rive::Mat2D invertedMatrix, rive::Vec2D canvasVector)
     return invertedMatrix * canvasVector;
 }
 
+bool hasListeners(rive::StateMachineInstance* smi)
+{
+    if (smi->stateMachine()->listenerCount() != 0)
+    {
+        return true;
+    }
+    for (auto nestedArtboard : smi->artboard()->nestedArtboards())
+    {
+        for (auto animation : nestedArtboard->nestedAnimations())
+        {
+            if (animation->is<rive::NestedStateMachine>())
+            {
+                auto nestedStateMachine = animation->as<rive::NestedStateMachine>();
+                if (hasListeners(nestedStateMachine->stateMachineInstance()))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 class DynamicRectanizer
 {
 public:
@@ -140,6 +165,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
     function("load", &load, allow_raw_pointers());
     function("computeAlignment", &computeAlignment);
     function("mapXY", &mapXY);
+    function("hasListeners", &hasListeners, allow_raw_pointers());
 
 #ifdef ENABLE_QUERY_FLAT_VERTICES
     class_<rive::FlattenedPath>("FlattenedPath")
