@@ -281,34 +281,50 @@ export declare class Artboard {
    */
   draw(renderer: CanvasRenderer): void;
   /**
-   * Creates a LinearAnimationinstance for the animation with the given name
-   * @param name - Name of the animation to create an instance for
-   * @returns A new LinearAnimationInstance object
+   * Creates a LinearAnimation for the animation with the given name
+   *
+   * Note: This does not create a LinearAnimationInstance to advance in the render loop.
+   * That needs to be created separately.
+   *
+   * @param name - Name of the animation to create a LinearAnimation reference for
+   * @returns A new LinearAnimation object
    */
-  animationByName(name: string): LinearAnimationInstance;
+  animationByName(name: string): LinearAnimation;
   /**
-   * Creates a LinearAnimationinstance for the animation with the given index
-   * @param index - Index of the animation to create an instance for
-   * @returns A new LinearAnimationInstance object
+   * Creates a LinearAnimation for the animation with the given index
+   *
+   * Note: This does not create a LinearAnimationInstance to advance in the render loop.
+   * That needs to be created separately.
+   *
+   * @param index - Index of the animation to create a LinearAnimation reference for
+   * @returns A new LinearAnimation object
    */
-  animationByIndex(index: number): LinearAnimationInstance;
+  animationByIndex(index: number): LinearAnimation;
   /**
    * Returns the number of animations in the artboard
    * @returns Number of animations on the Artboard
    */
   animationCount(): number;
   /**
-   * Creates a StateMachineInstance for the state machine with the given name
-   * @param name - Name of the state machine to create an instance for
-   * @returns A new StateMachineInstance object
+   * Creates a StateMachine for the state machine with the given name.
+   *
+   * Note: This does not create a StateMachineInstance to advance in the render loop.
+   * That needs to be created separately.
+   *
+   * @param name - Name of the state machine to create a StateMachine reference for
+   * @returns A new StateMachine object
    */
-  stateMachineByName(name: string): StateMachineInstance;
+  stateMachineByName(name: string): StateMachine;
   /**
-   * Creates a StateMachineInstance for the state machine with the given index
-   * @param index - Index of the state machine to create an instance for
-   * @returns A new StateMachineInstance object
+   * Creates a StateMachine for the state machine with the given index
+   *
+   * Note: This does not create a StateMachineInstance to advance in the render loop.
+   * That needs to be created separately.
+   *
+   * @param index - Index of the state machine to create a StateMachine reference for
+   * @returns A new StateMachine object
    */
-  stateMachineByIndex(index: number): StateMachineInstance;
+  stateMachineByIndex(index: number): StateMachine;
   /**
    * Returns the number of state machines in the artboard
    * @returns Number of state machines on the Artboard
@@ -393,11 +409,11 @@ export declare class TransformComponent {
 export declare class LinearAnimationInstance {
   /**
    * Create a new LinearAnimationInstance reference
-   * @param animation - A LinearAnimationInstance retrieved via the Artboard
+   * @param animation - A LinearAnimation reference retrieved via the Artboard
    * (i.e `artboard.animationByName('foo')`)
    * @param artboard - The Artboard instance for this animation
    */
-  constructor(animation: LinearAnimationInstance, artboard: Artboard);
+  constructor(animation: LinearAnimation, artboard: Artboard);
   get name(): string;
   get duration(): number;
   get fps(): number;
@@ -438,6 +454,24 @@ export declare class LinearAnimationInstance {
   delete(): void;
 }
 
+export declare class LinearAnimation {
+  /**
+   * The animation's loop type
+   */
+  get loopValue(): number;
+  /**
+   * Name of the LinearAnimation
+   */
+  get name(): string;
+}
+
+export declare class StateMachine {
+  /**
+   * Name of the StateMachine
+   */
+  get name(): string;
+}
+
 /**
  * Rive class representing a StateMachine instance. Use this class to advance and control a
  * particular state machine in the render loop (i.e scrub, grab state machine inputs, set up
@@ -451,11 +485,11 @@ export declare class LinearAnimationInstance {
 export declare class StateMachineInstance {
   /**
    * Create a new StateMachineInstance reference
-   * @param stateMachine - A StateMachineInstance retrieved via the Artboard
+   * @param stateMachine - A StateMachine retrieved via the Artboard
    * (i.e `artboard.stateMachineByName('foo')`)
    * @param artboard - The Artboard instance for this state machine
    */
-  constructor(stateMachine: StateMachineInstance, artboard: Artboard);
+  constructor(stateMachine: StateMachine, artboard: Artboard);
   get name(): string;
   /**
    * Returns the number of inputs associated with this state machine
