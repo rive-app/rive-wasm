@@ -1171,7 +1171,9 @@ export class Rive {
           .then(() => {
             if (!shouldDisableRiveListeners) {
               const activeStateMachines = (this.animator.stateMachines || [])
-                .filter((sm) => sm.playing)
+                .filter(
+                  (sm) => sm.playing && this.runtime.hasListeners(sm.instance)
+                )
                 .map((sm) => sm.instance);
               this.eventCleanup = registerTouchInteractions({
                 canvas: this.canvas,

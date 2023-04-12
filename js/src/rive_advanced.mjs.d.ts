@@ -97,6 +97,13 @@ export interface RiveCanvas {
    * This should be called when you wish to remove a rive animation from view.
    */
   cleanup(): void;
+
+  /**
+   * Returns whether or not there are Rive Listeners configured on a given StateMachineInstance
+   * @param stateMachine - StateMachineInstance to check for Listeners
+   * @returns bool - Boolean of if there are Listners on the state machine
+   */
+  hasListeners(stateMachine: StateMachineInstance): boolean;
 }
 
 //////////////
