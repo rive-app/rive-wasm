@@ -238,7 +238,7 @@ class Animation {
    * @param {any} instance: runtime animation instance object
    */
   constructor(
-    private animation: rc.LinearAnimationInstance,
+    private animation: rc.LinearAnimation,
     private artboard: rc.Artboard,
     runtime: rc.RiveCanvas,
     public playing: boolean
@@ -372,7 +372,7 @@ class StateMachine {
    * @param instance runtime state machine instance object
    */
   constructor(
-    private stateMachine: rc.StateMachineInstance,
+    private stateMachine: rc.StateMachine,
     runtime: rc.RiveCanvas,
     public playing: boolean,
     private artboard: rc.Artboard
@@ -931,6 +931,12 @@ export interface RiveParameters {
   layout?: Layout;
   autoplay?: boolean;
   useOffscreenRenderer?: boolean;
+  /**
+   * Turn off Rive Listeners. This means state machines that have Listeners
+   * will not be invoked, and also, no event listeners pertaining to Listeners
+   * will be attached to the <canvas> element
+   */
+  shouldDisableRiveListeners?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -977,6 +983,7 @@ export interface RiveLoadParameters {
   animations?: string | string[];
   stateMachines?: string | string[];
   useOffscreenRenderer?: boolean;
+  shouldDisableRiveListeners?: boolean;
 }
 
 // Interface ot Rive.reset function
@@ -1096,6 +1103,7 @@ export class Rive {
       stateMachines: params.stateMachines,
       artboard: params.artboard,
       useOffscreenRenderer: params.useOffscreenRenderer,
+      shouldDisableRiveListeners: params.shouldDisableRiveListeners,
     });
   }
 
@@ -1116,6 +1124,7 @@ export class Rive {
     artboard,
     autoplay = false,
     useOffscreenRenderer = false,
+    shouldDisableRiveListeners = false,
   }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
@@ -1160,20 +1169,20 @@ export class Rive {
           autoplay
         )
           .then(() => {
-            const activeStateMachineInstances = (
-              this.animator.stateMachines || []
-            )
-              .filter((sm) => sm.playing)
-              .map((sm) => sm.instance);
-            this.eventCleanup = registerTouchInteractions({
-              canvas: this.canvas,
-              artboard: this.artboard,
-              stateMachines: activeStateMachineInstances,
-              renderer: this.renderer,
-              rive: this.runtime,
-              fit: this._layout.runtimeFit(this.runtime),
-              alignment: this._layout.runtimeAlignment(this.runtime),
-            });
+            if (!shouldDisableRiveListeners) {
+              const activeStateMachines = (this.animator.stateMachines || [])
+                .filter((sm) => sm.playing)
+                .map((sm) => sm.instance);
+              this.eventCleanup = registerTouchInteractions({
+                canvas: this.canvas,
+                artboard: this.artboard,
+                stateMachines: activeStateMachines,
+                renderer: this.renderer,
+                rive: this.runtime,
+                fit: this._layout.runtimeFit(this.runtime),
+                alignment: this._layout.runtimeAlignment(this.runtime),
+              });
+            }
           })
           .catch((e) => {
             console.error(e);
