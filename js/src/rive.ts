@@ -1056,6 +1056,8 @@ export class Rive {
   private static readonly missingErrorMessage: string =
     "Rive source file or data buffer required";
 
+  private shouldDisableRiveListeners = false;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1066,6 +1068,7 @@ export class Rive {
     this.src = params.src;
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
+    this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1168,24 +1171,7 @@ export class Rive {
           startingStateMachineNames,
           autoplay
         )
-          .then(() => {
-            if (!shouldDisableRiveListeners) {
-              const activeStateMachines = (this.animator.stateMachines || [])
-                .filter(
-                  (sm) => sm.playing && this.runtime.hasListeners(sm.instance)
-                )
-                .map((sm) => sm.instance);
-              this.eventCleanup = registerTouchInteractions({
-                canvas: this.canvas,
-                artboard: this.artboard,
-                stateMachines: activeStateMachines,
-                renderer: this.renderer,
-                rive: this.runtime,
-                fit: this._layout.runtimeFit(this.runtime),
-                alignment: this._layout.runtimeAlignment(this.runtime),
-              });
-            }
-          })
+          .then(this.setupRiveListeners)
           .catch((e) => {
             console.error(e);
           });
@@ -1193,6 +1179,23 @@ export class Rive {
       .catch((e) => {
         console.error(e);
       });
+  }
+
+  private setupRiveListeners(): void {
+    if (!this.shouldDisableRiveListeners) {
+      const activeStateMachines = (this.animator.stateMachines || [])
+        .filter((sm) => sm.playing && this.runtime.hasListeners(sm.instance))
+        .map((sm) => sm.instance);
+      this.eventCleanup = registerTouchInteractions({
+        canvas: this.canvas,
+        artboard: this.artboard,
+        stateMachines: activeStateMachines,
+        renderer: this.renderer,
+        rive: this.runtime,
+        fit: this._layout.runtimeFit(this.runtime),
+        alignment: this._layout.runtimeAlignment(this.runtime),
+      });
+    }
   }
 
   // Initializes runtime with Rive data and preps for playing
@@ -1501,6 +1504,10 @@ export class Rive {
       return;
     }
     this.animator.play(animationNames);
+    if (this.eventCleanup) {
+      this.eventCleanup();
+    }
+    this.setupRiveListeners();
     this.startRendering();
   }
 
@@ -1546,6 +1553,9 @@ export class Rive {
       return;
     }
     this.animator.stop(animationNames);
+    if (this.eventCleanup) {
+      this.eventCleanup();
+    }
   }
 
   /**
