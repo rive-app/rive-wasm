@@ -1,6 +1,7 @@
 import * as rc from "../src/rive_advanced.mjs.js";
 import * as rive from "../src/rive";
 import getLongArtboardNameBuffer from "./test-rive-buffers/longArtboardName";
+import listenerBuffer from "./test-rive-buffers/listenerFile.js";
 
 // #region helper functions
 
@@ -1120,6 +1121,59 @@ test("Mouse events are removed from canvas when reset", (done) => {
         }
         done();
       }
+    },
+  });
+});
+
+test("Canvas has listener events attached on a Rive file with Rive Listeners", (done) => {
+  const canvasEl = document.createElement("canvas");
+  const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
+  new rive.Rive({
+    canvas: canvasEl,
+    buffer: arrayToArrayBuffer(listenerBuffer()),
+    autoplay: true,
+    stateMachines: "State Machine 1",
+    onStateChange: () => {
+      expect(listenerSpy).toHaveBeenCalled();
+      done();
+    },
+  });
+});
+
+test("Canvas does not have listener events if shouldDisableRiveListeners is true", (done) => {
+  const canvasEl = document.createElement("canvas");
+  const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
+  new rive.Rive({
+    canvas: canvasEl,
+    buffer: arrayToArrayBuffer(listenerBuffer()),
+    autoplay: true,
+    stateMachines: "State Machine 1",
+    shouldDisableRiveListeners: true,
+    onStateChange: () => {
+      expect(listenerSpy).not.toHaveBeenCalled();
+      done();
+    },
+  });
+});
+
+test("Canvas has listeners attached once play() is invoked with a state machine", (done) => {
+  const canvasEl = document.createElement("canvas");
+  const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
+  const stateMachineName = "State Machine 1";
+  const r = new rive.Rive({
+    canvas: canvasEl,
+    buffer: arrayToArrayBuffer(listenerBuffer()),
+    autoplay: false,
+    stateMachines: stateMachineName,
+    onLoad: () => {
+      // onLoad called first
+      expect(listenerSpy).not.toHaveBeenCalled();
+      r.play(stateMachineName);
+    },
+    onStateChange: () => {
+      // onStateChange invoked after play() is called
+      expect(listenerSpy).toHaveBeenCalled();
+      done();
     },
   });
 });

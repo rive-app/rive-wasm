@@ -1106,7 +1106,6 @@ export class Rive {
       stateMachines: params.stateMachines,
       artboard: params.artboard,
       useOffscreenRenderer: params.useOffscreenRenderer,
-      shouldDisableRiveListeners: params.shouldDisableRiveListeners,
     });
   }
 
@@ -1127,7 +1126,6 @@ export class Rive {
     artboard,
     autoplay = false,
     useOffscreenRenderer = false,
-    shouldDisableRiveListeners = false,
   }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
@@ -1171,7 +1169,7 @@ export class Rive {
           startingStateMachineNames,
           autoplay
         )
-          .then(this.setupRiveListeners)
+          .then(() => this.setupRiveListeners())
           .catch((e) => {
             console.error(e);
           });
