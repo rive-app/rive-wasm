@@ -1178,6 +1178,32 @@ test("Canvas has listeners attached once play() is invoked with a state machine"
   });
 });
 
+test("Canvas has listeners detache once stop() is invoked with a state machine", (done) => {
+  const canvasEl = document.createElement("canvas");
+  const addEventListenerSpy = jest.spyOn(canvasEl, "addEventListener");
+  const removeEventListenerSpy = jest.spyOn(canvasEl, "removeEventListener");
+  const stateMachineName = "State Machine 1";
+  const r = new rive.Rive({
+    canvas: canvasEl,
+    buffer: arrayToArrayBuffer(listenerBuffer()),
+    autoplay: false,
+    stateMachines: stateMachineName,
+    onLoad: () => {
+      // onLoad called first
+      expect(addEventListenerSpy).not.toHaveBeenCalled();
+      expect(removeEventListenerSpy).not.toHaveBeenCalled();
+      r.play(stateMachineName);
+    },
+    onStateChange: () => {
+      // onStateChange invoked after play() is called
+      expect(addEventListenerSpy).toHaveBeenCalled();
+      r.stop(stateMachineName);
+      expect(removeEventListenerSpy).toHaveBeenCalled();
+      done();
+    },
+  });
+});
+
 // #endregion
 
 test("Statemachines have pointer events", (done) => {
