@@ -45,12 +45,12 @@ export interface RiveCanvas {
    * This uses an offscreen renderer to draw on the canvas, allowing for multiple Rives/canvases on
    * a given screen. It is highly recommended to set this to `true` when using with the
    * `@rive-app/webgl` package
-   * @returns A Rive CanvasRenderer class
+   * @returns A Rive CanvasRenderer (Canvas2D) or Renderer (WebGL) class
    */
   makeRenderer(
     canvas: HTMLCanvasElement | OffscreenCanvas,
     useOffscreenRenderer?: boolean
-  ): CanvasRenderer;
+  ): CanvasRenderer | Renderer;
 
   /**
    * Computes how the Rive is laid out onto the canvas
@@ -133,7 +133,8 @@ export declare class RendererWrapper {
   drawPath(path: RenderPath, paint: RenderPaint): void;
   clipPath(path: RenderPath): void;
   /**
-   * Calls the context's clearRect() function to clear the entire canvas
+   * Calls the context's clearRect() function to clear the entire canvas. Crucial to call
+   * this at the start of the render loop to clear the canvas before drawing the next frame
    *
    * For the underlying API, check
    * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
@@ -202,6 +203,27 @@ export declare class CanvasRenderer extends Renderer {
   constructor(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
   );
+
+  /**
+   * Canvas2D API for drawing an image onto a canvas
+   */
+  drawImage: (
+    image:
+      | HTMLImageElement
+      | SVGImageElement
+      | HTMLVideoElement
+      | HTMLCanvasElement
+      | ImageBitmap
+      | OffscreenCanvas,
+    sx?: number,
+    sy?: number,
+    sWidth?: number,
+    sHeight?: number,
+    dx?: number,
+    dy?: number,
+    dWidth?: number,
+    dHeight?: number
+  ) => void;
 }
 
 export declare class CanvasRenderPaint extends RenderPaint {
@@ -286,7 +308,7 @@ export declare class Artboard {
    * Draws the artboard with a given rendering context.
    * @param renderer - Renderer context to draw with
    */
-  draw(renderer: CanvasRenderer): void;
+  draw(renderer: CanvasRenderer | Renderer): void;
   /**
    * Creates a LinearAnimation for the animation with the given name
    *

@@ -1007,17 +1007,8 @@ export class Rive {
   // The layout for rendering in the canvas
   private _layout: Layout;
 
-  // Flag to indicate if the layout has changed; used by the renderer to know
-  // when to align
-  private _updateLayout = true;
-
   // The runtime renderer
-  private renderer: rc.Renderer;
-
-  /**
-   * Flag to active/deactivate renderer
-   */
-  private isRendererActive = true;
+  private renderer: rc.Renderer | rc.CanvasRenderer;
 
   // Tracks if a Rive file is loaded
   private loaded = false;

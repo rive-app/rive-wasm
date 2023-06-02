@@ -591,6 +591,13 @@ Rive.onRuntimeInitialized = function () {
     _pendingCanvasRenderers.clear();
   }
 
+  /**
+   * A renderer exposed to consumers via .makeRenderer() that draws to a supplied canvas with
+   * an implicitly created Canvas2D context. All context APIs exposed should go through this
+   * CanvasRenderer, as this object is responsible for wrapping each Canvas2D API call to push
+   * it onto a deferred draw list stack that will eventually resolve at the end
+   * of a requestAnimationFrame loop
+   */
   var CanvasRenderer = (Rive.CanvasRenderer = Renderer.extend("Renderer", {
     "__construct": function (canvas) {
       this["__parent"]["__construct"].call(this);
@@ -645,7 +652,13 @@ Rive.onRuntimeInitialized = function () {
         paint["draw"].bind(paint, this._ctx, path._path2D, fillRule)
       );
     },
-    "_drawImage": function (image, blend, opacity) {
+    "drawImage": function (image, ...args) {
+      var ctx = this._ctx;
+      this._drawList.push(function () {
+        ctx["drawImage"](image, ...args);
+      });
+    },
+    "_drawRiveImage": function (image, blend, opacity) {
       var img = image._image;
       if (!img) {
         return;
