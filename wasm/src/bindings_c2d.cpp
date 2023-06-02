@@ -102,7 +102,7 @@ public:
 
     void drawImage(const rive::RenderImage* image, rive::BlendMode value, float opacity) override
     {
-        call<void>("_drawImage", image, value, opacity);
+        call<void>("_drawRiveImage", image, value, opacity);
     }
 
     void drawImageMesh(const rive::RenderImage* image,
