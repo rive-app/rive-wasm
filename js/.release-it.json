@@ -12,6 +12,7 @@
       "npm run bumpVersions",
       "npm run build:all",
       "npm test",
+      "npm run changelog",
       "npm run publish:all"
     ]
   }
