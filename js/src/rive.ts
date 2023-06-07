@@ -496,7 +496,7 @@ class Animator {
       // Play/pause already instanced items, or create new instances
       const instancedAnimationNames = this.animations.map((a) => a.name);
       const instancedMachineNames = this.stateMachines.map((m) => m.name);
-      for (const i in animatables) {
+      for (const [i] of animatables.entries()) {
         const aIndex = instancedAnimationNames.indexOf(animatables[i]);
         const mIndex = instancedMachineNames.indexOf(animatables[i]);
         if (aIndex >= 0 || mIndex >= 0) {
