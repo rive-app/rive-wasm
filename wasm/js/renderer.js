@@ -817,7 +817,30 @@ Rive.onRuntimeInitialized = function () {
   }));
 
   Rive.makeRenderer = function (canvas) {
-    return new CanvasRenderer(canvas);
+    const newCanvasRenderer = new CanvasRenderer(canvas);
+    const c2dSource = newCanvasRenderer._ctx;
+    return new Proxy(newCanvasRenderer, {
+      get(target, property) {
+        if (typeof target[property] === "function") {
+          return function (...args) {
+            return target[property].apply(target, args);
+          };
+        } else if (typeof c2dSource[property] === "function") {
+          return function (...args) {
+            newCanvasRenderer._drawList.push(
+              c2dSource[property].bind(c2dSource, ...args)
+            );
+          };
+        }
+        return target[property];
+      },
+      set(target, property, value) {
+        if (property in c2dSource) {
+          c2dSource[property] = value;
+          return true;
+        }
+      },
+    });
   };
 
   Rive.renderFactory = {
