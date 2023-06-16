@@ -50,7 +50,7 @@ export interface RiveCanvas {
   makeRenderer(
     canvas: HTMLCanvasElement | OffscreenCanvas,
     useOffscreenRenderer?: boolean
-  ): CanvasRenderer | Renderer;
+  ): WrappedRenderer;
 
   /**
    * Computes how the Rive is laid out onto the canvas
@@ -203,28 +203,11 @@ export declare class CanvasRenderer extends Renderer {
   constructor(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
   );
-
-  /**
-   * Canvas2D API for drawing an image onto a canvas
-   */
-  drawImage: (
-    image:
-      | HTMLImageElement
-      | SVGImageElement
-      | HTMLVideoElement
-      | HTMLCanvasElement
-      | ImageBitmap
-      | OffscreenCanvas,
-    sx?: number,
-    sy?: number,
-    sWidth?: number,
-    sHeight?: number,
-    dx?: number,
-    dy?: number,
-    dWidth?: number,
-    dHeight?: number
-  ) => void;
 }
+
+export type CanvasRendererProxy = CanvasRenderer & CanvasRenderingContext2D;
+
+export type WrappedRenderer = Renderer | CanvasRendererProxy;
 
 export declare class CanvasRenderPaint extends RenderPaint {
   draw(

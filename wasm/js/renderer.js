@@ -652,12 +652,6 @@ Rive.onRuntimeInitialized = function () {
         paint["draw"].bind(paint, this._ctx, path._path2D, fillRule)
       );
     },
-    "drawImage": function (image, ...args) {
-      var ctx = this._ctx;
-      this._drawList.push(function () {
-        ctx["drawImage"](image, ...args);
-      });
-    },
     "_drawRiveImage": function (image, blend, opacity) {
       var img = image._image;
       if (!img) {
