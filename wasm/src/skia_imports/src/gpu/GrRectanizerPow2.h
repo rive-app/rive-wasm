@@ -1,9 +1,9 @@
 /*
-* Copyright 2014 Google Inc.
-*
-* Use of this source code is governed by a BSD-style license that can be
-* found in the LICENSE file.
-*/
+ * Copyright 2014 Google Inc.
+ *
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
 
 #ifndef GrRectanizerPow2_DEFINED
 #define GrRectanizerPow2_DEFINED
@@ -20,15 +20,15 @@
 // The skyline algorithm almost always provides a better packing.
 //
 // Mark this class final in an effort to avoid the vtable when this subclass is used explicitly.
-class GrRectanizerPow2 final : public GrRectanizer {
+class GrRectanizerPow2 final : public GrRectanizer
+{
 public:
-    GrRectanizerPow2(int w, int h) : INHERITED(w, h) {
-        this->reset();
-    }
+    GrRectanizerPow2(int w, int h) : INHERITED(w, h) { this->reset(); }
 
     ~GrRectanizerPow2() final {}
 
-    void reset() final {
+    void reset() final
+    {
         fNextStripY = 0;
         fAreaSoFar = 0;
         sk_bzero(fRows, sizeof(fRows));
@@ -36,42 +36,42 @@ public:
 
     bool addRect(int w, int h, SkIPoint16* loc) final;
 
-    float percentFull() const final {
-        return fAreaSoFar / ((float)this->width() * this->height());
-    }
+    float percentFull() const final { return fAreaSoFar / ((float)this->width() * this->height()); }
 
 private:
     static const int kMIN_HEIGHT_POW2 = 2;
     static const int kMaxExponent = 16;
 
-    struct Row {
-        SkIPoint16  fLoc;
+    struct Row
+    {
+        SkIPoint16 fLoc;
         // fRowHeight is actually known by this struct's position in fRows
         // but it is used to signal if there exists an open row of this height
-        int         fRowHeight;
+        int fRowHeight;
 
-        bool canAddWidth(int width, int containerWidth) const {
+        bool canAddWidth(int width, int containerWidth) const
+        {
             return fLoc.fX + width <= containerWidth;
         }
     };
 
-    Row fRows[kMaxExponent];    // 0-th entry will be unused
+    Row fRows[kMaxExponent]; // 0-th entry will be unused
 
     int fNextStripY;
     int32_t fAreaSoFar;
 
-    static int HeightToRowIndex(int height) {
+    static int HeightToRowIndex(int height)
+    {
         SkASSERT(height >= kMIN_HEIGHT_POW2);
         int index = 32 - SkCLZ(height - 1);
         SkASSERT(index < kMaxExponent);
         return index;
     }
 
-    bool canAddStrip(int height) const {
-        return fNextStripY + height <= this->height();
-    }
+    bool canAddStrip(int height) const { return fNextStripY + height <= this->height(); }
 
-    void initRow(Row* row, int rowHeight) {
+    void initRow(Row* row, int rowHeight)
+    {
         row->fLoc.set(0, fNextStripY);
         row->fRowHeight = rowHeight;
         fNextStripY += rowHeight;

@@ -14,7 +14,8 @@
 /** \struct SkIPoint16
  SkIPoint16 holds two 16 bit integer coordinates.
  */
-struct SkIPoint16 {
+struct SkIPoint16
+{
     int16_t fX; //!< x-axis value used by SkIPoint16
 
     int16_t fY; //!< y-axis value used by SkIPoint16
@@ -26,9 +27,7 @@ struct SkIPoint16 {
      @param y  integer y-axis value of constructed SkIPoint
      @return   SkIPoint16 (x, y)
      */
-    static constexpr SkIPoint16 Make(int x, int y) {
-        return {SkToS16(x), SkToS16(y)};
-    }
+    static constexpr SkIPoint16 Make(int x, int y) { return {SkToS16(x), SkToS16(y)}; }
 
     /** Returns x-axis value of SkIPoint16.
 
@@ -47,11 +46,11 @@ struct SkIPoint16 {
      @param x  new value for fX
      @param y  new value for fY
      */
-    void set(int x, int y) {
+    void set(int x, int y)
+    {
         fX = SkToS16(x);
         fY = SkToS16(y);
     }
 };
 
 #endif
-

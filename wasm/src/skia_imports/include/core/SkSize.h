@@ -10,7 +10,8 @@
 
 #include "include/core/SkScalar.h"
 
-struct SkISize {
+struct SkISize
+{
     int32_t fWidth;
     int32_t fHeight;
 
@@ -38,7 +39,8 @@ struct SkISize {
     bool equals(int32_t w, int32_t h) const { return fWidth == w && fHeight == h; }
 };
 
-static inline bool operator==(const SkISize& a, const SkISize& b) {
+static inline bool operator==(const SkISize& a, const SkISize& b)
+{
     return a.fWidth == b.fWidth && a.fHeight == b.fHeight;
 }
 
@@ -46,13 +48,15 @@ static inline bool operator!=(const SkISize& a, const SkISize& b) { return !(a =
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct SkSize {
+struct SkSize
+{
     SkScalar fWidth;
     SkScalar fHeight;
 
     static SkSize Make(SkScalar w, SkScalar h) { return {w, h}; }
 
-    static SkSize Make(const SkISize& src) {
+    static SkSize Make(const SkISize& src)
+    {
         return {SkIntToScalar(src.width()), SkIntToScalar(src.height())};
     }
 
@@ -82,7 +86,8 @@ struct SkSize {
     SkISize toFloor() const { return {SkScalarFloorToInt(fWidth), SkScalarFloorToInt(fHeight)}; }
 };
 
-static inline bool operator==(const SkSize& a, const SkSize& b) {
+static inline bool operator==(const SkSize& a, const SkSize& b)
+{
     return a.fWidth == b.fWidth && a.fHeight == b.fHeight;
 }
 

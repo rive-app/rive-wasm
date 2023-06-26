@@ -147,11 +147,10 @@ git commit -m "Major: Restructuring the useRive API with new parameters"
 
 These messages help make the changelog clear as to what changes are made for future devs to see.
 
-When pull requests are merged, the runtime will automatically deploy the next NPM version. By default, patch versions are published. The changes are built and deployed to all the variant rive-wasm packages, which you can find [here](https://help.rive.app/runtimes/overview/web-js/canvas-vs-webgl).
-
+When changes are merged and releaesd, they are built and deployed to all the variant rive-wasm packages, which you can find [here](https://help.rive.app/runtimes/overview/web-js/canvas-vs-webgl).
 
 You can find the deploy scripts in `.github/` to see the logic for deploys.
 
 ## Bumping the underlying C++ runtime
 
-Many times, fixes to the runtime and feature adds come from the underlying cpp runtime. In these cases, just checkout the commit hash you need to bump to from `rive-cpp` in `wasm/submodules/rive-cpp` and run the `js/build.sh` script to incorporate the fix/feature across the various builds. Check out the example apps to make sure nothing is broken (or to verify a fix) before submitting a PR.
+Many times, fixes to the runtime and feature adds come from the underlying cpp runtime and are propagated to this repository. In these cases, you can test these changes by running the `js/build.sh` script to incorporate the fix/feature across the various builds. Check out the example apps to make sure nothing is broken (or to verify a fix) before making a release.

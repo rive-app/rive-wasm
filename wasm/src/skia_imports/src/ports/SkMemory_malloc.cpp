@@ -13,16 +13,15 @@
 #include <intrin.h>
 // This is a super stable value and setting it here avoids pulling in all of windows.h.
 #ifndef FAST_FAIL_FATAL_APP_EXIT
-#define FAST_FAIL_FATAL_APP_EXIT              7
+#define FAST_FAIL_FATAL_APP_EXIT 7
 #endif
 #endif
 
-#define SK_DEBUGFAILF(fmt, ...) \
-    SkASSERT((SkDebugf(fmt"\n", __VA_ARGS__), false))
+#define SK_DEBUGFAILF(fmt, ...) SkASSERT((SkDebugf(fmt "\n", __VA_ARGS__), false))
 
-static inline void sk_out_of_memory(size_t size) {
-    SK_DEBUGFAILF("sk_out_of_memory (asked for %zu bytes)",
-                  size);
+static inline void sk_out_of_memory(size_t size)
+{
+    SK_DEBUGFAILF("sk_out_of_memory (asked for %zu bytes)", size);
 #if defined(SK_BUILD_FOR_AFL_FUZZ)
     exit(1);
 #else
@@ -30,15 +29,18 @@ static inline void sk_out_of_memory(size_t size) {
 #endif
 }
 
-static inline void* throw_on_failure(size_t size, void* p) {
-    if (size > 0 && p == nullptr) {
+static inline void* throw_on_failure(size_t size, void* p)
+{
+    if (size > 0 && p == nullptr)
+    {
         // If we've got a nullptr here, the only reason we should have failed is running out of RAM.
         sk_out_of_memory(size);
     }
     return p;
 }
 
-void sk_abort_no_print() {
+void sk_abort_no_print()
+{
 #if defined(SK_BUILD_FOR_WIN) && defined(SK_IS_BOT)
     // do not display a system dialog before aborting the process
     _set_abort_behavior(0, _WRITE_ABORT_MSG);
@@ -52,7 +54,8 @@ void sk_abort_no_print() {
 #endif
 }
 
-void sk_out_of_memory(void) {
+void sk_out_of_memory(void)
+{
     SkDEBUGFAIL("sk_out_of_memory");
 #if defined(SK_BUILD_FOR_AFL_FUZZ)
     exit(1);
@@ -61,21 +64,28 @@ void sk_out_of_memory(void) {
 #endif
 }
 
-void* sk_realloc_throw(void* addr, size_t size) {
+void* sk_realloc_throw(void* addr, size_t size)
+{
     return throw_on_failure(size, realloc(addr, size));
 }
 
-void sk_free(void* p) {
-    if (p) {
+void sk_free(void* p)
+{
+    if (p)
+    {
         free(p);
     }
 }
 
-void* sk_malloc_flags(size_t size, unsigned flags) {
+void* sk_malloc_flags(size_t size, unsigned flags)
+{
     void* p;
-    if (flags & SK_MALLOC_ZERO_INITIALIZE) {
+    if (flags & SK_MALLOC_ZERO_INITIALIZE)
+    {
         p = calloc(size, 1);
-    } else {
+    }
+    else
+    {
 #if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK) && defined(__BIONIC__)
         /* TODO: After b/169449588 is fixed, we will want to change this to restore
          *       original behavior instead of always disabling the flag.
@@ -92,9 +102,12 @@ void* sk_malloc_flags(size_t size, unsigned flags) {
         (void)mallopt(M_THREAD_DISABLE_MEM_INIT, 0);
 #endif
     }
-    if (flags & SK_MALLOC_THROW) {
+    if (flags & SK_MALLOC_THROW)
+    {
         return throw_on_failure(size, p);
-    } else {
+    }
+    else
+    {
         return p;
     }
 }

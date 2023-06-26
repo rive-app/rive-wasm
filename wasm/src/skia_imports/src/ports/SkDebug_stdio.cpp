@@ -11,10 +11,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-void SkDebugf(const char format[], ...) {
+void SkDebugf(const char format[], ...)
+{
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
 }
-#endif//!defined(SK_BUILD_FOR_WIN) && !defined(SK_BUILD_FOR_ANDROID)
+#endif //! defined(SK_BUILD_FOR_WIN) && !defined(SK_BUILD_FOR_ANDROID)

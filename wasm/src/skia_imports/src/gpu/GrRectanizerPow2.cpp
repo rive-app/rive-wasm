@@ -7,30 +7,38 @@
 
 #include "src/gpu/GrRectanizerPow2.h"
 
-bool GrRectanizerPow2::addRect(int width, int height, SkIPoint16* loc) {
-    if ((unsigned)width > (unsigned)this->width() ||
-        (unsigned)height > (unsigned)this->height()) {
+bool GrRectanizerPow2::addRect(int width, int height, SkIPoint16* loc)
+{
+    if ((unsigned)width > (unsigned)this->width() || (unsigned)height > (unsigned)this->height())
+    {
         return false;
     }
 
     int32_t area = width * height; // computed here since height will be modified
 
     height = GrNextPow2(height);
-    if (height < kMIN_HEIGHT_POW2) {
+    if (height < kMIN_HEIGHT_POW2)
+    {
         height = kMIN_HEIGHT_POW2;
     }
 
     Row* row = &fRows[HeightToRowIndex(height)];
     SkASSERT(row->fRowHeight == 0 || row->fRowHeight == height);
 
-    if (0 == row->fRowHeight) {
-        if (!this->canAddStrip(height)) {
+    if (0 == row->fRowHeight)
+    {
+        if (!this->canAddStrip(height))
+        {
             return false;
         }
         this->initRow(row, height);
-    } else {
-        if (!row->canAddWidth(width, this->width())) {
-            if (!this->canAddStrip(height)) {
+    }
+    else
+    {
+        if (!row->canAddWidth(width, this->width()))
+        {
+            if (!this->canAddStrip(height))
+            {
                 return false;
             }
             // that row is now "full", so retarget our Row record for
@@ -54,6 +62,6 @@ bool GrRectanizerPow2::addRect(int width, int height, SkIPoint16* loc) {
 ///////////////////////////////////////////////////////////////////////////////
 
 // factory is now in GrRectanizer_skyline.cpp
-//GrRectanizer* GrRectanizer::Factory(int width, int height) {
+// GrRectanizer* GrRectanizer::Factory(int width, int height) {
 //    return new GrRectanizerPow2  (width, height);
 //}

@@ -10,9 +10,11 @@
 
 struct SkIPoint16;
 
-class GrRectanizer {
+class GrRectanizer
+{
 public:
-    GrRectanizer(int width, int height) : fWidth(width), fHeight(height) {
+    GrRectanizer(int width, int height) : fWidth(width), fHeight(height)
+    {
         SkASSERT(width >= 0);
         SkASSERT(height >= 0);
     }

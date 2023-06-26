@@ -15,16 +15,15 @@
 /**
  * std::underlying_type is only defined for enums. For integral types, we just want the type.
  */
-template <typename T, class Enable = void>
-struct sk_strip_enum {
+template <typename T, class Enable = void> struct sk_strip_enum
+{
     typedef T type;
 };
 
-template <typename T>
-struct sk_strip_enum<T, typename std::enable_if<std::is_enum<T>::value>::type> {
+template <typename T> struct sk_strip_enum<T, typename std::enable_if<std::is_enum<T>::value>::type>
+{
     typedef typename std::underlying_type<T>::type type;
 };
-
 
 /**
  * In C++ an unsigned to signed cast where the source value cannot be represented in the destination
@@ -68,31 +67,40 @@ struct sk_strip_enum<T, typename std::enable_if<std::is_enum<T>::value>::type> {
 
 template <typename D, typename S>
 static constexpr inline
-typename std::enable_if<(std::is_integral<S>::value || std::is_enum<S>::value) &&
-                        (std::is_integral<D>::value || std::is_enum<D>::value), bool>::type
-/*bool*/ SkTFitsIn(S src) {
+    typename std::enable_if<(std::is_integral<S>::value || std::is_enum<S>::value) &&
+                                (std::is_integral<D>::value || std::is_enum<D>::value),
+                            bool>::type
+    /*bool*/
+    SkTFitsIn(S src)
+{
     // SkTFitsIn() is used in public headers, so needs to be written targeting at most C++11.
     return
 
-    // E.g. (int8_t)(uint8_t) int8_t(-1) == -1, but the uint8_t == 255, not -1.
-    (std::is_signed<S>::value && std::is_unsigned<D>::value && sizeof(S) <= sizeof(D)) ?
-        (S)0 <= src :
+        // E.g. (int8_t)(uint8_t) int8_t(-1) == -1, but the uint8_t == 255, not -1.
+        (std::is_signed<S>::value && std::is_unsigned<D>::value && sizeof(S) <= sizeof(D))
+            ? (S)0 <= src
+            :
 
-    // E.g. (uint8_t)(int8_t) uint8_t(255) == 255, but the int8_t == -1.
-    (std::is_signed<D>::value && std::is_unsigned<S>::value && sizeof(D) <= sizeof(S)) ?
-        src <= (S)std::numeric_limits<typename sk_strip_enum<D>::type>::max() :
+            // E.g. (uint8_t)(int8_t) uint8_t(255) == 255, but the int8_t == -1.
+            (std::is_signed<D>::value && std::is_unsigned<S>::value && sizeof(D) <= sizeof(S))
+            ? src <= (S)std::numeric_limits<typename sk_strip_enum<D>::type>::max()
+            :
 
-#if !defined(SK_DEBUG) && !defined(__MSVC_RUNTIME_CHECKS )
-    // Correct (simple) version. This trips up MSVC's /RTCc run-time checking.
-    (S)(D)src == src;
+#if !defined(SK_DEBUG) && !defined(__MSVC_RUNTIME_CHECKS)
+            // Correct (simple) version. This trips up MSVC's /RTCc run-time checking.
+            (S)(D)src == src;
 #else
-    // More complex version that's safe with /RTCc. Used in all debug builds, for coverage.
-    (std::is_signed<S>::value) ?
-        (intmax_t)src >= (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::min() &&
-        (intmax_t)src <= (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max() :
+            // More complex version that's safe with /RTCc. Used in all debug builds, for coverage.
+            (std::is_signed<S>::value)
+            ? (intmax_t)src >=
+                      (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::min() &&
+                  (intmax_t)src <=
+                      (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max()
+            :
 
-    // std::is_unsigned<S> ?
-        (uintmax_t)src <= (uintmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max();
+            // std::is_unsigned<S> ?
+            (uintmax_t)src <=
+                (uintmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max();
 #endif
 }
 

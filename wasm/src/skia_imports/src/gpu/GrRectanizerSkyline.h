@@ -15,15 +15,15 @@
 // Based, in part, on Jukka Jylanki's work at http://clb.demon.fi
 //
 // Mark this class final in an effort to avoid the vtable when this subclass is used explicitly.
-class GrRectanizerSkyline final : public GrRectanizer {
+class GrRectanizerSkyline final : public GrRectanizer
+{
 public:
-    GrRectanizerSkyline(int w, int h) : INHERITED(w, h) {
-        this->reset();
-    }
+    GrRectanizerSkyline(int w, int h) : INHERITED(w, h) { this->reset(); }
 
-    ~GrRectanizerSkyline() final { }
+    ~GrRectanizerSkyline() final {}
 
-    void reset() final {
+    void reset() final
+    {
         fAreaSoFar = 0;
         fSkyline.reset();
         SkylineSegment* seg = fSkyline.append(1);
@@ -34,15 +34,14 @@ public:
 
     bool addRect(int w, int h, SkIPoint16* loc) final;
 
-    float percentFull() const final {
-        return fAreaSoFar / ((float)this->width() * this->height());
-    }
+    float percentFull() const final { return fAreaSoFar / ((float)this->width() * this->height()); }
 
 private:
-    struct SkylineSegment {
-        int  fX;
-        int  fY;
-        int  fWidth;
+    struct SkylineSegment
+    {
+        int fX;
+        int fY;
+        int fWidth;
     };
 
     SkTDArray<SkylineSegment> fSkyline;

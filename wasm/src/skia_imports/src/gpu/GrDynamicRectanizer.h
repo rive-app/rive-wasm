@@ -18,12 +18,17 @@ struct SkIRect;
  * This class implements a dynamic size GrRectanizer that grows until it reaches the implementation-
  * dependent max texture size.
  */
-class GrDynamicRectanizer {
+class GrDynamicRectanizer
+{
 public:
-    inline static constexpr int kPadding = 1;  // Amount of padding below and to the right of each
-                                               // path.
+    inline static constexpr int kPadding = 1; // Amount of padding below and to the right of each
+                                              // path.
 
-    enum class RectanizerAlgorithm { kSkyline, kPow2 };
+    enum class RectanizerAlgorithm
+    {
+        kSkyline,
+        kPow2
+    };
 
     GrDynamicRectanizer(SkISize initialSize,
                         int maxAtlasSize,

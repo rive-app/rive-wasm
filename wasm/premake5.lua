@@ -8,9 +8,10 @@ language 'C++'
 cppdialect 'C++17'
 targetdir((os.getenv('OUT_DIR') or 'build') .. '/bin/%{cfg.buildcfg}')
 objdir((os.getenv('OUT_DIR') or 'build') .. '/obj/%{cfg.buildcfg}')
-includedirs {'./submodules/rive-cpp/include'}
+source = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-cpp'
+includedirs {source .. '/include'}
 
-files {'./submodules/rive-cpp/src/**.cpp', './src/*.cpp'}
+files {source .. '/src/**.cpp', './src/*.cpp'}
 
 buildoptions {
     '-s STRICT=1',
@@ -88,15 +89,15 @@ do
     defines {'RIVE_SKIA_RENDERER'}
     buildoptions {'-DSK_GL', '-DSK_SUPPORT_GPU=1'}
     includedirs {
-        './submodules/rive-cpp/skia/renderer/include',
-        './submodules/rive-cpp/skia/dependencies/skia_rive_optimized',
-        './submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/core',
-        './submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/effects',
-        './submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/gpu',
-        './submodules/rive-cpp/skia/dependencies/skia_rive_optimized/include/config'
+        source .. '/skia/renderer/include',
+        source .. '/skia/dependencies/skia_rive_optimized',
+        source .. '/skia/dependencies/skia_rive_optimized/include/core',
+        source .. '/skia/dependencies/skia_rive_optimized/include/effects',
+        source .. '/skia/dependencies/skia_rive_optimized/include/gpu',
+        source .. '/skia/dependencies/skia_rive_optimized/include/config'
     }
-    files {'./submodules/rive-cpp/skia/renderer/src/**.cpp'}
-    libdirs {'submodules/rive-cpp/skia/dependencies/skia_rive_optimized/out/wasm/'}
+    files {source .. '/skia/renderer/src/**.cpp'}
+    libdirs {source .. '/skia/dependencies/skia_rive_optimized/out/wasm/'}
     links {'skia', 'GL'}
     linkoptions {
         '-s USE_WEBGL2=1',
