@@ -1779,13 +1779,24 @@ export class Rive {
 
   /**
    * Unsubscribes from a Rive-generated event
-   * @param callback the callback to unsubscribe from
+   * @param type the type of event to unsubscribe from
+   * @param callback the callback to unsubscribe
    */
-  public unsubscribe(type: EventType, callback: EventCallback) {
+  public off(type: EventType, callback: EventCallback) {
     this.eventManager.remove({
       type: type,
       callback: callback,
     });
+  }
+
+  /**
+   * Unsubscribes from a Rive-generated event
+   * @deprecated
+   * @param callback the callback to unsubscribe from
+   */
+  public unsubscribe(type: EventType, callback: EventCallback) {
+    console.warn("This function is deprecated: please use `off()` instead.");
+    this.off(type, callback);
   }
 
   /**
