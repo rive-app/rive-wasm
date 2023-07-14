@@ -761,6 +761,13 @@ class Animator {
       });
     }
   }
+
+  public handleAdvancing(time: number) {
+    this.eventManager.fire({
+      type: EventType.Advance,
+      data: time,
+    });
+  }
 }
 
 // #endregion
@@ -778,13 +785,14 @@ export enum EventType {
   Stop = "stop",
   Loop = "loop",
   Draw = "draw",
+  Advance = "advance",
   StateChange = "statechange",
 }
 
 // Event fired by Rive
 export interface Event {
   type: EventType;
-  data?: string | string[] | LoopEvent;
+  data?: string | string[] | LoopEvent | number;
 }
 
 /**
@@ -944,6 +952,7 @@ export interface RiveParameters {
   onStop?: EventCallback;
   onLoop?: EventCallback;
   onStateChange?: EventCallback;
+  onAdvance?: EventCallback;
   /**
    * @deprecated Use `onLoad()` instead
    */
@@ -1071,6 +1080,7 @@ export class Rive {
     if (params.onLoop) this.on(EventType.Loop, params.onLoop);
     if (params.onStateChange)
       this.on(EventType.StateChange, params.onStateChange);
+    if (params.onAdvance) this.on(EventType.Advance, params.onAdvance);
 
     /**
      * @deprecated Use camelCase'd versions instead.
@@ -1382,6 +1392,9 @@ export class Rive {
     // Check for any state machines that had a state change
     this.animator.handleStateChanges();
 
+    // Report advanced time
+    this.animator.handleAdvancing(elapsedTime);
+
     // Add duration to create frame to durations array
     this.frameCount++;
     const after = performance.now();
@@ -1510,6 +1523,9 @@ export class Rive {
         action: () => this.pause(animationNames),
       });
       return;
+    }
+    if (this.eventCleanup) {
+      this.eventCleanup();
     }
     this.animator.pause(animationNames);
   }

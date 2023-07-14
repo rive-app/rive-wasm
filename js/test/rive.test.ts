@@ -615,6 +615,26 @@ test("Stop events are received", (done) => {
   });
 });
 
+test("Advance events are received", (done) => {
+  const canvas = document.createElement("canvas");
+  let hasAdvancedOnce = false;
+  new rive.Rive({
+    canvas: canvas,
+    buffer: oneShotRiveFileBuffer,
+    autoplay: true,
+    onAdvance: (event) => {
+      expect(event.type).toBe(rive.EventType.Advance);
+      if (hasAdvancedOnce) {
+        expect(event.data).toBeGreaterThan(0);
+        done();
+      }
+      if (!hasAdvancedOnce) {
+        hasAdvancedOnce = true;
+      }
+    },
+  });
+});
+
 test("Events can be unsubscribed from", (done) => {
   const canvas = document.createElement("canvas");
 
@@ -1022,6 +1042,35 @@ test("Playing state machines report when states have changed", (done) => {
         done();
       }
     },
+  });
+});
+
+test("Advance event is not triggered when state machine is paused", (done) => {
+  const canvas = document.createElement("canvas");
+  const hasAdvancedMock = jest.fn();
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "MyArtboard",
+    stateMachines: "StateMachine",
+    autoplay: true,
+    onPlay: () => {
+      setTimeout(() => {
+        r.pause();
+      }, 100);
+    },
+    onPause: () => {
+      const advancedCallbackCount = hasAdvancedMock.mock.calls.length;
+      setTimeout(() => {
+        // Rive draws one more frame before pausing at the end of a render loop
+        expect(hasAdvancedMock.mock.calls.length).toBe(
+          advancedCallbackCount + 1
+        );
+        done();
+      }, 50);
+    },
+    onAdvance: hasAdvancedMock,
   });
 });
 
