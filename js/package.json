@@ -1,7 +1,7 @@
 {
   "name": "@rive-app/canvas",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Helper for building rive-api combinations (multiple separate packages).",
   "homepage": "https://rive.app",
   "repository": {
