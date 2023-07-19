@@ -1795,9 +1795,10 @@ export class Rive {
 
   /**
    * Unsubscribes from a Rive-generated event
-   * @param callback the callback to unsubscribe from
+   * @param type the type of event to unsubscribe from
+   * @param callback the callback to unsubscribe
    */
-  public unsubscribe(type: EventType, callback: EventCallback) {
+  public off(type: EventType, callback: EventCallback) {
     this.eventManager.remove({
       type: type,
       callback: callback,
@@ -1805,13 +1806,37 @@ export class Rive {
   }
 
   /**
-   * Unsubscribes all listeners from an event type, or everything if no type is
+   * Unsubscribes from a Rive-generated event
+   * @deprecated
+   * @param callback the callback to unsubscribe from
+   */
+  public unsubscribe(type: EventType, callback: EventCallback) {
+    console.warn("This function is deprecated: please use `off()` instead.");
+    this.off(type, callback);
+  }
+
+  /**
+   * Unsubscribes all Rive listeners from an event type, or everything if no type is
    * given
    * @param type the type of event to unsubscribe from, or all types if
    * undefined
    */
-  public unsubscribeAll(type?: EventType) {
+  public removeAllRiveEventListeners(type?: EventType) {
     this.eventManager.removeAll(type);
+  }
+
+  /**
+   * Unsubscribes all listeners from an event type, or everything if no type is
+   * given
+   * @deprecated
+   * @param type the type of event to unsubscribe from, or all types if
+   * undefined
+   */
+  public unsubscribeAll(type?: EventType) {
+    console.warn(
+      "This function is deprecated: please use `removeAllRiveEventListeners()` instead."
+    );
+    this.removeAllRiveEventListeners(type);
   }
 
   /**

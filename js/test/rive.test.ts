@@ -649,7 +649,7 @@ test("Events can be unsubscribed from", (done) => {
     onStop: stopCallback,
     onPlay: (event: rive.Event) => {
       // Deregister stop subscription
-      r.unsubscribe(rive.EventType.Stop, stopCallback);
+      r.off(rive.EventType.Stop, stopCallback);
     },
   });
   // Time out after 200 ms
@@ -672,7 +672,7 @@ test("Events of a single type can be mass unsubscribed", (done) => {
       r.on(rive.EventType.Loop, loopCallback2);
       r.on(rive.EventType.Loop, loopCallback3);
       // Deregisters all loop subscriptions
-      r.unsubscribeAll(rive.EventType.Loop);
+      r.removeAllRiveEventListeners(rive.EventType.Loop);
     },
     onStop: (event: rive.Event) => {
       // This should not hgave been removed
@@ -702,7 +702,7 @@ test("All events can be mass unsubscribed", (done) => {
       r.on(rive.EventType.Loop, loopCallback3);
       r.on(rive.EventType.Stop, stopCallback2);
       // Deregisters all loop subscriptions
-      r.unsubscribeAll();
+      r.removeAllRiveEventListeners();
     },
     onStop: stopCallback1,
   });
