@@ -8,7 +8,7 @@ const FileManagerPlugin = require("filemanager-webpack-plugin");
 // Uses canvas_advanced with an externally loaded wasm file.
 const canvas = {
   entry: "./src/rive.ts",
-  target: "es6",
+  target: "web",
   module: {
     rules: [
       {
@@ -71,7 +71,7 @@ const canvas = {
 // loading.
 const canvasSingle = {
   entry: "./src/rive.ts",
-  target: "es6",
+  target: "web",
   module: {
     rules: [
       {
@@ -136,7 +136,7 @@ const canvasSingle = {
 // Uses webgl_advanced with an externally loaded wasm file.
 const webgl = {
   entry: "./src/rive.ts",
-  target: "es6",
+  target: "web",
   module: {
     rules: [
       {
@@ -199,7 +199,7 @@ const webgl = {
 // loading.
 const webglSingle = {
   entry: "./src/rive.ts",
-  target: "es6",
+  target: "web",
   module: {
     rules: [
       {

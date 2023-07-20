@@ -1,17 +1,18 @@
 #!/bin/bash
 set -e
 
-echo 
+source ./get_emcc.sh
+
+echo
 echo "::::: building skia for wasm"
 echo
-path=`readlink -f "${BASH_SOURCE:-$0}"`
-DEV_SCRIPT_DIR=`dirname $path`
-if [ -d "$DEV_SCRIPT_DIR/submodules/rive-cpp" ];
-then
+path=$(readlink -f "${BASH_SOURCE:-$0}")
+DEV_SCRIPT_DIR=$(dirname $path)
+if [ -d "$DEV_SCRIPT_DIR/submodules/rive-cpp" ]; then
     pushd submodules/rive-cpp/skia/dependencies
 else
     pushd ../../runtime/skia/dependencies
-fi 
+fi
 ./make_skia_wasm.sh
 popd
 
@@ -48,34 +49,34 @@ echo "::::: cleaning all projects"
 echo
 rm -fR ./build
 
-echo 
+echo
 echo "::::: building @rive-app/canvas_advanced"
-echo 
+echo
 OUT_DIR=build/canvas_advanced ./build_wasm.sh release
 cp build/canvas_advanced/bin/release/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
 cp build/canvas_advanced/bin/release/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
 cp build/canvas_advanced/bin/release/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced/rive_advanced.mjs.d.ts
 
-echo 
+echo
 echo "::::: building @rive-app/canvas_advanced_single"
-echo 
+echo
 OUT_DIR=build/canvas_advanced_single ./build_wasm.sh -s release
 cp build/canvas_advanced_single/bin/release/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_single/rive_advanced.mjs.d.ts
 
-echo 
+echo
 echo "::::: building @rive-app/webgl_advanced"
-echo 
+echo
 OUT_DIR=build/webgl_advanced ./build_wasm.sh -r skia release
 cp build/webgl_advanced/bin/release/webgl_advanced.mjs ../js/npm/webgl_advanced/webgl_advanced.mjs
 cp build/webgl_advanced/bin/release/webgl_advanced.wasm ../js/npm/webgl_advanced/rive.wasm
 cp build/webgl_advanced/bin/release/webgl_advanced.wasm ../js/npm/webgl/rive.wasm
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced/rive_advanced.mjs.d.ts
 
-echo 
+echo
 echo "::::: building @rive-app/webgl_advanced_single"
-echo 
+echo
 OUT_DIR=build/webgl_advanced_single ./build_wasm.sh -r skia -s release
 cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced_single/rive_advanced.mjs.d.ts
