@@ -1,4 +1,4 @@
-Module.onRuntimeInitialized = function () {
+Module["onRuntimeInitialized"] = function () {
   const _isFirefox = navigator.userAgent.match(/firefox|fxios/i);
   let _offscreenGL = null;
   const _pendingOffscreenRenderers = new Set();
@@ -280,21 +280,21 @@ Module.onRuntimeInitialized = function () {
   }
 
   const _animationCallbackHandler = new AnimationCallbackHandler();
-  Rive["requestAnimationFrame"] =
+  Module["requestAnimationFrame"] =
     _animationCallbackHandler.requestAnimationFrame.bind(
       _animationCallbackHandler
     );
-  Rive["cancelAnimationFrame"] =
+  Module["cancelAnimationFrame"] =
     _animationCallbackHandler.cancelAnimationFrame.bind(
       _animationCallbackHandler
     );
-  Rive["enableFPSCounter"] = _animationCallbackHandler.enableFPSCounter.bind(
+  Module["enableFPSCounter"] = _animationCallbackHandler.enableFPSCounter.bind(
     _animationCallbackHandler
   );
   _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
 
-  let load = Rive["load"];
-  Rive["load"] = function (bytes) {
+  let load = Module["load"];
+  Module["load"] = function (bytes) {
     return Promise.resolve(load(bytes));
   };
 

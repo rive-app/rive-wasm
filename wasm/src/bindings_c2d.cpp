@@ -239,6 +239,11 @@ public:
 
     void shader(rive::rcp<rive::RenderShader> shader) override
     {
+        if (shader == nullptr)
+        {
+            call<void>("clearGradient");
+            return;
+        }
         static_cast<GradientShader*>(shader.get())->passToJS(*this);
     }
     void invalidateStroke() override {}

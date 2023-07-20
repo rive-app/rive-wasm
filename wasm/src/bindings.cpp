@@ -15,6 +15,7 @@
 #include "rive/nested_artboard.hpp"
 #include "rive/bones/bone.hpp"
 #include "rive/bones/root_bone.hpp"
+#include "rive/text/text_value_run.hpp"
 #include "rive/component.hpp"
 #include "rive/constraints/constraint.hpp"
 #include "rive/core.hpp"
@@ -296,6 +297,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       return self.find<rive::Node>(name);
                   }),
                   allow_raw_pointers())
+        .function("textRun",
+                  optional_override([](rive::ArtboardInstance& self, const std::string& name) {
+                      return self.find<rive::TextValueRun>(name);
+                  }),
+                  allow_raw_pointers())
         .function("bone",
                   optional_override([](rive::ArtboardInstance& self, const std::string& name) {
                       return self.find<rive::Bone>(name);
@@ -371,6 +377,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .property("y",
                   select_overload<float() const>(&rive::TransformComponent::y),
                   select_overload<void(float)>(&rive::Node::y));
+
+    class_<rive::TextValueRun>("TextValueRun")
+        .property("text",
+                  select_overload<const std::string&() const>(&rive::TextValueRunBase::text),
+                  select_overload<void(std::string)>(&rive::TextValueRunBase::text));
 
     class_<rive::Bone, base<rive::TransformComponent>>("Bone").property(
         "length",

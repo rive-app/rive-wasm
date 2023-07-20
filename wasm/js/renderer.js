@@ -311,16 +311,16 @@ const offscreenWebGL = new (function () {
   };
 })();
 
-Rive.onRuntimeInitialized = function () {
-  const RenderPaintStyle = Rive.RenderPaintStyle;
-  const FillRule = Rive.FillRule;
-  const RenderPath = Rive.RenderPath;
-  const RenderImage = Rive.RenderImage;
-  const RenderPaint = Rive.RenderPaint;
-  const Renderer = Rive.Renderer;
-  const StrokeCap = Rive.StrokeCap;
-  const StrokeJoin = Rive.StrokeJoin;
-  const BlendMode = Rive.BlendMode;
+Module["onRuntimeInitialized"] = function () {
+  const RenderPaintStyle = Module.RenderPaintStyle;
+  const FillRule = Module.FillRule;
+  const RenderPath = Module.RenderPath;
+  const RenderImage = Module.RenderImage;
+  const RenderPaint = Module.RenderPaint;
+  const Renderer = Module.Renderer;
+  const StrokeCap = Module.StrokeCap;
+  const StrokeJoin = Module.StrokeJoin;
+  const BlendMode = Module.BlendMode;
 
   const fill = RenderPaintStyle.fill;
   const stroke = RenderPaintStyle.stroke;
@@ -478,6 +478,9 @@ Rive.onRuntimeInitialized = function () {
     "blendMode": function (value) {
       this._blend = _canvasBlend(value);
     },
+    "clearGradient": function () {
+      this._gradient = null;
+    },
     "linearGradient": function (sx, sy, ex, ey) {
       this._gradient = {
         sx,
@@ -598,7 +601,7 @@ Rive.onRuntimeInitialized = function () {
    * it onto a deferred draw list stack that will eventually resolve at the end
    * of a requestAnimationFrame loop
    */
-  var CanvasRenderer = (Rive.CanvasRenderer = Renderer.extend("Renderer", {
+  var CanvasRenderer = (Module.CanvasRenderer = Renderer.extend("Renderer", {
     "__construct": function (canvas) {
       this["__parent"]["__construct"].call(this);
       // Keep a local shadow of the matrix stack, since actual calls to the canvas2d context
@@ -816,11 +819,11 @@ Rive.onRuntimeInitialized = function () {
     },
   }));
 
-  Rive.makeRenderer = function (canvas) {
+  Module["makeRenderer"] = function (canvas) {
     return new CanvasRenderer(canvas);
   };
 
-  Rive.renderFactory = {
+  Module["renderFactory"] = {
     makeRenderPaint: function () {
       return new CanvasRenderPaint();
     },
@@ -832,9 +835,9 @@ Rive.onRuntimeInitialized = function () {
     },
   };
 
-  let load = Rive["load"];
+  let load = Module["load"];
   let loadContext = null;
-  Rive["load"] = function (bytes) {
+  Module["load"] = function (bytes) {
     return new Promise(function (resolve, reject) {
       let result = null;
       loadContext = {
@@ -852,21 +855,21 @@ Rive.onRuntimeInitialized = function () {
   };
 
   const _animationCallbackHandler = new AnimationCallbackHandler();
-  Rive["requestAnimationFrame"] =
+  Module["requestAnimationFrame"] =
     _animationCallbackHandler.requestAnimationFrame.bind(
       _animationCallbackHandler
     );
-  Rive["cancelAnimationFrame"] =
+  Module["cancelAnimationFrame"] =
     _animationCallbackHandler.cancelAnimationFrame.bind(
       _animationCallbackHandler
     );
-  Rive["enableFPSCounter"] = _animationCallbackHandler.enableFPSCounter.bind(
+  Module["enableFPSCounter"] = _animationCallbackHandler.enableFPSCounter.bind(
     _animationCallbackHandler
   );
-  Rive["disableFPSCounter"] = _animationCallbackHandler.disableFPSCounter;
+  Module["disableFPSCounter"] = _animationCallbackHandler.disableFPSCounter;
   _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
 
-  Rive["cleanup"] = function () {
+  Module["cleanup"] = function () {
     if (_rectanizer) {
       _rectanizer.delete();
     }
