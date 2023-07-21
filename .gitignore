@@ -12,6 +12,7 @@ node_modules
 
 # build stuff
 */build
+/wasm/dependencies
 /wasm/Makefile
 /wasm/rive.make
 /wasm/publish/rive.pure.min.mjs
