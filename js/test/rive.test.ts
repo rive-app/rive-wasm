@@ -2,6 +2,7 @@ import * as rc from "../src/rive_advanced.mjs.js";
 import * as rive from "../src/rive";
 import getLongArtboardNameBuffer from "./test-rive-buffers/longArtboardName";
 import listenerBuffer from "./test-rive-buffers/listenerFile.js";
+import textBuffer from "./test-rive-buffers/textFile.json";
 
 // #region helper functions
 
@@ -1300,6 +1301,77 @@ test("Rive doesn't error out when cleaning up if the file is not set yet", () =>
     artboard: "MyArtboard",
   });
   r.cleanup();
+});
+
+// #endregion
+
+// #region text
+test("Rive returns undefined if not provided the name of a text run", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: "MyArtboard",
+    onLoad: () => {
+      const run = r.getTextRunValue("");
+      expect(run).toBeUndefined();
+      done();
+    },
+  });
+});
+
+test("Rive returns undefined if Artboard isn't set up yet", () => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: "MyArtboard",
+  });
+  expect(r.getTextRunValue("Foo")).toBeUndefined();
+});
+
+test("Rive returns undefined if Artboard does not have specified text run", async (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: arrayToArrayBuffer(JSON.parse(JSON.stringify(textBuffer))),
+    autoplay: true,
+    onLoad: () => {
+      const run = r.getTextRunValue("foofoo");
+      expect(run).toBeUndefined();
+      done();
+    },
+  });
+});
+
+test("Rive returns a text run", async (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: arrayToArrayBuffer(JSON.parse(JSON.stringify(textBuffer))),
+    autoplay: true,
+    onLoad: () => {
+      const textValue = r.getTextRunValue("MyRun");
+      expect(textValue).toBe("text");
+      done();
+    },
+  });
+});
+
+test("Rive sets a text run value", async (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: arrayToArrayBuffer(JSON.parse(JSON.stringify(textBuffer))),
+    autoplay: true,
+    onLoad: () => {
+      r.setTextRunValue("MyRun", "test-text");
+      expect(r.getTextRunValue("MyRun")).toBe("test-text");
+      done();
+    },
+  });
 });
 
 // #endregion

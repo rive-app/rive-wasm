@@ -1494,6 +1494,54 @@ export class Rive {
     }
   }
 
+  /**
+   * Tries to query the setup Artboard for a text run node with the given name.
+   * 
+   * @param textRunName - Name of the text run node associated with a text object
+   * @returns - TextValueRun node or undefined if the text run cannot be queried
+   */
+  private retrieveTextRun(textRunName: string): rc.TextValueRun | undefined {
+    if (!textRunName) {
+      console.warn("No text run name provided");
+      return;
+    }
+    if (!this.artboard) {
+      console.warn("Tried to access text run, but the Artboard is null");
+      return;
+    }
+    const textRun: rc.TextValueRun = this.artboard.textRun(textRunName);
+    if (!textRun) {
+      console.warn(`Could not access a text run with name '${textRunName}' in the '${this.artboard?.name}' Artboard. Note that you must rename a text run node in the Rive editor to make it queryable at runtime.`);
+      return;
+    }
+    return textRun;
+  }
+
+  /**
+   * Returns a string from a given text run node name, or undefined if the text run
+   * cannot be queried.
+   * 
+   * @param textRunName - Name of the text run node associated with a text object
+   * @returns - String value of the text run node or undefined
+   */
+  public getTextRunValue(textRunName: string): string | undefined {
+    const textRun = this.retrieveTextRun(textRunName);
+    return textRun ? textRun.text : undefined;
+  }
+
+  /**
+   * Sets a text value for a given text run node name if possible
+   * 
+   * @param textRunName - Name of the text run node associated with a text object
+   * @param textRunValue - String value to set on the text run node
+   */
+  public setTextRunValue(textRunName: string, textRunValue: string): void {
+    const textRun = this.retrieveTextRun(textRunName);
+    if (textRun) {
+      textRun.text = textRunValue;
+    }
+  }
+
   // Plays specified animations; if none specified, it unpauses everything.
   public play(animationNames?: string | string[], autoplay?: true): void {
     animationNames = mapToStringArray(animationNames);

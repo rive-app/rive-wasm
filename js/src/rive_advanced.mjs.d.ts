@@ -381,6 +381,11 @@ export declare class Artboard {
    * @param name - Name of the transform component to grab a reference to
    */
   transformComponent(name: string): TransformComponent;
+  /**
+   * Returns a reference for a TextValueRun object to get/set a text value for
+   * @param name - Name of the Text Run to grab a reference to
+   */
+  textRun(name: string): TextValueRun;
 }
 
 export declare class Bone extends TransformComponent {
@@ -481,6 +486,17 @@ export declare class LinearAnimationInstance {
    * when no longer in use
    */
   delete(): void;
+}
+
+export declare class TextValueRun {
+  /**
+   * Getter for text value of the Text Run
+   */
+  get text(): string;
+  /**
+   * Setter for the text value of the Text Run
+   */
+  set text(val: string);
 }
 
 export declare class LinearAnimation {
