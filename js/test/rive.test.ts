@@ -1,3 +1,5 @@
+// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
+// which means there is no loading an external WASM file for tests
 import * as rc from "../src/rive_advanced.mjs.js";
 import * as rive from "../src/rive";
 import getLongArtboardNameBuffer from "./test-rive-buffers/longArtboardName";

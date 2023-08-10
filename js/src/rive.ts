@@ -188,6 +188,18 @@ export class RuntimeLoader {
       while (RuntimeLoader.callBackQueue.length > 0) {
         RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
       }
+    }).catch(() => {
+      // In case unpkg fails or goes down, we should try to load from jsdelivr
+      const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive.wasm`;
+      if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
+        console.warn(`Failed to load WASM from ${RuntimeLoader.wasmURL}, trying jsdelivr as a backup`);
+        RuntimeLoader.setWasmUrl(backupJsdelivrUrl);
+        RuntimeLoader.loadRuntime();
+      } else {
+        console.error("Could not load Rive WASM file from unpkg or jsdelivr, network connection may be down, or \
+        you may need to call set a new WASM source via RuntimeLoader.setWasmUrl() and call \
+        RuntimeLoader.loadRuntime() again")
+      }
     });
   }
 
