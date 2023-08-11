@@ -13,7 +13,8 @@
       "npm run build:all",
       "npm test",
       "npm run changelog",
-      "npm run publish:all"
+      "npm run publish:all",
+      "cd .."
     ]
   }
 }
