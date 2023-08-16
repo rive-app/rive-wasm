@@ -1029,7 +1029,7 @@ export class Rive {
   private _layout: Layout;
 
   // The runtime renderer
-  private renderer: rc.Renderer | rc.CanvasRenderer;
+  private renderer: rc.WrappedRenderer;
 
   // Tracks if a Rive file is loaded
   private loaded = false;

@@ -50,7 +50,7 @@ export interface RiveCanvas {
   makeRenderer(
     canvas: HTMLCanvasElement | OffscreenCanvas,
     useOffscreenRenderer?: boolean
-  ): CanvasRenderer | Renderer;
+  ): WrappedRenderer;
 
   /**
    * Computes how the Rive is laid out onto the canvas
@@ -203,28 +203,37 @@ export declare class CanvasRenderer extends Renderer {
   constructor(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
   );
-
-  /**
-   * Canvas2D API for drawing an image onto a canvas
-   */
-  drawImage: (
-    image:
-      | HTMLImageElement
-      | SVGImageElement
-      | HTMLVideoElement
-      | HTMLCanvasElement
-      | ImageBitmap
-      | OffscreenCanvas,
-    sx?: number,
-    sy?: number,
-    sWidth?: number,
-    sHeight?: number,
-    dx?: number,
-    dy?: number,
-    dWidth?: number,
-    dHeight?: number
-  ) => void;
 }
+
+type OmittedCanvasRenderingContext2DMethods =   "createConicGradient" |
+  "createImageData" |
+  "createLinearGradient" |
+  "createPattern" |
+  "createRadialGradient" |
+  "getContextAttributes" |
+  "getImageData" |
+  "getLineDash" |
+  "getTransform" |
+  "isContextLost" |
+  "isPointInPath" |
+  "isPointInStroke" |
+  "measureText";
+
+/**
+ * Proxy class that handles calls to a CanvasRenderer instance and handles Rive-related rendering calls such
+ * as `save`, `restore`, `transform`, and more, effectively overriding and/or wrapping Canvas2D context
+ * APIs for Rive-specific purposes. Other calls not intentionally overridden are passed through to the
+ * Canvas2D context directly.
+ * 
+ * Note: Currently, any calls to the Canvas2D context that you expect to return a value (i.e. `isPointInStroke()`)
+ * will return undefined
+ */
+export type CanvasRendererProxy = CanvasRenderer & Omit<CanvasRenderingContext2D, OmittedCanvasRenderingContext2DMethods>;
+
+/**
+ * Renderer type for `makeRenderer()` that returns Renderer (webgl) or a CanvasRendererProxy (canvas2d)
+ */
+export type WrappedRenderer = Renderer | CanvasRendererProxy;
 
 export declare class CanvasRenderPaint extends RenderPaint {
   draw(

@@ -2,6 +2,7 @@ import RiveCanvas, {
   Artboard,
   SMIInput,
   StateMachineInstance,
+  CanvasRendererProxy
 } from "@rive-app/canvas-advanced-single";
 import Centaur from "./centaur.riv";
 
@@ -133,7 +134,7 @@ async function main() {
   window.onresize = computeSize;
   computeSize();
 
-  const renderer = rive.makeRenderer(canvas);
+  const renderer = rive.makeRenderer(canvas) as CanvasRendererProxy;
 
   // Game variables.
   let currentMoveSpeed = 0;

@@ -12,6 +12,23 @@ function makeMatrix(xx, xy, yx, yy, tx, ty) {
 const VTX_ARRAY = 0;
 const UV_ARRAY = 1;
 
+// We'll allow calling methods on the c2d context via the Proxy returned by `.makeRenderer()`. This is a list of methods that are allowed.
+const c2dMethodBlockList = [
+  "createConicGradient",
+  "createImageData",
+  "createLinearGradient",
+  "createPattern",
+  "createRadialGradient",
+  "getContextAttributes",
+  "getImageData",
+  "getLineDash",
+  "getTransform",
+  "isContextLost",
+  "isPointInPath",
+  "isPointInStroke",
+  "measureText",
+];
+
 // Used for rendering meshes.
 const offscreenWebGL = new (function () {
   let _gl = null;
@@ -655,12 +672,6 @@ Module["onRuntimeInitialized"] = function () {
         paint["draw"].bind(paint, this._ctx, path._path2D, fillRule)
       );
     },
-    "drawImage": function (image, ...args) {
-      var ctx = this._ctx;
-      this._drawList.push(function () {
-        ctx["drawImage"](image, ...args);
-      });
-    },
     "_drawRiveImage": function (image, blend, opacity) {
       var img = image._image;
       if (!img) {
@@ -820,7 +831,39 @@ Module["onRuntimeInitialized"] = function () {
   }));
 
   Module["makeRenderer"] = function (canvas) {
-    return new CanvasRenderer(canvas);
+    const newCanvasRenderer = new CanvasRenderer(canvas);
+    const c2dSource = newCanvasRenderer._ctx;
+    return new Proxy(newCanvasRenderer, {
+      get(target, property) {
+        if (typeof target[property] === "function") {
+          return function (...args) {
+            return target[property].apply(target, args);
+          };
+        } else if (typeof c2dSource[property] === "function") {
+          if (c2dMethodBlockList.indexOf(property) > -1) {
+            throw new Error(
+              "RiveException: Method call to '" +
+                property +
+                "()' is not allowed, as the renderer cannot immediately pass through the return \
+                values of any canvas 2d context methods."
+            );
+          } else {
+            return function (...args) {
+              newCanvasRenderer._drawList.push(
+                c2dSource[property].bind(c2dSource, ...args)
+              );
+            };
+          }
+        }
+        return target[property];
+      },
+      set(target, property, value) {
+        if (property in c2dSource) {
+          c2dSource[property] = value;
+          return true;
+        }
+      },
+    });
   };
 
   Module["renderFactory"] = {
