@@ -28,6 +28,11 @@
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
 #include "rive/transform_component.hpp"
+#include "rive/event.hpp"
+#include "rive/open_url_event.hpp"
+#include "rive/custom_property_boolean.hpp"
+#include "rive/custom_property_string.hpp"
+#include "rive/custom_property_number.hpp"
 
 #include "js_alignment.hpp"
 
@@ -442,6 +447,81 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self, double x, double y) {
                       self.pointerUp(rive::Vec2D((float)x, (float)y));
                   }))
+        .function("firedEventCount", &rive::StateMachineInstance::firedEventCount)
+        .function(
+            "firedEventAt",
+            optional_override([](rive::StateMachineInstance& self,
+                                 size_t index) -> emscripten::val {
+                const rive::Event* event = self.firedEventAt(index);
+                if (event == nullptr)
+                {
+                    return emscripten::val::undefined();
+                }
+                emscripten::val eventObject = emscripten::val::object();
+                eventObject.set("name", event->name());
+                if (event->is<rive::OpenUrlEvent>())
+                {
+                    auto urlEvent = event->as<rive::OpenUrlEvent>();
+                    eventObject.set("type", event->coreType());
+                    eventObject.set("url", urlEvent->url());
+                    const char* target = nullptr;
+                    switch (urlEvent->targetValue())
+                    {
+                        case 0:
+                            target = "_blank";
+                            break;
+                        case 1:
+                            target = "_parent";
+                            break;
+                        case 2:
+                            target = "_self";
+                            break;
+                        case 3:
+                            target = "_top";
+                            break;
+                    }
+                    if (target != nullptr)
+                    {
+                        eventObject.set("target", target);
+                    }
+                }
+                bool haveCustom = false;
+                emscripten::val propertiesObject = emscripten::val::object();
+                for (auto child : event->children())
+                {
+                    if (child->is<rive::CustomProperty>())
+                    {
+                        if (!child->name().empty())
+                        {
+                            switch (child->coreType())
+                            {
+                                case rive::CustomPropertyBoolean::typeKey:
+                                    propertiesObject.set(
+                                        child->name(),
+                                        child->as<rive::CustomPropertyBoolean>()->propertyValue());
+                                    break;
+                                case rive::CustomPropertyString::typeKey:
+                                    propertiesObject.set(
+                                        child->name(),
+                                        child->as<rive::CustomPropertyString>()->propertyValue());
+                                    break;
+                                case rive::CustomPropertyNumber::typeKey:
+                                    propertiesObject.set(
+                                        child->name(),
+                                        child->as<rive::CustomPropertyNumber>()->propertyValue());
+                                    break;
+                            }
+                            haveCustom = true;
+                        }
+                    }
+                }
+                if (haveCustom)
+                {
+                    eventObject.set("properties", propertiesObject);
+                }
+                return eventObject;
+            }),
+            allow_raw_pointers())
         .function("stateChangedCount", &rive::StateMachineInstance::stateChangedCount)
         .function(
             "stateChangedNameByIndex",
