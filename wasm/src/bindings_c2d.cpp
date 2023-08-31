@@ -109,6 +109,8 @@ public:
                        rive::rcp<rive::RenderBuffer> vertices_f32,
                        rive::rcp<rive::RenderBuffer> uvCoords_f32,
                        rive::rcp<rive::RenderBuffer> indices_u16,
+                       uint32_t vertexCount,
+                       uint32_t indexCount,
                        rive::BlendMode value,
                        float opacity) override
     {
@@ -117,21 +119,24 @@ public:
         auto uv = rive::DataRenderBuffer::Cast(uvCoords_f32.get());
         auto indices = rive::DataRenderBuffer::Cast(indices_u16.get());
 
-        assert(uv->count() == vtx->count());
-        if (!vtx->count() || !indices->count())
+        assert(vtx->sizeInBytes() == vertexCount * sizeof(Vec2D));
+        assert(uv->sizeInBytes() == vertexCount * sizeof(Vec2D));
+        assert(indices->sizeInBytes() == indexCount * sizeof(uint16_t));
+
+        if (vertexCount == 0 || indexCount == 0)
         {
             return;
         }
 
-        emscripten::val uvJS{emscripten::typed_memory_view(uv->count(), uv->f32s())};
-        emscripten::val vtxJS{emscripten::typed_memory_view(vtx->count(), vtx->f32s())};
-        emscripten::val indicesJS{emscripten::typed_memory_view(indices->count(), indices->u16s())};
+        emscripten::val uvJS{emscripten::typed_memory_view(vertexCount, uv->f32s())};
+        emscripten::val vtxJS{emscripten::typed_memory_view(vertexCount, vtx->f32s())};
+        emscripten::val indicesJS{emscripten::typed_memory_view(indexCount, indices->u16s())};
 
         // Compute the mesh's bounding box.
         float m[6];
         emscripten::val mJS{emscripten::typed_memory_view(6, m)};
         call<void>("_getMatrix", mJS);
-        auto [l, t, r, b] = bbox(m, vtx->f32s(), vtx->count());
+        auto [l, t, r, b] = bbox(m, vtx->f32s(), vertexCount);
 
         call<void>("_drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS, l, t, r, b);
     }
@@ -294,17 +299,11 @@ namespace rive
 
 class C2DFactory : public Factory
 {
-    rcp<RenderBuffer> makeBufferU16(Span<const uint16_t> data) override
+    rcp<RenderBuffer> makeRenderBuffer(RenderBufferType type,
+                                       RenderBufferFlags flags,
+                                       size_t sizeInBytes)
     {
-        return rive::DataRenderBuffer::Make(data);
-    }
-    rcp<RenderBuffer> makeBufferU32(Span<const uint32_t> data) override
-    {
-        return rive::DataRenderBuffer::Make(data);
-    }
-    rcp<RenderBuffer> makeBufferF32(Span<const float> data) override
-    {
-        return rive::DataRenderBuffer::Make(data);
+        return make_rcp<DataRenderBuffer>(type, flags, sizeInBytes);
     }
 
     rcp<RenderShader> makeLinearGradient(float sx,
