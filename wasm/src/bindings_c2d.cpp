@@ -119,24 +119,25 @@ public:
         auto uv = rive::DataRenderBuffer::Cast(uvCoords_f32.get());
         auto indices = rive::DataRenderBuffer::Cast(indices_u16.get());
 
-        assert(vtx->sizeInBytes() == vertexCount * sizeof(Vec2D));
-        assert(uv->sizeInBytes() == vertexCount * sizeof(Vec2D));
+        uint32_t f32Count = vertexCount * 2;
+        assert(vtx->sizeInBytes() == f32Count * sizeof(float));
+        assert(uv->sizeInBytes() == f32Count * sizeof(float));
         assert(indices->sizeInBytes() == indexCount * sizeof(uint16_t));
 
-        if (vertexCount == 0 || indexCount == 0)
+        if (f32Count == 0 || indexCount == 0)
         {
             return;
         }
 
-        emscripten::val uvJS{emscripten::typed_memory_view(vertexCount, uv->f32s())};
-        emscripten::val vtxJS{emscripten::typed_memory_view(vertexCount, vtx->f32s())};
+        emscripten::val uvJS{emscripten::typed_memory_view(f32Count, uv->f32s())};
+        emscripten::val vtxJS{emscripten::typed_memory_view(f32Count, vtx->f32s())};
         emscripten::val indicesJS{emscripten::typed_memory_view(indexCount, indices->u16s())};
 
         // Compute the mesh's bounding box.
         float m[6];
         emscripten::val mJS{emscripten::typed_memory_view(6, m)};
         call<void>("_getMatrix", mJS);
-        auto [l, t, r, b] = bbox(m, vtx->f32s(), vertexCount);
+        auto [l, t, r, b] = bbox(m, vtx->f32s(), f32Count);
 
         call<void>("_drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS, l, t, r, b);
     }
@@ -301,7 +302,7 @@ class C2DFactory : public Factory
 {
     rcp<RenderBuffer> makeRenderBuffer(RenderBufferType type,
                                        RenderBufferFlags flags,
-                                       size_t sizeInBytes)
+                                       size_t sizeInBytes) override
     {
         return make_rcp<DataRenderBuffer>(type, flags, sizeInBytes);
     }

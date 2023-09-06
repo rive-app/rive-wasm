@@ -18,6 +18,9 @@ includedirs {
     harfbuzz .. '/src',
     sheenbidi .. '/Headers'
 }
+flags {
+    'FatalCompileWarnings',
+}
 
 files {
     source .. '/src/**.cpp',
