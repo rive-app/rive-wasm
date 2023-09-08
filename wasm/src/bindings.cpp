@@ -425,7 +425,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   select_overload<float() const>(&rive::LinearAnimationInstance::time),
                   select_overload<void(float)>(&rive::LinearAnimationInstance::time))
         .property("didLoop", &rive::LinearAnimationInstance::didLoop)
-        .function("advance", &rive::LinearAnimationInstance::advance)
+        .function("advance", select_overload<bool(float)>(&rive::LinearAnimationInstance::advance))
         .function("apply", &rive::LinearAnimationInstance::apply, allow_raw_pointers());
 
     class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
@@ -447,18 +447,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self, double x, double y) {
                       self.pointerUp(rive::Vec2D((float)x, (float)y));
                   }))
-        .function("firedEventCount", &rive::StateMachineInstance::firedEventCount)
+        .function("reportedEventCount", &rive::StateMachineInstance::reportedEventCount)
         .function(
-            "firedEventAt",
+            "reportedEventAt",
             optional_override([](rive::StateMachineInstance& self,
                                  size_t index) -> emscripten::val {
-                const rive::Event* event = self.firedEventAt(index);
-                if (event == nullptr)
+                const rive::EventReport report = self.reportedEventAt(index);
+                if (report.event() == nullptr)
                 {
                     return emscripten::val::undefined();
                 }
+                rive::Event* event = report.event();
                 emscripten::val eventObject = emscripten::val::object();
                 eventObject.set("name", event->name());
+                eventObject.set("delay", report.secondsDelay());
                 if (event->is<rive::OpenUrlEvent>())
                 {
                     auto urlEvent = event->as<rive::OpenUrlEvent>();
