@@ -1,4 +1,5 @@
 {
+  "exclude": ["examples/**/*"],
   "compilerOptions": {
     "outDir": "./build/",
     "noImplicitAny": true,

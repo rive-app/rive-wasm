@@ -367,6 +367,11 @@ export class StateMachineInput {
   }
 }
 
+export enum RiveEventType {
+  General = 128,
+  OpenUrl = 131,
+}
+
 class StateMachine {
   /**
    * Caches the inputs from the runtime
@@ -414,6 +419,25 @@ class StateMachine {
    */
   public advance(time: number) {
     this.instance.advance(time);
+  }
+
+  /**
+   * Returns the number of events reported from the last advance call
+   * @returns Number of events reported
+   */
+  public reportedEventCount(): number {
+    return this.instance.reportedEventCount();
+  }
+
+  /**
+   * Returns a RiveEvent object emitted from the last advance call at the given index
+   * of a list of potentially multiple events. If an event at the index is not found,
+   * undefined is returned.
+   * @param i index of the event reported in a list of potentially multiple events
+   * @returns RiveEvent or extended RiveEvent object returned, or undefined
+   */
+  reportedEventAt(i: number): rc.OpenUrlEvent | rc.RiveEvent | undefined {
+    return this.instance.reportedEventAt(i);
   }
 
   /**
@@ -799,12 +823,16 @@ export enum EventType {
   Draw = "draw",
   Advance = "advance",
   StateChange = "statechange",
+  RiveEvent = "riveevent",
 }
 
-// Event fired by Rive
+export type RiveEventPayload = rc.RiveEvent | rc.OpenUrlEvent;
+
+// Event reported by Rive for significant events during animation playback (i.e. play, pause, stop, etc.),
+// as well as for custom Rive events reported from the state machine defined at design-time.
 export interface Event {
   type: EventType;
-  data?: string | string[] | LoopEvent | number;
+  data?: string | string[] | LoopEvent | number | RiveEventPayload;
 }
 
 /**
@@ -957,6 +985,18 @@ export interface RiveParameters {
    * will be attached to the <canvas> element
    */
   shouldDisableRiveListeners?: boolean;
+  /**
+   * Enable Rive Events to be handled by the runtime. This means any special Rive Event may have
+   * a side effect that takes place implicitly.
+   * 
+   * For example, if during the render loop an OpenUrlEvent is detected, the
+   * browser may try to open the specified URL in the payload.
+   * 
+   * This flag is false by default to prevent any unwanted behaviors from taking place.
+   * This means any special Rive Event will have to be handled manually by subscribing to
+   * EventType.RiveEvent
+   */
+  automaticallyHandleEvents?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1070,6 +1110,8 @@ export class Rive {
 
   private shouldDisableRiveListeners = false;
 
+  private automaticallyHandleEvents = false;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1081,6 +1123,7 @@ export class Rive {
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
+    this.automaticallyHandleEvents = !!params.automaticallyHandleEvents;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1377,6 +1420,37 @@ export class Rive {
       (a) => a.playing
     );
     for (const stateMachine of activeStateMachines) {
+      // Check for events before the current frame's state machine advance
+      const numEventsReported = stateMachine.reportedEventCount();
+      if (numEventsReported) {
+        for (let i = 0; i < numEventsReported; i++) {
+          const event = stateMachine.reportedEventAt(i);
+          
+          if (event) {
+            if (event.type === RiveEventType.OpenUrl) {
+              this.eventManager.fire({
+                type: EventType.RiveEvent,
+                data: event as rc.OpenUrlEvent,
+              });
+              // Handle the event side effect if explicitly enabled
+              if (this.automaticallyHandleEvents) {
+                const newAnchorTag = document.createElement("a");
+                const {url, target} = (event as rc.OpenUrlEvent);
+                url && newAnchorTag.setAttribute("href", url);
+                target && newAnchorTag.setAttribute("target", target);
+                if (url) {
+                  newAnchorTag.click();
+                }
+              }
+            } else {
+              this.eventManager.fire({
+                type: EventType.RiveEvent,
+                data: event as rc.RiveEvent,
+              });
+            }
+          }
+        }
+      }
       stateMachine.advance(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
     }

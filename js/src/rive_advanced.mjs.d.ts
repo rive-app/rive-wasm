@@ -508,6 +508,56 @@ export declare class TextValueRun {
   set text(val: string);
 }
 
+/**
+ * Rive Event interface for "General" custom events defined in the Rive editor. Each event has a
+ * name and optionally some other custom properties and a type
+ */
+export interface RiveEvent {
+  /**
+   * Name of the event fired
+   */
+  name: string;
+  /**
+   * Optional type of the specific kind of event fired (i.e. General, OpenUrl)
+   */
+  type?: number;
+  /**
+   * Optional custom properties defined on the event
+   */
+  properties?: RiveEventCustomProperties;
+  /**
+   * Optional elapsed time since the event specifically occurred
+   */
+  delay?: number;
+}
+
+/**
+ * A specific Rive Event type for "OpenUrl" events. This event type has a URL and optionally a
+ * target property to dictate how to open the URL
+ */
+export interface OpenUrlEvent extends RiveEvent {
+  /**
+   * URL to open when the event is invoked
+   */
+  url: string;
+  /**
+   * Where to display the linked URL
+   */
+  target?: string;
+}
+
+/**
+ * A Rive Event may have any number of optional custom properties defined on itself with variable names
+ * and values that are either a number, boolean, or string
+ */
+export interface RiveEventCustomProperties {
+  /**
+   * Custom property may be named anything in the Rive editor, and given a value of
+   * a number, boolean, or string type
+   */
+  [key: string]: number | boolean | string;
+}
+
 export declare class LinearAnimation {
   /**
    * The animation's loop type
@@ -574,6 +624,21 @@ export declare class StateMachineInstance {
    * @returns Name of the state/animation transitioned to
    */
   stateChangedNameByIndex(i: number): string;
+
+  /**
+   * Returns the number of events reported from the last advance call
+   * @returns Number of events reported
+   */
+  reportedEventCount(): number;
+
+  /**
+   * Returns a RiveEvent object emitted from the last advance call at the given index
+   * of a list of potentially multiple events. If an event at the index is not found,
+   * undefined is returned.
+   * @param i index of the event reported in a list of potentially multiple events
+   * @returns RiveEvent or extended RiveEvent object returned, or undefined
+   */
+  reportedEventAt(i: number): OpenUrlEvent | RiveEvent | undefined;
 
   /**
    * Notifies the state machine that the pointer has pressed down at the given coordinate in

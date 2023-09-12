@@ -5,6 +5,7 @@ import * as rive from "../src/rive";
 import getLongArtboardNameBuffer from "./test-rive-buffers/longArtboardName";
 import listenerBuffer from "./test-rive-buffers/listenerFile.js";
 import textBuffer from "./test-rive-buffers/textFile.json";
+import eventsBuffer from "./test-rive-buffers/eventsFile.json";
 
 // #region helper functions
 
@@ -636,6 +637,33 @@ test("Advance events are received", (done) => {
       }
     },
   });
+});
+
+test("Rive Events are received", (done) => {
+  const canvas = document.createElement("canvas");
+  const eventsArrayBuffer = arrayToArrayBuffer(eventsBuffer);
+  const events: rive.RiveEventPayload[] = [];
+  const riveEventCb = jest.fn((riveEvent: rive.Event) => {
+    events.push(riveEvent.data as rive.RiveEventPayload);
+  });
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: eventsArrayBuffer,
+    stateMachines: "State Machine 1",
+    autoplay: false,
+    onLoad: () => {
+      r.play("State Machine 1");
+      const input = r.stateMachineInputs("State Machine 1")[0];
+      setTimeout(() => input.fire(), 100);
+    },
+  });
+
+  r.on(rive.EventType.RiveEvent, riveEventCb);
+  setTimeout(() => {
+    expect(events[0].name).toBe('genEvent');
+    expect(events[1].name).toBe('urlEvent');
+    done();
+  }, 200);
 });
 
 test("Events can be unsubscribed from", (done) => {

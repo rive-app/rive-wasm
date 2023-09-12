@@ -1,24 +1,24 @@
 import "regenerator-runtime";
-import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
+import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas";
 //import { Rive, Fit, Alignment, Layout } from "@rive-app/webgl";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
-import BallAnimation from "./ball.riv";
 import SwitchAnimation from "./switch_event_example.riv";
 import NestedDefaultAnimation from "./nested_default.riv";
 import JigSaw from "./jigsaw.riv";
 import StringRive from "./string.riv";
+import RatingAnimation from "./rating_animation.riv";
 
 const RIVE_EXAMPLES = {
   0: {
-    riveFile: SwitchAnimation,
+    riveFile: RatingAnimation,
     hasStateMachine: true,
-    stateMachine: "Main State Machine",
+    stateMachine: "State Machine 1",
   },
   1: {
-    riveFile: BallAnimation,
+    riveFile: SwitchAnimation,
     hasStateMachine: true,
     stateMachine: "Main State Machine",
   },
@@ -67,11 +67,11 @@ async function main(num) {
   const body = document.querySelector("body");
   const el = document.createElement("canvas");
   el.id = `canvas${num}`;
-  el.width = "800";
-  el.height = "800";
+  el.width = "400";
+  el.height = "400";
   body.appendChild(el);
 
-  new Rive({
+  const r = new Rive({
     buffer: bytes,
     autoplay: true,
     canvas: el,
@@ -81,6 +81,10 @@ async function main(num) {
     }),
     ...(riveEx.hasStateMachine && { stateMachines: riveEx.stateMachine }),
   });
+  function onRiveEventReceived(riveEvent) {
+    console.log("Rive Event Fired", riveEvent);
+  }
+  r.on(EventType.RiveEvent, onRiveEventReceived);
 }
 
 for (let i = 0; i < 9; i++) {

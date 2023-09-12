@@ -461,10 +461,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                 emscripten::val eventObject = emscripten::val::object();
                 eventObject.set("name", event->name());
                 eventObject.set("delay", report.secondsDelay());
+                eventObject.set("type", event->coreType());
                 if (event->is<rive::OpenUrlEvent>())
                 {
                     auto urlEvent = event->as<rive::OpenUrlEvent>();
-                    eventObject.set("type", event->coreType());
                     eventObject.set("url", urlEvent->url());
                     const char* target = nullptr;
                     switch (urlEvent->targetValue())
