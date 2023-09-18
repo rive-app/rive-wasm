@@ -14,7 +14,7 @@
       "npm test",
       "npm run changelog",
       "npm run publish:all",
-      "cd .."
+      "git add ../CHANGELOG.md"
     ]
   }
 }
