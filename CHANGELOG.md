@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.1](https://github.com/rive-app/rive-wasm/compare/2.4.0...2.4.1)
+## [2.4.2](https://github.com/rive-app/rive-wasm/compare/2.4.1...2.4.2)
 
 ### Commits
 
+- Fix issue with timeline events on first frame [`127a7d4`](https://github.com/rive-app/rive-wasm/commit/127a7d49841d3798c8c22eff3f214d40e5250a58)
+
+## [2.4.1](https://github.com/rive-app/rive-wasm/compare/2.4.0...2.4.1) - 2023-09-18
+
+### Commits
+
+- chore: tag 2.4.1 [`e6c9e8e`](https://github.com/rive-app/rive-wasm/commit/e6c9e8ef2b940137f47a8f283d2cb24f73347185)
 - patch: specifically add changelog at project root level before releaseit commits [`b62d01e`](https://github.com/rive-app/rive-wasm/commit/b62d01e5993ab23dff945959b2e76cf6821f8732)
 - Event fixes [`5284de1`](https://github.com/rive-app/rive-wasm/commit/5284de1237cf0dfbdc58c0309a2f78d2f92c48d6)
 - Bump the iOS minimum version to 13 on native builds [`524177f`](https://github.com/rive-app/rive-wasm/commit/524177f70df43c9b38a13b369b28bf3e22ae4218)
