@@ -1,6 +1,6 @@
 import * as rc from "./rive_advanced.mjs";
 import * as packageData from "package.json";
-import { registerTouchInteractions } from "./utils";
+import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
 
 /**
  * Generic type for a parameterless void callback
@@ -1436,9 +1436,11 @@ export class Rive {
               if (this.automaticallyHandleEvents) {
                 const newAnchorTag = document.createElement("a");
                 const {url, target} = (event as rc.OpenUrlEvent);
-                url && newAnchorTag.setAttribute("href", url);
+              
+                const sanitizedUrl = sanitizeUrl(url);
+                url && newAnchorTag.setAttribute("href", sanitizedUrl);
                 target && newAnchorTag.setAttribute("target", target);
-                if (url) {
+                if (sanitizedUrl && sanitizedUrl !== BLANK_URL) {
                   newAnchorTag.click();
                 }
               }
