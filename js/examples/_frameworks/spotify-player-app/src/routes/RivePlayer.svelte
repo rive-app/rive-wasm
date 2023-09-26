@@ -81,19 +81,9 @@
         }
       }, "");
       riveInstance.setTextRunValue("track", trackName);
-      riveInstance.setTextRunValue(" trackDummy", trackName);
+      riveInstance.setTextRunValue("trackDummy", trackName);
       riveInstance.setTextRunValue("artist", artistNames);
       riveInstance.setTextRunValue("timeStart", `0:00`);
-      // The block below is for updating the player with current playing track
-      // if (currentTrackData) {
-      //   const currentStartTime = currentTrackData.progress_ms;
-      //   currentTrackProgress = currentStartTime;
-      //   const startDurationMin = ((currentStartTime / 1000) / 60) % 60;
-      //   const startDurationSec = ((currentStartTime / 1000) % 60);
-      //   riveInstance.setTextRunValue("timeStart", `${Math.trunc(startDurationMin)}:${formatNumber(startDurationSec)}`);
-      // } else {
-      //   riveInstance.setTextRunValue("timeStart", `0:00`);
-      // }
 
       const endDurationMin = ((trackData.duration_ms / 1000) / 60) % 60;
       const endDurationSec = ((trackData.duration_ms / 1000) % 60);
@@ -104,51 +94,68 @@
 
   // Event handler for Rive events (i.e. playback controls)
   async function onReceivedRiveEvent(event: Event) {
-    console.log("onReceivedRiveEvent", event);
     if (!event || !sdk || !device) {
       return;
     }
-    if ((event.data as RiveEventPayload).name === "playbackEvent") {
-      const isPlaying = ((event.data as RiveEventPayload).properties)?.isPlaying;
-      const trackData = resultItems[trackIdx].track;
-      if (isPlaying) {
-        const playbackState = await sdk.player.getPlaybackState();
-        if (!pollingIntervalId) {
-          await sdk.player.startResumePlayback(device, undefined, [
-            trackData.uri,
-          ], undefined, playbackState?.progress_ms);
-          currentTrackProgress = 0;
+    const riveEvent = (event.data as RiveEventPayload);
+    switch (riveEvent.name) {
+      case 'playbackEvent': {
+        const isPlaying = (riveEvent.properties)?.isPlaying;
+        const trackData = resultItems[trackIdx].track;
+        if (isPlaying) {
+          const playbackState = await sdk.player.getPlaybackState();
+          if (!pollingIntervalId) {
+            await sdk.player.startResumePlayback(device, undefined, [
+              trackData.uri,
+            ], undefined, playbackState?.progress_ms);
+            currentTrackProgress = 0;
+          } else {
+            await sdk.player.startResumePlayback(device);
+          }
+          pollingIntervalId = window.setInterval(pollCurrentPlay, 1000);
         } else {
-          await sdk.player.startResumePlayback(device);
+          await sdk.player.pausePlayback(device);
+          clearInterval(pollingIntervalId);
         }
-        pollingIntervalId = window.setInterval(pollCurrentPlay, 1000);
-      } else {
-        await sdk.player.pausePlayback(device);
-        clearInterval(pollingIntervalId);
+        break;
       }
-    } else if ((event.data as RiveEventPayload).name === "nextTrackHit") {
-      if (trackIdx >= 4) {
-        trackIdx = 0;
-      } else {
-        trackIdx++;
+      case 'nextTrackHit': {
+        if (trackIdx >= 4) {
+          trackIdx = 0;
+        } else {
+          trackIdx++;
+        }
+        currentTrackProgress = 0;
+        const trackData = resultItems[trackIdx].track;
+        await sdk.player.startResumePlayback(device, undefined, [
+          trackData.uri,
+        ]);
+        break;
       }
-      currentTrackProgress = 0;
-      const trackData = resultItems[trackIdx].track;
-      console.log("Start next song - ", trackData.name);
-      await sdk.player.startResumePlayback(device, undefined, [
-        trackData.uri,
-      ]);
-    } else if ((event.data as RiveEventPayload).name === "prevTrackHit") {
-      if (trackIdx <= 0) {
-        trackIdx = 4;
-      } else {
-        trackIdx--;
+      case 'prevTrackHit': {
+        if (trackIdx <= 0) {
+          trackIdx = 4;
+        } else {
+          trackIdx--;
+        }
+        currentTrackProgress = 0;
+        const trackData = resultItems[trackIdx].track;
+        await sdk.player.startResumePlayback(device, undefined, [
+          trackData.uri,
+        ]);
+        break;
       }
-      currentTrackProgress = 0;
-      const trackData = resultItems[trackIdx].track;
-      await sdk.player.startResumePlayback(device, undefined, [
-        trackData.uri,
-      ]);
+      case 'volumeAdjusted': {
+        if ('level' in (riveEvent.properties || {})) {
+          const volumeLevel = riveEvent.properties!.level as number;
+          const mappedSpotifyVolume = (100 * volumeLevel) / 11;
+          await sdk.player.setPlaybackVolume(Math.round(mappedSpotifyVolume));
+        }
+        break;
+      }
+      default: {
+        console.warn("Unhandled Event", riveEvent);
+      }
     }
   }
 
@@ -157,7 +164,7 @@
     const canvasEl = document.getElementById("rive-canvas") as HTMLCanvasElement;
 
     riveInstance = new Rive({
-      src: '/digital_music_player_3.riv',
+      src: '/digital_music_player.riv',
       autoplay: true,
       stateMachines: "State Machine 1",
       canvas: canvasEl,
@@ -166,7 +173,7 @@
 
         // Set text to empty initially
         riveInstance.setTextRunValue("track", "");
-        riveInstance.setTextRunValue(" trackDummy", "");
+        riveInstance.setTextRunValue("trackDummy", "");
         riveInstance.setTextRunValue("artist", "");
         riveInstance.setTextRunValue("timeStart", "");
 
