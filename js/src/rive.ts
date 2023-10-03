@@ -1261,7 +1261,12 @@ export class Rive {
   ): Promise<void> {
     // Load the buffer from the src if provided
     if (this.src) {
-      this.buffer = await loadRiveFile(this.src);
+      try {
+        this.buffer = await loadRiveFile(this.src);
+      } catch (e) {
+        this.eventManager.fire({ type: EventType.LoadError, data: e.message });
+        return Promise.reject(e.message);
+      }
     }
     // Load the Rive file
     this.file = await this.runtime.load(new Uint8Array(this.buffer));
@@ -2109,8 +2114,11 @@ interface RiveFileContents {
 const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
   const req = new Request(src);
   const res = await fetch(req);
-  const buffer = await res.arrayBuffer();
-  return buffer;
+  if (res.status < 400) {
+    const buffer = await res.arrayBuffer();
+    return buffer;
+  }
+  throw new Error(`Error loading ${src}: ${res.status} ${res.statusText}`);
 };
 
 // #endregion

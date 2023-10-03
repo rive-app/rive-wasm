@@ -1405,3 +1405,32 @@ test("Rive sets a text run value", async (done) => {
 });
 
 // #endregion
+
+// #region error handling
+
+test("Rive triggers onLoadError if the request to load the .riv fails", (done) => {
+  global.fetch = jest
+    .fn()
+    .mockImplementation(() =>
+      Promise.resolve(
+        new Response("", { status: 404, statusText: "Not Found" })
+      )
+    );
+
+  const canvas = document.createElement("canvas");
+
+  new rive.Rive({
+    canvas: canvas,
+    src: "a/file.riv",
+    autoplay: true,
+    artboard: "MyArtboard",
+    onLoadError: () => {
+      // @ts-ignore
+      global.fetch.mockClear();
+      delete global.fetch;
+      done();
+    },
+  });
+});
+
+// #endregion
