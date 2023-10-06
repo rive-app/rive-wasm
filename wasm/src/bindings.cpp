@@ -1,10 +1,10 @@
-#include "rive/animation/animation.hpp"
 #include "rive/animation/animation_state.hpp"
+#include "rive/animation/animation.hpp"
 #include "rive/animation/any_state.hpp"
 #include "rive/animation/entry_state.hpp"
 #include "rive/animation/exit_state.hpp"
-#include "rive/animation/linear_animation.hpp"
 #include "rive/animation/linear_animation_instance.hpp"
+#include "rive/animation/linear_animation.hpp"
 #include "rive/animation/nested_state_machine.hpp"
 #include "rive/animation/state_machine_bool.hpp"
 #include "rive/animation/state_machine_input_instance.hpp"
@@ -12,29 +12,36 @@
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
 #include "rive/artboard.hpp"
-#include "rive/nested_artboard.hpp"
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/image_asset.hpp"
 #include "rive/bones/bone.hpp"
 #include "rive/bones/root_bone.hpp"
-#include "rive/text/text_value_run.hpp"
+#include "rive/component_dirt.hpp"
 #include "rive/component.hpp"
 #include "rive/constraints/constraint.hpp"
 #include "rive/core.hpp"
 #include "rive/core/binary_reader.hpp"
+#include "rive/custom_property_boolean.hpp"
+#include "rive/custom_property_number.hpp"
+#include "rive/custom_property_string.hpp"
+#include "rive/event.hpp"
+#include "rive/file_asset_loader.hpp"
 #include "rive/file.hpp"
 #include "rive/layout.hpp"
 #include "rive/math/mat2d.hpp"
+#include "rive/nested_artboard.hpp"
 #include "rive/node.hpp"
+#include "rive/open_url_event.hpp"
 #include "rive/renderer.hpp"
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
+#include "rive/text/text_style.hpp"
+#include "rive/text/text_value_run.hpp"
+#include "rive/text/text.hpp"
 #include "rive/transform_component.hpp"
-#include "rive/event.hpp"
-#include "rive/open_url_event.hpp"
-#include "rive/custom_property_boolean.hpp"
-#include "rive/custom_property_string.hpp"
-#include "rive/custom_property_number.hpp"
 
 #include "js_alignment.hpp"
+#include "js_asset.hpp"
 
 #include "src/core/SkIPoint16.h"
 #include "src/gpu/GrDynamicRectanizer.h"
@@ -44,6 +51,8 @@
 #include <emscripten/val.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <sanitizer/lsan_interface.h>
@@ -62,18 +71,6 @@ const uint16_t stateMachineBoolTypeKey = rive::StateMachineBoolBase::typeKey;
 const uint16_t stateMachineNumberTypeKey = rive::StateMachineNumberBase::typeKey;
 
 const uint16_t stateMachineTriggerTypeKey = rive::StateMachineTriggerBase::typeKey;
-
-rive::File* load(emscripten::val byteArray)
-{
-    std::vector<unsigned char> rv;
-
-    const auto l = byteArray["byteLength"].as<unsigned>();
-    rv.resize(l);
-
-    emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
-    memoryView.call<void>("set", byteArray);
-    return rive::File::import(rv, jsFactory()).release();
-}
 
 rive::Alignment convertAlignment(JsAlignment alignment)
 {
@@ -166,9 +163,57 @@ private:
     GrDynamicRectanizer m_Rectanizer;
 };
 
+class FileAssetLoaderWrapper : public wrapper<rive::FileAssetLoader>
+{
+public:
+    EMSCRIPTEN_WRAPPER(FileAssetLoaderWrapper);
+
+    bool loadContents(rive::FileAsset& asset, rive::Span<const uint8_t> inBandBytes)
+    {
+        auto bytes =
+            emscripten::val(emscripten::typed_memory_view(inBandBytes.size(), inBandBytes.data()));
+        return call<bool>("loadContents", (intptr_t)&asset, bytes);
+    };
+};
+
+rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoader)
+{
+    std::vector<unsigned char> rv;
+
+    const auto l = byteArray["byteLength"].as<unsigned>();
+    rv.resize(l);
+
+    emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
+    memoryView.call<void>("set", byteArray);
+
+    return rive::File::import(rv, jsFactory(), nullptr, fileAssetLoader).release();
+}
+
+// utility function to get File Asset object from pointer
+rive::FileAsset* ptrToFileAsset(intptr_t pointer) { return (rive::FileAsset*)pointer; }
+rive::ImageAsset* ptrToImageAsset(intptr_t pointer) { return (rive::ImageAsset*)pointer; }
+rive::FontAsset* ptrToFontAsset(intptr_t pointer) { return (rive::FontAsset*)pointer; }
+
+rive::rcp<rive::Font> decodeFont(emscripten::val byteArray)
+{
+    std::vector<unsigned char> vector;
+
+    const auto l = byteArray["byteLength"].as<unsigned>();
+    vector.resize(l);
+
+    emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
+    memoryView.call<void>("set", byteArray);
+    return jsFactory()->decodeFont(vector);
+}
+
 EMSCRIPTEN_BINDINGS(RiveWASM)
 {
+    function("ptrToFileAsset", &ptrToFileAsset, allow_raw_pointers());
+    function("ptrToImageAsset", &ptrToImageAsset, allow_raw_pointers());
+    function("ptrToFontAsset", &ptrToFontAsset, allow_raw_pointers());
+    function("decodeFont", &decodeFont, allow_raw_pointers());
     function("load", &load, allow_raw_pointers());
+    function("jsFactory", &jsFactory, allow_raw_pointers());
     function("computeAlignment", &computeAlignment);
     function("mapXY", &mapXY);
     function("hasListeners", &hasListeners, allow_raw_pointers());
@@ -258,7 +303,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             }),
             allow_raw_pointers())
         .function("artboardCount", &rive::File::artboardCount);
-
+    class_<rive::rcp<rive::Font>>("rcpFont");
+    class_<rive::Font>("Font");
     class_<rive::Artboard>("ArtboardBase");
     class_<rive::ArtboardInstance, base<rive::Artboard>>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
@@ -429,6 +475,73 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("apply", &rive::LinearAnimationInstance::apply, allow_raw_pointers());
 
     class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
+    class_<rive::Factory>("Factory")
+        .function("decodeImage", &rive::Factory::decodeImage, allow_raw_pointers())
+        .function("decodeFont", &rive::Factory::decodeFont, allow_raw_pointers());
+    class_<rive::Span<const uint8_t>>("Span");
+
+    class_<rive::FileAsset>("FileAsset")
+        .property("name", select_overload<const std::string&() const>(&rive::FileAssetBase::name))
+        .property("cdnBaseUrl",
+                  select_overload<const std::string&() const>(&rive::FileAssetBase::cdnBaseUrl))
+        .property("fileExtension",
+                  select_overload<std::string() const>(&rive::FileAsset::fileExtension))
+        .property("isImage", 
+                  optional_override([](const rive::FileAsset& self) -> bool {
+                      return self.is<rive::ImageAsset>();
+                  }))
+        .property("isFont", 
+                  optional_override([](const rive::FileAsset& self) -> bool {
+                      return self.is<rive::FontAsset>();
+                  }))
+        .property("cdnUuid", 
+                  optional_override([](const rive::FileAsset& self) -> std::string {
+                      if (self.cdnUuid().size() != 16)
+                    {
+                        return "";
+                    }
+                    std::vector<int> indices = {3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10};
+
+                    std::stringstream ss;
+                    ss << std::hex << std::setfill('0');
+                    for (int i : indices)
+                    {
+                        ss << std::setw(2) << static_cast<int>(self.cdnUuid()[i]);
+                        if (i == 0 || i == 4 || i == 6 || i == 8)
+                            ss << '-';
+                    }
+
+                    return ss.str();
+                  }))
+        .function("decode",
+                  optional_override([](rive::FileAsset& self, emscripten ::val byteArray) {
+                      std::vector<unsigned char> charVector;
+                      const auto length = byteArray["byteLength"].as<unsigned>();
+                      charVector.resize(length);
+
+                      emscripten::val memoryView{
+                          emscripten::typed_memory_view(length, charVector.data())};
+
+                      memoryView.call<void>("set", byteArray);
+                      self.decode(charVector, jsFactory());
+                  }),
+                  allow_raw_pointers());
+
+    class_<rive::ImageAsset, base<rive::FileAsset>>("ImageAsset")
+        .function(
+            "setRenderImage",
+            optional_override([](rive::ImageAsset& self, rive::RenderImage* renderImage) -> void {
+                self.renderImage(std::unique_ptr<rive::RenderImage>(renderImage));
+            }),
+            allow_raw_pointers());
+
+    class_<rive::FontAsset, base<rive::FileAsset>>("FontAsset")
+        .function("setFont",
+                  optional_override([](rive::FontAsset& self, rive::rcp<rive::Font> font) -> void {
+                      // why is this rcp and not unique_ptr
+                      self.font(rive::rcp<rive::Font>(font));
+                  }),
+                  allow_raw_pointers());
 
     class_<rive::StateMachineInstance>("StateMachineInstance")
         .constructor<rive::StateMachine*, rive::ArtboardInstance*>()
@@ -622,6 +735,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("addRect", &DynamicRectanizer::addRect)
         .function("drawWidth", &DynamicRectanizer::drawWidth)
         .function("drawHeight", &DynamicRectanizer::drawHeight);
+
+    class_<rive::FileAssetLoader>("FileAssetLoader")
+        .function("loadContents",
+                  &FileAssetLoaderWrapper::loadContents,
+                  pure_virtual(),
+                  allow_raw_pointers())
+        .allow_subclass<FileAssetLoaderWrapper>("FileAssetLoaderWrapper");
 
 #ifdef DEBUG
     function("doLeakCheck", &__lsan_do_recoverable_leak_check);

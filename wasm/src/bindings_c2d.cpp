@@ -7,6 +7,9 @@
 #include "rive/math/path_types.hpp"
 #include "utils/factory_utils.hpp"
 
+#include "rive/assets/file_asset.hpp"
+#include "rive/assets/image_asset.hpp"
+
 #include "skia_imports/include/private/SkVx.h"
 #include "js_alignment.hpp"
 
@@ -285,7 +288,8 @@ public:
     {
         emscripten::val byteArray =
             emscripten::val(emscripten::typed_memory_view(bytes.size(), bytes.data()));
-        return call<bool>("decode", byteArray);
+        call<val>("decode", byteArray);
+        return true;
     }
 
     void size(int width, int height)
@@ -379,7 +383,7 @@ class C2DFactory : public Factory
     std::unique_ptr<RenderImage> decodeImage(Span<const uint8_t> bytes) override
     {
         // TODO: seems like we should change the constructor the the JS RenderImage to
-        //       be pased the byteArray, and have it decode (or fail) right away.
+        //       be passed the byteArray, and have it decode (or fail) right away.
         //       It could just return null to us for its object if it failed.
         //   ... that would avoid that tricky cast to RenderImageWrapper*
 

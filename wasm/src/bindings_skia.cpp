@@ -102,6 +102,18 @@ WebGLSkiaRenderer* makeSkiaRenderer(int width, int height)
     return new WebGLSkiaRenderer(context, width, height);
 }
 
+std::unique_ptr<rive::RenderImage> decodeImageSkia(emscripten::val byteArray)
+{
+    std::vector<unsigned char> vector;
+
+    const auto l = byteArray["byteLength"].as<unsigned>();
+    vector.resize(l);
+
+    emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
+    memoryView.call<void>("set", byteArray);
+    return jsFactory()->decodeImage(vector);
+}
+
 EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
 {
     class_<rive::Renderer>("Renderer")
@@ -124,8 +136,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
         .function("resize", &WebGLSkiaRenderer::resize)
         .function("saveClipRect", &WebGLSkiaRenderer::saveClipRect)
         .function("restoreClipRect", &WebGLSkiaRenderer::restoreClipRect);
+    class_<rive::RenderImage>("RenderImage");
 
     function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
+    function("decodeImageSkia", &decodeImageSkia, allow_raw_pointers());
 }
 
 #endif // RIVE_SKIA_RENDERER

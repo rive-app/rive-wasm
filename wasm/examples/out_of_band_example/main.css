@@ -1,0 +1,23 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #333;
+}
+
+
+.counter {
+    position: absolute;
+    color: white;
+    z-index: 100
+}
+
+.fps {
+    top: 0px;
+}
+
+.framems {
+    top: 20px;
+}

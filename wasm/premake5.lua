@@ -250,6 +250,9 @@ buildoptions {
 
 linkoptions {
     '--bind',
+    -- TODO: uncomment this to enable asyncify for wasm, check in with -Oz as well
+    -- '-O3',
+    -- '-s ASYNCIFY',
     '-s FORCE_FILESYSTEM=0',
     '-s MODULARIZE=1',
     '-s NO_EXIT_RUNTIME=1',
@@ -278,6 +281,7 @@ do
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
         '--pre-js ./js/renderer.js',
+        '--pre-js ./js/shared.js',
         '-o %{cfg.targetdir}/canvas_advanced.mjs'
     }
 end
@@ -288,6 +292,7 @@ do
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
         '--pre-js ./js/renderer.js',
+        '--pre-js ./js/shared.js',
         '-o %{cfg.targetdir}/canvas_advanced_single.mjs'
     }
 end
@@ -327,7 +332,8 @@ do
         '-s MAX_WEBGL_VERSION=2',
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
-        '--pre-js ./js/skia_renderer.js'
+        '--pre-js ./js/skia_renderer.js',
+        '--pre-js ./js/shared.js'
     }
 end
 

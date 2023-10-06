@@ -6,6 +6,10 @@ import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
  * Generic type for a parameterless void callback
  */
 export type VoidCallback = () => void;
+export type AssetLoadCallback = (
+  asset: rc.FileAsset,
+  bytes: Uint8Array,
+) => Boolean;
 
 /**
  * Type for artboard bounds
@@ -81,7 +85,7 @@ export class Layout {
     maxY,
   }: LayoutParameters): Layout {
     console.warn(
-      "This function is deprecated: please use `new Layout({})` instead"
+      "This function is deprecated: please use `new Layout({})` instead",
     );
     return new Layout({ fit, alignment, minX, minY, maxX, maxY });
   }
@@ -182,25 +186,31 @@ export class RuntimeLoader {
     rc.default({
       // Loads Wasm bundle
       locateFile: () => RuntimeLoader.wasmURL,
-    }).then((rive: rc.RiveCanvas) => {
-      RuntimeLoader.runtime = rive;
-      // Fire all the callbacks
-      while (RuntimeLoader.callBackQueue.length > 0) {
-        RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
-      }
-    }).catch(() => {
-      // In case unpkg fails or goes down, we should try to load from jsdelivr
-      const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive.wasm`;
-      if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
-        console.warn(`Failed to load WASM from ${RuntimeLoader.wasmURL}, trying jsdelivr as a backup`);
-        RuntimeLoader.setWasmUrl(backupJsdelivrUrl);
-        RuntimeLoader.loadRuntime();
-      } else {
-        console.error("Could not load Rive WASM file from unpkg or jsdelivr, network connection may be down, or \
+    })
+      .then((rive: rc.RiveCanvas) => {
+        RuntimeLoader.runtime = rive;
+        // Fire all the callbacks
+        while (RuntimeLoader.callBackQueue.length > 0) {
+          RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
+        }
+      })
+      .catch(() => {
+        // In case unpkg fails or goes down, we should try to load from jsdelivr
+        const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive.wasm`;
+        if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
+          console.warn(
+            `Failed to load WASM from ${RuntimeLoader.wasmURL}, trying jsdelivr as a backup`,
+          );
+          RuntimeLoader.setWasmUrl(backupJsdelivrUrl);
+          RuntimeLoader.loadRuntime();
+        } else {
+          console.error(
+            "Could not load Rive WASM file from unpkg or jsdelivr, network connection may be down, or \
         you may need to call set a new WASM source via RuntimeLoader.setWasmUrl() and call \
-        RuntimeLoader.loadRuntime() again")
-      }
-    });
+        RuntimeLoader.loadRuntime() again",
+          );
+        }
+      });
   }
 
   // Provides a runtime instance via a callback
@@ -220,7 +230,7 @@ export class RuntimeLoader {
   // Provides a runtime instance via a promise
   public static awaitInstance(): Promise<rc.RiveCanvas> {
     return new Promise<rc.RiveCanvas>((resolve) =>
-      RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => resolve(rive))
+      RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => resolve(rive)),
     );
   }
 
@@ -253,7 +263,7 @@ class Animation {
     private animation: rc.LinearAnimation,
     private artboard: rc.Artboard,
     runtime: rc.RiveCanvas,
-    public playing: boolean
+    public playing: boolean,
   ) {
     this.instance = new runtime.LinearAnimationInstance(animation, artboard);
   }
@@ -333,7 +343,7 @@ export enum StateMachineInputType {
 export class StateMachineInput {
   constructor(
     public readonly type: StateMachineInputType,
-    private runtimeInput: rc.SMIInput
+    private runtimeInput: rc.SMIInput,
   ) {}
 
   /**
@@ -392,7 +402,7 @@ class StateMachine {
     private stateMachine: rc.StateMachine,
     runtime: rc.RiveCanvas,
     public playing: boolean,
-    private artboard: rc.Artboard
+    private artboard: rc.Artboard,
   ) {
     this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
@@ -458,22 +468,22 @@ class StateMachine {
    */
   private mapRuntimeInput(
     input: rc.SMIInput,
-    runtime: rc.RiveCanvas
+    runtime: rc.RiveCanvas,
   ): StateMachineInput {
     if (input.type === runtime.SMIInput.bool) {
       return new StateMachineInput(
         StateMachineInputType.Boolean,
-        input.asBool()
+        input.asBool(),
       );
     } else if (input.type === runtime.SMIInput.number) {
       return new StateMachineInput(
         StateMachineInputType.Number,
-        input.asNumber()
+        input.asNumber(),
       );
     } else if (input.type === runtime.SMIInput.trigger) {
       return new StateMachineInput(
         StateMachineInputType.Trigger,
-        input.asTrigger()
+        input.asTrigger(),
       );
     }
   }
@@ -508,7 +518,7 @@ class Animator {
     private artboard: rc.Artboard,
     private eventManager: EventManager,
     public readonly animations: Animation[] = [],
-    public readonly stateMachines: StateMachine[] = []
+    public readonly stateMachines: StateMachine[] = [],
   ) {}
 
   /**
@@ -521,7 +531,7 @@ class Animator {
   public add(
     animatables: string | string[],
     playing: boolean,
-    fireEvent = true
+    fireEvent = true,
   ): string[] {
     animatables = mapToStringArray(animatables);
     // If animatables is empty, play or pause everything
@@ -551,7 +561,7 @@ class Animator {
               anim,
               this.artboard,
               this.runtime,
-              playing
+              playing,
             );
             // Display the first frame of the specified animation
             newAnimation.advance(0);
@@ -565,7 +575,7 @@ class Animator {
                 sm,
                 this.runtime,
                 playing,
-                this.artboard
+                this.artboard,
               );
               this.stateMachines.push(newStateMachine);
             }
@@ -618,7 +628,7 @@ class Animator {
    */
   public scrub(animatables: string[], value: number): string[] {
     const forScrubbing = this.animations.filter((a) =>
-      animatables.includes(a.name)
+      animatables.includes(a.name),
     );
     forScrubbing.forEach((a) => (a.scrubTo = value));
     return forScrubbing.map((a) => a.name);
@@ -670,7 +680,7 @@ class Animator {
     } else {
       // Remove only the named animations/state machines
       const animationsToRemove = this.animations.filter((a) =>
-        animatables.includes(a.name)
+        animatables.includes(a.name),
       );
 
       animationsToRemove.forEach((a) => {
@@ -678,7 +688,7 @@ class Animator {
         this.animations.splice(this.animations.indexOf(a), 1);
       });
       const machinesToRemove = this.stateMachines.filter((m) =>
-        animatables.includes(m.name)
+        animatables.includes(m.name),
       );
       machinesToRemove.forEach((m) => {
         m.cleanup();
@@ -737,14 +747,14 @@ class Animator {
         this.add(
           [(instancedName = this.artboard.animationByIndex(0).name)],
           playing,
-          fireEvent
+          fireEvent,
         );
       } else if (this.artboard.stateMachineCount() > 0) {
         // Add the first state machine
         this.add(
           [(instancedName = this.artboard.stateMachineByIndex(0).name)],
           playing,
-          fireEvent
+          fireEvent,
         );
       }
     }
@@ -980,6 +990,11 @@ export interface RiveParameters {
   autoplay?: boolean;
   useOffscreenRenderer?: boolean;
   /**
+   * Allow the runtime to automatically load assets hosted in Rive's CDN.
+   * enabled by default.
+   */
+  enableRiveAssetCDN?: boolean;
+  /**
    * Turn off Rive Listeners. This means state machines that have Listeners
    * will not be invoked, and also, no event listeners pertaining to Listeners
    * will be attached to the <canvas> element
@@ -988,10 +1003,10 @@ export interface RiveParameters {
   /**
    * Enable Rive Events to be handled by the runtime. This means any special Rive Event may have
    * a side effect that takes place implicitly.
-   * 
+   *
    * For example, if during the render loop an OpenUrlEvent is detected, the
    * browser may try to open the specified URL in the payload.
-   * 
+   *
    * This flag is false by default to prevent any unwanted behaviors from taking place.
    * This means any special Rive Event will have to be handled manually by subscribing to
    * EventType.RiveEvent
@@ -1005,6 +1020,7 @@ export interface RiveParameters {
   onLoop?: EventCallback;
   onStateChange?: EventCallback;
   onAdvance?: EventCallback;
+  assetLoader?: AssetLoadCallback;
   /**
    * @deprecated Use `onLoad()` instead
    */
@@ -1104,6 +1120,9 @@ export class Rive {
   // Animator: manages animations and state machines
   private animator: Animator;
 
+  // AssetLoadCallback: allows customizing asset loading for images and fonts.
+  private assetLoader: AssetLoadCallback;
+
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
     "Rive source file or data buffer required";
@@ -1111,6 +1130,9 @@ export class Rive {
   private shouldDisableRiveListeners = false;
 
   private automaticallyHandleEvents = false;
+
+  // Allow the runtime to automatically load assets hosted in Rive's runtime.
+  private enableRiveAssetCDN = true;
 
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
@@ -1124,6 +1146,10 @@ export class Rive {
     this.layout = params.layout ?? new Layout();
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
     this.automaticallyHandleEvents = !!params.automaticallyHandleEvents;
+    this.enableRiveAssetCDN =
+      params.enableRiveAssetCDN === undefined
+        ? true
+        : params.enableRiveAssetCDN;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1151,6 +1177,11 @@ export class Rive {
     if (params.onstatechange && !params.onStateChange)
       this.on(EventType.StateChange, params.onstatechange);
 
+    /**
+     * Asset loading
+     */
+    if (params.assetLoader) this.assetLoader = params.assetLoader;
+
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
 
@@ -1168,7 +1199,7 @@ export class Rive {
   // Alternative constructor to build a Rive instance from an interface/object
   public static new(params: RiveParameters): Rive {
     console.warn(
-      "This function is deprecated: please use `new Rive({})` instead"
+      "This function is deprecated: please use `new Rive({})` instead",
     );
     return new Rive(params);
   }
@@ -1209,7 +1240,7 @@ export class Rive {
         // Get the canvas where you want to render the animation and create a renderer
         this.renderer = this.runtime.makeRenderer(
           this.canvas,
-          useOffscreenRenderer
+          useOffscreenRenderer,
         );
 
         // Initial size adjustment based on devicePixelRatio if no width/height are
@@ -1223,7 +1254,7 @@ export class Rive {
           artboard,
           startingAnimationNames,
           startingStateMachineNames,
-          autoplay
+          autoplay,
         )
           .then(() => this.setupRiveListeners())
           .catch((e) => {
@@ -1257,14 +1288,24 @@ export class Rive {
     artboardName: string,
     animationNames: string[],
     stateMachineNames: string[],
-    autoplay: boolean
+    autoplay: boolean,
   ): Promise<void> {
     // Load the buffer from the src if provided
     if (this.src) {
       this.buffer = await loadRiveFile(this.src);
     }
+    let loader;
+    if (this.assetLoader) {
+      loader = new this.runtime.CustomFileAssetLoader({
+        loadContents: this.assetLoader,
+      });
+    }
     // Load the Rive file
-    this.file = await this.runtime.load(new Uint8Array(this.buffer));
+    this.file = await this.runtime.load(
+      new Uint8Array(this.buffer),
+      loader,
+      this.enableRiveAssetCDN,
+    );
 
     if (this.file) {
       // Initialize and draw frame
@@ -1272,7 +1313,7 @@ export class Rive {
         artboardName,
         animationNames,
         stateMachineNames,
-        autoplay
+        autoplay,
       );
 
       // Everything's set up, emit a load event
@@ -1303,7 +1344,7 @@ export class Rive {
     artboardName: string,
     animationNames: string[],
     stateMachineNames: string[],
-    autoplay: boolean
+    autoplay: boolean,
   ): void {
     // Fetch the artboard
     const rootArtboard = artboardName
@@ -1331,7 +1372,7 @@ export class Rive {
     this.animator = new Animator(
       this.runtime,
       this.artboard,
-      this.eventManager
+      this.eventManager,
     );
 
     // Initialize the animations; as loaded hasn't happened yet, we need to
@@ -1417,7 +1458,7 @@ export class Rive {
     // - Advance non-paused state machines by the elapsed number of seconds
     // - Advance to the first frame even when autoplay is false
     const activeStateMachines = this.animator.stateMachines.filter(
-      (a) => a.playing
+      (a) => a.playing,
     );
     for (const stateMachine of activeStateMachines) {
       // Check for events before the current frame's state machine advance
@@ -1425,7 +1466,7 @@ export class Rive {
       if (numEventsReported) {
         for (let i = 0; i < numEventsReported; i++) {
           const event = stateMachine.reportedEventAt(i);
-          
+
           if (event) {
             if (event.type === RiveEventType.OpenUrl) {
               this.eventManager.fire({
@@ -1435,8 +1476,8 @@ export class Rive {
               // Handle the event side effect if explicitly enabled
               if (this.automaticallyHandleEvents) {
                 const newAnchorTag = document.createElement("a");
-                const {url, target} = (event as rc.OpenUrlEvent);
-              
+                const { url, target } = event as rc.OpenUrlEvent;
+
                 const sanitizedUrl = sanitizeUrl(url);
                 url && newAnchorTag.setAttribute("href", sanitizedUrl);
                 target && newAnchorTag.setAttribute("target", target);
@@ -1525,7 +1566,7 @@ export class Rive {
         maxX: _layout.maxX,
         maxY: _layout.maxY,
       },
-      artboard.bounds
+      artboard.bounds,
     );
   }
 
@@ -1584,7 +1625,7 @@ export class Rive {
 
   /**
    * Tries to query the setup Artboard for a text run node with the given name.
-   * 
+   *
    * @param textRunName - Name of the text run node associated with a text object
    * @returns - TextValueRun node or undefined if the text run cannot be queried
    */
@@ -1599,7 +1640,9 @@ export class Rive {
     }
     const textRun: rc.TextValueRun = this.artboard.textRun(textRunName);
     if (!textRun) {
-      console.warn(`Could not access a text run with name '${textRunName}' in the '${this.artboard?.name}' Artboard. Note that you must rename a text run node in the Rive editor to make it queryable at runtime.`);
+      console.warn(
+        `Could not access a text run with name '${textRunName}' in the '${this.artboard?.name}' Artboard. Note that you must rename a text run node in the Rive editor to make it queryable at runtime.`,
+      );
       return;
     }
     return textRun;
@@ -1608,7 +1651,7 @@ export class Rive {
   /**
    * Returns a string from a given text run node name, or undefined if the text run
    * cannot be queried.
-   * 
+   *
    * @param textRunName - Name of the text run node associated with a text object
    * @returns - String value of the text run node or undefined
    */
@@ -1619,7 +1662,7 @@ export class Rive {
 
   /**
    * Sets a text value for a given text run node name if possible
-   * 
+   *
    * @param textRunName - Name of the text run node associated with a text object
    * @param textRunValue - String value to set on the text run node
    */
@@ -1722,7 +1765,7 @@ export class Rive {
       artBoardName,
       animationNames,
       stateMachineNames,
-      autoplay
+      autoplay,
     );
     this.taskQueue.process();
   }
@@ -1838,7 +1881,7 @@ export class Rive {
       return;
     }
     const stateMachine = this.animator.stateMachines.find(
-      (m) => m.name === name
+      (m) => m.name === name,
     );
     return stateMachine?.inputs;
   }
@@ -1970,7 +2013,7 @@ export class Rive {
    */
   public unsubscribeAll(type?: EventType) {
     console.warn(
-      "This function is deprecated: please use `removeAllRiveEventListeners()` instead."
+      "This function is deprecated: please use `removeAllRiveEventListeners()` instead.",
     );
     this.removeAllRiveEventListeners(type);
   }
@@ -2003,7 +2046,7 @@ export class Rive {
     if (this.loaded && this.artboard && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
         this.frameRequestId = this.runtime.requestAnimationFrame(
-          this.draw.bind(this)
+          this.draw.bind(this),
         );
       } else {
         this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
@@ -2054,7 +2097,7 @@ export class Rive {
         const name = stateMachine.name;
         const instance = new this.runtime.StateMachineInstance(
           stateMachine,
-          artboard
+          artboard,
         );
         const inputContents: StateMachineInputContents[] = [];
         for (let l = 0; l < instance.inputCount(); l++) {
@@ -2138,6 +2181,26 @@ const mapToStringArray = (obj?: string[] | string | undefined): string[] => {
 export const Testing = {
   EventManager: EventManager,
   TaskQueueManager: TaskQueueManager,
+};
+
+// #endregion
+
+// #region asset loaders
+
+export const decodeImage = (bytes: Uint8Array): Promise<any> => {
+  return new Promise<any>((resolve) =>
+    RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
+      rive.decodeImage(bytes, resolve);
+    }),
+  );
+};
+
+export const decodeFont = (bytes: Uint8Array): Promise<any> => {
+  return new Promise<any>((resolve) =>
+    RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
+      rive.decodeFont(bytes, resolve);
+    }),
+  );
 };
 
 // #endregion

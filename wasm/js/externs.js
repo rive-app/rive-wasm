@@ -1,52 +1,76 @@
 var Rive = {
-    load: function () {},
-    RenderPaintStyle: {
-        fill: {},
-        stroke: {}
-    },
-    FillRule: {
-        evenOdd: {},
-        nonZero: {}
-    },
-    StrokeCap: {
-        butt: {},
-        round: {},
-        square: {}
-    },
-    StrokeJoin: {
-        miter: {},
-        round: {},
-        bevel: {}
-    },
-    BlendMode: {
-        srcOver: {},
-        screen: {},
-        overlay: {},
-        darken: {},
-        lighten: {},
-        colorDodge: {},
-        colorBurn: {},
-        hardLight: {},
-        softLight: {},
-        difference: {},
-        exclusion: {},
-        multiply: {},
-        hue: {},
-        saturation: {},
-        color: {},
-        luminosity: {}
-    },
-    Renderer: {},
-    Artboard: {},
-    CanvasRenderer: {},
-    RenderPath: {},
-    RenderPaint: {},
-    RenderImage: {},
-    renderFactory: {
-        makeRenderPaint: function () {},
-        makeRenderPath: function () {},
-        makeRenderImage: function () {},
-    },
-    onRuntimeInitialized: function () {},
-    makeRenderer: function () {}
+  load: function () {},
+  RenderPaintStyle: {
+    fill: {},
+    stroke: {},
+  },
+  FillRule: {
+    evenOdd: {},
+    nonZero: {},
+  },
+  StrokeCap: {
+    butt: {},
+    round: {},
+    square: {},
+  },
+  StrokeJoin: {
+    miter: {},
+    round: {},
+    bevel: {},
+  },
+  BlendMode: {
+    srcOver: {},
+    screen: {},
+    overlay: {},
+    darken: {},
+    lighten: {},
+    colorDodge: {},
+    colorBurn: {},
+    hardLight: {},
+    softLight: {},
+    difference: {},
+    exclusion: {},
+    multiply: {},
+    hue: {},
+    saturation: {},
+    color: {},
+    luminosity: {},
+  },
+  Renderer: {},
+  Artboard: {},
+  CanvasRenderer: {},
+  RenderPath: {},
+  RenderPaint: {},
+  RenderImage: {},
+  FileAssetLoader: {
+    willLoadContents: function () {},
+    loadContents: function () {},
+  },
+  FallbackFileAssetLoader: {
+    addLoader: function () {},
+  },
+  CustomFileAssetLoader: {},
+  CDNFileAssetLoader: {},
+  renderFactory: {
+    makeRenderPaint: function () {},
+    makeRenderPath: function () {},
+    makeRenderImage: function () {},
+  },
+  Factory: {
+    decodeImage: function () { },
+    decodeFont: function () { },
+  },
+  FileAsset: {
+    name: {},
+    fileExtension: {},
+    cdnBaseUrl: {},
+    isImage: {},
+    isFont: {},
+    cdnUuid: {},
+  },
+  onRuntimeInitialized: function () {},
+  makeRenderer: function () {},
+  ptrToFileAsset: function () {},
+  ptrToImageAsset: function () {},
+  ptrToFontAsset: function () {},
 };

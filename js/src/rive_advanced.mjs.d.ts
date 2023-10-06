@@ -16,6 +16,7 @@ export interface RiveCanvas {
   CanvasRenderer: typeof CanvasRenderer;
   LinearAnimationInstance: typeof LinearAnimationInstance;
   StateMachineInstance: typeof StateMachineInstance;
+  CustomFileAssetLoader: typeof CustomFileAssetLoader;
   Mat2D: typeof Mat2D;
   Vec2D: typeof Vec2D;
   AABB: AABB;
@@ -28,14 +29,22 @@ export interface RiveCanvas {
   RenderPaintStyle: typeof RenderPaintStyle;
   StrokeCap: typeof StrokeCap;
   StrokeJoin: typeof StrokeJoin;
+  decodeImage: Function;
+  decodeFont: Function;
 
   /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
    *
    * @param buffer - Array buffer of a Rive file
+   * @param assetLoader - FileAssetLoader used to optionally customize loading of font and image assets
+   * @param enableRiveAssetCDN - boolean flag to allow loading assets from the Rive CDN, enabled by default.
    * @returns A Promise for a Rive File class
    */
-  load(buffer: Uint8Array): Promise<File>;
+  load(
+    buffer: Uint8Array,
+    assetLoader?: FileAssetLoader,
+    enableRiveAssetCDN?: boolean,
+  ): Promise<File>;
 
   /**
    * Creates the renderer to draw the Rive on the provided canvas element
@@ -49,7 +58,7 @@ export interface RiveCanvas {
    */
   makeRenderer(
     canvas: HTMLCanvasElement | OffscreenCanvas,
-    useOffscreenRenderer?: boolean
+    useOffscreenRenderer?: boolean,
   ): WrappedRenderer;
 
   /**
@@ -65,7 +74,7 @@ export interface RiveCanvas {
     fit: Fit,
     alignment: Alignment,
     frame: AABB,
-    content: AABB
+    content: AABB,
   ): Mat2D;
   mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
   /**
@@ -158,7 +167,7 @@ export declare class RenderPathWrapper {
     ix: number,
     iy: number,
     x: number,
-    y: number
+    y: number,
   ): void;
   close(): void;
 }
@@ -201,34 +210,36 @@ export declare class RenderPaint extends RenderPaintWrapper {}
 /////////////////////
 export declare class CanvasRenderer extends Renderer {
   constructor(
-    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   );
 }
 
-type OmittedCanvasRenderingContext2DMethods =   "createConicGradient" |
-  "createImageData" |
-  "createLinearGradient" |
-  "createPattern" |
-  "createRadialGradient" |
-  "getContextAttributes" |
-  "getImageData" |
-  "getLineDash" |
-  "getTransform" |
-  "isContextLost" |
-  "isPointInPath" |
-  "isPointInStroke" |
-  "measureText";
+type OmittedCanvasRenderingContext2DMethods =
+  | "createConicGradient"
+  | "createImageData"
+  | "createLinearGradient"
+  | "createPattern"
+  | "createRadialGradient"
+  | "getContextAttributes"
+  | "getImageData"
+  | "getLineDash"
+  | "getTransform"
+  | "isContextLost"
+  | "isPointInPath"
+  | "isPointInStroke"
+  | "measureText";
 
 /**
  * Proxy class that handles calls to a CanvasRenderer instance and handles Rive-related rendering calls such
  * as `save`, `restore`, `transform`, and more, effectively overriding and/or wrapping Canvas2D context
  * APIs for Rive-specific purposes. Other calls not intentionally overridden are passed through to the
  * Canvas2D context directly.
- * 
+ *
  * Note: Currently, any calls to the Canvas2D context that you expect to return a value (i.e. `isPointInStroke()`)
  * will return undefined
  */
-export type CanvasRendererProxy = CanvasRenderer & Omit<CanvasRenderingContext2D, OmittedCanvasRenderingContext2DMethods>;
+export type CanvasRendererProxy = CanvasRenderer &
+  Omit<CanvasRenderingContext2D, OmittedCanvasRenderingContext2DMethods>;
 
 /**
  * Renderer type for `makeRenderer()` that returns Renderer (webgl) or a CanvasRendererProxy (canvas2d)
@@ -238,7 +249,7 @@ export type WrappedRenderer = Renderer | CanvasRendererProxy;
 export declare class CanvasRenderPaint extends RenderPaint {
   draw(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-    path: RenderPath
+    path: RenderPath,
   ): void;
 }
 
@@ -839,4 +850,20 @@ export declare class Vec2D {
    * Deletes the underlying CPP object created for this instance
    */
   delete(): void;
+}
+
+export declare class FileAsset {
+  name: string;
+  fileExtension: string;
+  isImage: boolean;
+  isFont: boolean;
+  cdnUuid: boolean;
+}
+
+export declare class FileAssetLoader {
+}
+
+export declare class CustomFileAssetLoader extends FileAssetLoader {
+  constructor({loadContents}: {loadContents:Function});
+  loadContents(asset: FileAsset, bytes:any): boolean;
 }

@@ -328,11 +328,18 @@ const offscreenWebGL = new (function () {
   };
 })();
 
+const rendererOnRuntimeInitialized = Module["onRuntimeInitialized"];
 Module["onRuntimeInitialized"] = function () {
+  // If an initialize function is already configured, execute that first.
+  (rendererOnRuntimeInitialized && rendererOnRuntimeInitialized());
+
   const RenderPaintStyle = Module.RenderPaintStyle;
   const FillRule = Module.FillRule;
   const RenderPath = Module.RenderPath;
   const RenderImage = Module.RenderImage;
+
+  const FileAssetLoader = Module.FileAssetLoader;
+
   const RenderPaint = Module.RenderPaint;
   const Renderer = Module.Renderer;
   const StrokeCap = Module.StrokeCap;
@@ -346,35 +353,34 @@ Module["onRuntimeInitialized"] = function () {
   const nonZero = FillRule.nonZero;
 
   let _nextImageUniqueID = 1;
+
   var CanvasRenderImage = RenderImage.extend("CanvasRenderImage", {
-    "__construct": function () {
+    "__construct": function ({ onComplete, onDecode } = {}) {
       this["__parent"]["__construct"].call(this);
       this._uniqueID = _nextImageUniqueID;
       _nextImageUniqueID = (_nextImageUniqueID + 1) & 0x7fffffff || 1;
+      this.onComplete = onComplete;
+      this.onDecode = onDecode;
+
     },
     "decode": function (bytes) {
-      let context = loadContext;
-      context.total++;
+      
       var cri = this;
+      // Question: could .bind(cri);
+      cri.onDecode && cri.onDecode(cri);
       var image = new Image();
       image.src = URL.createObjectURL(
         new Blob([bytes], {
           type: "image/png",
         })
       );
+
       image.onload = function () {
         cri._image = image;
         cri._texture = offscreenWebGL.createImageTexture(image);
         cri["size"](image.width, image.height);
 
-        context.loaded++;
-        if (context.loaded === context.total) {
-          const ready = context.ready;
-          if (ready) {
-            ready();
-            context.ready = null;
-          }
-        }
+        cri.onComplete && cri.onComplete(cri);
       };
     },
   });
@@ -865,6 +871,12 @@ Module["onRuntimeInitialized"] = function () {
       },
     });
   };
+  
+
+  Module["decodeImage"] = function (bytes, onComplete) {
+    let renderImage = new CanvasRenderImage({onComplete});
+    renderImage.decode(bytes);
+  }
 
   Module["renderFactory"] = {
     makeRenderPaint: function () {
@@ -874,14 +886,42 @@ Module["onRuntimeInitialized"] = function () {
       return new CanvasRenderPath();
     },
     makeRenderImage: function () {
-      return new CanvasRenderImage();
+      let context = loadContext;
+      return new CanvasRenderImage({
+        onDecode: () => {
+          context.total++;
+        },
+        onComplete: ()=> {
+          context.loaded++;
+          if (context.loaded === context.total) {
+            const ready = context.ready;
+            if (ready) {
+              ready();
+              context.ready = null;
+            }
+          }
+        }
+      });
     },
   };
 
   let load = Module["load"];
   let loadContext = null;
-  Module["load"] = function (bytes) {
-    return new Promise(function (resolve, reject) {
+  Module["load"] = function (
+    bytes,
+    fileAssetLoader,
+    enableRiveAssetCDN=true,
+  ) {
+  
+    const loader = new Module["FallbackFileAssetLoader"]();
+    if (fileAssetLoader !== undefined) {
+      loader.addLoader(fileAssetLoader);
+    }
+    if (enableRiveAssetCDN) { 
+      const cdnLoader = new Module["CDNFileAssetLoader"]();
+      loader.addLoader(cdnLoader);
+    }
+    return  new Promise(function (resolve, reject) {
       let result = null;
       loadContext = {
         total: 0,
@@ -890,7 +930,7 @@ Module["onRuntimeInitialized"] = function () {
           resolve(result);
         },
       };
-      result = load(bytes);
+      result = load(bytes, loader);
       if (loadContext.total == 0) {
         resolve(result);
       }
