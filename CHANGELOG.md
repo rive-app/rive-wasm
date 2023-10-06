@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.4](https://github.com/rive-app/rive-wasm/compare/2.4.3...2.4.4)
+## [2.5.0](https://github.com/rive-app/rive-wasm/compare/2.4.4...2.5.0)
+
+### Fixed
+
+- separate animation and state machines initialization [`#4983`](https://github.com/rive-app/rive-wasm/issues/4983)
+
+### Commits
+
+- Add out of band loading to rive-wasm [`0eaf42d`](https://github.com/rive-app/rive-wasm/commit/0eaf42d69bd986225251f51a78052a4526cad9bd)
+
+## [2.4.4](https://github.com/rive-app/rive-wasm/compare/2.4.3...2.4.4) - 2023-10-03
 
 ### Fixed
 
@@ -13,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.4.4 [`8eee059`](https://github.com/rive-app/rive-wasm/commit/8eee059a79e7c5ce1010907970e6844c98383614)
 - Add a math::round_up_to_multiple_of&lt;N&gt;() utility [`a210381`](https://github.com/rive-app/rive-wasm/commit/a210381dc854a6477694c8c5d4072efc6cb578e9)
 - Clamping color stops. [`eb0e47e`](https://github.com/rive-app/rive-wasm/commit/eb0e47efe83044227613b145cf454f45a8e61268)
 - Add a WebGPU mode that uses EXT_shader_pixel_local_storage [`f942f41`](https://github.com/rive-app/rive-wasm/commit/f942f418e89dfea2440736f37c620cccbfefea12)
