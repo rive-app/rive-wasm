@@ -602,6 +602,81 @@ class Animator {
   }
 
   /**
+   * Adds linear animations by their names.
+   * @param animatables the name(s) of animations to add
+   * @param playing whether animations should play on instantiation 
+   */
+  public initLinearAnimations(
+    animatables: string[],
+    playing: boolean,
+  ) {
+    // Play/pause already instanced items, or create new instances
+    // This validation is kept to maintain compatibility with current behavior.
+    // But given that it this is called during artboard initialization
+    // it should probably be safe to remove.
+    const instancedAnimationNames = this.animations.map((a) => a.name);
+    for (let i = 0; i < animatables.length; i++) {
+      const aIndex = instancedAnimationNames.indexOf(animatables[i]);
+      if (aIndex >= 0) {
+        this.animations[aIndex].playing = playing;
+      } else {
+        // Try to create a new animation instance
+        const anim = this.artboard.animationByName(animatables[i]);
+        if (anim) {
+          const newAnimation = new Animation(
+            anim,
+            this.artboard,
+            this.runtime,
+            playing
+          );
+          // Display the first frame of the specified animation
+          newAnimation.advance(0);
+          newAnimation.apply(1.0);
+          this.animations.push(newAnimation);
+        }
+      }
+    }
+  }
+
+  /**
+   * Adds state machines by their names.
+   * @param animatables the name(s) of state machines to add
+   * @param playing whether state machines should play on instantiation 
+   */
+  public initStateMachines(
+    animatables: string[],
+    playing: boolean,
+  ) {
+    // Play/pause already instanced items, or create new instances
+    // This validation is kept to maintain compatibility with current behavior.
+    // But given that it this is called during artboard initialization
+    // it should probably be safe to remove.
+    const instancedStateMachineNames = this.stateMachines.map((a) => a.name);
+    for (let i = 0; i < animatables.length; i++) {
+      const aIndex = instancedStateMachineNames.indexOf(animatables[i]);
+      if (aIndex >= 0) {
+        this.stateMachines[aIndex].playing = playing;
+      } else {
+        // Try to create a new state machine instance
+        const sm = this.artboard.stateMachineByName(animatables[i]);
+        if (sm) {
+          const newStateMachine = new StateMachine(
+            sm,
+            this.runtime,
+            playing,
+            this.artboard
+          );
+          this.stateMachines.push(newStateMachine);
+        } else {
+          // In order to maintain compatibility with current behavior, if a state machine is not found
+          // we look for an animation with the same name
+          this.initLinearAnimations([animatables[i]], playing);
+        }
+      }
+    }
+  }
+
+  /**
    * Play the named animations/state machines
    * @param animatables the names of the animations/machines to play; plays all if empty
    * @returns a list of the playing items
@@ -1382,7 +1457,8 @@ export class Rive {
     let instanceNames: string[];
     if (animationNames.length > 0 || stateMachineNames.length > 0) {
       instanceNames = animationNames.concat(stateMachineNames);
-      this.animator.add(instanceNames, autoplay, false);
+      this.animator.initLinearAnimations(animationNames, autoplay);
+      this.animator.initStateMachines(stateMachineNames, autoplay);
     } else {
       instanceNames = [this.animator.atLeastOne(autoplay, false)];
     }
