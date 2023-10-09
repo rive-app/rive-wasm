@@ -131,6 +131,73 @@ bool hasListeners(rive::StateMachineInstance* smi)
     return false;
 }
 
+emscripten::val createRiveEventObject(rive::Event* event)
+{
+    emscripten::val eventObject = emscripten::val::object();
+    eventObject.set("name", event->name());
+    eventObject.set("type", event->coreType());
+    if (event->is<rive::OpenUrlEvent>())
+    {
+        auto urlEvent = event->as<rive::OpenUrlEvent>();
+        eventObject.set("url", urlEvent->url());
+        const char* target = nullptr;
+        switch (urlEvent->targetValue())
+        {
+            case 0:
+                target = "_blank";
+                break;
+            case 1:
+                target = "_parent";
+                break;
+            case 2:
+                target = "_self";
+                break;
+            case 3:
+                target = "_top";
+                break;
+        }
+        if (target != nullptr)
+        {
+            eventObject.set("target", target);
+        }
+    }
+    bool haveCustom = false;
+    emscripten::val propertiesObject = emscripten::val::object();
+    for (auto child : event->children())
+    {
+        if (child->is<rive::CustomProperty>())
+        {
+            if (!child->name().empty())
+            {
+                switch (child->coreType())
+                {
+                    case rive::CustomPropertyBoolean::typeKey:
+                        propertiesObject.set(
+                            child->name(),
+                            child->as<rive::CustomPropertyBoolean>()->propertyValue());
+                        break;
+                    case rive::CustomPropertyString::typeKey:
+                        propertiesObject.set(
+                            child->name(),
+                            child->as<rive::CustomPropertyString>()->propertyValue());
+                        break;
+                    case rive::CustomPropertyNumber::typeKey:
+                        propertiesObject.set(
+                            child->name(),
+                            child->as<rive::CustomPropertyNumber>()->propertyValue());
+                        break;
+                }
+                haveCustom = true;
+            }
+        }
+    }
+    if (haveCustom)
+    {
+        eventObject.set("properties", propertiesObject);
+    }
+    return eventObject;
+}
+
 class DynamicRectanizer
 {
 public:
@@ -392,6 +459,26 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::ArtboardInstance& self) -> size_t {
                       return self.stateMachineCount();
                   }))
+        .function("textValueRunCount",
+                  optional_override([](rive::ArtboardInstance& self) -> size_t {
+                      return self.textValueRunCount();
+                  }))
+        .function("textValueRunByIndex",
+                  optional_override(
+                      [](rive::ArtboardInstance& self, size_t index) -> rive::TextValueRun* {
+                          return self.textValueRunAt(index);
+                      }),
+                  allow_raw_pointers())
+        .function("eventCount", optional_override([](rive::ArtboardInstance& self) -> size_t {
+                      return self.eventCount();
+                  }))
+        .function(
+            "eventByIndex",
+            optional_override([](rive::ArtboardInstance& self, size_t index) -> emscripten::val {
+                rive::Event* event = self.eventAt(index);
+                return createRiveEventObject(event);
+            }),
+            allow_raw_pointers())
         .property("bounds", optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
                       return self.bounds();
                   }))
@@ -430,6 +517,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   select_overload<void(float)>(&rive::Node::y));
 
     class_<rive::TextValueRun>("TextValueRun")
+        .property("name",
+                  select_overload<const std::string&() const>(&rive::TextValueRunBase::name))
         .property("text",
                   select_overload<const std::string&() const>(&rive::TextValueRunBase::text),
                   select_overload<void(std::string)>(&rive::TextValueRunBase::text));
@@ -561,82 +650,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       self.pointerUp(rive::Vec2D((float)x, (float)y));
                   }))
         .function("reportedEventCount", &rive::StateMachineInstance::reportedEventCount)
-        .function(
-            "reportedEventAt",
-            optional_override([](rive::StateMachineInstance& self,
-                                 size_t index) -> emscripten::val {
-                const rive::EventReport report = self.reportedEventAt(index);
-                if (report.event() == nullptr)
-                {
-                    return emscripten::val::undefined();
-                }
-                rive::Event* event = report.event();
-                emscripten::val eventObject = emscripten::val::object();
-                eventObject.set("name", event->name());
-                eventObject.set("delay", report.secondsDelay());
-                eventObject.set("type", event->coreType());
-                if (event->is<rive::OpenUrlEvent>())
-                {
-                    auto urlEvent = event->as<rive::OpenUrlEvent>();
-                    eventObject.set("url", urlEvent->url());
-                    const char* target = nullptr;
-                    switch (urlEvent->targetValue())
-                    {
-                        case 0:
-                            target = "_blank";
-                            break;
-                        case 1:
-                            target = "_parent";
-                            break;
-                        case 2:
-                            target = "_self";
-                            break;
-                        case 3:
-                            target = "_top";
-                            break;
-                    }
-                    if (target != nullptr)
-                    {
-                        eventObject.set("target", target);
-                    }
-                }
-                bool haveCustom = false;
-                emscripten::val propertiesObject = emscripten::val::object();
-                for (auto child : event->children())
-                {
-                    if (child->is<rive::CustomProperty>())
-                    {
-                        if (!child->name().empty())
-                        {
-                            switch (child->coreType())
-                            {
-                                case rive::CustomPropertyBoolean::typeKey:
-                                    propertiesObject.set(
-                                        child->name(),
-                                        child->as<rive::CustomPropertyBoolean>()->propertyValue());
-                                    break;
-                                case rive::CustomPropertyString::typeKey:
-                                    propertiesObject.set(
-                                        child->name(),
-                                        child->as<rive::CustomPropertyString>()->propertyValue());
-                                    break;
-                                case rive::CustomPropertyNumber::typeKey:
-                                    propertiesObject.set(
-                                        child->name(),
-                                        child->as<rive::CustomPropertyNumber>()->propertyValue());
-                                    break;
-                            }
-                            haveCustom = true;
-                        }
-                    }
-                }
-                if (haveCustom)
-                {
-                    eventObject.set("properties", propertiesObject);
-                }
-                return eventObject;
-            }),
-            allow_raw_pointers())
+        .function("reportedEventAt",
+                  optional_override(
+                      [](rive::StateMachineInstance& self, size_t index) -> emscripten::val {
+                          const rive::EventReport report = self.reportedEventAt(index);
+                          if (report.event() == nullptr)
+                          {
+                              return emscripten::val::undefined();
+                          }
+                          rive::Event* event = report.event();
+                          emscripten::val eventObject = createRiveEventObject(event);
+                          eventObject.set("delay", report.secondsDelay());
+                          return eventObject;
+                      }),
+                  allow_raw_pointers())
         .function("stateChangedCount", &rive::StateMachineInstance::stateChangedCount)
         .function(
             "stateChangedNameByIndex",

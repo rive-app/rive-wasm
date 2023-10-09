@@ -510,6 +510,10 @@ export declare class LinearAnimationInstance {
 
 export declare class TextValueRun {
   /**
+   * Getter for the name of the Text Run
+   */
+  get name(): string;
+  /**
    * Getter for text value of the Text Run
    */
   get text(): string;
