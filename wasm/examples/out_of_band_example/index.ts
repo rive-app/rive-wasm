@@ -1,7 +1,10 @@
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 
-import SampleImage from "./asset_load_check.riv";
+// import SampleImage from "./asset_load_check.riv";
+
+import SampleImage from "./foo.riv";
+
 
 let lastTime;
 
@@ -19,7 +22,7 @@ async function main() {
   let fontIndex = 0;
 
   const randomImageAsset = (asset) => {
-    fetch("https://picsum.photos/1000/1500").then(async (res) => {
+    fetch("https://picsum.photos/300/300").then(async (res) => {
       rive.decodeImage(new Uint8Array(await res.arrayBuffer()), (image) => {
         // Maybe the api would be nicer as renderImage = image?
         asset.setRenderImage(image);
