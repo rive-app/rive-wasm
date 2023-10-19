@@ -1,5 +1,6 @@
 import "regenerator-runtime";
-import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas";
+// import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas";
+import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas-lite";
 //import { Rive, Fit, Alignment, Layout } from "@rive-app/webgl";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
@@ -10,6 +11,7 @@ import NestedDefaultAnimation from "./nested_default.riv";
 import JigSaw from "./jigsaw.riv";
 import StringRive from "./string.riv";
 import RatingAnimation from "./rating_animation.riv";
+import TextAnimation from "./text_test_2.riv";
 
 const RIVE_EXAMPLES = {
   0: {
@@ -54,6 +56,11 @@ const RIVE_EXAMPLES = {
     hasStateMachine: true,
     stateMachine: "String",
   },
+  9: {
+    riveFile: TextAnimation,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  },
 };
 
 async function loadFile(num) {
@@ -87,6 +94,6 @@ async function main(num) {
   r.on(EventType.RiveEvent, onRiveEventReceived);
 }
 
-for (let i = 0; i < 9; i++) {
+for (let i = 0; i < 10; i++) {
   main(i);
 }

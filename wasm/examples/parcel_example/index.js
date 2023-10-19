@@ -1,15 +1,27 @@
 import "regenerator-runtime";
+// (Debug) Canvas Advanced Single
 // import RiveCanvas from "../../build/bin/debug/canvas_advanced_single.mjs";
+
+// (Debug) Canvas Advanced
 // import RiveCanvas from "../../build/bin/debug/canvas_advanced.mjs";
+
+// (Release) WebGL Advanced Single
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
-import { registerTouchInteractions } from "../../../js/src/utils";
+
+// (Release) Canvas Advanced Single
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
+
+// (Release) Canvas Advanced Single Lite
+// import RiveCanvas from "../../build/canvas_advanced_lite_single/bin/release/canvas_advanced_single.mjs";
+
+import { registerTouchInteractions } from "../../../js/src/utils";
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
 import TruckAnimation from "./truck.riv";
 import BallAnimation from "./ball.riv";
 import SwitchAnimation from "./switch_event_example.riv";
+import TestText from "./text_test_2.riv";
 import "./main.css";
 
 const randomNum = Math.ceil(Math.random() * 100 * 5) + 100;
@@ -40,6 +52,11 @@ const RIVE_EXAMPLES = {
   5: {
     riveFile: AvatarAnimation,
     animation: "idle",
+  },
+  6: {
+    riveFile: TestText,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
   },
 };
 
@@ -139,7 +156,7 @@ async function main() {
   const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop),
   });
-  const numCanvases = parseInt(params.numCanvases || 0) || 20;
+  const numCanvases = parseInt(params.numCanvases || 0) || 7;
   const hasRandomSizes = !!params.hasRandomSizes || false;
   const rive = await RiveCanvas();
 

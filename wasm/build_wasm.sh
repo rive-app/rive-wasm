@@ -54,8 +54,12 @@ PREMAKE_FLAGS=
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
-while getopts "s:r:" flag; do
+while getopts "ls:r:" flag; do
     case "${flag}" in
+    l)
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--lite "
+        ;;
     s)
         OPTIONS=$((OPTIONS + 1))
         PREMAKE_FLAGS+="--single_file "

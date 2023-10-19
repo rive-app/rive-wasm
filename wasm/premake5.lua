@@ -230,7 +230,6 @@ files {
 }
 
 defines {
-    'WITH_RIVE_TEXT',
     'HAVE_OT',
     'HB_NO_FALLBACK_SHAPE',
     'HB_NO_WIN1256'
@@ -350,6 +349,11 @@ do
     }
 end
 
+filter 'options:not lite'
+do
+    defines { 'WITH_RIVE_TEXT' }
+end
+
 filter 'configurations:debug'
 do
     files {
@@ -420,4 +424,9 @@ newoption {
 newoption {
     trigger = 'single_file',
     description = 'Set when the wasm should be packed in with the js code.'
+}
+
+newoption {
+    trigger = 'lite',
+    description = 'Set when building WASM withot major dependencies (i.e. text engine).'
 }
