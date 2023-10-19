@@ -5,10 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.6.0](https://github.com/rive-app/rive-wasm/compare/2.5.0...2.6.0)
+## [2.6.1](https://github.com/rive-app/rive-wasm/compare/2.6.0...2.6.1)
 
 ### Commits
 
+- Add a canvas-lite and canvas-advanced-lite package for the web runtime [`f5da1b4`](https://github.com/rive-app/rive-wasm/commit/f5da1b495e1bcf0f514dcec81dc600fd638b04d9)
+- Show NestedInputs in the Inputs panel of the parent artboard [`67fb4b5`](https://github.com/rive-app/rive-wasm/commit/67fb4b51a81261713c55766bfad8b0e81a943217)
+- Move vello [`e3ed3fc`](https://github.com/rive-app/rive-wasm/commit/e3ed3fcb57a10398d49f3e61175a5d81a6d667c3)
+- Added by-name instantiation. [`fd7c440`](https://github.com/rive-app/rive-wasm/commit/fd7c440b4f89a5ff30a6584e79445dcb69517fff)
+- add ability to attach callbacks when resolving file asset listeners [`575845a`](https://github.com/rive-app/rive-wasm/commit/575845a5156bfd06443ea2c7e00238fb3a172ce5)
+- patch up division by zero issue on normalizing Length [`9f516f2`](https://github.com/rive-app/rive-wasm/commit/9f516f28f3dfdf6475b290140a341e16e042f4a7)
+- Android Out of Band Assets [`0dbf437`](https://github.com/rive-app/rive-wasm/commit/0dbf437cda25ce664c2aee201b56df64da259ee6)
+- Removed single-threaded counter. [`aa6b968`](https://github.com/rive-app/rive-wasm/commit/aa6b9688a57549b705188fd1ae21436fbb87daa5)
+- Removed Cargo workspace dependencies. [`d37449a`](https://github.com/rive-app/rive-wasm/commit/d37449a7bcedc8b676a34762d5e538a5ef068f5a)
+- Fission the CG and Skia renderers [`4911796`](https://github.com/rive-app/rive-wasm/commit/49117961953fd19c209a291794b526d1332d63a5)
+- Nested Inputs [`012c8dc`](https://github.com/rive-app/rive-wasm/commit/012c8dc353303c8eac2d02b384675190214859b9)
+- Add support to Listeners for events from nested artboards [`7c83e01`](https://github.com/rive-app/rive-wasm/commit/7c83e019a7453006b004389f46b3ea8628263103)
+- Added a Rust runtime. [`ed539e8`](https://github.com/rive-app/rive-wasm/commit/ed539e888621040ca5458dcb4b6cf632e9e12d2e)
+
+## [2.6.0](https://github.com/rive-app/rive-wasm/compare/2.5.0...2.6.0) - 2023-10-10
+
+### Commits
+
+- chore: tag 2.6.0 [`a884bca`](https://github.com/rive-app/rive-wasm/commit/a884bca3bc3bd817c03aa0fbc80589f7752a2cac)
 - feat: add count and query APIs for events and text runs at the Artboard level, and expose in WASM [`9d6316f`](https://github.com/rive-app/rive-wasm/commit/9d6316f15832fa5ab7ba8ff0200ee61895556c2e)
 
 ## [2.5.0](https://github.com/rive-app/rive-wasm/compare/2.4.4...2.5.0) - 2023-10-06
