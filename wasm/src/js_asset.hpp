@@ -4,7 +4,7 @@
 enum class AssetType : unsigned char
 {
     image,
-    font, 
+    font,
     unknown
 };
 

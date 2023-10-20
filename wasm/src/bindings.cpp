@@ -575,33 +575,32 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   select_overload<const std::string&() const>(&rive::FileAssetBase::cdnBaseUrl))
         .property("fileExtension",
                   select_overload<std::string() const>(&rive::FileAsset::fileExtension))
-        .property("isImage", 
-                  optional_override([](const rive::FileAsset& self) -> bool {
+        .property("isImage", optional_override([](const rive::FileAsset& self) -> bool {
                       return self.is<rive::ImageAsset>();
                   }))
-        .property("isFont", 
-                  optional_override([](const rive::FileAsset& self) -> bool {
+        .property("isFont", optional_override([](const rive::FileAsset& self) -> bool {
                       return self.is<rive::FontAsset>();
                   }))
-        .property("cdnUuid", 
-                  optional_override([](const rive::FileAsset& self) -> std::string {
-                      if (self.cdnUuid().size() != 16)
-                    {
-                        return "";
-                    }
-                    std::vector<int> indices = {3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10};
+        .property(
+            "cdnUuid",
+            optional_override([](const rive::FileAsset& self) -> std::string {
+                if (self.cdnUuid().size() != 16)
+                {
+                    return "";
+                }
+                std::vector<int> indices = {3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10};
 
-                    std::stringstream ss;
-                    ss << std::hex << std::setfill('0');
-                    for (int i : indices)
-                    {
-                        ss << std::setw(2) << static_cast<int>(self.cdnUuid()[i]);
-                        if (i == 0 || i == 4 || i == 6 || i == 8)
-                            ss << '-';
-                    }
+                std::stringstream ss;
+                ss << std::hex << std::setfill('0');
+                for (int i : indices)
+                {
+                    ss << std::setw(2) << static_cast<int>(self.cdnUuid()[i]);
+                    if (i == 0 || i == 4 || i == 6 || i == 8)
+                        ss << '-';
+                }
 
-                    return ss.str();
-                  }))
+                return ss.str();
+            }))
         .function("decode",
                   optional_override([](rive::FileAsset& self, emscripten ::val byteArray) {
                       std::vector<unsigned char> charVector;
