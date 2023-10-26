@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.6.1](https://github.com/rive-app/rive-wasm/compare/2.6.0...2.6.1)
+## [2.7.0](https://github.com/rive-app/rive-wasm/compare/2.6.1...2.7.0)
 
 ### Commits
 
+- Outofbandcache [`0bef370`](https://github.com/rive-app/rive-wasm/commit/0bef37078b8f669da33abab0b15cbb899aa7ec30)
+- Fix for FollowPathConstraint position at distance multiples of 100% [`2fef572`](https://github.com/rive-app/rive-wasm/commit/2fef572a5620021c4a997cea634a5688863cb54b)
+- Apply NestedInput initial values [`61ed529`](https://github.com/rive-app/rive-wasm/commit/61ed529a415b385102e27fdf28ae4c535362402b)
+- feat: add neostream events sample [`5047460`](https://github.com/rive-app/rive-wasm/commit/504746034be96841914365286b6b754f833af5ff)
+- Elastic easing [`4afb492`](https://github.com/rive-app/rive-wasm/commit/4afb49268a4b50d9b3e22ee9a5d86bc50c310991)
+- Add options to build with rtti and exceptions [`d9ca38d`](https://github.com/rive-app/rive-wasm/commit/d9ca38d3a9b40e7e62a6d28ff5f8a7469f37b7df)
+- Fix clang format error [`0de34e9`](https://github.com/rive-app/rive-wasm/commit/0de34e92b53a75cae0e69420f59f9b5286719036)
+- fix version merge conflict [`694e8c3`](https://github.com/rive-app/rive-wasm/commit/694e8c3e738ef7fbbd4d107a520d8ac6049baec6)
+- merge conflicts... [`3046c92`](https://github.com/rive-app/rive-wasm/commit/3046c92d4b30b9f2f93be129d1b2d7664a2b97b3)
+- add isCollapsed validation on nested artboard advance method [`4b44437`](https://github.com/rive-app/rive-wasm/commit/4b44437edebebeca2b4505fa90b8e463a6fefa8a)
+- Fixed clang check. [`9bc2f99`](https://github.com/rive-app/rive-wasm/commit/9bc2f9924ce96ef9e2e58dafd5a0f3992cf53c60)
+
+## [2.6.1](https://github.com/rive-app/rive-wasm/compare/2.6.0...2.6.1) - 2023-10-19
+
+### Commits
+
+- chore: tag 2.6.1 [`e137799`](https://github.com/rive-app/rive-wasm/commit/e137799ca55a56f55cd07f356a6f65d17f1ee040)
 - Add a canvas-lite and canvas-advanced-lite package for the web runtime [`f5da1b4`](https://github.com/rive-app/rive-wasm/commit/f5da1b495e1bcf0f514dcec81dc600fd638b04d9)
 - Show NestedInputs in the Inputs panel of the parent artboard [`67fb4b5`](https://github.com/rive-app/rive-wasm/commit/67fb4b51a81261713c55766bfad8b0e81a943217)
 - Move vello [`e3ed3fc`](https://github.com/rive-app/rive-wasm/commit/e3ed3fcb57a10398d49f3e61175a5d81a6d667c3)
