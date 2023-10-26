@@ -297,6 +297,7 @@ public:
         m_Width = width;
         m_Height = height;
     }
+    void unref() { rive::RenderImage::unref(); }
 };
 
 namespace rive
@@ -380,8 +381,12 @@ class C2DFactory : public Factory
         return std::unique_ptr<RenderPaint>(ptr);
     }
 
-    std::unique_ptr<RenderImage> decodeImage(Span<const uint8_t> bytes) override
+    rcp<RenderImage> decodeImage(Span<const uint8_t> bytes) override
     {
+        // NOTE::
+        // This path is only used for hostedImages & embedded images.
+        // I think we should refactor this so everything follows the same path.
+
         // TODO: seems like we should change the constructor the the JS RenderImage to
         //       be passed the byteArray, and have it decode (or fail) right away.
         //       It could just return null to us for its object if it failed.
@@ -389,13 +394,16 @@ class C2DFactory : public Factory
 
         val renderImage = val::module_property("renderFactory").call<val>("makeRenderImage");
 
-        auto ptr = renderImage.as<RenderImageWrapper*>(allow_raw_pointers());
+        rcp<RenderImageWrapper> ptr =
+            rcp(renderImage.as<RenderImageWrapper*>(allow_raw_pointers()));
         if (!ptr->decode(bytes))
         {
-            //       delete ptr;
+            // Question, what do we do when we end up here?
+            //       safe_unref(ptr);
             //       ptr = nullptr;
         }
-        return std::unique_ptr<RenderImage>(ptr);
+
+        return ptr;
     }
 };
 
@@ -474,9 +482,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
     class_<rive::RenderImage>("RenderImage")
-        //      .function("decode", &RenderImageWrapper::decode, pure_virtual(),
-        //      allow_raw_pointers())
         .function("size", &RenderImageWrapper::size)
+        .function("unref", &RenderImageWrapper::unref)
         .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 }
 

@@ -29,8 +29,8 @@ export interface RiveCanvas {
   RenderPaintStyle: typeof RenderPaintStyle;
   StrokeCap: typeof StrokeCap;
   StrokeJoin: typeof StrokeJoin;
-  decodeImage: Function;
-  decodeFont: Function;
+  decodeImage: DecodeFont;
+  decodeFont: DecodeFont;
 
   /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
@@ -258,6 +258,25 @@ export declare class CanvasRenderPath extends RenderPath {}
 export interface CanvasRenderFactory {
   makeRenderPaint(): CanvasRenderPaint;
   makeRenderPath(): CanvasRenderPath;
+}
+
+export class Image {
+  unref(): void;
+}
+export interface ImageCallback {
+  (image: Image): void;
+}
+export interface DecodeImage {
+  (bytes: Uint8Array, callback: ImageCallback): void;
+}
+export class Font {
+  unref(): void;
+}
+export interface FontCallback {
+  (font: Font): void;
+}
+export interface DecodeFont {
+  (bytes: Uint8Array, callback: FontCallback): void;
 }
 
 //////////
@@ -864,10 +883,9 @@ export declare class FileAsset {
   cdnUuid: boolean;
 }
 
-export declare class FileAssetLoader {
-}
+export declare class FileAssetLoader {}
 
 export declare class CustomFileAssetLoader extends FileAssetLoader {
-  constructor({loadContents}: {loadContents:Function});
-  loadContents(asset: FileAsset, bytes:any): boolean;
+  constructor({ loadContents }: { loadContents: Function });
+  loadContents(asset: FileAsset, bytes: any): boolean;
 }

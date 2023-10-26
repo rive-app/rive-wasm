@@ -261,7 +261,18 @@ rive::FileAsset* ptrToFileAsset(intptr_t pointer) { return (rive::FileAsset*)poi
 rive::ImageAsset* ptrToImageAsset(intptr_t pointer) { return (rive::ImageAsset*)pointer; }
 rive::FontAsset* ptrToFontAsset(intptr_t pointer) { return (rive::FontAsset*)pointer; }
 
-rive::rcp<rive::Font> decodeFont(emscripten::val byteArray)
+class FontWrapper
+{
+private:
+    rive::rcp<rive::Font> m_font;
+
+public:
+    FontWrapper(rive::rcp<rive::Font> font) { m_font = std::move(font); }
+    void unref() { m_font->unref(); }
+    rive::rcp<rive::Font> font() { return m_font; }
+};
+
+FontWrapper* decodeFont(emscripten::val byteArray)
 {
     std::vector<unsigned char> vector;
 
@@ -270,7 +281,9 @@ rive::rcp<rive::Font> decodeFont(emscripten::val byteArray)
 
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
-    return jsFactory()->decodeFont(vector);
+    auto font = new FontWrapper(jsFactory()->decodeFont(vector));
+
+    return font;
 }
 
 EMSCRIPTEN_BINDINGS(RiveWASM)
@@ -370,8 +383,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             }),
             allow_raw_pointers())
         .function("artboardCount", &rive::File::artboardCount);
-    class_<rive::rcp<rive::Font>>("rcpFont");
-    class_<rive::Font>("Font");
+    class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
     class_<rive::Artboard>("ArtboardBase");
     class_<rive::ArtboardInstance, base<rive::Artboard>>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
@@ -619,15 +631,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function(
             "setRenderImage",
             optional_override([](rive::ImageAsset& self, rive::RenderImage* renderImage) -> void {
-                self.renderImage(std::unique_ptr<rive::RenderImage>(renderImage));
+                self.renderImage(rive::ref_rcp(renderImage));
             }),
             allow_raw_pointers());
 
     class_<rive::FontAsset, base<rive::FileAsset>>("FontAsset")
         .function("setFont",
-                  optional_override([](rive::FontAsset& self, rive::rcp<rive::Font> font) -> void {
-                      // why is this rcp and not unique_ptr
-                      self.font(rive::rcp<rive::Font>(font));
+                  optional_override([](rive::FontAsset& self, FontWrapper* font) -> void {
+                      self.font(font->font());
                   }),
                   allow_raw_pointers());
 

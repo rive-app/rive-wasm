@@ -1,9 +1,8 @@
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 
-// import SampleImage from "./asset_load_check.riv";
 
-import SampleImage from "./foo.riv";
+import SampleImage from "./asset_load_check.riv";
 
 
 let lastTime;
@@ -16,17 +15,75 @@ async function main() {
   let fileBytes = new Uint8Array(
     await (await fetch(new Request(SampleImage))).arrayBuffer()
   );
-  let imageAsset;
-  let fontAsset;
+  let onDemandFont;
+  let onDemandImage;
+  let cachedFont;
+  let cachedImage;
   let artboard;
   let fontIndex = 0;
+  let imageCache = <any>[];
+  let imageCacheIndex = 0;
+  let fontCache = <any>[];
+  let fontCacheIndex = 0;
+  console.log("Warming up image cache...");
+  await new Promise<void>((resolve, reject) => {
+    let imageCacheSize = 5;
+    for (let i = 0; i < imageCacheSize; i++) {
+      fetch("https://picsum.photos/2048/1365").then(async (res) => {
+        rive.decodeImage(new Uint8Array(await res.arrayBuffer()), (image) => {
+          imageCache.push(image);
+          if (imageCache.length == imageCacheSize) {
+            resolve();
+          }
+        });
+      });
+    }
+  });
+  console.log("Warming up font cache...");
+  await new Promise<void>((resolve, reject) => {
+    const urls = [
+      "https://cdn.rive.app/runtime/flutter/IndieFlower-Regular.ttf",
+      "https://cdn.rive.app/runtime/flutter/comic-neue.ttf",
+      "https://cdn.rive.app/runtime/flutter/inter.ttf",
+      "https://cdn.rive.app/runtime/flutter/inter-tight.ttf",
+      "https://cdn.rive.app/runtime/flutter/josefin-sans.ttf",
+      "https://cdn.rive.app/runtime/flutter/send-flowers.ttf",
+    ];
+    for (let i = 0; i < urls.length; i++) {
+      fetch(urls[i]).then(async  (res) => {
+        rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => { 
+          fontCache.push(font);
+          if (fontCache.length === urls.length) {
+            resolve();
+          }
+        });
+        
+      });
+    }
+  });
+
+  const cachedImageAsset = (asset) => {
+    let image = imageCache[imageCacheIndex++ % imageCache.length];
+    asset.setRenderImage(image);
+    rive.requestAnimationFrame(draw);
+    // IMPORTANT: to clear the cache, be sure to also call .unref() on each asset.
+  };
+
+  const cachedFontAsset = (asset) => {
+    let font = fontCache[fontCacheIndex++ % fontCache.length];
+    asset.setFont(font);
+    rive.requestAnimationFrame(draw);
+    // IMPORTANT: to clear the cache, be sure to also call .unref() on each asset.
+  };
 
   const randomImageAsset = (asset) => {
-    fetch("https://picsum.photos/300/300").then(async (res) => {
+    fetch("https://picsum.photos/1000/1500").then(async  (res) => {
       rive.decodeImage(new Uint8Array(await res.arrayBuffer()), (image) => {
-        // Maybe the api would be nicer as renderImage = image?
         asset.setRenderImage(image);
         rive.requestAnimationFrame(draw);
+        // IMPORTANT: call unref, so that we do not keep the asset alive with 
+        // a reference from javascript.
+        image.unref();
       });
     });
   };
@@ -41,16 +98,16 @@ async function main() {
       "https://cdn.rive.app/runtime/flutter/send-flowers.ttf",
     ];
 
-    fetch(urls[fontIndex++ % urls.length]).then(async (res) => {
-      
-      rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => {
-        // Note, currently updating fonts will not mark 
-        // shapes that depend on fonts as dirty, so they will not be re-rendered
-        // unless they are animated. 
+    fetch(urls[fontIndex++ % urls.length]).then(async  (res) => {
+      rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => { 
         asset.setFont(font);
-        rive.requestAnimationFrame(draw);        
+  
+        rive.requestAnimationFrame(draw);
+        // IMPORTANT: call unref, so that we do not keep the asset alive with 
+        // a reference from javascript.
+        font.unref();
       });
-
+      
     });
   };
 
@@ -58,7 +115,40 @@ async function main() {
     fileBytes,
     new rive.CustomFileAssetLoader({
       loadContents: (asset, inBandBytes) => {
-        console.log("Tell our asset importer if we are going to load the asset contents", {
+        if (inBandBytes.length > 0) { 
+          return false;
+        }
+        if (asset.cdnUuid.length > 0) {
+          return false;
+        }
+        switch (asset.name) {
+          case "flower.jpeg":
+            onDemandImage = asset;
+            randomImageAsset(asset);
+            return true;
+          case "tree.jpg":
+            cachedImage = asset;
+            cachedImageAsset(asset);
+            return true;
+          case "Kenia":
+            cachedFont = asset;
+            cachedFontAsset(asset);
+            return true;
+          case "Kodchasan":
+            onDemandFont = asset;
+            randomFontAsset(asset);
+            return true;
+          case "three.png":
+            cachedImage = asset;
+            cachedImageAsset(asset);
+            return true;
+          case "Inter":
+            onDemandFont = asset;
+            randomFontAsset(asset);
+            return true;
+        }
+        console.log("Eeek not dealing with ", {
+          length: inBandBytes.length,
           name: asset.name,
           fileExtension: asset.fileExtension,
           cdnUuid: asset.cdnUuid,
@@ -66,22 +156,9 @@ async function main() {
           isFont: asset.isFont,
           inBandBytes,
         });
-
-        if (asset.cdnUuid.length >0 || inBandBytes.length > 0) {
-          return false;
-        }
-        if (asset.isImage) {
-          imageAsset = asset;
-          randomImageAsset(asset);
-          return true;
-        } else if (asset.isFont) {
-          fontAsset = asset;
-          randomFontAsset(asset);
-          return true;
-        }
         return false;
       },
-    })
+    }),
   );
 
   artboard = file.defaultArtboard();
@@ -91,8 +168,10 @@ async function main() {
   );
   const canvas = document.getElementById("canvas0") as HTMLCanvasElement;
   canvas.onclick = () => {
-    randomImageAsset(imageAsset);
-    randomFontAsset(fontAsset);
+    if (onDemandImage)randomImageAsset(onDemandImage);
+    if (onDemandFont)randomFontAsset(onDemandFont);
+    if (cachedImage) cachedImageAsset(cachedImage);
+    if (cachedFont) cachedFontAsset(cachedFont);
   };
 
   // Helper to update the size of the canvas to fit the window.

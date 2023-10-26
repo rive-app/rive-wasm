@@ -43,7 +43,6 @@ var Rive = {
   RenderPaint: {},
   RenderImage: {},
   FileAssetLoader: {
-    willLoadContents: function () {},
     loadContents: function () {},
   },
   FallbackFileAssetLoader: {
@@ -69,7 +68,7 @@ var Rive = {
     cdnUuid: {},
   },
   onRuntimeInitialized: function () {},
-  makeRenderer: function () {},
+  makeRenderer: function () { },
   ptrToFileAsset: function () {},
   ptrToImageAsset: function () {},
   ptrToFontAsset: function () {},

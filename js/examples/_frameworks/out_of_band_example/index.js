@@ -31,6 +31,7 @@ const randomImageAsset = (asset) => {
     async (res) => {
       const image = await decodeImage(new Uint8Array(await res.arrayBuffer()));
       asset.setRenderImage(image);
+      image.unref();
     }
   );
 };
@@ -48,6 +49,7 @@ const randomFontAsset = (asset) => {
     async (res) => {
       const font = await decodeFont(new Uint8Array(await res.arrayBuffer()));
       asset.setFont(font);
+      font.unref();
     }
   );
 };

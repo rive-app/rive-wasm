@@ -361,7 +361,6 @@ Module["onRuntimeInitialized"] = function () {
       _nextImageUniqueID = (_nextImageUniqueID + 1) & 0x7fffffff || 1;
       this.onComplete = onComplete;
       this.onDecode = onDecode;
-
     },
     "decode": function (bytes) {
       
@@ -872,7 +871,6 @@ Module["onRuntimeInitialized"] = function () {
     });
   };
   
-
   Module["decodeImage"] = function (bytes, onComplete) {
     let renderImage = new CanvasRenderImage({onComplete});
     renderImage.decode(bytes);

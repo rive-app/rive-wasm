@@ -2263,16 +2263,28 @@ export const Testing = {
 
 // #region asset loaders
 
-export const decodeImage = (bytes: Uint8Array): Promise<any> => {
-  return new Promise<any>((resolve) =>
+/**
+ * Decodes bytes into an image.
+ * 
+ * Be sure to call `.dispose()` on the image once it is no longer needed. This 
+ * allows the engine to clean it up when it is not used by any more animations.
+ */
+export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
+  return new Promise<rc.Image>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeImage(bytes, resolve);
     }),
   );
 };
 
-export const decodeFont = (bytes: Uint8Array): Promise<any> => {
-  return new Promise<any>((resolve) =>
+/**
+ * Decodes bytes into a font.
+ * 
+ * Be sure to call `.dispose()` on the font once it is no longer needed. This 
+ * allows the engine to clean it up when it is not used by any more animations.
+ */
+export const decodeFont = (bytes: Uint8Array): Promise<rc.Font> => {
+  return new Promise<rc.Font>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeFont(bytes, resolve);
     }),

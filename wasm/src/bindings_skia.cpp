@@ -102,7 +102,14 @@ WebGLSkiaRenderer* makeSkiaRenderer(int width, int height)
     return new WebGLSkiaRenderer(context, width, height);
 }
 
-std::unique_ptr<rive::RenderImage> decodeImageSkia(emscripten::val byteArray)
+class RenderImageWrapper : public wrapper<rive::RenderImage>
+{
+public:
+    EMSCRIPTEN_WRAPPER(RenderImageWrapper);
+    void unref() { rive::RenderImage::unref(); }
+};
+
+RenderImageWrapper* decodeImageSkia(emscripten::val byteArray)
 {
     std::vector<unsigned char> vector;
 
@@ -111,7 +118,10 @@ std::unique_ptr<rive::RenderImage> decodeImageSkia(emscripten::val byteArray)
 
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
-    return jsFactory()->decodeImage(vector);
+    rive::rcp rcpImage = jsFactory()->decodeImage(vector);
+    // NOTE: ref so the image does not get disposed after the scope of this function.
+    rcpImage->ref();
+    return (RenderImageWrapper*)(rcpImage.get());
 }
 
 EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
@@ -136,7 +146,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
         .function("resize", &WebGLSkiaRenderer::resize)
         .function("saveClipRect", &WebGLSkiaRenderer::saveClipRect)
         .function("restoreClipRect", &WebGLSkiaRenderer::restoreClipRect);
-    class_<rive::RenderImage>("RenderImage");
+    class_<rive::RenderImage>("RenderImage")
+        .function("unref", &RenderImageWrapper::unref)
+        .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
 
     function("makeRenderer", &makeSkiaRenderer, allow_raw_pointers());
     function("decodeImageSkia", &decodeImageSkia, allow_raw_pointers());
