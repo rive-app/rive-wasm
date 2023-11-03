@@ -880,7 +880,7 @@ export declare class FileAsset {
   fileExtension: string;
   isImage: boolean;
   isFont: boolean;
-  cdnUuid: boolean;
+  cdnUuid: string;
 }
 
 export declare class FileAssetLoader {}
