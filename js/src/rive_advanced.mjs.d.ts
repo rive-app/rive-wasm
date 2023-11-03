@@ -883,6 +883,14 @@ export declare class FileAsset {
   cdnUuid: string;
 }
 
+export declare class ImageAsset extends FileAsset {
+  setRenderImage(image: Image): void;
+}
+
+export declare class FontAsset extends FileAsset {
+  setFont(font: Font): void;
+}
+
 export declare class FileAssetLoader {}
 
 export declare class CustomFileAssetLoader extends FileAssetLoader {
