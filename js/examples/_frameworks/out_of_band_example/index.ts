@@ -5,6 +5,9 @@ import {
   Alignment,
   Layout,
   EventType,
+  FileAsset,
+  ImageAsset,
+  FontAsset,
   decodeImage,
   decodeFont,
 } from "@rive-app/canvas";
@@ -14,6 +17,9 @@ import {
 //   Alignment,
 //   Layout,
 //   EventType,
+//   FileAsset,
+//   ImageAsset,
+//   FontAsset,
 //   decodeImage,
 //   decodeFont, } from "@rive-app/webgl";
 import SampleFile from "./asset_load_check.riv";
@@ -26,7 +32,7 @@ async function loadFile() {
 }
 
 
-const randomImageAsset = (asset) => {
+const randomImageAsset = (asset: ImageAsset) => {
   fetch("https://picsum.photos/1000/1500").then(
     async (res) => {
       const image = await decodeImage(new Uint8Array(await res.arrayBuffer()));
@@ -35,7 +41,7 @@ const randomImageAsset = (asset) => {
     }
   );
 };
-const randomFontAsset = (asset) => {
+const randomFontAsset = (asset: FontAsset) => {
 
   const urls = [
     "https://cdn.rive.app/runtime/flutter/IndieFlower-Regular.ttf",
@@ -56,16 +62,16 @@ const randomFontAsset = (asset) => {
 
 async function main() {
   const bytes = await loadFile();
-  const body = document.querySelector("body");
-  const el = document.createElement("canvas");
+  const body = document.querySelector("body") as HTMLBodyElement;
+  const el = document.createElement("canvas") as HTMLCanvasElement;
   
   el.onclick = () => {
     randomImageAsset(imageAsset);
     randomFontAsset(fontAsset);
   };
   el.id = `canvas`;
-  el.width = "1600";
-  el.height = "800";
+  el.width = 1600;
+  el.height = 800;
   body.appendChild(el);
 
   let imageAsset, fontAsset;
@@ -78,8 +84,7 @@ async function main() {
       fit: Fit.Contain,
       alignment: Alignment.Center,
     }),
-    loadCDNAssets: true, 
-    assetLoader: (asset, bytes) => {
+    assetLoader: (asset: FileAsset, bytes: Uint8Array) => {
       console.log("Tell our asset importer if we are going to load the asset contents", {
         name: asset.name,
         fileExtension: asset.fileExtension,
@@ -95,11 +100,11 @@ async function main() {
 
       if (asset.isImage) {
           imageAsset = asset;
-          randomImageAsset(asset);
+          randomImageAsset(asset as ImageAsset);
           return true;
       } else if (asset.isFont) {
           fontAsset = asset;
-          randomFontAsset(asset);
+          randomFontAsset(asset as FontAsset);
           return true;
         }
         return false;

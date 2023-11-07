@@ -875,12 +875,32 @@ export declare class Vec2D {
   delete(): void;
 }
 
+/**
+ * Rive class representing a FileAsset with relevant metadata fields to describe
+ * an asset associated wtih the Rive File
+ */
 export declare class FileAsset {
   name: string;
   fileExtension: string;
   isImage: boolean;
   isFont: boolean;
   cdnUuid: string;
+}
+
+/**
+ * Rive class extending the FileAsset that exposes a `setRenderImage()` API with a 
+ * decoded Image (via the `decodeImage()` API) to set a new Image on the Rive FileAsset
+ */
+export declare class ImageAsset extends FileAsset {
+  setRenderImage(image: Image): void;
+}
+
+/**
+ * Rive class extending the FileAsset that exposes a `setFont()` API with a 
+ * decoded Font (via the `decodeFont()` API) to set a new Font on the Rive FileAsset
+ */
+export declare class FontAsset extends FileAsset {
+  setFont(font: Font): void;
 }
 
 export declare class FileAssetLoader {}

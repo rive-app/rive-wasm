@@ -2,6 +2,12 @@ import * as rc from "./rive_advanced.mjs";
 import * as packageData from "package.json";
 import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
 
+// Note: Re-exporting a few types from rive_advanced.mjs to expose for high-level
+// API usage without re-defining their type definition here. May want to revisit
+// and see if we want to expose both types from rive.ts and rive_advanced.mjs in
+// the future
+export type { FileAsset, FontAsset, ImageAsset } from './rive_advanced.mjs';
+
 /**
  * Generic type for a parameterless void callback
  */
