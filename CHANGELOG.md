@@ -5,10 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.0](https://github.com/rive-app/rive-wasm/compare/2.6.1...2.7.0)
+## [2.7.1](https://github.com/rive-app/rive-wasm/compare/2.7.0...2.7.1)
+
+### Fixed
+
+- Fix follow path 6070 [`#6070`](https://github.com/rive-app/rive-wasm/issues/6070)
 
 ### Commits
 
+- Add types for ImageAsset and FontAsset [`9e54b20`](https://github.com/rive-app/rive-wasm/commit/9e54b205091d8da141046fe485d1407a63a0b218)
+- compute parameters when cubic values change [`bddcd7b`](https://github.com/rive-app/rive-wasm/commit/bddcd7bbd39db5ae3471bc0b68e7c502214539cd)
+- fix: Made default and copy constructors explicit. [`37aef15`](https://github.com/rive-app/rive-wasm/commit/37aef15f19022568695f29f763059b183a7d4643)
+- Fix: change cdnUuid export type from boolean to string [`506e2e7`](https://github.com/rive-app/rive-wasm/commit/506e2e774c9d21a46d1baaf01b677df049893d06)
+- add support for rendering static scene [`9f527b2`](https://github.com/rive-app/rive-wasm/commit/9f527b28a4372510e51759f4b6c9ce94ad8b25e3)
+
+## [2.7.0](https://github.com/rive-app/rive-wasm/compare/2.6.1...2.7.0) - 2023-10-26
+
+### Commits
+
+- chore: tag 2.7.0 [`6f053d9`](https://github.com/rive-app/rive-wasm/commit/6f053d916be27987f669761ab6a1790521c6fa14)
 - Outofbandcache [`0bef370`](https://github.com/rive-app/rive-wasm/commit/0bef37078b8f669da33abab0b15cbb899aa7ec30)
 - Fix for FollowPathConstraint position at distance multiples of 100% [`2fef572`](https://github.com/rive-app/rive-wasm/commit/2fef572a5620021c4a997cea634a5688863cb54b)
 - Apply NestedInput initial values [`61ed529`](https://github.com/rive-app/rive-wasm/commit/61ed529a415b385102e27fdf28ae4c535362402b)
