@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.1](https://github.com/rive-app/rive-wasm/compare/2.7.0...2.7.1)
+## [2.7.2](https://github.com/rive-app/rive-wasm/compare/2.7.1...2.7.2)
+
+### Commits
+
+- Fix validation for listeners to validate with nested inputs [`3062170`](https://github.com/rive-app/rive-wasm/commit/306217049c3303aeeb5fd0e367f0b7922db5a200)
+
+## [2.7.1](https://github.com/rive-app/rive-wasm/compare/2.7.0...2.7.1) - 2023-11-07
 
 ### Fixed
 
@@ -13,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.7.1 [`1319fa9`](https://github.com/rive-app/rive-wasm/commit/1319fa9de57dfffb5cdae2f6977cb28ef26d9d24)
 - Add types for ImageAsset and FontAsset [`9e54b20`](https://github.com/rive-app/rive-wasm/commit/9e54b205091d8da141046fe485d1407a63a0b218)
 - compute parameters when cubic values change [`bddcd7b`](https://github.com/rive-app/rive-wasm/commit/bddcd7bbd39db5ae3471bc0b68e7c502214539cd)
 - fix: Made default and copy constructors explicit. [`37aef15`](https://github.com/rive-app/rive-wasm/commit/37aef15f19022568695f29f763059b183a7d4643)
