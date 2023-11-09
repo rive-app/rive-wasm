@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.2](https://github.com/rive-app/rive-wasm/compare/2.7.1...2.7.2)
+## [2.7.3](https://github.com/rive-app/rive-wasm/compare/2.7.2...2.7.3)
 
 ### Commits
 
+- Delete assets after artboards to fix race condition with FileAssetReferencers. [`f7e6924`](https://github.com/rive-app/rive-wasm/commit/f7e69246a4c9c64f747ff0da979a7f28cb336dc7)
+
+## [2.7.2](https://github.com/rive-app/rive-wasm/compare/2.7.1...2.7.2) - 2023-11-08
+
+### Commits
+
+- chore: tag 2.7.2 [`9fd1e94`](https://github.com/rive-app/rive-wasm/commit/9fd1e94106ddb827670e0f323d7dfd23c11d74c4)
 - Fix validation for listeners to validate with nested inputs [`3062170`](https://github.com/rive-app/rive-wasm/commit/306217049c3303aeeb5fd0e367f0b7922db5a200)
 
 ## [2.7.1](https://github.com/rive-app/rive-wasm/compare/2.7.0...2.7.1) - 2023-11-07
