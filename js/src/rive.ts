@@ -1678,8 +1678,11 @@ export class Rive {
     this.stopRendering();
     // Clean up any artboard, animation or state machine instances.
     this.cleanupInstances();
-    // Delete the renderer
-    this.renderer?.delete();
+    // Only CanvasRenderer needs a delete for now, not WebGL.. might be a better
+    // way to detect this in the future 
+    if (this.runtime?.CanvasRenderer) {
+      this.renderer?.delete();
+    }
     this.renderer = null;
     // Delete the rive file
     this.file?.delete();
