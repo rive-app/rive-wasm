@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.3](https://github.com/rive-app/rive-wasm/compare/2.7.2...2.7.3)
+## [2.7.4](https://github.com/rive-app/rive-wasm/compare/2.7.3...2.7.4)
 
 ### Commits
 
+- tendon crash fix [`529e597`](https://github.com/rive-app/rive-wasm/commit/529e5972a90998f7293bcdc587a8aff70500c036)
+- patch: Only clean up the Renderer object if it is a CanvasRenderer, as WebGL Renderer does not need to be deleted [`2df6145`](https://github.com/rive-app/rive-wasm/commit/2df61459386cd9f43ed35661dda325656402662b)
+- Disable d3d blend state during PLS flush [`33e5609`](https://github.com/rive-app/rive-wasm/commit/33e560953fe3ae4ede9b079ba653afd9bb76e53a)
+- add clipResult enum and render clips to copy the editor behavior [`b8c029c`](https://github.com/rive-app/rive-wasm/commit/b8c029cf36d008b604400db7e6999e09de7ba194)
+- Unity [`da338c3`](https://github.com/rive-app/rive-wasm/commit/da338c3e65815e0a690d14dbc46f06e65fdadd9f)
+
+## [2.7.3](https://github.com/rive-app/rive-wasm/compare/2.7.2...2.7.3) - 2023-11-09
+
+### Commits
+
+- chore: tag 2.7.3 [`f6e5255`](https://github.com/rive-app/rive-wasm/commit/f6e525559f27b1bda296ce85313f2da6b05f6ff4)
 - Delete assets after artboards to fix race condition with FileAssetReferencers. [`f7e6924`](https://github.com/rive-app/rive-wasm/commit/f7e69246a4c9c64f747ff0da979a7f28cb336dc7)
 
 ## [2.7.2](https://github.com/rive-app/rive-wasm/compare/2.7.1...2.7.2) - 2023-11-08
