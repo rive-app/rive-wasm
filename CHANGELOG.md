@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.4](https://github.com/rive-app/rive-wasm/compare/2.7.3...2.7.4)
+## [2.7.5](https://github.com/rive-app/rive-wasm/compare/2.7.4...2.7.5)
 
 ### Commits
 
+- ignore paths that are inactive in solos when calculating hit test [`d1ad646`](https://github.com/rive-app/rive-wasm/commit/d1ad64672bafd5e75d512b9cdf5159cf1cd519bf)
+- generate drawing rules in the correct order [`fc49a2d`](https://github.com/rive-app/rive-wasm/commit/fc49a2dfcc2f561891738c515104872d52cf7138)
+- Xxxx hidden paths runtime render fixes solos [`da6146d`](https://github.com/rive-app/rive-wasm/commit/da6146d2b8ae2ccc783d59f109b576ff0dabb2e5)
+
+## [2.7.4](https://github.com/rive-app/rive-wasm/compare/2.7.3...2.7.4) - 2023-11-21
+
+### Commits
+
+- chore: tag 2.7.4 [`0cdde88`](https://github.com/rive-app/rive-wasm/commit/0cdde883a01dbefffb9380df1d0c30acfe0a05b7)
 - tendon crash fix [`529e597`](https://github.com/rive-app/rive-wasm/commit/529e5972a90998f7293bcdc587a8aff70500c036)
 - patch: Only clean up the Renderer object if it is a CanvasRenderer, as WebGL Renderer does not need to be deleted [`2df6145`](https://github.com/rive-app/rive-wasm/commit/2df61459386cd9f43ed35661dda325656402662b)
 - Disable d3d blend state during PLS flush [`33e5609`](https://github.com/rive-app/rive-wasm/commit/33e560953fe3ae4ede9b079ba653afd9bb76e53a)
