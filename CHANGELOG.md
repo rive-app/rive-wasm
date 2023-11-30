@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.5](https://github.com/rive-app/rive-wasm/compare/2.7.4...2.7.5)
+## [2.7.6](https://github.com/rive-app/rive-wasm/compare/2.7.5...2.7.6)
 
 ### Commits
 
+- skip constraints in editor when target is collapsed [`1468503`](https://github.com/rive-app/rive-wasm/commit/1468503d5832c6f06d0bf7806df68b3455eab969)
+
+## [2.7.5](https://github.com/rive-app/rive-wasm/compare/2.7.4...2.7.5) - 2023-11-29
+
+### Commits
+
+- chore: tag 2.7.5 [`ced1772`](https://github.com/rive-app/rive-wasm/commit/ced1772ff494d268880161830a10dbe78ca8c153)
 - ignore paths that are inactive in solos when calculating hit test [`d1ad646`](https://github.com/rive-app/rive-wasm/commit/d1ad64672bafd5e75d512b9cdf5159cf1cd519bf)
 - generate drawing rules in the correct order [`fc49a2d`](https://github.com/rive-app/rive-wasm/commit/fc49a2dfcc2f561891738c515104872d52cf7138)
 - Xxxx hidden paths runtime render fixes solos [`da6146d`](https://github.com/rive-app/rive-wasm/commit/da6146d2b8ae2ccc783d59f109b576ff0dabb2e5)
