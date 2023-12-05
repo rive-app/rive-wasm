@@ -235,7 +235,9 @@ class FileAssetLoaderWrapper : public wrapper<rive::FileAssetLoader>
 public:
     EMSCRIPTEN_WRAPPER(FileAssetLoaderWrapper);
 
-    bool loadContents(rive::FileAsset& asset, rive::Span<const uint8_t> inBandBytes)
+    bool loadContents(rive::FileAsset& asset,
+                      rive::Span<const uint8_t> inBandBytes,
+                      rive::Factory* factory)
     {
         auto bytes =
             emscripten::val(emscripten::typed_memory_view(inBandBytes.size(), inBandBytes.data()));
@@ -253,6 +255,7 @@ rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoad
     emscripten::val memoryView{emscripten::typed_memory_view(l, rv.data())};
     memoryView.call<void>("set", byteArray);
 
+    // QUESTION (max) we ignore the result currently, we could use it and throw exceptions with it.
     return rive::File::import(rv, jsFactory(), nullptr, fileAssetLoader).release();
 }
 
