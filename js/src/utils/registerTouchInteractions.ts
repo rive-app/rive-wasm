@@ -112,10 +112,30 @@ export const registerTouchInteractions = ({
     forwardMatrix.delete();
 
     switch (event.type) {
+      /**
+       * There's a 2px buffer for a hitRadius when translating the pointer coordinates
+       * down to the state machine. In cases where the hitbox is about that much away
+       * from the Artboard border, we don't have exact precision on determining pointer
+       * exit. We're therefore adding to the translated coordinates on mouseout of a canvas
+       * to ensure that we report the mouse has truly exited the hitarea.
+       * https://github.com/rive-app/rive-cpp/blob/master/src/animation/state_machine_instance.cpp#L336
+       * 
+       * We add/subtract 10000 to account for when the graphic goes beyond the canvas bound
+       * due to for example, a fit: 'cover'. Not perfect, but helps reliably (for now) ensure
+       * we report going out of bounds when the mouse is out of the canvas
+       */
+      case "mouseout":
+        for (const stateMachine of stateMachines) {
+          stateMachine.pointerMove(
+            transformedX < 0 ? transformedX - 10000 : transformedX + 10000,
+            transformedY < 0 ? transformedY - 10000 : transformedY + 10000
+          );
+        }
+        break;
+
       // Pointer moving/hovering on the canvas
       case "touchmove":
       case "mouseover":
-      case "mouseout":
       case "mousemove": {
         for (const stateMachine of stateMachines) {
           stateMachine.pointerMove(transformedX, transformedY);

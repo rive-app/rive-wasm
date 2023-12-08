@@ -105,3 +105,16 @@ test("touchend event can invoke pointerUp", (): void => {
   expect(mockStateMachines[0].pointerMove).not.toBeCalledWith();
   expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100);
 });
+
+test("mouseout event can invoke pointerMove with out of bounds coordinates", (): void => {
+  canvas.dispatchEvent(
+    new MouseEvent("mouseout", {
+      clientX: -1,
+      clientY: 1,
+    })
+  );
+
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+  expect(mockStateMachines[0].pointerMove).toBeCalledWith(-10001, 10001);
+  expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+});
