@@ -117,10 +117,9 @@ public:
                        rive::BlendMode value,
                        float opacity) override
     {
-
-        auto vtx = rive::DataRenderBuffer::Cast(vertices_f32.get());
-        auto uv = rive::DataRenderBuffer::Cast(uvCoords_f32.get());
-        auto indices = rive::DataRenderBuffer::Cast(indices_u16.get());
+        LITE_RTTI_CAST_OR_RETURN(vtx, rive::DataRenderBuffer*, vertices_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(uv, rive::DataRenderBuffer*, uvCoords_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(indices, rive::DataRenderBuffer*, indices_u16.get());
 
         uint32_t f32Count = vertexCount * 2;
         assert(vtx->sizeInBytes() == f32Count * sizeof(float));
