@@ -139,6 +139,12 @@ const offscreenWebGL = new (function () {
     return _maxRTSize;
   };
 
+  this.deleteImageTexture = function (texture) {
+    if (!_gl) {
+      return;
+    }
+    _gl.deleteTexture(texture);
+  };
   this.createImageTexture = function (image) {
     if (!initGL()) {
       return null;
@@ -362,8 +368,12 @@ Module["onRuntimeInitialized"] = function () {
       this.onComplete = onComplete;
       this.onDecode = onDecode;
     },
+    "__destruct": function () {
+      if (this._texture) {
+        offscreenWebGL.deleteImageTexture(this._texture);
+      }
+    },
     "decode": function (bytes) {
-      
       var cri = this;
       // Question: could .bind(cri);
       cri.onDecode && cri.onDecode(cri);
