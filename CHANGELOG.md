@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.7](https://github.com/rive-app/rive-wasm/compare/2.7.6...2.7.7)
+## [2.7.8](https://github.com/rive-app/rive-wasm/compare/2.7.7...2.7.8)
 
 ### Commits
 
+- chore: fix broken docs link [`85ff798`](https://github.com/rive-app/rive-wasm/commit/85ff79809ec019e27574ee9761c4df3953543b81)
+
+## [2.7.7](https://github.com/rive-app/rive-wasm/compare/2.7.6...2.7.7) - 2023-12-11
+
+### Commits
+
+- chore: tag 2.7.7 [`70a9564`](https://github.com/rive-app/rive-wasm/commit/70a956474d8992ce8dc989b367a3ee8183349996)
 - Add a "lite_rtti" utility and use it with Render objects [`a94902e`](https://github.com/rive-app/rive-wasm/commit/a94902ef0b45a50fd372cc3aaee13bc3fae323be)
 - fix: exaggerate pointer exit listener on mouseout to account for hitareas too close to the artboard border [`b831f39`](https://github.com/rive-app/rive-wasm/commit/b831f394fbc77c556bf3d8e475971c53d27ba759)
 - Make tess compile again [`64c935e`](https://github.com/rive-app/rive-wasm/commit/64c935e2bfb9f36c8ee9c4745b9f0da7888c8043)
