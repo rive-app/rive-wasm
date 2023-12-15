@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.8.2](https://github.com/rive-app/rive-wasm/compare/2.8.1...2.8.2)
+## [2.8.3](https://github.com/rive-app/rive-wasm/compare/2.8.2...2.8.3)
 
 ### Commits
 
+- fix: add back in the image texture delete action [`af46a7b`](https://github.com/rive-app/rive-wasm/commit/af46a7be364beed1c177932f9764e3cba4b4229b)
+
+## [2.8.2](https://github.com/rive-app/rive-wasm/compare/2.8.1...2.8.2) - 2023-12-15
+
+### Commits
+
+- chore: tag 2.8.2 [`02e4a80`](https://github.com/rive-app/rive-wasm/commit/02e4a8052b213d39ed10e3e5ab2557cc1b507259)
 - remove optional chaining added in renderer.js [`bb3ba22`](https://github.com/rive-app/rive-wasm/commit/bb3ba220610c3091e41ae334c12ebe160816c373)
 
 ## [2.8.1](https://github.com/rive-app/rive-wasm/compare/2.8.0...2.8.1) - 2023-12-15
