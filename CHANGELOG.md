@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.8.1](https://github.com/rive-app/rive-wasm/compare/2.8.0...2.8.1)
+## [2.8.2](https://github.com/rive-app/rive-wasm/compare/2.8.1...2.8.2)
 
 ### Commits
 
+- remove optional chaining added in renderer.js [`bb3ba22`](https://github.com/rive-app/rive-wasm/commit/bb3ba220610c3091e41ae334c12ebe160816c373)
+
+## [2.8.1](https://github.com/rive-app/rive-wasm/compare/2.8.0...2.8.1) - 2023-12-15
+
+### Commits
+
+- chore: tag 2.8.1 [`dc898a0`](https://github.com/rive-app/rive-wasm/commit/dc898a02f23a871cea6d0b6013ba46442274165a)
 - Adding more proxy checks on rendering mesh and stop drawing images if we cant render it [`4acd184`](https://github.com/rive-app/rive-wasm/commit/4acd184e7e2cd587b93206f8e494cf60f0a5ce60)
 
 ## [2.8.0](https://github.com/rive-app/rive-wasm/compare/2.7.9...2.8.0) - 2023-12-15
