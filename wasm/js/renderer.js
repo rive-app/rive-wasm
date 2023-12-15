@@ -122,7 +122,7 @@ const offscreenWebGL = new (function () {
         gl.shaderSource(shader, sourceCode);
         gl.compileShader(shader);
         const log = gl.getShaderInfoLog(shader);
-        if (log?.length > 0) {
+        if ((log || "").length > 0) {
           throw log;
         }
         gl.attachShader(program, shader);
