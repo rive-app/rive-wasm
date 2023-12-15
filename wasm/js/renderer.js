@@ -38,6 +38,7 @@ const offscreenWebGL = new (function () {
   let _translateUniform = null;
   let _vertexBufferLength = 0;
   let _indexBufferLength = 0;
+  let _hasLoggedContextLostError = false;
 
   const initGL = function () {
     if (!_gl) {
@@ -72,7 +73,14 @@ const offscreenWebGL = new (function () {
       gl = new Proxy(gl, {
         get(target, property) {
           if (target.isContextLost()) {
-            console.error("GL Context was lost, tried to invoke ", property);
+            // rAf may still take place, so just want to prevent logging constantly
+            if (!_hasLoggedContextLostError) {
+              console.error(
+                "Cannot render the mesh because the GL Context was lost. Tried to invoke ",
+                property
+              );
+              _hasLoggedContextLostError = true;
+            }
             if (typeof target[property] === "function") {
               return function () {};
             }
@@ -88,9 +96,14 @@ const offscreenWebGL = new (function () {
         },
         set(target, property, value) {
           if (target.isContextLost()) {
-            console.error(
-              "GL Context was lost, tried to set property " + property
-            );
+            // rAf may still take place, so just want to prevent logging constantly
+            if (!_hasLoggedContextLostError) {
+              console.error(
+                "Cannot render the mesh because the GL Context was lost. Tried to set property " +
+                  property
+              );
+              _hasLoggedContextLostError = true;
+            }
             return;
           } else {
             target[property] = value;
@@ -109,7 +122,7 @@ const offscreenWebGL = new (function () {
         gl.shaderSource(shader, sourceCode);
         gl.compileShader(shader);
         const log = gl.getShaderInfoLog(shader);
-        if (log.length > 0) {
+        if (log?.length > 0) {
           throw log;
         }
         gl.attachShader(program, shader);
@@ -142,7 +155,7 @@ const offscreenWebGL = new (function () {
       gl.bindAttribLocation(program, UV_ARRAY, "uv");
       gl.linkProgram(program);
       const log = gl.getProgramInfoLog(program);
-      if (log.trim().length > 0) {
+      if ((log || "").trim().length > 0) {
         throw log;
       }
       _matUniform = gl.getUniformLocation(program, "mat");
@@ -175,6 +188,9 @@ const offscreenWebGL = new (function () {
       return null;
     }
     const texture = _gl.createTexture();
+    if (!texture) {
+      return null;
+    }
     _gl.bindTexture(_gl.TEXTURE_2D, texture);
     _gl.texImage2D(
       _gl.TEXTURE_2D,
@@ -230,6 +246,11 @@ const offscreenWebGL = new (function () {
 
     const canvasWidth = _maxRecentAtlasWidth.push(atlasWidth);
     const canvasHeight = _maxRecentAtlasHeight.push(atlasHeight);
+
+    // Early out if the proxy doesn't return the canvas due to lost context
+    if (!_gl.canvas) {
+      return;
+    }
     if (_gl.canvas.width != canvasWidth || _gl.canvas.height != canvasHeight) {
       _gl.canvas.width = canvasWidth;
       _gl.canvas.height = canvasHeight;
@@ -825,17 +846,20 @@ Module["onRuntimeInitialized"] = function () {
         ctx["resetTransform"]();
         ctx["globalCompositeOperation"] = canvasBlend;
         ctx["globalAlpha"] = opacity;
-        ctx["drawImage"](
-          offscreenWebGL.canvas(),
-          atlasX,
-          atlasY,
-          widthInAtlas,
-          heightInAtlas,
-          meshMinX,
-          meshMinY,
-          meshClippedWidth,
-          meshClippedHeight
-        );
+        const offscreenCanvas = offscreenWebGL.canvas();
+        if (offscreenCanvas) {
+          ctx["drawImage"](
+            offscreenCanvas,
+            atlasX,
+            atlasY,
+            widthInAtlas,
+            heightInAtlas,
+            meshMinX,
+            meshMinY,
+            meshClippedWidth,
+            meshClippedHeight
+          );
+        }
         ctx["restore"]();
       });
     },
