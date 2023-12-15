@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.8](https://github.com/rive-app/rive-wasm/compare/2.7.7...2.7.8)
+## [2.7.9](https://github.com/rive-app/rive-wasm/compare/2.7.8...2.7.9)
 
 ### Commits
 
+- fix: try wrapping the webgl context as a proxy and erroring out early if context is lost [`df1977e`](https://github.com/rive-app/rive-wasm/commit/df1977eae6d279d49b4ffc9fc37ab817e37ff420)
+
+## [2.7.8](https://github.com/rive-app/rive-wasm/compare/2.7.7...2.7.8) - 2023-12-14
+
+### Commits
+
+- chore: tag 2.7.8 [`97563b3`](https://github.com/rive-app/rive-wasm/commit/97563b3c6e460a3cfd0da497a071864155449047)
 - chore: fix broken docs link [`85ff798`](https://github.com/rive-app/rive-wasm/commit/85ff79809ec019e27574ee9761c4df3953543b81)
 
 ## [2.7.7](https://github.com/rive-app/rive-wasm/compare/2.7.6...2.7.7) - 2023-12-11
