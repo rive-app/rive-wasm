@@ -69,6 +69,36 @@ const offscreenWebGL = new (function () {
         }
       }
 
+      gl = new Proxy(gl, {
+        get(target, property) {
+          if (target.isContextLost()) {
+            console.error("GL Context was lost, tried to invoke ", property);
+            if (typeof target[property] === "function") {
+              return function () {};
+            }
+            return;
+          } else {
+            if (typeof target[property] === "function") {
+              return function (...args) {
+                return target[property].apply(target, args);
+              };
+            }
+            return target[property];
+          }
+        },
+        set(target, property, value) {
+          if (target.isContextLost()) {
+            console.error(
+              "GL Context was lost, tried to set property " + property
+            );
+            return;
+          } else {
+            target[property] = value;
+            return true;
+          }
+        },
+      });
+
       _maxRTSize = Math.min(
         gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
         gl.getParameter(gl.MAX_TEXTURE_SIZE)
@@ -133,6 +163,8 @@ const offscreenWebGL = new (function () {
     }
     return true;
   };
+  // TODO: Might mask the issue of GL context lost, but initializing GL early to help mitigate
+  initGL();
 
   this.maxRTSize = function () {
     initGL();
@@ -337,7 +369,7 @@ const offscreenWebGL = new (function () {
 const rendererOnRuntimeInitialized = Module["onRuntimeInitialized"];
 Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.
-  (rendererOnRuntimeInitialized && rendererOnRuntimeInitialized());
+  rendererOnRuntimeInitialized && rendererOnRuntimeInitialized();
 
   const RenderPaintStyle = Module.RenderPaintStyle;
   const FillRule = Module.FillRule;
@@ -880,11 +912,11 @@ Module["onRuntimeInitialized"] = function () {
       },
     });
   };
-  
+
   Module["decodeImage"] = function (bytes, onComplete) {
-    let renderImage = new CanvasRenderImage({onComplete});
+    let renderImage = new CanvasRenderImage({ onComplete });
     renderImage.decode(bytes);
-  }
+  };
 
   Module["renderFactory"] = {
     makeRenderPaint: function () {
@@ -899,7 +931,7 @@ Module["onRuntimeInitialized"] = function () {
         onDecode: () => {
           context.total++;
         },
-        onComplete: ()=> {
+        onComplete: () => {
           context.loaded++;
           if (context.loaded === context.total) {
             const ready = context.ready;
@@ -908,7 +940,7 @@ Module["onRuntimeInitialized"] = function () {
               context.ready = null;
             }
           }
-        }
+        },
       });
     },
   };
@@ -918,18 +950,17 @@ Module["onRuntimeInitialized"] = function () {
   Module["load"] = function (
     bytes,
     fileAssetLoader,
-    enableRiveAssetCDN=true,
+    enableRiveAssetCDN = true
   ) {
-  
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
       loader.addLoader(fileAssetLoader);
     }
-    if (enableRiveAssetCDN) { 
+    if (enableRiveAssetCDN) {
       const cdnLoader = new Module["CDNFileAssetLoader"]();
       loader.addLoader(cdnLoader);
     }
-    return  new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       let result = null;
       loadContext = {
         total: 0,
