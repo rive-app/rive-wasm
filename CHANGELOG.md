@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.9](https://github.com/rive-app/rive-wasm/compare/2.7.8...2.7.9)
+## [2.8.0](https://github.com/rive-app/rive-wasm/compare/2.7.9...2.8.0)
 
 ### Commits
 
+- fix: revert image texture destructor for testing binding issues [`8c7b72c`](https://github.com/rive-app/rive-wasm/commit/8c7b72cf9fcbe60d8ec7502b526cd50ebcb888a6)
+
+## [2.7.9](https://github.com/rive-app/rive-wasm/compare/2.7.8...2.7.9) - 2023-12-15
+
+### Commits
+
+- chore: tag 2.7.9 [`efb2e47`](https://github.com/rive-app/rive-wasm/commit/efb2e4757b216dcc661695956d8e805c7e409471)
 - fix: try wrapping the webgl context as a proxy and erroring out early if context is lost [`df1977e`](https://github.com/rive-app/rive-wasm/commit/df1977eae6d279d49b4ffc9fc37ab817e37ff420)
 
 ## [2.7.8](https://github.com/rive-app/rive-wasm/compare/2.7.7...2.7.8) - 2023-12-14
