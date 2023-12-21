@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.8.3](https://github.com/rive-app/rive-wasm/compare/2.8.2...2.8.3)
+## [2.9.0](https://github.com/rive-app/rive-wasm/compare/2.8.3...2.9.0)
 
 ### Commits
 
+- use skia directly from skia repository for recorder [`c7b8ff3`](https://github.com/rive-app/rive-wasm/commit/c7b8ff3bc1b59dd2e16986f7a9971c55dcfc976b)
+- feat: only use webgl instead of webgl2 in iOS browsers to try and prevent crashing on iOS Safari [`35df9e0`](https://github.com/rive-app/rive-wasm/commit/35df9e0d5ca064ecaf7dd5e696ca90e40e91038e)
+- add support for svg export [`63bb2f6`](https://github.com/rive-app/rive-wasm/commit/63bb2f66542b5ab75aa3a6cc7889edea94856dab)
+- fix off color interpolation [`e2da9c7`](https://github.com/rive-app/rive-wasm/commit/e2da9c781ef25f603d46efe6971c1e8d9e03fd19)
+
+## [2.8.3](https://github.com/rive-app/rive-wasm/compare/2.8.2...2.8.3) - 2023-12-15
+
+### Commits
+
+- chore: tag 2.8.3 [`b6e3d60`](https://github.com/rive-app/rive-wasm/commit/b6e3d60d65e219cf719c9921752234dc4a250676)
 - fix: add back in the image texture delete action [`af46a7b`](https://github.com/rive-app/rive-wasm/commit/af46a7be364beed1c177932f9764e3cba4b4229b)
 
 ## [2.8.2](https://github.com/rive-app/rive-wasm/compare/2.8.1...2.8.2) - 2023-12-15
