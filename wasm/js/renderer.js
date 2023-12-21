@@ -56,17 +56,30 @@ const offscreenWebGL = new (function () {
         "explicitSwapControl": 1,
         "renderViaOffscreenBackBuffer": 1,
       };
-      // Prefer webgl2 so we can use mipmaps on now-power-2 mesh textures.
-      let gl = canvas.getContext("webgl2", contextAttribs);
-      if (gl) {
-        _webglVersion = 2;
-      } else {
+      const _isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      let gl;
+      // Check for iOS as we've encountered context lost and crash issues
+      // with WebGL2 contexts and iOS Safari (16 and 17)
+      if (_isiOS) {
         gl = canvas.getContext("webgl", contextAttribs);
-        if (gl) {
-          _webglVersion = 1;
-        } else {
+        _webglVersion = 1;
+        if (!gl) {
           console.log("No WebGL support. Image mesh will not be drawn.");
           return false;
+        }
+      } else {
+        // Prefer webgl2 so we can use mipmaps on now-power-2 mesh textures.
+        gl = canvas.getContext("webgl2", contextAttribs);
+        if (gl) {
+          _webglVersion = 2;
+        } else {
+          gl = canvas.getContext("webgl", contextAttribs);
+          if (gl) {
+            _webglVersion = 1;
+          } else {
+            console.log("No WebGL support. Image mesh will not be drawn.");
+            return false;
+          }
         }
       }
 
@@ -423,6 +436,9 @@ Module["onRuntimeInitialized"] = function () {
     "__destruct": function () {
       if (this._texture) {
         offscreenWebGL.deleteImageTexture(this._texture);
+        // Recommended to release this when it's safe to do so
+        // Source: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management
+        URL.revokeObjectURL(this._newObjectUrl);
       }
       this["__parent"]["__destruct"].call(this);
     },
@@ -431,11 +447,12 @@ Module["onRuntimeInitialized"] = function () {
       // Question: could .bind(cri);
       cri.onDecode && cri.onDecode(cri);
       var image = new Image();
-      image.src = URL.createObjectURL(
+      cri._newObjectUrl = URL.createObjectURL(
         new Blob([bytes], {
           type: "image/png",
         })
       );
+      image.src = cri._newObjectUrl;
 
       image.onload = function () {
         cri._image = image;
