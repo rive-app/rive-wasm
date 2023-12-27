@@ -83,7 +83,7 @@ public:
     void saveClipRect(float l, float t, float r, float b)
     {
         save();
-        std::unique_ptr<rive::RenderPath> rect(jsFactory()->makeEmptyRenderPath());
+        rive::rcp<rive::RenderPath> rect(jsFactory()->makeEmptyRenderPath());
         rect->moveTo(l, t);
         rect->lineTo(r, t);
         rect->lineTo(r, b);

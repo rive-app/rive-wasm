@@ -331,7 +331,7 @@ class C2DFactory : public Factory
         return rcp<RenderShader>(new RadialGradientShader(colors, stops, count, cx, cy, radius));
     }
 
-    std::unique_ptr<RenderPath> makeRenderPath(RawPath& path, FillRule fr) override
+    rcp<RenderPath> makeRenderPath(RawPath& path, FillRule fr) override
     {
         val renderPath = val::module_property("renderFactory").call<val>("makeRenderPath");
         auto ptr = renderPath.as<RenderPath*>(allow_raw_pointers());
@@ -363,21 +363,21 @@ class C2DFactory : public Factory
         }
         assert(pts - path.points().data() == path.points().size());
 
-        return std::unique_ptr<RenderPath>(ptr);
+        return rcp(ptr); // Adopt this ref without increasing the refcount.
     }
 
-    std::unique_ptr<RenderPath> makeEmptyRenderPath() override
+    rcp<RenderPath> makeEmptyRenderPath() override
     {
         val renderPath = val::module_property("renderFactory").call<val>("makeRenderPath");
         auto ptr = renderPath.as<RenderPath*>(allow_raw_pointers());
-        return std::unique_ptr<RenderPath>(ptr);
+        return rcp(ptr); // Adopt this ref without increasing the refcount.
     }
 
-    std::unique_ptr<RenderPaint> makeRenderPaint() override
+    rcp<RenderPaint> makeRenderPaint() override
     {
         val renderPaint = val::module_property("renderFactory").call<val>("makeRenderPaint");
         auto ptr = renderPaint.as<RenderPaint*>(allow_raw_pointers());
-        return std::unique_ptr<RenderPaint>(ptr);
+        return rcp(ptr); // Adopt this ref without increasing the refcount.
     }
 
     rcp<RenderImage> decodeImage(Span<const uint8_t> bytes) override
