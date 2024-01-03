@@ -22,7 +22,8 @@
   ],
   "license": "MIT",
   "files": [
-    "webgl_advanced_single.mjs"
+    "webgl_advanced_single.mjs",
+    "rive_advanced.mjs.d.ts"
   ],
   "types": "rive_advanced.mjs.d.ts",
   "dependencies": {},
