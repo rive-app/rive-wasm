@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.0](https://github.com/rive-app/rive-wasm/compare/2.8.3...2.9.0)
+## [2.9.1](https://github.com/rive-app/rive-wasm/compare/2.9.0...2.9.1)
 
 ### Commits
 
+- Fix: Include types declaration in webgl advanced packages [`d356ab5`](https://github.com/rive-app/rive-wasm/commit/d356ab5e7026ef0f2528ea3c090c75232dc9e318)
+- Refactor PLSRenderer into draw objects [`cd59415`](https://github.com/rive-app/rive-wasm/commit/cd5941536333f9cec21978d20948e149d442a2f1)
+- Convert RenderPath/CommandPath and RenderPaint to refcounted objects [`1dffe23`](https://github.com/rive-app/rive-wasm/commit/1dffe231bb54317804c4895419d352e492fc4e10)
+- Delete the Vec2D default constructor [`efc3bd5`](https://github.com/rive-app/rive-wasm/commit/efc3bd5bfbdff9dadbf8b5759a64136e36847441)
+
+## [2.9.0](https://github.com/rive-app/rive-wasm/compare/2.8.3...2.9.0) - 2023-12-21
+
+### Commits
+
+- chore: tag 2.9.0 [`11ed0c3`](https://github.com/rive-app/rive-wasm/commit/11ed0c3d6385ef1294019dda2d1c097f6378f860)
 - use skia directly from skia repository for recorder [`c7b8ff3`](https://github.com/rive-app/rive-wasm/commit/c7b8ff3bc1b59dd2e16986f7a9971c55dcfc976b)
 - feat: only use webgl instead of webgl2 in iOS browsers to try and prevent crashing on iOS Safari [`35df9e0`](https://github.com/rive-app/rive-wasm/commit/35df9e0d5ca064ecaf7dd5e696ca90e40e91038e)
 - add support for svg export [`63bb2f6`](https://github.com/rive-app/rive-wasm/commit/63bb2f66542b5ab75aa3a6cc7889edea94856dab)
