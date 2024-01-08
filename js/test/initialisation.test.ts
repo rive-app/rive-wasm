@@ -289,3 +289,62 @@ test("Rive doesn't error out when cleaning up if the file is not set yet", () =>
 });
 
 // #endregion
+
+// #region sizing the canvas
+
+test("resizeDrawingSurfaceToCanvas scales canvas with devicePixelRatio by default", (done) => {
+  Element.prototype.getBoundingClientRect = jest.fn(() => {
+    return {
+      width: 500,
+      height: 500,
+    } as DOMRect;
+  });
+  window.devicePixelRatio = 3;
+  const canvas = document.createElement("canvas");
+  canvas.style.width = "500px";
+  canvas.style.height = "500px";
+  canvas.width = 500;
+  canvas.height = 500;
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: pingPongRiveFileBuffer,
+    onLoad: () => {
+      expect(canvas.width).toBe(500);
+      expect(canvas.height).toBe(500);
+      r.resizeDrawingSurfaceToCanvas();
+      console.log(canvas.getBoundingClientRect());
+      expect(canvas.width).toBe(1500);
+      expect(canvas.height).toBe(1500);
+      done();
+    },
+  });
+});
+
+test("resizeDrawingSurfaceToCanvas scales canvas with passed in ratio if present", (done) => {
+  Element.prototype.getBoundingClientRect = jest.fn(() => {
+    return {
+      width: 500,
+      height: 500,
+    } as DOMRect;
+  });
+  window.devicePixelRatio = 3;
+  const canvas = document.createElement("canvas");
+  canvas.style.width = "500px";
+  canvas.style.height = "500px";
+  canvas.width = 500;
+  canvas.height = 500;
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: pingPongRiveFileBuffer,
+    onLoad: () => {
+      expect(canvas.width).toBe(500);
+      expect(canvas.height).toBe(500);
+      r.resizeDrawingSurfaceToCanvas(1);
+      expect(canvas.width).toBe(500);
+      expect(canvas.height).toBe(500);
+      done();
+    },
+  });
+});
+
+// #endregion

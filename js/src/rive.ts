@@ -1903,10 +1903,10 @@ export class Rive {
    * and resize the layout to match the new drawing surface afterwards.
    * Useful function for consumers to include in a window resize listener
    */
-  public resizeDrawingSurfaceToCanvas() {
+  public resizeDrawingSurfaceToCanvas(customDevicePixelRatio?: number) {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
       const { width, height } = this.canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = customDevicePixelRatio || window.devicePixelRatio || 1;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
       this.startRendering();
