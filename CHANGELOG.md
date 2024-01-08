@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.1](https://github.com/rive-app/rive-wasm/compare/2.9.0...2.9.1)
+## [2.9.2](https://github.com/rive-app/rive-wasm/compare/2.9.1...2.9.2)
 
 ### Commits
 
+- add optional param for method resizeDrawingSurfaceToCanvas [`f251f5e`](https://github.com/rive-app/rive-wasm/commit/f251f5e97b223f8f5fd453ce87dd97ed86223fc6)
+- add support for self clipping shape [`b3f9097`](https://github.com/rive-app/rive-wasm/commit/b3f9097dbf77621dbf618ace61a0a78733b45b95)
+- clone metrics path when a path is added [`40a2201`](https://github.com/rive-app/rive-wasm/commit/40a2201d662b8209e55d45759d5b42886e0bf87b)
+- Defer PLS writes to GPU resources until flush [`a6c451d`](https://github.com/rive-app/rive-wasm/commit/a6c451dbf29b3b2858e0c95c110826d2366f7d89)
+
+## [2.9.1](https://github.com/rive-app/rive-wasm/compare/2.9.0...2.9.1) - 2024-01-03
+
+### Commits
+
+- chore: tag 2.9.1 [`73780e2`](https://github.com/rive-app/rive-wasm/commit/73780e29976d05c17ca3bda64f21c61bfeaaa543)
 - Fix: Include types declaration in webgl advanced packages [`d356ab5`](https://github.com/rive-app/rive-wasm/commit/d356ab5e7026ef0f2528ea3c090c75232dc9e318)
 - Refactor PLSRenderer into draw objects [`cd59415`](https://github.com/rive-app/rive-wasm/commit/cd5941536333f9cec21978d20948e149d442a2f1)
 - Convert RenderPath/CommandPath and RenderPaint to refcounted objects [`1dffe23`](https://github.com/rive-app/rive-wasm/commit/1dffe231bb54317804c4895419d352e492fc4e10)
