@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.2](https://github.com/rive-app/rive-wasm/compare/2.9.1...2.9.2)
+## [2.9.3](https://github.com/rive-app/rive-wasm/compare/2.9.2...2.9.3)
+
+### Fixed
+
+- fix elastic interpolator crash with period 0 [`#6422`](https://github.com/rive-app/rive-wasm/issues/6422)
 
 ### Commits
 
+- Unify storage buffers for atomic mode and normal [`07055fe`](https://github.com/rive-app/rive-wasm/commit/07055fe644a0b7bf819e332c152022082133b3eb)
+- default to skia branch for commit hash in cache helper [`88846e5`](https://github.com/rive-app/rive-wasm/commit/88846e541e46576c3e5a10c45668df3e6ef14543)
+- Implement re-ordering for PLS atomic draws [`391108d`](https://github.com/rive-app/rive-wasm/commit/391108d4d084741968abc66a651cf65ce5df40d5)
+
+## [2.9.2](https://github.com/rive-app/rive-wasm/compare/2.9.1...2.9.2) - 2024-01-08
+
+### Commits
+
+- chore: tag 2.9.2 [`7d028e9`](https://github.com/rive-app/rive-wasm/commit/7d028e969e2aed543381ed15aed65fa2b44c1054)
 - add optional param for method resizeDrawingSurfaceToCanvas [`f251f5e`](https://github.com/rive-app/rive-wasm/commit/f251f5e97b223f8f5fd453ce87dd97ed86223fc6)
 - add support for self clipping shape [`b3f9097`](https://github.com/rive-app/rive-wasm/commit/b3f9097dbf77621dbf618ace61a0a78733b45b95)
 - clone metrics path when a path is added [`40a2201`](https://github.com/rive-app/rive-wasm/commit/40a2201d662b8209e55d45759d5b42886e0bf87b)
