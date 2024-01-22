@@ -91,6 +91,15 @@ export interface RiveCanvas {
    */
   cancelAnimationFrame(requestID: number): void;
   /**
+   * A Rive-specific function to "flush" queued up draw calls from using the renderer.
+   * 
+   * This should only be invoked once at the end of a loop in a regular JS
+   * requestAnimationFrame loop, and should not be used with the Rive-wrapped
+   * requestAnimationFrame (aka, the requestAnimationFrame() API on this object) as that
+   * API will handle flushing the draw calls implicitly.
+   */
+  resolveAnimationFrame(): void;
+  /**
    * Debugging tool to showcase the FPS in the corner of the screen in a new div. If a callback
    * function is provided, this function passes the FPS count to the callback instead of creating a
    * new div so the client can decide what to do with that data.

@@ -65,14 +65,14 @@ async function main() {
   const cachedImageAsset = (asset) => {
     let image = imageCache[imageCacheIndex++ % imageCache.length];
     asset.setRenderImage(image);
-    rive.requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
     // IMPORTANT: to clear the cache, be sure to also call .unref() on each asset.
   };
 
   const cachedFontAsset = (asset) => {
     let font = fontCache[fontCacheIndex++ % fontCache.length];
     asset.setFont(font);
-    rive.requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
     // IMPORTANT: to clear the cache, be sure to also call .unref() on each asset.
   };
 
@@ -80,7 +80,7 @@ async function main() {
     fetch("https://picsum.photos/1000/1500").then(async  (res) => {
       rive.decodeImage(new Uint8Array(await res.arrayBuffer()), (image) => {
         asset.setRenderImage(image);
-        rive.requestAnimationFrame(draw);
+        requestAnimationFrame(draw);
         // IMPORTANT: call unref, so that we do not keep the asset alive with 
         // a reference from javascript.
         image.unref();
@@ -102,7 +102,7 @@ async function main() {
       rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => { 
         asset.setFont(font);
   
-        rive.requestAnimationFrame(draw);
+        requestAnimationFrame(draw);
         // IMPORTANT: call unref, so that we do not keep the asset alive with 
         // a reference from javascript.
         font.unref();
@@ -221,9 +221,10 @@ async function main() {
     renderer.flush();
 
     // Draw more if we want to.
-    rive.requestAnimationFrame(draw);
+    requestAnimationFrame(draw);
+    rive.resolveAnimationFrame();
   }
-  rive.requestAnimationFrame(draw);
+  requestAnimationFrame(draw);
 }
 
 main();

@@ -14,7 +14,8 @@ import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_s
 // (Release) Canvas Advanced Single Lite
 // import RiveCanvas from "../../build/canvas_advanced_lite_single/bin/release/canvas_advanced_single.mjs";
 
-import { registerTouchInteractions } from "../../../js/src/utils";
+// import {checkForLeaks} from "./checkForLeaks";
+
 import AvatarAnimation from "./look.riv";
 import TapeMeshAnimation from "./tape.riv";
 import BirdAnimation from "./birb.riv";
@@ -24,7 +25,6 @@ import SwitchAnimation from "./switch_event_example.riv";
 import TestText from "./text_test_2.riv";
 import "./main.css";
 
-const randomNum = Math.ceil(Math.random() * 100 * 5) + 100;
 const RIVE_EXAMPLES = {
   0: {
     riveFile: BallAnimation,
@@ -47,7 +47,7 @@ const RIVE_EXAMPLES = {
   4: {
     riveFile: TruckAnimation,
     hasStateMachine: true,
-    stateMachine: "",
+    stateMachine: "drive",
   },
   5: {
     riveFile: AvatarAnimation,
@@ -60,9 +60,8 @@ const RIVE_EXAMPLES = {
   },
 };
 
-// Loads a default animation and displays it using the advanced api. Drag and
-// drop .riv files to see them and play their default animations.
-async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
+// Load in the Rive File, retrieve the default artboard, a named state machine, or a named animation
+async function retrieveRiveContents({ rive, num }) {
   async function loadDefault() {
     const riveEx = RIVE_EXAMPLES[num % Object.keys(RIVE_EXAMPLES).length];
     const { hasStateMachine } = riveEx;
@@ -73,7 +72,7 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     artboard = file.defaultArtboard();
     if (hasStateMachine) {
       stateMachine = new rive.StateMachineInstance(
-        artboard.stateMachineByIndex(0),
+        artboard.stateMachineByName(riveEx.stateMachine),
         artboard
       );
     } else {
@@ -85,33 +84,41 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
   }
   await loadDefault();
 
-  let canvas = document.getElementById(`canvas${num}`);
-  if (!canvas) {
-    const body = document.querySelector("body");
-    canvas = document.createElement("canvas");
-    canvas.id = `canvas${num}`;
-    body.appendChild(canvas);
-  }
-  canvas.width = hasRandomSizes ? `${randomNum}` : "400";
-  canvas.height = hasRandomSizes ? `${randomNum}` : "400";
-  // Don't use the offscreen renderer for FF as it should have a context limit of 300
-  const renderer = rive.makeRenderer(canvas, true);
-
-  // Register cursor mouse actions to trigger Rive touch interactions
-  const activeStateMachines = stateMachine ? [stateMachine] : [];
-  registerTouchInteractions({
-    canvas,
-    artboard,
-    stateMachines: activeStateMachines,
-    renderer,
-    rive,
-    fit: rive.Fit.contain,
-    alignment: rive.Alignment.center,
-  });
-
-  let lastTime = 0;
   let artboard, stateMachine, animation;
 
+  return { artboard, stateMachine, animation };
+}
+
+async function main() {
+  // Determine how many Rives to load and draw onto the singular canvas
+  const params = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop),
+  });
+  const numRivesToRender = parseInt(params.numCanvases || 0) || 20;
+
+  // Set canvas surface area based on the amount of rivs to render
+  // To keep this simple, we'll just render each Rive with an area
+  // of 250x250
+  let canvas = document.getElementById("rive-canvas");
+  canvas.width = `${numRivesToRender * 250}`;
+  canvas.height = `${Math.ceil(numRivesToRender / 4) * 250}`;
+
+  // Instance Rive and create our Renderer
+  // Note: We use the advanced-single build here to simplify having to load in WASM, as
+  // this will ensure WASM is bundled in the JS
+  const rive = await RiveCanvas();
+  const renderer = rive.makeRenderer(canvas, true);
+
+  // OPTIONAL FOR DEBUG TESTING: Perform leak checks right after rive is initialized.
+  // await checkForLeaks(rive);
+
+  // Track the artboard, animation/state machine of each Rive file we load in
+  let instances = [];
+  for (let i = 0; i < numRivesToRender; i++) {
+    instances.push(await retrieveRiveContents({ rive, num: i }));
+  }
+
+  let lastTime = 0;
   function draw(time) {
     if (!lastTime) {
       lastTime = time;
@@ -121,131 +128,62 @@ async function renderRiveAnimation({ rive, num, hasRandomSizes }) {
     lastTime = time;
 
     renderer.clear();
-    if (artboard) {
-      if (stateMachine) {
-        stateMachine.advance(elapsedSeconds);
-      }
-      if (animation) {
-        animation.advance(elapsedSeconds);
-        animation.apply(1);
-      }
-      artboard.advance(elapsedSeconds);
-      renderer.save();
-      renderer.align(
-        rive.Fit.contain,
-        rive.Alignment.center,
-        {
-          minX: 0,
-          minY: 0,
-          maxX: canvas.width,
-          maxY: canvas.height,
-        },
-        artboard.bounds
-      );
-      artboard.draw(renderer);
-      renderer.restore();
-    }
-    renderer.flush();
+    let trackX = 0;
+    let trackY = 0;
+    const colMax = 4;
 
+    // For each Rive we loaded, advance the animation/state machine and artboard by elapsed
+    // time since last frame draw and render the Artboard to a piece of the canvas using
+    // the Renderer's align method
+    for (let i = 0; i < numRivesToRender; i++) {
+      let { artboard, stateMachine, animation } = instances[i];
+      if (artboard) {
+        if (stateMachine) {
+          stateMachine.advance(elapsedSeconds);
+        }
+        if (animation) {
+          animation.advance(elapsedSeconds);
+          animation.apply(1);
+        }
+        artboard.advance(elapsedSeconds);
+        renderer.save();
+        // Draw to a 250x250 piece of the canvas and track "position"
+        // in grid to move to the next piece to render the next Rive
+        renderer.align(
+          rive.Fit.contain,
+          rive.Alignment.center,
+          {
+            minX: trackX,
+            minY: trackY,
+            maxX: trackX + 250,
+            maxY: trackY + 250,
+          },
+          artboard.bounds
+        );
+        if ((i + 1) % colMax === 0) {
+          trackX = 0;
+          trackY += 250;
+        } else {
+          trackX += 250;
+        }
+
+        // Pass along our Renderer to the artboard, so that it can draw onto the canvas
+        artboard.draw(renderer);
+        renderer.restore();
+        renderer.flush();
+      }
+    }
+
+    // Needed to actually resolve a queue of drawing and rendering calls with our Renderer
+    // Note: ONLY needed if using a normal JS requestAnimationFrame, rather than our wrapped
+    // one in the rive API
+    // rive.resolveAnimationFrame();
+
+    // Call the next frame!
     rive.requestAnimationFrame(draw);
   }
+  // Start the animation loop
   rive.requestAnimationFrame(draw);
-}
-
-async function main() {
-  const params = new Proxy(new URLSearchParams(window.location.search), {
-    get: (searchParams, prop) => searchParams.get(prop),
-  });
-  const numCanvases = parseInt(params.numCanvases || 0) || 7;
-  const hasRandomSizes = !!params.hasRandomSizes || false;
-  const rive = await RiveCanvas();
-
-  // Optionally perform leak checks right after rive is initialized.
-  // await checkForLeaks(rive);
-
-  rive.enableFPSCounter();
-  for (let i = 0; i < numCanvases; i++) {
-    await renderRiveAnimation({ rive, num: i, hasRandomSizes });
-  }
-}
-
-async function checkForLeaks(rive) {
-  const riveEx = RIVE_EXAMPLES[0];
-  const { hasStateMachine } = riveEx;
-  var stateMachine, animation;
-  const bytes = await (await fetch(new Request(riveEx.riveFile))).arrayBuffer();
-  const file = await rive.load(new Uint8Array(bytes));
-  const artboard = file.defaultArtboard();
-  artboard.advance(0);
-  if (hasStateMachine) {
-    stateMachine = new rive.StateMachineInstance(
-      artboard.stateMachineByIndex(0),
-      artboard
-    );
-  } else {
-    animation = new rive.LinearAnimationInstance(
-      artboard.animationByName(riveEx.animation),
-      artboard
-    );
-  }
-  const num = 0;
-  let canvas = document.getElementById(`canvas${num}`);
-  if (!canvas) {
-    const body = document.querySelector("body");
-    canvas = document.createElement("canvas");
-    canvas.id = `canvas${num}`;
-    body.appendChild(canvas);
-  }
-  canvas.width = "400";
-  canvas.height = "400";
-  // Don't use the offscreen renderer for FF as it should have a context limit of 300
-  const renderer = rive.makeRenderer(canvas, true);
-  var elapsedSeconds = 0.0167;
-  // Render 20 frames.
-  for (var i = 0; i < 1000; i++) {
-    renderer.clear();
-    if (artboard) {
-      if (stateMachine) {
-        stateMachine.advance(elapsedSeconds);
-      }
-      if (animation) {
-        animation.advance(elapsedSeconds);
-        animation.apply(1);
-      }
-      artboard.advance(elapsedSeconds);
-      renderer.save();
-      renderer.align(
-        rive.Fit.contain,
-        rive.Alignment.center,
-        {
-          minX: 0,
-          minY: 0,
-          maxX: canvas.width,
-          maxY: canvas.height,
-        },
-        artboard.bounds
-      );
-      artboard.draw(renderer);
-      renderer.restore();
-    }
-    renderer.flush();
-  }
-
-  renderer.delete();
-  if (stateMachine) {
-    stateMachine.delete();
-  }
-  if (animation) {
-    animation.delete();
-  }
-  if (artboard) {
-    artboard.delete();
-  }
-  file.delete();
-  rive.cleanup();
-  // Report any leaks.
-  rive.doLeakCheck();
-  console.log("END");
 }
 
 main();

@@ -1032,6 +1032,8 @@ Module["onRuntimeInitialized"] = function () {
   Module["disableFPSCounter"] = _animationCallbackHandler.disableFPSCounter;
   _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
 
+  Module["resolveAnimationFrame"] = flushCanvasRenderers;
+
   Module["cleanup"] = function () {
     if (_rectanizer) {
       _rectanizer.delete();

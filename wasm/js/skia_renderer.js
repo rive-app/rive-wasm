@@ -2,7 +2,7 @@ const skiaOnRuntimeInitialized = Module["onRuntimeInitialized"];
 
 Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.
-  (skiaOnRuntimeInitialized && skiaOnRuntimeInitialized());
+  skiaOnRuntimeInitialized && skiaOnRuntimeInitialized();
 
   const _isFirefox = navigator.userAgent.match(/firefox|fxios/i);
   let _offscreenGL = null;
@@ -298,22 +298,23 @@ Module["onRuntimeInitialized"] = function () {
   );
   _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
 
+  Module["resolveAnimationFrame"] = flushOffscreenRenderers;
+
   let load = Module["load"];
   Module["load"] = function (
-    bytes, 
+    bytes,
     fileAssetLoader,
-    enableRiveAssetCDN = true,
+    enableRiveAssetCDN = true
   ) {
-
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
       loader.addLoader(fileAssetLoader);
     }
-    if (enableRiveAssetCDN) { 
+    if (enableRiveAssetCDN) {
       const cdnLoader = new Module["CDNFileAssetLoader"]();
       loader.addLoader(cdnLoader);
     }
-    
+
     return Promise.resolve(load(bytes, loader));
   };
 
@@ -333,5 +334,5 @@ Module["onRuntimeInitialized"] = function () {
   Module["decodeImage"] = function (bytes, onComplete) {
     let image = Module["decodeImageSkia"](bytes);
     onComplete(image);
-  }
+  };
 };
