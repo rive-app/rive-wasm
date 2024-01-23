@@ -1,6 +1,7 @@
 local dependency = require 'dependency'
 harfbuzz = dependency.github('harfbuzz/harfbuzz', '6.0.0')
 sheenbidi = dependency.github('Tehreer/SheenBidi', 'v2.6')
+miniaudio = dependency.github('rive-app/miniaudio', 'rive')
 
 workspace 'rive'
 configurations {'debug', 'release'}
@@ -16,10 +17,11 @@ source = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-cpp
 includedirs {
     source .. '/include',
     harfbuzz .. '/src',
-    sheenbidi .. '/Headers'
+    sheenbidi .. '/Headers',
+    miniaudio
 }
 flags {
-    'FatalCompileWarnings',
+    'FatalCompileWarnings'
 }
 
 files {
@@ -351,7 +353,7 @@ end
 
 filter 'options:not lite'
 do
-    defines { 'WITH_RIVE_TEXT' }
+    defines {'WITH_RIVE_TEXT', 'WITH_RIVE_AUDIO'}
 end
 
 filter 'configurations:debug'

@@ -618,15 +618,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             }))
         .function("decode",
                   optional_override([](rive::FileAsset& self, emscripten ::val byteArray) {
-                      std::vector<unsigned char> charVector;
-                      const auto length = byteArray["byteLength"].as<unsigned>();
-                      charVector.resize(length);
+                      auto length = byteArray["byteLength"].as<unsigned>();
+                      rive::SimpleArray<uint8_t> bytes((size_t)length);
 
                       emscripten::val memoryView{
-                          emscripten::typed_memory_view(length, charVector.data())};
+                          emscripten::typed_memory_view(length, bytes.data())};
 
                       memoryView.call<void>("set", byteArray);
-                      self.decode(charVector, jsFactory());
+                      self.decode(bytes, jsFactory());
                   }),
                   allow_raw_pointers());
 
