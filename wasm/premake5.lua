@@ -1,30 +1,28 @@
-local dependency = require 'dependency'
+local dependency = require('dependency')
 harfbuzz = dependency.github('harfbuzz/harfbuzz', '6.0.0')
 sheenbidi = dependency.github('Tehreer/SheenBidi', 'v2.6')
 miniaudio = dependency.github('rive-app/miniaudio', 'rive')
 
-workspace 'rive'
-configurations {'debug', 'release'}
+workspace('rive')
+configurations({ 'debug', 'release' })
 
-project 'rive'
+project('rive')
 
-kind 'ConsoleApp'
-language 'C++'
-cppdialect 'C++17'
+kind('ConsoleApp')
+language('C++')
+cppdialect('C++17')
 targetdir((os.getenv('OUT_DIR') or 'build') .. '/bin/%{cfg.buildcfg}')
 objdir((os.getenv('OUT_DIR') or 'build') .. '/obj/%{cfg.buildcfg}')
 source = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-cpp'
-includedirs {
+includedirs({
     source .. '/include',
     harfbuzz .. '/src',
     sheenbidi .. '/Headers',
-    miniaudio
-}
-flags {
-    'FatalCompileWarnings'
-}
+    miniaudio,
+})
+flags({ 'FatalCompileWarnings' })
 
-files {
+files({
     source .. '/src/**.cpp',
     './src/*.cpp',
     harfbuzz .. '/src/hb-aat-layout-ankr-table.hh',
@@ -228,15 +226,11 @@ files {
     harfbuzz .. '/src/hb-utf.hh',
     harfbuzz .. '/src/hb-vector.hh',
     harfbuzz .. '/src/hb.hh',
-    harfbuzz .. '/src/graph/gsubgpos-context.cc'
-}
+    harfbuzz .. '/src/graph/gsubgpos-context.cc',
+})
 
-defines {
-    'HAVE_OT',
-    'HB_NO_FALLBACK_SHAPE',
-    'HB_NO_WIN1256'
-}
-buildoptions {
+defines({ 'HAVE_OT', 'HB_NO_FALLBACK_SHAPE', 'HB_NO_WIN1256' })
+buildoptions({
     '-s STRICT=1',
     '-s DISABLE_EXCEPTION_CATCHING=1',
     '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
@@ -246,10 +240,10 @@ buildoptions {
     '-fno-exceptions',
     '-fno-rtti',
     '-fno-unwind-tables',
-    '--no-entry'
-}
+    '--no-entry',
+})
 
-linkoptions {
+linkoptions({
     '--bind',
     -- TODO: uncomment this to enable asyncify for wasm, check in with -Oz as well
     -- '-O3',
@@ -273,92 +267,86 @@ linkoptions {
     '-fno-exceptions',
     '-fno-rtti',
     '-fno-unwind-tables',
-    '--no-entry'
-}
+    '--no-entry',
+})
 
-filter {'options:not skia', 'options:not single_file'}
+filter({ 'options:not skia', 'options:not single_file' })
 do
-    linkoptions {
+    linkoptions({
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
         '--pre-js ./js/renderer.js',
         '--pre-js ./js/shared.js',
-        '-o %{cfg.targetdir}/canvas_advanced.mjs'
-    }
+        '-o %{cfg.targetdir}/canvas_advanced.mjs',
+    })
 end
 
-filter {'options:not skia', 'options:single_file'}
+filter({ 'options:not skia', 'options:single_file' })
 do
-    linkoptions {
+    linkoptions({
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
         '--pre-js ./js/renderer.js',
         '--pre-js ./js/shared.js',
-        '-o %{cfg.targetdir}/canvas_advanced_single.mjs'
-    }
+        '-o %{cfg.targetdir}/canvas_advanced_single.mjs',
+    })
 end
 
-filter {'options:skia', 'options:single_file'}
+filter({ 'options:skia', 'options:single_file' })
 do
-    linkoptions {
-        '-o %{cfg.targetdir}/webgl_advanced_single.mjs'
-    }
+    linkoptions({ '-o %{cfg.targetdir}/webgl_advanced_single.mjs' })
 end
 
-filter {'options:skia', 'options:not single_file'}
+filter({ 'options:skia', 'options:not single_file' })
 do
-    linkoptions {
-        '-o %{cfg.targetdir}/webgl_advanced.mjs'
-    }
+    linkoptions({ '-o %{cfg.targetdir}/webgl_advanced.mjs' })
 end
 
-filter 'options:skia'
+filter('options:skia')
 do
-    defines {'RIVE_SKIA_RENDERER'}
-    buildoptions {'-DSK_GL', '-DSK_SUPPORT_GPU=1'}
-    includedirs {
+    defines({ 'RIVE_SKIA_RENDERER' })
+    buildoptions({ '-DSK_GL', '-DSK_SUPPORT_GPU=1' })
+    includedirs({
         source .. '/skia/renderer/include',
         source .. '/skia/dependencies/skia_rive_optimized',
         source .. '/skia/dependencies/skia_rive_optimized/include/core',
         source .. '/skia/dependencies/skia_rive_optimized/include/effects',
         source .. '/skia/dependencies/skia_rive_optimized/include/gpu',
-        source .. '/skia/dependencies/skia_rive_optimized/include/config'
-    }
-    files {source .. '/skia/renderer/src/**.cpp'}
-    libdirs {source .. '/skia/dependencies/skia_rive_optimized/out/wasm/'}
-    links {'skia', 'GL'}
-    linkoptions {
+        source .. '/skia/dependencies/skia_rive_optimized/include/config',
+    })
+    files({ source .. '/skia/renderer/src/**.cpp' })
+    libdirs({ source .. '/skia/dependencies/skia_rive_optimized/out/wasm/' })
+    links({ 'skia', 'GL' })
+    linkoptions({
         '-s USE_WEBGL2=1',
         '-s MIN_WEBGL_VERSION=1',
         '-s MAX_WEBGL_VERSION=2',
         '--pre-js ./js/animation_callback_handler.js',
         '--pre-js ./js/max_recent_size.js',
         '--pre-js ./js/skia_renderer.js',
-        '--pre-js ./js/shared.js'
-    }
+        '--pre-js ./js/shared.js',
+    })
 end
 
-filter 'options:not skia'
+filter('options:not skia')
 do
-    includedirs {'./src/skia_imports'}
-    files {'./src/skia_imports/**.cpp'}
+    includedirs({ './src/skia_imports' })
+    files({ './src/skia_imports/**.cpp' })
 end
 
-filter 'options:single_file'
+filter('options:single_file')
 do
-    linkoptions {
-        '-s SINGLE_FILE=1'
-    }
+    linkoptions({ '-s SINGLE_FILE=1' })
 end
 
-filter 'options:not lite'
+filter('options:not lite')
 do
-    defines {'WITH_RIVE_TEXT', 'WITH_RIVE_AUDIO'}
+    defines({ 'WITH_RIVE_TEXT', 'WITH_RIVE_AUDIO' })
 end
 
-filter 'configurations:debug'
+filter('configurations:debug')
 do
-    files {
+    files({
         sheenbidi .. '/Source/BidiChain.c',
         sheenbidi .. '/Source/BidiTypeLookup.c',
         sheenbidi .. '/Source/BracketQueue.c',
@@ -377,58 +365,43 @@ do
         sheenbidi .. '/Source/SBScriptLocator.c',
         sheenbidi .. '/Source/ScriptLookup.c',
         sheenbidi .. '/Source/ScriptStack.c',
-        sheenbidi .. '/Source/StatusStack.c'
-    }
-    defines {'DEBUG'}
-    symbols 'On'
-    buildoptions {
+        sheenbidi .. '/Source/StatusStack.c',
+    })
+    defines({ 'DEBUG' })
+    symbols('On')
+    buildoptions({
         '-g2',
-        '-fsanitize=address'
+        '-fsanitize=address',
         -- '-fsanitize=leak'
-    }
-    linkoptions {
+    })
+    linkoptions({
         '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
         '-s ASSERTIONS=1',
         '-s ABORTING_MALLOC=0',
         '-s DEMANGLE_SUPPORT=1',
         '-g2',
-        '-fsanitize=address'
+        '-fsanitize=address',
         -- '-fsanitize=leak',
-    }
+    })
 end
 
-filter 'configurations:release'
+filter('configurations:release')
 do
-    files {
-        sheenbidi .. '/Source/SheenBidi.c'
-    }
-    defines {'RELEASE', 'NDEBUG', 'SB_CONFIG_UNITY'}
-    optimize 'On'
-    buildoptions {
-        '-flto',
-        '-Oz',
-        '-g0'
-    }
-    linkoptions {
-        '-s ASSERTIONS=0',
-        '--closure 1',
-        '-flto',
-        '-Oz',
-        '-g0'
-    }
+    files({ sheenbidi .. '/Source/SheenBidi.c' })
+    defines({ 'RELEASE', 'NDEBUG', 'SB_CONFIG_UNITY' })
+    optimize('On')
+    buildoptions({ '-flto', '-Oz', '-g0' })
+    linkoptions({ '-s ASSERTIONS=0', '--closure 1', '-flto', '-Oz', '-g0' })
 end
 
-newoption {
-    trigger = 'skia',
-    description = 'Set when linking with Skia.'
-}
+newoption({ trigger = 'skia', description = 'Set when linking with Skia.' })
 
-newoption {
+newoption({
     trigger = 'single_file',
-    description = 'Set when the wasm should be packed in with the js code.'
-}
+    description = 'Set when the wasm should be packed in with the js code.',
+})
 
-newoption {
+newoption({
     trigger = 'lite',
-    description = 'Set when building WASM withot major dependencies (i.e. text engine).'
-}
+    description = 'Set when building WASM withot major dependencies (i.e. text engine).',
+})
