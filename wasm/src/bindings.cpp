@@ -476,21 +476,21 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   }))
         .function("textValueRunCount",
                   optional_override([](rive::ArtboardInstance& self) -> size_t {
-                      return self.textValueRunCount();
+                      return self.count<rive::TextValueRun>();
                   }))
         .function("textValueRunByIndex",
                   optional_override(
                       [](rive::ArtboardInstance& self, size_t index) -> rive::TextValueRun* {
-                          return self.textValueRunAt(index);
+                          return self.objectAt<rive::TextValueRun>(index);
                       }),
                   allow_raw_pointers())
         .function("eventCount", optional_override([](rive::ArtboardInstance& self) -> size_t {
-                      return self.eventCount();
+                      return self.count<rive::Event>();
                   }))
         .function(
             "eventByIndex",
             optional_override([](rive::ArtboardInstance& self, size_t index) -> emscripten::val {
-                rive::Event* event = self.eventAt(index);
+                rive::Event* event = self.objectAt<rive::Event>(index);
                 return createRiveEventObject(event);
             }),
             allow_raw_pointers())
