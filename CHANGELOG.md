@@ -5,10 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.9.2](https://github.com/rive-app/rive-wasm/compare/2.9.1...2.9.2)
+## [2.10.0](https://github.com/rive-app/rive-wasm/compare/2.9.3...2.10.0)
 
 ### Commits
 
+- Rework text/event count/at. [`94dab1f`](https://github.com/rive-app/rive-wasm/commit/94dab1f09d4bfaf86504166f9cf7a74d48aa92db)
+- fix ./build_viewer.sh run [`7a2fc03`](https://github.com/rive-app/rive-wasm/commit/7a2fc03885bdd5b2bebf01a36709cda96af82457)
+- Update goldens [`02dadf3`](https://github.com/rive-app/rive-wasm/commit/02dadf360f291fc4379f31412dc56edeebfa6449)
+- apply current state update before changing states [`ea2a2f4`](https://github.com/rive-app/rive-wasm/commit/ea2a2f4c11ad655a8e77341bc3c142a5876b8be4)
+- Clean up emscripten build [`a69f708`](https://github.com/rive-app/rive-wasm/commit/a69f7085e8f73c4d8f8a5ac95552f61006117b1c)
+- make sure we force embedded assets when exporting for cloud renderer … [`9915108`](https://github.com/rive-app/rive-wasm/commit/99151082319ee4eba5523b3203426a9b920b4903)
+- Fix GL rendering with URP. [`3778cd3`](https://github.com/rive-app/rive-wasm/commit/3778cd3bbdc77deb7dac046d47a74e350c14e044)
+- Unity with new Premake scripts! [`776f931`](https://github.com/rive-app/rive-wasm/commit/776f93136406835fa63026f9dc3cb6060f11aa3c)
+- Unity Android & C# style updates [`3bca997`](https://github.com/rive-app/rive-wasm/commit/3bca9970d49c0ad58dbb003bd1ded5af5978363d)
+- fix listener resolving to different event [`e08a6c4`](https://github.com/rive-app/rive-wasm/commit/e08a6c4556b64a1dc132707ca3da5e8625537beb)
+- Tests use new premake system [`7c57d54`](https://github.com/rive-app/rive-wasm/commit/7c57d54bf32abc0d4e79d9cb51bdb17ce2865cbc)
+- fix viewer build [`77695f6`](https://github.com/rive-app/rive-wasm/commit/77695f6ed7ad8cbf9053585ffb17439c3c3c3b0f)
+- Lua formatter [`d5ffcb9`](https://github.com/rive-app/rive-wasm/commit/d5ffcb9e41fea196498b53a2b53c6ad7a3c8e050)
+- Reorganize premake [`dc9c662`](https://github.com/rive-app/rive-wasm/commit/dc9c662f45e3d24dbd33d0c51c797f1a1f94509c)
+- Build Android deps with audio [`cbc5cee`](https://github.com/rive-app/rive-wasm/commit/cbc5cee3c41efc34b2be563fb71b21fd5522ac9e)
+- PLS external framebuffer optimizations [`bf25bfa`](https://github.com/rive-app/rive-wasm/commit/bf25bfae22c7a55c7b91bba47a98e071fcac910d)
+- Properly generate an android_ndk toolset [`c472135`](https://github.com/rive-app/rive-wasm/commit/c4721359fb3462c98cfa0d9620848ac8753a1585)
+- Audio engine [`2a644b8`](https://github.com/rive-app/rive-wasm/commit/2a644b848d4aee8c18f15146a22391bab7a5650e)
+- poc for adding "flush" [`3b48f12`](https://github.com/rive-app/rive-wasm/commit/3b48f12e93f95d10dc47f72085ec488d2ac48a62)
+- IntersectionBoard optimizations [`0332745`](https://github.com/rive-app/rive-wasm/commit/0332745fc153a44ea606d7d562f5cf967c410f61)
+- IntersectionBoard cleanups [`13dfbd0`](https://github.com/rive-app/rive-wasm/commit/13dfbd043aeb8198d7fd04d11d2d418960a74d90)
+
+## [2.9.3](https://github.com/rive-app/rive-wasm/compare/2.9.2...2.9.3) - 2024-01-18
+
+### Fixed
+
+- fix elastic interpolator crash with period 0 [`#6422`](https://github.com/rive-app/rive-wasm/issues/6422)
+
+### Commits
+
+- chore: tag 2.9.3 [`5de8515`](https://github.com/rive-app/rive-wasm/commit/5de8515751a6999b1ed967ac80c520a2f378b32b)
+- Unify storage buffers for atomic mode and normal [`07055fe`](https://github.com/rive-app/rive-wasm/commit/07055fe644a0b7bf819e332c152022082133b3eb)
+- default to skia branch for commit hash in cache helper [`88846e5`](https://github.com/rive-app/rive-wasm/commit/88846e541e46576c3e5a10c45668df3e6ef14543)
+- Implement re-ordering for PLS atomic draws [`391108d`](https://github.com/rive-app/rive-wasm/commit/391108d4d084741968abc66a651cf65ce5df40d5)
+
+## [2.9.2](https://github.com/rive-app/rive-wasm/compare/2.9.1...2.9.2) - 2024-01-08
+
+### Commits
+
+- chore: tag 2.9.2 [`7d028e9`](https://github.com/rive-app/rive-wasm/commit/7d028e969e2aed543381ed15aed65fa2b44c1054)
 - add optional param for method resizeDrawingSurfaceToCanvas [`f251f5e`](https://github.com/rive-app/rive-wasm/commit/f251f5e97b223f8f5fd453ce87dd97ed86223fc6)
 - add support for self clipping shape [`b3f9097`](https://github.com/rive-app/rive-wasm/commit/b3f9097dbf77621dbf618ace61a0a78733b45b95)
 - clone metrics path when a path is added [`40a2201`](https://github.com/rive-app/rive-wasm/commit/40a2201d662b8209e55d45759d5b42886e0bf87b)
