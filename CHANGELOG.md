@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.10.0](https://github.com/rive-app/rive-wasm/compare/2.9.3...2.10.0)
+## [2.10.1](https://github.com/rive-app/rive-wasm/compare/2.10.0...2.10.1)
 
 ### Commits
 
+- text modifier length calculation fix [`4228eb0`](https://github.com/rive-app/rive-wasm/commit/4228eb0e49f37a5f580da455f3f6aea216a6d294)
+
+## [2.10.0](https://github.com/rive-app/rive-wasm/compare/2.9.3...2.10.0) - 2024-02-05
+
+### Commits
+
+- chore: tag 2.10.0 [`d386ef6`](https://github.com/rive-app/rive-wasm/commit/d386ef6965bf6884989deda1678fad43db8591b9)
 - Rework text/event count/at. [`94dab1f`](https://github.com/rive-app/rive-wasm/commit/94dab1f09d4bfaf86504166f9cf7a74d48aa92db)
 - fix ./build_viewer.sh run [`7a2fc03`](https://github.com/rive-app/rive-wasm/commit/7a2fc03885bdd5b2bebf01a36709cda96af82457)
 - Update goldens [`02dadf3`](https://github.com/rive-app/rive-wasm/commit/02dadf360f291fc4379f31412dc56edeebfa6449)
