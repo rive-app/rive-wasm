@@ -1,7 +1,7 @@
 local dependency = require('dependency')
 harfbuzz = dependency.github('harfbuzz/harfbuzz', '6.0.0')
 sheenbidi = dependency.github('Tehreer/SheenBidi', 'v2.6')
-miniaudio = dependency.github('rive-app/miniaudio', 'rive')
+miniaudio = dependency.github('rive-app/miniaudio', 'rive_changes')
 
 workspace('rive')
 configurations({ 'debug', 'release' })
