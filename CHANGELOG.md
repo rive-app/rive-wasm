@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.10.1](https://github.com/rive-app/rive-wasm/compare/2.10.0...2.10.1)
+## [2.10.2](https://github.com/rive-app/rive-wasm/compare/2.10.1...2.10.2)
 
 ### Commits
 
+- sort hit shapes when draw order changes and stop propagation on hit s… [`c377c99`](https://github.com/rive-app/rive-wasm/commit/c377c992a653b16cece635ecd37001abe4a06fd0)
+- Updating harfbuzz to 8.3.0 [`8165f23`](https://github.com/rive-app/rive-wasm/commit/8165f2351b59e36f3b047f1477faf8d1ba7ee7ea)
+- Unity compute bounds [`4c7ed1e`](https://github.com/rive-app/rive-wasm/commit/4c7ed1e4c085a6887fafb378c0f2adbdd193dfe7)
+- Fix path for downstream runtime. [`21105bd`](https://github.com/rive-app/rive-wasm/commit/21105bd0eb58ec313dfc9490d2f70050056428a5)
+- Fix downstream cpp tests [`4a39e95`](https://github.com/rive-app/rive-wasm/commit/4a39e954362de1a0151e06ca7dda7f99e1dd2c56)
+- Single test script for windows and mac. [`d5a58bb`](https://github.com/rive-app/rive-wasm/commit/d5a58bbd4d17323cc26d5204f460e6079bd12e31)
+- Fix tests to use harfbuzz renames. [`7a63a40`](https://github.com/rive-app/rive-wasm/commit/7a63a40f70574f4d6ece7b41d3c3623c5a91a4a1)
+- make a change to force a mono flush [`f7a048f`](https://github.com/rive-app/rive-wasm/commit/f7a048f9cc23f791a8f6e1cb905de699769157dc)
+- Audio out of band in Unity! [`65f2cef`](https://github.com/rive-app/rive-wasm/commit/65f2cefdab79411dfcaf1396b1cb7efa9a7f1fdd)
+- Audio for Unity [`ec73b95`](https://github.com/rive-app/rive-wasm/commit/ec73b951390b3e37780e75479337b33348bfd18d)
+- fix cast [`e1e4d96`](https://github.com/rive-app/rive-wasm/commit/e1e4d96cb894d49dfc79d262f79d4253c8efbbce)
+- Add audio preview generator. [`a322457`](https://github.com/rive-app/rive-wasm/commit/a322457676fe2e6a8f81afce555821cd5b78ffb3)
+
+## [2.10.1](https://github.com/rive-app/rive-wasm/compare/2.10.0...2.10.1) - 2024-02-08
+
+### Commits
+
+- chore: tag 2.10.1 [`52fca8d`](https://github.com/rive-app/rive-wasm/commit/52fca8dee50f4ea2b9fddc408b0e797611639c72)
 - text modifier length calculation fix [`4228eb0`](https://github.com/rive-app/rive-wasm/commit/4228eb0e49f37a5f580da455f3f6aea216a6d294)
 
 ## [2.10.0](https://github.com/rive-app/rive-wasm/compare/2.9.3...2.10.0) - 2024-02-05
