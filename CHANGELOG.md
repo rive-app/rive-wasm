@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.10.2](https://github.com/rive-app/rive-wasm/compare/2.10.1...2.10.2)
+## [2.10.3](https://github.com/rive-app/rive-wasm/compare/2.10.2...2.10.3)
 
 ### Commits
 
+- trigger change when text modifier updates [`e5c0750`](https://github.com/rive-app/rive-wasm/commit/e5c0750c3a9e29f5c0b8f2e8e9bdbfef9fe8855b)
+- add support for text feature in runtime [`62f995d`](https://github.com/rive-app/rive-wasm/commit/62f995df33593ef8f5aee8bff1137ad2cbe6c544)
+
+## [2.10.2](https://github.com/rive-app/rive-wasm/compare/2.10.1...2.10.2) - 2024-02-21
+
+### Commits
+
+- chore: tag 2.10.2 [`e8c4dfd`](https://github.com/rive-app/rive-wasm/commit/e8c4dfdd74e51b5d14aeb1b51c1298ce57dedb4f)
 - sort hit shapes when draw order changes and stop propagation on hit s… [`c377c99`](https://github.com/rive-app/rive-wasm/commit/c377c992a653b16cece635ecd37001abe4a06fd0)
 - Updating harfbuzz to 8.3.0 [`8165f23`](https://github.com/rive-app/rive-wasm/commit/8165f2351b59e36f3b047f1477faf8d1ba7ee7ea)
 - Unity compute bounds [`4c7ed1e`](https://github.com/rive-app/rive-wasm/commit/4c7ed1e4c085a6887fafb378c0f2adbdd193dfe7)
