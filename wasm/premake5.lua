@@ -4,6 +4,7 @@ sheenbidi = dependency.github('Tehreer/SheenBidi', 'v2.6')
 miniaudio = dependency.github('rive-app/miniaudio', 'rive_changes')
 
 workspace('rive')
+
 configurations({ 'debug', 'release' })
 
 project('rive')
