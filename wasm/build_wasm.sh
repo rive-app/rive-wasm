@@ -50,7 +50,8 @@ else
 fi
 
 OPTIONS=0
-PREMAKE_FLAGS=
+PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR "
+PREMAKE_HEAVY_FLAGS="--with_rive_text --with_rive_audio=system "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
@@ -58,11 +59,11 @@ while getopts "ls:r:" flag; do
     case "${flag}" in
     l)
         OPTIONS=$((OPTIONS + 1))
-        PREMAKE_FLAGS+="--lite "
+        PREMAKE_HEAVY_FLAGS=
         ;;
     s)
         OPTIONS=$((OPTIONS + 1))
-        PREMAKE_FLAGS+="--single_file "
+        PREMAKE_FLAGS+="--wasm_single "
         ;;
     r)
         OPTIONS=$((OPTIONS + 2))
@@ -78,10 +79,11 @@ while getopts "ls:r:" flag; do
 done
 shift $OPTIONS
 OPTION=$1
+PREMAKE_FLAGS+=$PREMAKE_HEAVY_FLAGS
 if [[ ! -d "../../runtime" ]]; then
-    PREMAKE_FLAGS="--scripts=./submodules/rive-cpp/build $PREMAKE_FLAGS"
+    PREMAKE_FLAGS+="--scripts=./submodules/rive-cpp/build "
 else
-    PREMAKE_FLAGS="--scripts=../../runtime/build $PREMAKE_FLAGS"
+    PREMAKE_FLAGS+="--scripts=../../runtime/build "
 fi
 
 if [ "$OPTION" = 'help' ]; then
@@ -94,11 +96,11 @@ elif [ "$OPTION" = "clean" ]; then
     rm -fR ./build
     exit 0
 elif [ "$OPTION" = "tools" ]; then
-    $PREMAKE gmake2 $PREMAKE_FLAGS && AR=emar CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES CC=emcc CXX=em++ make config=release -j$NCPU
+    $PREMAKE gmake2 $PREMAKE_FLAGS && CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES make -C $OUT_DIR -j$NCPU
 elif [ "$OPTION" = "release" ]; then
-    $PREMAKE gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make config=release -j$NCPU
+    $PREMAKE gmake2 --release $PREMAKE_FLAGS gmake2 && make -C $OUT_DIR -j$NCPU
 else
-    $PREMAKE gmake2 $PREMAKE_FLAGS && AR=emar CC=emcc CXX=em++ make -j$NCPU
+    $PREMAKE gmake2 $PREMAKE_FLAGS && make -C $OUT_DIR -j$NCPU
 fi
 
 # If you want to run the leak checker with debug symbols, copy
