@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.10.3](https://github.com/rive-app/rive-wasm/compare/2.10.2...2.10.3)
+## [2.10.4](https://github.com/rive-app/rive-wasm/compare/2.10.3...2.10.4)
 
 ### Commits
 
+- Unity webgl! [`e3c0033`](https://github.com/rive-app/rive-wasm/commit/e3c00339d7787df030764643a26128407c99c40a)
+- Always decode 3 or 4 channel PNG images. [`f23e5f3`](https://github.com/rive-app/rive-wasm/commit/f23e5f367de5242489cd8e16cdd5fced48ac8dc8)
+- Upgrade rive_wasm to the new premake system [`4c4b5b4`](https://github.com/rive-app/rive-wasm/commit/4c4b5b430ea707c37c57add4dc0c55968d577141)
+- Generate WASM sizes only when necesary [`a20794b`](https://github.com/rive-app/rive-wasm/commit/a20794b8d032ddeae1dc947ca0e90bc7a1d14bdb)
+- slim down harfbuzz [`55ddabd`](https://github.com/rive-app/rive-wasm/commit/55ddabddd5fd053b3010711fd790cebf4b77f490)
+- Implement an MSAA fallback for PLS [`2e787a1`](https://github.com/rive-app/rive-wasm/commit/2e787a191ad5c662acc5156e1923a050b9de88e2)
+
+## [2.10.3](https://github.com/rive-app/rive-wasm/compare/2.10.2...2.10.3) - 2024-02-26
+
+### Commits
+
+- chore: tag 2.10.3 [`f58c17a`](https://github.com/rive-app/rive-wasm/commit/f58c17aa0c6bed2da79c2fb5c776727b8d5d88bf)
 - trigger change when text modifier updates [`e5c0750`](https://github.com/rive-app/rive-wasm/commit/e5c0750c3a9e29f5c0b8f2e8e9bdbfef9fe8855b)
 - add support for text feature in runtime [`62f995d`](https://github.com/rive-app/rive-wasm/commit/62f995df33593ef8f5aee8bff1137ad2cbe6c544)
 
