@@ -20,7 +20,7 @@ This library allows full control over Rive files with a high-level API for hooki
 - 👨‍💻 [Contributing](#contributing)
 - :question: [Issues](#issues)
 
-## Rive Overview
+## Rive overview
 
 [Rive](https://rive.app) is a real-time interactive design and animation tool that helps teams create and run interactive animations anywhere. Designers and developers use our collaborative editor to create motion graphics that respond to different states and user inputs. Our lightweight open-source runtime libraries allow them to load their animations into apps, games, and websites.
 
@@ -30,7 +30,7 @@ This library allows full control over Rive files with a high-level API for hooki
 
 🛠 [Learning Rive](https://rive.app/learn-rive)
 
-## Getting Started
+## Getting started
 
 Follow along with the link below for a quick start in getting Rive JS integrated into your web applications.
 
@@ -38,7 +38,7 @@ Follow along with the link below for a quick start in getting Rive JS integrated
 
 [API documentation](https://help.rive.app/runtimes/overview/web-js/rive-parameters)
 
-## Supported Browsers
+## Supported browsers
 
 Rive can be used in all major browsers. We're constantly working to improve performance with our renderer so that animations playback smoothly for all.
 
@@ -64,7 +64,7 @@ Check out some of the `examples/` projects in this codebase, as well as some of 
 
 For even more examples and resources on using Rive at runtime or in other tools, checkout the [awesome-rive](https://github.com/rive-app/awesome-rive) repo.
 
-## Migration Guides
+## Migration guides
 
 Using `rive-js` or an older version of the runtime and need to learn how to upgrade to the latest version? Check out the migration guides below in our help center that help guide you through major version bumps; breaking changes and all!
 
