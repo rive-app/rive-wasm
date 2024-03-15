@@ -170,9 +170,10 @@ async function main() {
         // Pass along our Renderer to the artboard, so that it can draw onto the canvas
         artboard.draw(renderer);
         renderer.restore();
-        renderer.flush();
       }
     }
+
+    renderer.flush();
 
     // Needed to actually resolve a queue of drawing and rendering calls with our Renderer
     // Note: ONLY needed if using a normal JS requestAnimationFrame, rather than our wrapped
