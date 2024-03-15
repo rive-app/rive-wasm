@@ -15,6 +15,7 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+#include <emscripten/html5.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -25,14 +26,42 @@ rive::Factory* jsFactory() { return &gSkiaFactory; }
 
 using namespace emscripten;
 
+// RAII utility to set and restore the current GL context.
+class ScopedGLContextMakeCurrent
+{
+public:
+    ScopedGLContextMakeCurrent(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE glContext) :
+        m_glContext(glContext), m_previousContext(emscripten_webgl_get_current_context())
+    {
+        if (m_glContext != m_previousContext)
+        {
+            emscripten_webgl_make_context_current(m_glContext);
+        }
+    }
+
+    ~ScopedGLContextMakeCurrent()
+    {
+        if (m_glContext != m_previousContext)
+        {
+            emscripten_webgl_make_context_current(m_previousContext);
+        }
+    }
+
+private:
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_glContext;
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_previousContext;
+};
+
 class WebGLSkiaRenderer : public rive::SkiaRenderer
 {
 private:
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_glContext;
     sk_sp<GrDirectContext> m_Context;
     SkSurface* m_Surface;
 
 public:
     WebGLSkiaRenderer(sk_sp<GrDirectContext> context, int width, int height) :
+        m_glContext(emscripten_webgl_get_current_context()),
         m_Context(context),
         m_Surface(makeSurface(context, width, height)),
         rive::SkiaRenderer(nullptr)
@@ -40,21 +69,37 @@ public:
         m_Canvas = m_Surface->getCanvas();
     }
 
-    ~WebGLSkiaRenderer() { delete m_Surface; }
+    ~WebGLSkiaRenderer()
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_glContext);
+        delete m_Surface;
+        m_Context = nullptr;
+    }
 
     void resize(int width, int height)
     {
+        ScopedGLContextMakeCurrent makeCurrent(m_glContext);
         delete m_Surface;
         m_Surface = makeSurface(m_Context, width, height);
         m_Canvas = m_Surface->getCanvas();
     }
 
-    void clear() { m_Canvas->clear(0); }
+    void clear()
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_glContext);
+        m_Canvas->clear(0);
+    }
 
-    void flush() { m_Context->flush(); }
+    void flush()
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_glContext);
+        m_Context->flush();
+    }
 
     SkSurface* makeSurface(sk_sp<GrDirectContext> context, int width, int height)
     {
+        assert(emscripten_webgl_get_current_context() == m_glContext);
+
         int numSamples, numStencilBits;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glGetIntegerv(GL_SAMPLES, &numSamples);

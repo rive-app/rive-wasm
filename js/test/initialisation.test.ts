@@ -272,6 +272,7 @@ test("Rive deletes instances on the cleanup", (done) => {
       expect(r.activeArtboard).toBe("MyArtboard");
       r.cleanup();
       expect(r.activeArtboard).toBe("");
+      expect(r["renderer"]).not.toBeNull();
       done();
     },
   });
@@ -286,6 +287,60 @@ test("Rive doesn't error out when cleaning up if the file is not set yet", () =>
     artboard: "MyArtboard",
   });
   r.cleanup();
+});
+
+test("Rive renderer is deleted on deleteRiveRenderer", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: "MyArtboard",
+    onLoad: () => {
+      expect(r.activeArtboard).toBe("MyArtboard");
+      r.cleanup();
+      r.deleteRiveRenderer();
+      expect(r["renderer"]).toBe(null);
+      done();
+    },
+  });
+});
+
+test("Two Rive renderers can be deleted in reverse order", (done) => {
+  const canvas1 = document.createElement("canvas");
+  const canvas2 = document.createElement("canvas");
+  let r1 : rive.Rive, r2 : rive.Rive, r1DrawCountWithR2Stopped = 0, r2DrawCount = 0;
+  r1 = new rive.Rive({
+    canvas: canvas1,
+    buffer: stateMachineFileBuffer,
+    autoplay: true,
+    artboard: "MyArtboard",
+    onAdvance: (event: rive.Event) => {
+      // Draw until r2 has stopped for a while (make sure we have the final draw).
+      if (r2 && r2.isStopped)
+         ++r1DrawCountWithR2Stopped;
+      if (r1DrawCountWithR2Stopped >= 3) {
+        // Cleanup in reverse order.
+        r2.cleanup();
+        r2.deleteRiveRenderer();
+        expect(r2["renderer"]).toBe(null);
+        r1.cleanup();
+        r1.deleteRiveRenderer();
+        expect(r1["renderer"]).toBe(null);
+        done();
+      }
+    },
+  });
+  r2 = new rive.Rive({
+    canvas: canvas2,
+    buffer: loopRiveFileBuffer,
+    autoplay: true,
+    onAdvance: (event: rive.Event) => {
+      ++r2DrawCount;
+      if (r2DrawCount >= 3)
+        r2.stop();
+    },
+  });
 });
 
 // #endregion
