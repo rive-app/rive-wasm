@@ -1,6 +1,6 @@
 #include "rive/rive_types.hpp"
 
-#ifndef RIVE_SKIA_RENDERER
+#ifdef RIVE_CANVAS_2D_RENDERER
 
 #include "rive/factory.hpp"
 #include "rive/renderer.hpp"
@@ -489,4 +489,4 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
 static rive::C2DFactory gC2DFactory;
 rive::Factory* jsFactory() { return &gC2DFactory; }
 
-#endif // not RIVE_SKIA_RENDERER
+#endif // RIVE_CANVAS_2D_RENDERER

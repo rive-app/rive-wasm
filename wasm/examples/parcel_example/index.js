@@ -8,6 +8,9 @@ import "regenerator-runtime";
 // (Release) WebGL Advanced Single
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 
+// (Release) WebGL2 Advanced Single
+// import RiveCanvas from "../../build/webgl2_advanced_single/bin/release/webgl2_advanced_single.mjs"
+
 // (Release) Canvas Advanced Single
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 
@@ -100,7 +103,7 @@ async function main() {
   // To keep this simple, we'll just render each Rive with an area
   // of 250x250
   let canvas = document.getElementById("rive-canvas");
-  canvas.width = `${numRivesToRender * 250}`;
+  canvas.width = `${4 * 250}`;
   canvas.height = `${Math.ceil(numRivesToRender / 4) * 250}`;
 
   // Instance Rive and create our Renderer

@@ -40,6 +40,9 @@ rm -f ../js/npm/webgl/*.wasm
 rm -f ../js/npm/canvas_single/*.mjs
 rm -f ../js/npm/webgl_single/*.mjs
 
+rm -f ../js/npm/webgl2_advanced/*.mjs
+rm -f ../js/npm/webgl2_advanced/*.wasm
+
 mkdir -p ../js/npm/webgl
 mkdir -p ../js/npm/canvas
 mkdir -p ../js/npm/canvas_lite
@@ -50,6 +53,8 @@ mkdir -p ../js/npm/canvas_advanced_lite
 mkdir -p ../js/npm/webgl_advanced
 mkdir -p ../js/npm/canvas_advanced_single
 mkdir -p ../js/npm/webgl_advanced_single
+mkdir -p ../js/npm/webgl2
+mkdir -p ../js/npm/webgl2_advanced
 
 # Comment this block to use incremental builds.
 echo
@@ -105,3 +110,18 @@ echo
 OUT_DIR=build/webgl_advanced_single/bin/release ./build_wasm.sh -r skia -s release
 cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/webgl_advanced_single/webgl_advanced_single.mjs
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced_single/rive_advanced.mjs.d.ts
+
+echo
+echo "::::: building @rive-app/webgl2_advanced"
+echo
+OUT_DIR=build/webgl2_advanced/bin/release ./build_wasm.sh -r webgl2 release
+cp build/webgl2_advanced/bin/release/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
+
+echo
+echo "::::: building @rive-app/webgl2_advanced_single"
+echo
+OUT_DIR=build/webgl2_advanced_single/bin/release ./build_wasm.sh -r webgl2 -s release
+# Don't build a package for this one. Just do the build so we can test it.

@@ -452,8 +452,6 @@ Module["onRuntimeInitialized"] = function () {
           type: "image/png",
         })
       );
-      image.src = cri._newObjectUrl;
-
       image.onload = function () {
         cri._image = image;
         cri._texture = offscreenWebGL.createImageTexture(image);
@@ -461,6 +459,7 @@ Module["onRuntimeInitialized"] = function () {
 
         cri.onComplete && cri.onComplete(cri);
       };
+      image.src = cri._newObjectUrl;
     },
   });
 

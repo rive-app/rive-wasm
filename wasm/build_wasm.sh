@@ -68,7 +68,11 @@ while getopts "ls:r:" flag; do
     r)
         OPTIONS=$((OPTIONS + 2))
         if [ "${OPTARG}" = "skia" ]; then
-            PREMAKE_FLAGS+="--skia "
+            PREMAKE_FLAGS+="--renderer=skia "
+        fi
+        if [ "${OPTARG}" = "webgl2" ]; then
+            # Emscripten has a bug when building PLS with LTO.
+            PREMAKE_FLAGS+="--renderer=webgl2 --no-rive-decoders --no-lto "
         fi
         ;;
     *)

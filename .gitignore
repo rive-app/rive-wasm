@@ -54,4 +54,5 @@ node_modules
 /js/npm/**/rive_advanced.mjs.d.ts
 /js/npm/webgl_advanced_single/webgl_advanced_single.mjs
 /js/npm/webgl_advanced/webgl_advanced.mjs
+/js/npm/webgl2_advanced/webgl2_advanced.mjs
 /wasm/examples/**/docs

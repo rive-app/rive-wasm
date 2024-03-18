@@ -18,6 +18,13 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+      - name: Checkout Rive Renderer Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          repository: "rive-app/pls"
+          token: ${{ secrets.PAT_GITHUB }}
+          path: ./wasm/submodules/pls
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v11
         with:

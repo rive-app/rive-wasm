@@ -1,0 +1,36 @@
+{
+  "name": "@rive-app/webgl2-advanced",
+  "version": "2.6.0",
+  "description": "Rive's webgl2 low-level canvas based web api.",
+  "main": "webgl2_advanced.mjs",
+  "homepage": "https://rive.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
+  },
+  "keywords": [
+    "rive",
+    "animation"
+  ],
+  "author": "Rive",
+  "contributors": [
+    "Luigi Rosso <luigi@rive.app> (https://rive.app)",
+    "Maxwell Talbot <max@rive.app> (https://rive.app)",
+    "Arthur Vivian <arthur@rive.app> (https://rive.app)",
+    "Umberto Sonnino <umberto@rive.app> (https://rive.app)",
+    "Matthew Sullivan <matt.j.sullivan@gmail.com> (mailto:matt.j.sullivan@gmail.com)",
+    "Chris Dalton <chris@rive.app> (https://rive.app)"
+  ],
+  "license": "MIT",
+  "files": [
+    "webgl2_advanced.mjs",
+    "rive.wasm",
+    "rive_advanced.mjs.d.ts"
+  ],
+  "types": "rive_advanced.mjs.d.ts",
+  "dependencies": {},
+  "browser": {
+    "fs": false,
+    "path": false
+  }
+}

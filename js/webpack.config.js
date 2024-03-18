@@ -355,6 +355,68 @@ const webglSingle = {
   },
 };
 
+// Uses webgl2_advanced with an externally loaded wasm file.
+const webgl2 = {
+  entry: "./src/rive.ts",
+  target: "web",
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: [".ts", ".js"],
+    fallback: {
+      "fs": false,
+      "path": false,
+    },
+    alias: {
+      "./rive_advanced.mjs": path.resolve(
+        __dirname,
+        "npm/webgl2_advanced/webgl2_advanced.mjs"
+      ),
+      "package.json": path.resolve(__dirname, "npm/webgl2/package.json"),
+    },
+  },
+  output: {
+    path: path.resolve(__dirname, "npm/webgl2"),
+    filename: "rive.js",
+    libraryTarget: "umd",
+    library: "rive",
+    globalObject: "this",
+  },
+  devtool: "source-map",
+  mode: "none",
+  plugins: [
+    new FileManagerPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            {
+              source: "build/src/rive.d.ts",
+              destination: path.resolve(__dirname, "npm/webgl2/rive.d.ts"),
+            },
+            {
+              source: "src/rive_advanced.mjs.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "npm/webgl2/rive_advanced.mjs.d.ts"
+              ),
+            },
+          ],
+        },
+      },
+    }),
+  ],
+  watchOptions: {
+    ignored: ["**/node_modules", "**/npm"],
+  },
+};
+
 module.exports = [
   canvasSingle,
   canvasLiteSingle,
@@ -362,4 +424,5 @@ module.exports = [
   canvasLite,
   webglSingle,
   webgl,
+  webgl2,
 ];

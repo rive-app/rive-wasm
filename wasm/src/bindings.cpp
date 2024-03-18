@@ -59,7 +59,7 @@
 
 using namespace emscripten;
 
-// Returns the global factory (either c2d or skia backed)
+// Returns the global factory (either c2d, skia, or webgl2 backed)
 extern rive::Factory* jsFactory();
 
 // We had to do this because binding the core class const defined types directly
