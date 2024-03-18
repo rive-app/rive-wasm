@@ -22,9 +22,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: false
-          repository: "rive-app/pls"
+          repository: rive-app/rive-pls
           token: ${{ secrets.PAT_GITHUB }}
           path: ./wasm/submodules/pls
+          ref: main
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v11
         with:
