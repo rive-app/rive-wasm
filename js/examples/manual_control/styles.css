@@ -1,9 +1,0 @@
-html, body {
-    margin: 0;
-    height: 100%;
-  }
-      
-  .parent {
-    display: grid;
-    place-items: center;
-  }
