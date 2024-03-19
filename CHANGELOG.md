@@ -5,10 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.10.4](https://github.com/rive-app/rive-wasm/compare/2.10.3...2.10.4)
+## [2.11.0](https://github.com/rive-app/rive-wasm/compare/2.10.4...2.11.0)
 
 ### Commits
 
+- Fix checkout of rive-pls in rive-wasm [`5fba0aa`](https://github.com/rive-app/rive-wasm/commit/5fba0aa8d6231eaf88085a9e703730fa26d11292)
+- Add a @rive-app/webgl2 package that uses PLS [`98b3cd4`](https://github.com/rive-app/rive-wasm/commit/98b3cd437f851cbd518c6a1816cd7c573abf32dd)
+- remove stale examples from rive-wasm [`172f212`](https://github.com/rive-app/rive-wasm/commit/172f212ef008746196c2785795947d24acc7e1ca)
+- Fix flush() to balance clear() in parcel_example [`58b88f0`](https://github.com/rive-app/rive-wasm/commit/58b88f05edaee0985c974c24a4041b29979b925c)
+- Move cleaning up renderer into its own API outside of cleanup [`9318ac6`](https://github.com/rive-app/rive-wasm/commit/9318ac6f8cdf194485fd90da5fa3326f3e8fe5a1)
+- Remove the Queue from Metal PLS [`3dfe454`](https://github.com/rive-app/rive-wasm/commit/3dfe4545bd4561d10ffbb35ba34d523bad160ff2)
+- support for interrupting transitions on state change [`e825a13`](https://github.com/rive-app/rive-wasm/commit/e825a135ed2b5ed5c99218d52ed2fec2bf92e532)
+- Update README.md [`0ec0835`](https://github.com/rive-app/rive-wasm/commit/0ec0835960d31cdf0f7a281e20ddbf5b84e9c341)
+- chore: update README [`54a4bd9`](https://github.com/rive-app/rive-wasm/commit/54a4bd92f3050b745317a5f4c5fa7338dd190ea0)
+
+## [2.10.4](https://github.com/rive-app/rive-wasm/compare/2.10.3...2.10.4) - 2024-03-11
+
+### Commits
+
+- chore: tag 2.10.4 [`f6e2211`](https://github.com/rive-app/rive-wasm/commit/f6e22110d5db34fd7cac5c859a25fff79e625b37)
 - Unity webgl! [`e3c0033`](https://github.com/rive-app/rive-wasm/commit/e3c00339d7787df030764643a26128407c99c40a)
 - Always decode 3 or 4 channel PNG images. [`f23e5f3`](https://github.com/rive-app/rive-wasm/commit/f23e5f367de5242489cd8e16cdd5fced48ac8dc8)
 - Upgrade rive_wasm to the new premake system [`4c4b5b4`](https://github.com/rive-app/rive-wasm/commit/4c4b5b430ea707c37c57add4dc0c55968d577141)
