@@ -21,10 +21,11 @@ jobs:
       - name: Checkout Rive Renderer Repo
         uses: actions/checkout@v3
         with:
-          submodules: false
-          repository: "rive-app/pls"
+          submodules: true
+          repository: rive-app/rive-pls
           token: ${{ secrets.PAT_GITHUB }}
-          path: ./wasm/submodules/pls
+          path: ./wasm/submodules/rive-pls
+          ref: main
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v11
         with:
