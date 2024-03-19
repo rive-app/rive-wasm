@@ -27,7 +27,6 @@ do
         '-s STRICT=1',
         '-s DISABLE_EXCEPTION_CATCHING=1',
         '-s WASM=1',
-        '-sINCOMING_MODULE_JS_API=onRuntimeInitialized',
         -- "-s EXPORT_ES6=1",
         '-s USE_ES6_IMPORT_META=0',
         '-s EXPORT_NAME="Rive"',
