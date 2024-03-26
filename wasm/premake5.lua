@@ -46,19 +46,11 @@ filter('options:config=debug')
 do
     defines({ 'DEBUG' })
     symbols('On')
-    buildoptions({
-        '-g2',
-        '-fsanitize=address',
-        -- '-fsanitize=leak'
-    })
     linkoptions({
         '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
         '-s ASSERTIONS=1',
         '-s ABORTING_MALLOC=0',
         '-s DEMANGLE_SUPPORT=1',
-        '-g2',
-        '-fsanitize=address',
-        -- '-fsanitize=leak',
     })
 end
 

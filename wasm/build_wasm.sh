@@ -49,14 +49,19 @@ else
     echo using your custom installed emsdk
 fi
 
-OPTIONS=0
+OPTIONS=1
 PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR "
 PREMAKE_HEAVY_FLAGS="--with_rive_text --with_rive_audio=system "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
-while getopts "ls:r:" flag; do
+while getopts "clsr:" flag; do
     case "${flag}" in
+    c)
+        # compatibility mode, disable simd
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--no-wasm-simd "
+        ;;
     l)
         OPTIONS=$((OPTIONS + 1))
         PREMAKE_HEAVY_FLAGS=
@@ -81,8 +86,7 @@ while getopts "ls:r:" flag; do
         ;;
     esac
 done
-shift $OPTIONS
-OPTION=$1
+OPTION=${!OPTIONS}
 PREMAKE_FLAGS+=$PREMAKE_HEAVY_FLAGS
 if [[ ! -d "../../runtime" ]]; then
     PREMAKE_FLAGS+="--scripts=./submodules/rive-cpp/build "
@@ -102,7 +106,7 @@ elif [ "$OPTION" = "clean" ]; then
 elif [ "$OPTION" = "tools" ]; then
     $PREMAKE gmake2 $PREMAKE_FLAGS && CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES make -C $OUT_DIR -j$NCPU
 elif [ "$OPTION" = "release" ]; then
-    $PREMAKE gmake2 --release $PREMAKE_FLAGS gmake2 && make -C $OUT_DIR -j$NCPU
+    $PREMAKE gmake2 $PREMAKE_FLAGS --config=release gmake2 && make -C $OUT_DIR -j$NCPU
 else
     $PREMAKE gmake2 $PREMAKE_FLAGS && make -C $OUT_DIR -j$NCPU
 fi
