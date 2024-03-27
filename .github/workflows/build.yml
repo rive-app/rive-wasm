@@ -30,6 +30,7 @@ jobs:
           tar -xvf premake-5.0.0-alpha16-linux.tar.gz
           sudo chmod a+x premake5
           sudo mv premake5 /usr/local/bin
+          pip3 install ply
       - name: Install modules
         run: cd js && npm install
       - name: Setup Ninja
