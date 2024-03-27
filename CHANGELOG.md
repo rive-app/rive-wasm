@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.11.0](https://github.com/rive-app/rive-wasm/compare/2.10.4...2.11.0)
+## [2.12.0](https://github.com/rive-app/rive-wasm/compare/2.11.0...2.12.0)
 
 ### Commits
 
+- install ply on downstream wasm CI [`def3f13`](https://github.com/rive-app/rive-wasm/commit/def3f13d66a4091cba8d41f45f36f6bbef0c39c7)
+- Get wasm sizes back down. [`e5977a6`](https://github.com/rive-app/rive-wasm/commit/e5977a6287ede942d77c355e98ccdfdd38c98bd0)
+- No simd canvas [`2a9cd21`](https://github.com/rive-app/rive-wasm/commit/2a9cd2156d019d84dedf0d1db08a6746e08d431f)
+- More LTO tweaks [`48a16a6`](https://github.com/rive-app/rive-wasm/commit/48a16a611ff6746588531f838a41acc006b40195)
+- rename to rive-renderer and add readme [`bd349b5`](https://github.com/rive-app/rive-wasm/commit/bd349b51096de16349a7e483a7e69d43a5a9664f)
+- fix: remove premake flag [`27ed464`](https://github.com/rive-app/rive-wasm/commit/27ed4643728b72b95a10df163134c583fbc2d1b6)
+
+## [2.11.0](https://github.com/rive-app/rive-wasm/compare/2.10.4...2.11.0) - 2024-03-19
+
+### Commits
+
+- chore: tag 2.11.0 [`f256e80`](https://github.com/rive-app/rive-wasm/commit/f256e80a23a1e753237668d715e8e20889824276)
 - Fix checkout of rive-pls in rive-wasm [`5fba0aa`](https://github.com/rive-app/rive-wasm/commit/5fba0aa8d6231eaf88085a9e703730fa26d11292)
 - Add a @rive-app/webgl2 package that uses PLS [`98b3cd4`](https://github.com/rive-app/rive-wasm/commit/98b3cd437f851cbd518c6a1816cd7c573abf32dd)
 - remove stale examples from rive-wasm [`172f212`](https://github.com/rive-app/rive-wasm/commit/172f212ef008746196c2785795947d24acc7e1ca)
