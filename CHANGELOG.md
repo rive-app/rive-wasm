@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.12.0](https://github.com/rive-app/rive-wasm/compare/2.11.0...2.12.0)
+## [2.12.1](https://github.com/rive-app/rive-wasm/compare/2.12.0...2.12.1)
 
 ### Commits
 
+- Export proxy and testing at runtime. [`22eea55`](https://github.com/rive-app/rive-wasm/commit/22eea554abc0771eb8da9eb93c44b581094fe2ab)
+- Export audio clip [`41ba537`](https://github.com/rive-app/rive-wasm/commit/41ba5377427a8656a2eacfbfa8f226e05f4a397f)
+- propagate parent input change to nested input [`72096d2`](https://github.com/rive-app/rive-wasm/commit/72096d270f16ee59096f9233d582a232a2f55425)
+
+## [2.12.0](https://github.com/rive-app/rive-wasm/compare/2.11.0...2.12.0) - 2024-03-27
+
+### Commits
+
+- chore: tag 2.12.0 [`0e2ef60`](https://github.com/rive-app/rive-wasm/commit/0e2ef60038c542ee88a2eef48644ae3684909436)
 - install ply on downstream wasm CI [`def3f13`](https://github.com/rive-app/rive-wasm/commit/def3f13d66a4091cba8d41f45f36f6bbef0c39c7)
 - Get wasm sizes back down. [`e5977a6`](https://github.com/rive-app/rive-wasm/commit/e5977a6287ede942d77c355e98ccdfdd38c98bd0)
 - No simd canvas [`2a9cd21`](https://github.com/rive-app/rive-wasm/commit/2a9cd2156d019d84dedf0d1db08a6746e08d431f)
