@@ -8,6 +8,7 @@ export interface TouchInteractionsParams {
   rive: rc.RiveCanvas;
   fit: rc.Fit;
   alignment: rc.Alignment;
+  isTouchScrollEnabled?: boolean;
 }
 
 interface ClientCoordinates {
@@ -23,13 +24,18 @@ interface ClientCoordinates {
  * @returns - Coordinates of the clientX and clientY properties from the touch/mouse event
  */
 const getClientCoordinates = (
-  event: MouseEvent | TouchEvent
+  event: MouseEvent | TouchEvent,
+  isTouchScrollEnabled: boolean,
 ): ClientCoordinates => {
   if (
     ["touchstart", "touchmove"].indexOf(event.type) > -1 &&
     (event as TouchEvent).touches?.length
   ) {
-    event.preventDefault();
+    // This flag, if false, prevents touch events on the canvas default behavior
+    // which may prevent scrolling if a drag motion on the canvas is performed
+    if (!isTouchScrollEnabled) {
+      event.preventDefault();
+    }
     return {
       clientX: (event as TouchEvent).touches[0].clientX,
       clientY: (event as TouchEvent).touches[0].clientY,
@@ -62,6 +68,7 @@ export const registerTouchInteractions = ({
   rive,
   fit,
   alignment,
+  isTouchScrollEnabled = false,
 }: TouchInteractionsParams) => {
   if (
     !canvas ||
@@ -79,7 +86,7 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
-    const { clientX, clientY } = getClientCoordinates(event);
+    const { clientX, clientY } = getClientCoordinates(event, isTouchScrollEnabled);
     if (!clientX && !clientY) {
       return;
     }

@@ -42,7 +42,11 @@ let canvas: HTMLCanvasElement;
 
 let mockStateMachines: rc.StateMachineInstance[];
 
-beforeEach(() => {
+let cleanupRiveListenersFunction: (() => void) | null;
+
+const createCanvasAndRiveListeners = ({isTouchScrollEnabled}: {
+  isTouchScrollEnabled?: boolean
+} = {}) => {
   canvas = document.createElement("canvas") as HTMLCanvasElement;
   canvas.width = 500;
   canvas.height = 500;
@@ -57,7 +61,7 @@ beforeEach(() => {
     } as unknown as rc.StateMachineInstance,
   ];
 
-  registerTouchInteractions({
+  cleanupRiveListenersFunction = registerTouchInteractions({
     canvas,
     artboard: mockArtboard as rc.Artboard,
     stateMachines: mockStateMachines as unknown as rc.StateMachineInstance[],
@@ -65,8 +69,19 @@ beforeEach(() => {
     rive: mockRive as unknown as rc.RiveCanvas,
     fit: mockFit as rc.Fit,
     alignment: mockAlignment as rc.Alignment,
+    isTouchScrollEnabled,
   });
+};
+
+beforeEach(() => {
+  createCanvasAndRiveListeners();
 });
+
+afterEach(() => {
+  if (cleanupRiveListenersFunction) {
+    cleanupRiveListenersFunction();
+  }
+})
 
 // #region test touch events for Rive listeners
 
@@ -83,15 +98,18 @@ test("touchstart event can invoke pointerDown", (): void => {
 });
 
 test("touchmove event can invoke pointerMove", (): void => {
+  const mockTouchEvent = new TouchEvent("touchmove", {
+    touches: [mockTouchPoint],
+  });
+  jest.spyOn(mockTouchEvent, 'preventDefault');
   canvas.dispatchEvent(
-    new TouchEvent("touchmove", {
-      touches: [mockTouchPoint],
-    })
+    mockTouchEvent
   );
 
   expect(mockStateMachines[0].pointerDown).not.toBeCalled();
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(100, 100);
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+  expect(mockTouchEvent.preventDefault).toHaveBeenCalled();
 });
 
 test("touchend event can invoke pointerUp", (): void => {
@@ -117,4 +135,19 @@ test("mouseout event can invoke pointerMove with out of bounds coordinates", ():
   expect(mockStateMachines[0].pointerDown).not.toBeCalled();
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(-10001, 10001);
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+});
+
+test("dont prevent default on TouchEvent behavior if isTouchScrollEnabled is true", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({isTouchScrollEnabled: true});
+
+  const mockTouchEvent = new TouchEvent("touchstart", {
+    changedTouches: [mockTouchPoint],
+  });
+  jest.spyOn(mockTouchEvent, 'preventDefault');
+  canvas.dispatchEvent(
+    mockTouchEvent
+  );
+
+  expect(mockTouchEvent.preventDefault).not.toHaveBeenCalled();
 });
