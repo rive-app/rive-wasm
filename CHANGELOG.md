@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.12.1](https://github.com/rive-app/rive-wasm/compare/2.12.0...2.12.1)
+## [2.13.0](https://github.com/rive-app/rive-wasm/compare/2.12.1...2.13.0)
+
+### Fixed
+
+- treat cubic curve as quad when control point equals endpoint [`#6969`](https://github.com/rive-app/rive-wasm/issues/6969)
 
 ### Commits
 
+- Audio asset volume + VU [`e1011f4`](https://github.com/rive-app/rive-wasm/commit/e1011f45382156e022257e98353aba41bc78db22)
+
+## [2.12.1](https://github.com/rive-app/rive-wasm/compare/2.12.0...2.12.1) - 2024-03-29
+
+### Commits
+
+- chore: tag 2.12.1 [`baeb09c`](https://github.com/rive-app/rive-wasm/commit/baeb09cdb42b7d2da651b45faa5c9bdbe1c9174e)
 - Export proxy and testing at runtime. [`22eea55`](https://github.com/rive-app/rive-wasm/commit/22eea554abc0771eb8da9eb93c44b581094fe2ab)
 - Export audio clip [`41ba537`](https://github.com/rive-app/rive-wasm/commit/41ba5377427a8656a2eacfbfa8f226e05f4a397f)
 - propagate parent input change to nested input [`72096d2`](https://github.com/rive-app/rive-wasm/commit/72096d270f16ee59096f9233d582a232a2f55425)
