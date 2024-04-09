@@ -5,14 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.12.2](https://github.com/rive-app/rive-wasm/compare/2.13.0...2.12.2)
+## [2.13.2](https://github.com/rive-app/rive-wasm/compare/2.13.0...2.13.2)
+
+### Merged
+
+- update version manually to 2.13.1 [`#353`](https://github.com/rive-app/rive-wasm/pull/353)
 
 ### Commits
 
+- Fix WASM audio MP3 [`0db549c`](https://github.com/rive-app/rive-wasm/commit/0db549c5503fbf17b956b7c71bd57b87a7fdeea2)
+- chore: tag 2.12.2 [`ade65fc`](https://github.com/rive-app/rive-wasm/commit/ade65fc2d7c472fcaa373d0cf0f4988bc1090e0d)
 - negative speed fix [`789cbe7`](https://github.com/rive-app/rive-wasm/commit/789cbe759b94ff929ca36e184d7a32089bb048a9)
 - feat: add APIs to configure Rive Listener setup for allowing touch scroll behavior on the canvas [`7488d1c`](https://github.com/rive-app/rive-wasm/commit/7488d1c92a7c6ae66657486d3baef98f215ae2fe)
 
-## [2.13.0](https://github.com/rive-app/rive-wasm/compare/2.12.1...2.13.0) - 2024-04-08
+## [2.13.0](https://github.com/rive-app/rive-wasm/compare/2.12.2...2.13.0) - 2024-04-08
+
+### Commits
+
+- chore: tag 2.13.0 [`96b873b`](https://github.com/rive-app/rive-wasm/commit/96b873b521815124a348cb1da153b4837972c80f)
+
+## [2.12.2](https://github.com/rive-app/rive-wasm/compare/2.12.1...2.12.2) - 2024-04-08
 
 ### Fixed
 
@@ -20,7 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
-- chore: tag 2.13.0 [`96b873b`](https://github.com/rive-app/rive-wasm/commit/96b873b521815124a348cb1da153b4837972c80f)
+- chore: tag 2.12.2 [`ade65fc`](https://github.com/rive-app/rive-wasm/commit/ade65fc2d7c472fcaa373d0cf0f4988bc1090e0d)
+- negative speed fix [`789cbe7`](https://github.com/rive-app/rive-wasm/commit/789cbe759b94ff929ca36e184d7a32089bb048a9)
+- feat: add APIs to configure Rive Listener setup for allowing touch scroll behavior on the canvas [`7488d1c`](https://github.com/rive-app/rive-wasm/commit/7488d1c92a7c6ae66657486d3baef98f215ae2fe)
 - Audio asset volume + VU [`e1011f4`](https://github.com/rive-app/rive-wasm/commit/e1011f45382156e022257e98353aba41bc78db22)
 
 ## [2.12.1](https://github.com/rive-app/rive-wasm/compare/2.12.0...2.12.1) - 2024-03-29
