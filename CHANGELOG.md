@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.13.2](https://github.com/rive-app/rive-wasm/compare/2.13.0...2.13.2)
+## [2.14.0](https://github.com/rive-app/rive-wasm/compare/2.13.2...2.14.0)
+
+### Commits
+
+- Fixing audio runtimes. [`2f8daa8`](https://github.com/rive-app/rive-wasm/commit/2f8daa8283d6e0c805d7643506817126c66ba33c)
+
+## [2.13.2](https://github.com/rive-app/rive-wasm/compare/2.13.0...2.13.2) - 2024-04-09
 
 ### Merged
 
@@ -13,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.13.2 [`f6be9f7`](https://github.com/rive-app/rive-wasm/commit/f6be9f750e87c6f20b12ef2041d87096b2b6cff7)
 - Fix WASM audio MP3 [`0db549c`](https://github.com/rive-app/rive-wasm/commit/0db549c5503fbf17b956b7c71bd57b87a7fdeea2)
 - chore: tag 2.12.2 [`ade65fc`](https://github.com/rive-app/rive-wasm/commit/ade65fc2d7c472fcaa373d0cf0f4988bc1090e0d)
 - negative speed fix [`789cbe7`](https://github.com/rive-app/rive-wasm/commit/789cbe759b94ff929ca36e184d7a32089bb048a9)
