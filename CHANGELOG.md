@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.14.0](https://github.com/rive-app/rive-wasm/compare/2.13.2...2.14.0)
+## [2.14.1](https://github.com/rive-app/rive-wasm/compare/2.14.0...2.14.1)
 
 ### Commits
 
+- add definition [`0c10fc3`](https://github.com/rive-app/rive-wasm/commit/0c10fc3a48eb40b83bc71af61a15d2298027a22e)
+- Exposing artboard volume [`aa84e1a`](https://github.com/rive-app/rive-wasm/commit/aa84e1a83e23be184e1f0fb4b1ff600b98f51cd2)
+
+## [2.14.0](https://github.com/rive-app/rive-wasm/compare/2.13.2...2.14.0) - 2024-04-10
+
+### Commits
+
+- chore: tag 2.14.0 [`4110fd5`](https://github.com/rive-app/rive-wasm/commit/4110fd5a8e0ece9fc0562f19cbc073ccb01f8c37)
 - Fixing audio runtimes. [`2f8daa8`](https://github.com/rive-app/rive-wasm/commit/2f8daa8283d6e0c805d7643506817126c66ba33c)
 
 ## [2.13.2](https://github.com/rive-app/rive-wasm/compare/2.13.0...2.13.2) - 2024-04-09
