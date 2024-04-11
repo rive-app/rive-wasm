@@ -6,7 +6,7 @@ import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
 // API usage without re-defining their type definition here. May want to revisit
 // and see if we want to expose both types from rive.ts and rive_advanced.mjs in
 // the future
-export type { FileAsset, FontAsset, ImageAsset } from './rive_advanced.mjs';
+export type { FileAsset, FontAsset, ImageAsset } from "./rive_advanced.mjs";
 
 /**
  * Generic type for a parameterless void callback
@@ -614,12 +614,9 @@ class Animator {
   /**
    * Adds linear animations by their names.
    * @param animatables the name(s) of animations to add
-   * @param playing whether animations should play on instantiation 
+   * @param playing whether animations should play on instantiation
    */
-  public initLinearAnimations(
-    animatables: string[],
-    playing: boolean,
-  ) {
+  public initLinearAnimations(animatables: string[], playing: boolean) {
     // Play/pause already instanced items, or create new instances
     // This validation is kept to maintain compatibility with current behavior.
     // But given that it this is called during artboard initialization
@@ -637,7 +634,7 @@ class Animator {
             anim,
             this.artboard,
             this.runtime,
-            playing
+            playing,
           );
           // Display the first frame of the specified animation
           newAnimation.advance(0);
@@ -651,12 +648,9 @@ class Animator {
   /**
    * Adds state machines by their names.
    * @param animatables the name(s) of state machines to add
-   * @param playing whether state machines should play on instantiation 
+   * @param playing whether state machines should play on instantiation
    */
-  public initStateMachines(
-    animatables: string[],
-    playing: boolean,
-  ) {
+  public initStateMachines(animatables: string[], playing: boolean) {
     // Play/pause already instanced items, or create new instances
     // This validation is kept to maintain compatibility with current behavior.
     // But given that it this is called during artboard initialization
@@ -674,7 +668,7 @@ class Animator {
             sm,
             this.runtime,
             playing,
-            this.artboard
+            this.artboard,
           );
           this.stateMachines.push(newStateMachine);
         } else {
@@ -1152,7 +1146,6 @@ export interface RiveLoadParameters {
   stateMachines?: string | string[];
   useOffscreenRenderer?: boolean;
   shouldDisableRiveListeners?: boolean;
-
 }
 
 // Interface ot Rive.reset function
@@ -1225,6 +1218,9 @@ export class Rive {
 
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN = true;
+
+  // Keep a local value of the set volume to update it asynchronously
+  private _volume = 1;
 
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
@@ -1366,13 +1362,18 @@ export class Rive {
    * touch scrolling on the canvas element on touch-enabled devices
    * i.e. { isTouchScrollEnabled: true }
    */
-  public setupRiveListeners(riveListenerOptions?: SetupRiveListenersOptions): void {
+  public setupRiveListeners(
+    riveListenerOptions?: SetupRiveListenersOptions,
+  ): void {
     if (!this.shouldDisableRiveListeners) {
       const activeStateMachines = (this.animator.stateMachines || [])
         .filter((sm) => sm.playing && this.runtime.hasListeners(sm.instance))
         .map((sm) => sm.instance);
       let touchScrollEnabledOption = this.isTouchScrollEnabled;
-      if (riveListenerOptions && 'isTouchScrollEnabled' in riveListenerOptions) {
+      if (
+        riveListenerOptions &&
+        "isTouchScrollEnabled" in riveListenerOptions
+      ) {
         touchScrollEnabledOption = riveListenerOptions.isTouchScrollEnabled;
       }
       this.eventCleanup = registerTouchInteractions({
@@ -1474,6 +1475,7 @@ export class Rive {
     }
 
     this.artboard = rootArtboard;
+    rootArtboard.volume = this._volume;
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
@@ -2234,6 +2236,23 @@ export class Rive {
     }
     return riveContents;
   }
+
+  /**
+   * getter and setter for the volume of the artboard
+   */
+  public get volume(): number {
+    if (this.artboard && this.artboard.volume !== this._volume) {
+      this._volume = this.artboard.volume;
+    }
+    return this._volume;
+  }
+
+  public set volume(value: number) {
+    this._volume = value;
+    if (this.artboard) {
+      this.artboard.volume = value;
+    }
+  }
 }
 
 /**
@@ -2310,8 +2329,8 @@ export const Testing = {
 
 /**
  * Decodes bytes into an image.
- * 
- * Be sure to call `.dispose()` on the image once it is no longer needed. This 
+ *
+ * Be sure to call `.dispose()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
 export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
@@ -2324,8 +2343,8 @@ export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
 
 /**
  * Decodes bytes into a font.
- * 
- * Be sure to call `.dispose()` on the font once it is no longer needed. This 
+ *
+ * Be sure to call `.dispose()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
 export const decodeFont = (bytes: Uint8Array): Promise<rc.Font> => {

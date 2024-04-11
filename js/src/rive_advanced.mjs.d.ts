@@ -341,6 +341,11 @@ export declare class Artboard {
   get frameOrigin(): boolean;
   set frameOrigin(val: boolean);
   /**
+   * Getter and setter for the artboard volume
+   */
+  get volume(): number;
+  set volume(val: number);
+  /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this
    * instance when no longer in use
    */
