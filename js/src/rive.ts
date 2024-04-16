@@ -913,6 +913,7 @@ export enum EventType {
   Advance = "advance",
   StateChange = "statechange",
   RiveEvent = "riveevent",
+  AudioStatusChange = "audiostatuschange", // internal event. TODO: split
 }
 
 export type RiveEventPayload = rc.RiveEvent | rc.OpenUrlEvent;
@@ -1052,6 +1053,97 @@ class TaskQueueManager {
     }
   }
 }
+
+// #endregion
+
+// #region Audio
+
+enum SystemAudioStatus {
+  AVAILABLE,
+  UNAVAILABLE,
+}
+
+// Class to handle audio context availability and status changes
+class AudioManager extends EventManager {
+  private _started: boolean = false;
+  private _status: SystemAudioStatus = SystemAudioStatus.UNAVAILABLE;
+  private _audioContext: AudioContext;
+
+  private async delay(time: number) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+  }
+
+  private async timeout() {
+    return new Promise((_, reject) => setTimeout(reject, 50));
+  }
+
+  // Alerts animations on status changes and removes the listeners to avoid alerting twice.
+  private reportToListeners() {
+    this.fire({ type: EventType.AudioStatusChange });
+    this.removeAll();
+  }
+
+  // Waits for the audio context to be ready or shortcircuits with a timeout
+  private async waitForContext() {
+    if (
+      this._status === SystemAudioStatus.UNAVAILABLE &&
+      this._audioContext !== null
+    ) {
+      // if the audio context is not available, it will never resume,
+      // so the timeout will throw after 50ms and a new cycle will start
+      await Promise.race([this._audioContext.resume(), this.timeout()]);
+      this._status = SystemAudioStatus.AVAILABLE;
+      this.reportToListeners();
+    }
+  }
+
+  // It loops testing for an audio context available until its status changes
+  private async startTest() {
+    if (!this._started) {
+      this._started = true;
+      // If window doesn't exist we assume they are not in a browser context
+      // so audio will not be blocked
+      if (typeof window == "undefined") {
+        this._status = SystemAudioStatus.AVAILABLE;
+        this.reportToListeners();
+      } else {
+        this._audioContext = new AudioContext();
+        while (this._status === SystemAudioStatus.UNAVAILABLE) {
+          try {
+            await this.waitForContext();
+          } catch (error) {}
+          await this.delay(1000);
+        }
+      }
+    }
+  }
+
+  // Single immediate test to check if audio is ready
+  private async testSync() {
+    try {
+      await this.waitForContext();
+    } catch (error) {}
+  }
+
+  public async testAudio() {
+    this.startTest();
+  }
+
+  public get systemVolume() {
+    if (this._status === SystemAudioStatus.UNAVAILABLE) {
+      // We do an immediate test to avoid depending on the delay of the running test
+      this.testSync();
+      return 0;
+    }
+    return 1;
+  }
+
+  public get status(): SystemAudioStatus {
+    return this._status;
+  }
+}
+
+const audioManager = new AudioManager();
 
 // #endregion
 
@@ -1275,6 +1367,15 @@ export class Rive {
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
 
+    // Initialize audio
+    if (audioManager.status == SystemAudioStatus.UNAVAILABLE) {
+      audioManager.add({
+        type: EventType.AudioStatusChange,
+        callback: () => this.onSystemAudioChanged(),
+      });
+      audioManager.testAudio();
+    }
+
     this.init({
       src: this.src,
       buffer: this.buffer,
@@ -1292,6 +1393,11 @@ export class Rive {
       "This function is deprecated: please use `new Rive({})` instead",
     );
     return new Rive(params);
+  }
+
+  // Event handler for when audio context becomes available
+  private onSystemAudioChanged() {
+    this.volume = this._volume;
   }
 
   // Initializes the Rive object either from constructor or load()
@@ -1475,7 +1581,7 @@ export class Rive {
     }
 
     this.artboard = rootArtboard;
-    rootArtboard.volume = this._volume;
+    rootArtboard.volume = this._volume * audioManager.systemVolume;
 
     // Check that the artboard has at least 1 animation
     if (this.artboard.animationCount() < 1) {
@@ -2250,7 +2356,7 @@ export class Rive {
   public set volume(value: number) {
     this._volume = value;
     if (this.artboard) {
-      this.artboard.volume = value;
+      this.artboard.volume = value * audioManager.systemVolume;
     }
   }
 }

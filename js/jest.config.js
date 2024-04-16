@@ -11,5 +11,5 @@ module.exports = {
     // Needed to handle ES6 rive-canvas module
     "/node_modules/(?!rive-canvas).+\\.m?js$"
   ],
-  setupFiles: ['jest-canvas-mock']
+  setupFiles: ['jest-canvas-mock', './test/setup.ts']
 };
