@@ -1154,7 +1154,7 @@ class AudioManager extends EventManager {
       this.enableAudio();
     };
     // NOTE: we should test this on mobile/pads
-    document.body.addEventListener("mousedown", _clickListener, {
+    document.addEventListener("pointerdown", _clickListener, {
       once: true,
     });
   }
