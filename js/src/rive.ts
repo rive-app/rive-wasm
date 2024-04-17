@@ -1066,6 +1066,8 @@ enum SystemAudioStatus {
 // Class to handle audio context availability and status changes
 class AudioManager extends EventManager {
   private _started: boolean = false;
+  private _enabled: boolean = false;
+
   private _status: SystemAudioStatus = SystemAudioStatus.UNAVAILABLE;
   private _audioContext: AudioContext;
 
@@ -1083,56 +1085,91 @@ class AudioManager extends EventManager {
     this.removeAll();
   }
 
-  // Waits for the audio context to be ready or shortcircuits with a timeout
-  private async waitForContext() {
+  /**
+   * The audio context has been resolved.
+   * Alert any listeners that we can now play audio.
+   * Rive will now play audio at the configured volume.
+   */
+  private async enableAudio() {
+    if (!this._enabled) {
+      this._enabled = true;
+      this._status = SystemAudioStatus.AVAILABLE;
+      this.reportToListeners();
+    }
+  }
+
+  /**
+   * Check if we are able to play audio.
+   *
+   * We currently check the audio context, when resume() returns before a timeout we know that the
+   * audio context is running and we can enable audio.
+   */
+  private async testAudio() {
     if (
       this._status === SystemAudioStatus.UNAVAILABLE &&
       this._audioContext !== null
     ) {
       // if the audio context is not available, it will never resume,
       // so the timeout will throw after 50ms and a new cycle will start
-      await Promise.race([this._audioContext.resume(), this.timeout()]);
-      this._status = SystemAudioStatus.AVAILABLE;
-      this.reportToListeners();
+      try {
+        await Promise.race([this._audioContext.resume(), this.timeout()]);
+        this.enableAudio();
+      } catch {
+        // we expect the promise race to timeout, which we ignore.
+      }
     }
   }
 
-  // It loops testing for an audio context available until its status changes
-  private async startTest() {
+  /**
+   * Establish audio for use with rive.
+   * We both test if we can use audio intermittently and listen for user interaction.
+   * The aim is to enable audio playback as soon as the browser allows this.
+   */
+  private async _establishAudio() {
     if (!this._started) {
       this._started = true;
       // If window doesn't exist we assume they are not in a browser context
       // so audio will not be blocked
       if (typeof window == "undefined") {
-        this._status = SystemAudioStatus.AVAILABLE;
-        this.reportToListeners();
+        this.enableAudio();
       } else {
         this._audioContext = new AudioContext();
+        this.listenForUserAction();
         while (this._status === SystemAudioStatus.UNAVAILABLE) {
-          try {
-            await this.waitForContext();
-          } catch (error) {}
+          await this.testAudio();
           await this.delay(1000);
         }
       }
     }
   }
 
-  // Single immediate test to check if audio is ready
-  private async testSync() {
-    try {
-      await this.waitForContext();
-    } catch (error) {}
+  private listenForUserAction() {
+    // NOTE: AudioContexts are ready immediately if requested in a ui callback
+    // we *could* re request one in this listener.
+    const _clickListener = async () => {
+      // note this has "better" results than calling `await this.testAudio()`
+      // as we force audio to be enabled in the current thread, rather than chancing
+      // the thread to be passed over for some other async context
+
+      this.enableAudio();
+    };
+    // NOTE: we should test this on mobile/pads
+    document.body.addEventListener("mousedown", _clickListener, {
+      once: true,
+    });
   }
 
-  public async testAudio() {
-    this.startTest();
+  /**
+   * Establish the audio context for rive, this lets rive know that we can play audio.
+   */
+  public async establishAudio() {
+    this._establishAudio();
   }
 
   public get systemVolume() {
     if (this._status === SystemAudioStatus.UNAVAILABLE) {
       // We do an immediate test to avoid depending on the delay of the running test
-      this.testSync();
+      this.testAudio();
       return 0;
     }
     return 1;
@@ -1373,7 +1410,7 @@ export class Rive {
         type: EventType.AudioStatusChange,
         callback: () => this.onSystemAudioChanged(),
       });
-      audioManager.testAudio();
+      audioManager.establishAudio();
     }
 
     this.init({
