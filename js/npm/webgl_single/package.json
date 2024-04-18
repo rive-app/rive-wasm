@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/webgl-single",
-  "version": "2.14.2",
+  "version": "2.14.3",
   "description": "Rive's webgl based web api with bundled wasm.",
   "main": "rive.js",
   "homepage": "https://rive.app",

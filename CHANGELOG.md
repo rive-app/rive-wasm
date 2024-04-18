@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.14.2](https://github.com/rive-app/rive-wasm/compare/2.14.1...2.14.2)
+## [2.14.3](https://github.com/rive-app/rive-wasm/compare/2.14.2...2.14.3)
 
 ### Commits
 
+- propagate volume to nested artboards [`9268272`](https://github.com/rive-app/rive-wasm/commit/926827232dfbad8aff639ae4575963860c60be50)
+
+## [2.14.2](https://github.com/rive-app/rive-wasm/compare/2.14.1...2.14.2) - 2024-04-17
+
+### Commits
+
+- chore: tag 2.14.2 [`afb1465`](https://github.com/rive-app/rive-wasm/commit/afb1465d761c6b7c11210cba46eb91ea2c38f808)
 - update listener to use pointerdown [`91a1b90`](https://github.com/rive-app/rive-wasm/commit/91a1b9087b13db84721e6d0201c4a3b494246348)
 - update audio manager to also listen to user interaction [`bf18c67`](https://github.com/rive-app/rive-wasm/commit/bf18c6728a91acd5e88659c595091994897b5ff4)
 - Stop audio in iOS when backgrounded. [`9345879`](https://github.com/rive-app/rive-wasm/commit/9345879d0b9bc9870eee09336d0b1a6bae8b90aa)
