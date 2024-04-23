@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.14.3](https://github.com/rive-app/rive-wasm/compare/2.14.2...2.14.3)
+## [2.14.4](https://github.com/rive-app/rive-wasm/compare/2.14.3...2.14.4)
 
 ### Commits
 
+- Fix audio instances [`79aa41d`](https://github.com/rive-app/rive-wasm/commit/79aa41df6bbf32a07fc47467f8369137f593c8dc)
+- add out of band audio support ios - abstracted audio! [`924b938`](https://github.com/rive-app/rive-wasm/commit/924b938d8a8e941ca5a4ac08d1dbff055d64dd78)
+- Xxxx randomization updates part 2 [`433965d`](https://github.com/rive-app/rive-wasm/commit/433965d0dedf0d1d055c43b5bc98e136f5378f36)
+- Xxxx support random transitions [`66a1d4d`](https://github.com/rive-app/rive-wasm/commit/66a1d4de84e99f845acd4b93055a2890b474f6ce)
+- support randomizing transitions [`0868fb3`](https://github.com/rive-app/rive-wasm/commit/0868fb3ed787b45860c21fac73c6dbb4d59225ee)
+
+## [2.14.3](https://github.com/rive-app/rive-wasm/compare/2.14.2...2.14.3) - 2024-04-18
+
+### Commits
+
+- chore: tag 2.14.3 [`4c1d046`](https://github.com/rive-app/rive-wasm/commit/4c1d0468fb478720d5b5310db13dc66734590891)
 - propagate volume to nested artboards [`9268272`](https://github.com/rive-app/rive-wasm/commit/926827232dfbad8aff639ae4575963860c60be50)
 
 ## [2.14.2](https://github.com/rive-app/rive-wasm/compare/2.14.1...2.14.2) - 2024-04-17
