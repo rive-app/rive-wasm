@@ -29,7 +29,8 @@ export interface RiveCanvas {
   RenderPaintStyle: typeof RenderPaintStyle;
   StrokeCap: typeof StrokeCap;
   StrokeJoin: typeof StrokeJoin;
-  decodeImage: DecodeFont;
+  decodeAudio: DecodeAudio;
+  decodeImage: DecodeImage;
   decodeFont: DecodeFont;
 
   /**
@@ -92,7 +93,7 @@ export interface RiveCanvas {
   cancelAnimationFrame(requestID: number): void;
   /**
    * A Rive-specific function to "flush" queued up draw calls from using the renderer.
-   * 
+   *
    * This should only be invoked once at the end of a loop in a regular JS
    * requestAnimationFrame loop, and should not be used with the Rive-wrapped
    * requestAnimationFrame (aka, the requestAnimationFrame() API on this object) as that
@@ -269,6 +270,15 @@ export interface CanvasRenderFactory {
   makeRenderPath(): CanvasRenderPath;
 }
 
+export class Audio {
+  unref(): void;
+}
+export interface AudioCallback {
+  (audio: Audio): void;
+}
+export interface DecodeAudio {
+  (bytes: Uint8Array, callback: AudioCallback): void;
+}
 export class Image {
   unref(): void;
 }
@@ -896,13 +906,25 @@ export declare class Vec2D {
 export declare class FileAsset {
   name: string;
   fileExtension: string;
+  uniqueFilename: string;
+  isAudio: boolean;
   isImage: boolean;
   isFont: boolean;
   cdnUuid: string;
+
+  decode(bytes: Uint8Array): void;
 }
 
 /**
- * Rive class extending the FileAsset that exposes a `setRenderImage()` API with a 
+ * Rive class extending the FileAsset that exposes a `setAudioSource()` API with a
+ * decoded Audio (via the `decodeAudio()` API) to set a new Audio on the Rive FileAsset
+ */
+export declare class AudioAsset extends FileAsset {
+  setAudioSource(audio: Audio): void;
+}
+
+/**
+ * Rive class extending the FileAsset that exposes a `setRenderImage()` API with a
  * decoded Image (via the `decodeImage()` API) to set a new Image on the Rive FileAsset
  */
 export declare class ImageAsset extends FileAsset {
@@ -910,7 +932,7 @@ export declare class ImageAsset extends FileAsset {
 }
 
 /**
- * Rive class extending the FileAsset that exposes a `setFont()` API with a 
+ * Rive class extending the FileAsset that exposes a `setFont()` API with a
  * decoded Font (via the `decodeFont()` API) to set a new Font on the Rive FileAsset
  */
 export declare class FontAsset extends FileAsset {

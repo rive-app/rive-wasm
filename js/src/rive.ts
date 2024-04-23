@@ -6,7 +6,12 @@ import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
 // API usage without re-defining their type definition here. May want to revisit
 // and see if we want to expose both types from rive.ts and rive_advanced.mjs in
 // the future
-export type { FileAsset, FontAsset, ImageAsset } from "./rive_advanced.mjs";
+export type {
+  FileAsset,
+  AudioAsset,
+  FontAsset,
+  ImageAsset,
+} from "./rive_advanced.mjs";
 
 /**
  * Generic type for a parameterless void callback
@@ -2471,9 +2476,23 @@ export const Testing = {
 // #region asset loaders
 
 /**
+ * Decodes bytes into an audio asset.
+ *
+ * Be sure to call `.unref()` on the audio once it is no longer needed. This
+ * allows the engine to clean it up when it is not used by any more animations.
+ */
+export const decodeAudio = (bytes: Uint8Array): Promise<rc.Audio> => {
+  return new Promise<rc.Audio>((resolve) =>
+    RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
+      rive.decodeAudio(bytes, resolve);
+    }),
+  );
+};
+
+/**
  * Decodes bytes into an image.
  *
- * Be sure to call `.dispose()` on the image once it is no longer needed. This
+ * Be sure to call `.unref()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
 export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
@@ -2487,7 +2506,7 @@ export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
 /**
  * Decodes bytes into a font.
  *
- * Be sure to call `.dispose()` on the font once it is no longer needed. This
+ * Be sure to call `.unref()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
 export const decodeFont = (bytes: Uint8Array): Promise<rc.Font> => {

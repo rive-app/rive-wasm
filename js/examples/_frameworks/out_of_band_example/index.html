@@ -1,6 +1,35 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Layout</title>
+    <style>
+      body {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        height: 100vh;
+        background: #f0f0f0;
+      }
+
+      canvas {
+        margin: 10px;
+      }
+
+      /* Media query for screens wider than 1600px + 800px + 20px margin */
+      @media (min-width: 2420px) {
+        body {
+          flex-direction: row; /* Lays out children horizontally */
+        }
+      }
+    </style>
+  </head>
   <body>
+    <canvas id="canvas-audio" width="800" height="1000"></canvas>
+    <canvas id="canvas-text-and-images" width="1600" height="800"></canvas>
     <script src="./index.ts"></script>
   </body>
 </html>
