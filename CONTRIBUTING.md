@@ -85,9 +85,9 @@ In this project, it references the local version of `@rive-app/canvas-single` wh
 
 If you want to work on the underlying JS classes and methods exposed through the compiled WASM, `cd` into the `wasm/` folder at the top level.
 
-To check out the Emscripten bindings from cpp to JS, look at the `wasm/src/bindings.cpp` file (`bindings_c2d` for canvas-specific bindings, `bindings_skia` for WebGL specific bindings).
+To check out the Emscripten bindings from cpp to JS, look at the `wasm/src/bindings.cpp` file (`bindings_c2d` for canvas-specific bindings, `bindings_skia` for WebGL specific bindings, and `bindings_webgl2.cpp` for WebGL2 specific bindings needed for the Rive Renderer).
 
-The files in `wasm/js` (specifically `renderer.js` and `skia_renderer.js`) use the [Canvas2D](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D) and [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderers respectfully to expose and implement bindings for drawing to the canvas.
+The files in `wasm/js` (specifically `renderer.js`, `skia_renderer.js`, and `webgl2_renderer.js`) use the [Canvas2D](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D) and [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderers respectfully to expose and implement bindings for drawing to the canvas.
 
 If you're looking to alter or add bindings as a result of a change or new feature in rive-cpp, you'll work with these files (most likely starting with the `bindings.cpp` first). When making changes, you will have to re-build WASM to test them out in an app (`js/build.sh` script). When changing or adding low-level API functionality for the high-level API, ensure that the `js/src/rive_advanced.mjs.d.ts` types file is updated accordingly. This ensures types are up-to-date with any changes.
 

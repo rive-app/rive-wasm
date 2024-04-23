@@ -3,6 +3,12 @@ Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.
   sharedOnRuntimeInitialized && sharedOnRuntimeInitialized();
 
+  let decodeAudio = Module["decodeAudio"];
+  Module["decodeAudio"] = function (bytes, onComplete) {
+    const audio = decodeAudio(bytes);
+    onComplete(audio);
+  };
+
   let decodeFont = Module["decodeFont"];
   Module["decodeFont"] = function (bytes, onComplete) {
     const font = decodeFont(bytes);
@@ -17,6 +23,8 @@ Module["onRuntimeInitialized"] = function () {
       return Module["ptrToImageAsset"](assetAddress);
     } else if (asset.isFont) {
       return Module["ptrToFontAsset"](assetAddress);
+    } else if (asset.isAudio) {
+      return Module["ptrToAudioAsset"](assetAddress);
     }
     return asset;
   };

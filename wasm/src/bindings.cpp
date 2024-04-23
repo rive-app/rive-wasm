@@ -12,6 +12,7 @@
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
 #include "rive/artboard.hpp"
+#include "rive/assets/audio_asset.hpp"
 #include "rive/assets/file_asset.hpp"
 #include "rive/assets/image_asset.hpp"
 #include "rive/bones/bone.hpp"
@@ -261,6 +262,7 @@ rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoad
 
 // utility function to get File Asset object from pointer
 rive::FileAsset* ptrToFileAsset(intptr_t pointer) { return (rive::FileAsset*)pointer; }
+rive::AudioAsset* ptrToAudioAsset(intptr_t pointer) { return (rive::AudioAsset*)pointer; }
 rive::ImageAsset* ptrToImageAsset(intptr_t pointer) { return (rive::ImageAsset*)pointer; }
 rive::FontAsset* ptrToFontAsset(intptr_t pointer) { return (rive::FontAsset*)pointer; }
 
@@ -289,11 +291,38 @@ FontWrapper* decodeFont(emscripten::val byteArray)
     return font;
 }
 
+class AudioWrapper
+{
+private:
+    rive::rcp<rive::AudioSource> m_audio;
+
+public:
+    AudioWrapper(rive::rcp<rive::AudioSource> audio) { m_audio = std::move(audio); }
+    void unref() { m_audio->unref(); }
+    rive::rcp<rive::AudioSource> audio() { return m_audio; }
+};
+
+AudioWrapper* decodeAudio(emscripten::val byteArray)
+{
+    std::vector<unsigned char> vector;
+
+    const auto l = byteArray["byteLength"].as<unsigned>();
+    vector.resize(l);
+
+    emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
+    memoryView.call<void>("set", byteArray);
+    auto audio = new AudioWrapper(jsFactory()->decodeAudio(vector));
+
+    return audio;
+}
+
 EMSCRIPTEN_BINDINGS(RiveWASM)
 {
     function("ptrToFileAsset", &ptrToFileAsset, allow_raw_pointers());
+    function("ptrToAudioAsset", &ptrToAudioAsset, allow_raw_pointers());
     function("ptrToImageAsset", &ptrToImageAsset, allow_raw_pointers());
     function("ptrToFontAsset", &ptrToFontAsset, allow_raw_pointers());
+    function("decodeAudio", &decodeAudio, allow_raw_pointers());
     function("decodeFont", &decodeFont, allow_raw_pointers());
     function("load", &load, allow_raw_pointers());
     function("jsFactory", &jsFactory, allow_raw_pointers());
@@ -387,6 +416,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             allow_raw_pointers())
         .function("artboardCount", &rive::File::artboardCount);
     class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
+    class_<AudioWrapper>("AudioWrapper").function("unref", &AudioWrapper::unref);
     class_<rive::Artboard>("ArtboardBase");
     class_<rive::ArtboardInstance, base<rive::Artboard>>("Artboard")
 #ifdef ENABLE_QUERY_FLAT_VERTICES
@@ -583,6 +613,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 
     class_<rive::StateMachine, base<rive::Animation>>("StateMachine");
     class_<rive::Factory>("Factory")
+        .function("decodeAudio", &rive::Factory::decodeAudio, allow_raw_pointers())
         .function("decodeImage", &rive::Factory::decodeImage, allow_raw_pointers())
         .function("decodeFont", &rive::Factory::decodeFont, allow_raw_pointers());
     class_<rive::Span<const uint8_t>>("Span");
@@ -593,6 +624,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   select_overload<const std::string&() const>(&rive::FileAssetBase::cdnBaseUrl))
         .property("fileExtension",
                   select_overload<std::string() const>(&rive::FileAsset::fileExtension))
+        .property("uniqueFilename",
+                  select_overload<std::string() const>(&rive::FileAsset::uniqueFilename))
+        .property("isAudio", optional_override([](const rive::FileAsset& self) -> bool {
+                      return self.is<rive::AudioAsset>();
+                  }))
         .property("isImage", optional_override([](const rive::FileAsset& self) -> bool {
                       return self.is<rive::ImageAsset>();
                   }))
@@ -639,6 +675,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                 self.renderImage(rive::ref_rcp(renderImage));
             }),
             allow_raw_pointers());
+
+    class_<rive::AudioAsset, base<rive::FileAsset>>("AudioAsset")
+        .function("setAudioSource",
+                  optional_override([](rive::AudioAsset& self, AudioWrapper* audio) -> void {
+                      self.audioSource(audio->audio());
+                  }),
+                  allow_raw_pointers());
 
     class_<rive::FontAsset, base<rive::FileAsset>>("FontAsset")
         .function("setFont",
