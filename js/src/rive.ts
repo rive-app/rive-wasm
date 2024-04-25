@@ -1409,15 +1409,6 @@ export class Rive {
     // Hook up the task queue
     this.taskQueue = new TaskQueueManager(this.eventManager);
 
-    // Initialize audio
-    if (audioManager.status == SystemAudioStatus.UNAVAILABLE) {
-      audioManager.add({
-        type: EventType.AudioStatusChange,
-        callback: () => this.onSystemAudioChanged(),
-      });
-      audioManager.establishAudio();
-    }
-
     this.init({
       src: this.src,
       buffer: this.buffer,
@@ -1546,6 +1537,23 @@ export class Rive {
     }
   }
 
+  /**
+   * If the instance has audio and the system audio is not ready
+   * we hook the instance to the audio manager
+   */
+  private initializeAudio() {
+    // Initialize audio if needed
+    if (audioManager.status == SystemAudioStatus.UNAVAILABLE) {
+      if (this.artboard?.hasAudio) {
+        audioManager.add({
+          type: EventType.AudioStatusChange,
+          callback: () => this.onSystemAudioChanged(),
+        });
+        audioManager.establishAudio();
+      }
+    }
+  }
+
   // Initializes runtime with Rive data and preps for playing
   private async initData(
     artboardName: string,
@@ -1578,6 +1586,9 @@ export class Rive {
         stateMachineNames,
         autoplay,
       );
+
+      // Check for audio
+      this.initializeAudio();
 
       // Everything's set up, emit a load event
       this.loaded = true;

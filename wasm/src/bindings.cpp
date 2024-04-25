@@ -530,6 +530,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .property("frameOrigin",
                   select_overload<bool() const>(&rive::Artboard::frameOrigin),
                   select_overload<void(bool)>(&rive::Artboard::frameOrigin))
+        .property("hasAudio", optional_override([](const rive::ArtboardInstance& self) -> bool {
+                      return self.hasAudio();
+                  }))
         .property("volume",
                   select_overload<float() const>(&rive::Artboard::volume),
                   select_overload<void(float)>(&rive::Artboard::volume));

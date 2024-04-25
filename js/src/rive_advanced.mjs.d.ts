@@ -348,6 +348,7 @@ export declare class Artboard {
    * Get the bounds of this Artboard instance
    */
   get bounds(): AABB;
+  get hasAudio(): boolean;
   get frameOrigin(): boolean;
   set frameOrigin(val: boolean);
   /**
