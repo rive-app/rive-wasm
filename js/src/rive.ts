@@ -1189,6 +1189,69 @@ const audioManager = new AudioManager();
 
 // #endregion
 
+// #region Observers
+
+type ObservedObject = {
+  onResize: Function;
+  element: HTMLCanvasElement;
+};
+
+/**
+ * This class takes care of any observers that will be attached to an animation.
+ * It should be treated as a singleton because observers are much more performant
+ * when used for observing multiple elements by a single instance.
+ */
+
+class ObjectObservers {
+  private _elementsMap: Map<HTMLCanvasElement, ObservedObject> = new Map();
+
+  private _resizeObserver: ResizeObserver;
+
+  constructor() {
+    this._resizeObserver = new ResizeObserver(this._onObserved);
+  }
+
+  /**
+   * Resize observers trigger both when the element changes its size and also when the
+   * element is added or removed from the document.
+   */
+  private _onObservedEntry = (entry: ResizeObserverEntry) => {
+    const observed = this._elementsMap.get(entry.target as HTMLCanvasElement);
+    if (observed !== null) {
+      observed.onResize(
+        entry.target.clientWidth == 0 || entry.target.clientHeight == 0,
+      );
+    } else {
+      this._resizeObserver.unobserve(entry.target);
+    }
+  };
+
+  private _onObserved = (entries: ResizeObserverEntry[]) => {
+    entries.forEach(this._onObservedEntry);
+  };
+
+  // Adds an observable element
+  public add(element: HTMLCanvasElement, onResize: Function) {
+    let observed: ObservedObject = {
+      onResize,
+      element,
+    };
+    this._elementsMap.set(element, observed);
+    this._resizeObserver.observe(element);
+    return observed;
+  }
+
+  // Removes an observable element
+  public remove(observed: ObservedObject) {
+    this._resizeObserver.unobserve(observed.element);
+    this._elementsMap.delete(observed.element);
+  }
+}
+
+const observers = new ObjectObservers();
+
+// #endregion
+
 // #region Rive
 
 // Interface for the Rive static method contructor
@@ -1309,6 +1372,9 @@ export class Rive {
   // Tracks if a Rive file is loaded
   private loaded = false;
 
+  // Reference of an object that handles any observers for the animation
+  private _observed: ObservedObject | null;
+
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
    * commands (e.g. contents) can be called as soon as the file is loaded.
@@ -1356,6 +1422,9 @@ export class Rive {
   // Keep a local value of the set volume to update it asynchronously
   private _volume = 1;
 
+  // Whether the canvas element's size is 0
+  private _hasZeroSize = false;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1364,6 +1433,12 @@ export class Rive {
 
   constructor(params: RiveParameters) {
     this.canvas = params.canvas;
+    if (params.canvas.constructor === HTMLCanvasElement) {
+      this._observed = observers.add(
+        this.canvas as HTMLCanvasElement,
+        this.onCanvasResize,
+      );
+    }
     this.src = params.src;
     this.buffer = params.buffer;
     this.layout = params.layout ?? new Layout();
@@ -1432,6 +1507,13 @@ export class Rive {
   private onSystemAudioChanged() {
     this.volume = this._volume;
   }
+
+  private onCanvasResize = (hasZeroSize: boolean) => {
+    this._hasZeroSize = hasZeroSize;
+    if (!this._layout.maxX || !this._layout.maxY) {
+      this.resizeToCanvas();
+    }
+  };
 
   // Initializes the Rive object either from constructor or load()
   private init({
@@ -1694,10 +1776,10 @@ export class Rive {
    * @param time the time at which to render a frame
    */
   private draw(time: number, onSecond?: VoidCallback): void {
-    const before = performance.now();
-
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
+
+    const before = performance.now();
 
     // On the first pass, make sure lastTime has a valid value
     if (!this.lastRenderTime) {
@@ -1786,7 +1868,10 @@ export class Rive {
     // Update the renderer alignment if necessary
     this.alignRenderer();
 
-    this.artboard.draw(renderer);
+    // Do not draw on 0 canvas size
+    if (!this._hasZeroSize) {
+      this.artboard.draw(renderer);
+    }
 
     renderer.restore();
     renderer.flush();
@@ -1872,6 +1957,10 @@ export class Rive {
     this.stopRendering();
     // Clean up any artboard, animation or state machine instances.
     this.cleanupInstances();
+    // Remove from observer
+    if (this._observed !== null) {
+      observers.remove(this._observed);
+    }
     // Delete the rive file
     this.file?.delete();
     this.file = null;
