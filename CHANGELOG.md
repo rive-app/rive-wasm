@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.1](https://github.com/rive-app/rive-wasm/compare/2.15.0...2.15.1)
+## [2.15.2](https://github.com/rive-app/rive-wasm/compare/2.15.1...2.15.2)
+
+### Commits
+
+- add observer polyfill [`67e826a`](https://github.com/rive-app/rive-wasm/commit/67e826adec0dbf6df33890bd06739c9f1200d9ce)
+
+## [2.15.1](https://github.com/rive-app/rive-wasm/compare/2.15.0...2.15.1) - 2024-04-30
 
 ### Fixed
 
@@ -13,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.15.1 [`7a30128`](https://github.com/rive-app/rive-wasm/commit/7a301282472a3a14679db3e2dfa5909d4a659555)
 - GameKit on Windows [`dcf28ad`](https://github.com/rive-app/rive-wasm/commit/dcf28addd6e04a5702004615260a8a5a30659799)
 - add resize observer for rive instances [`1904dfa`](https://github.com/rive-app/rive-wasm/commit/1904dfabe3d4845388b0609b33643dd73e743b3e)
 - initialize audio manager only if an instance needs it [`759dc45`](https://github.com/rive-app/rive-wasm/commit/759dc4542dc926c7cd9772f309e081f9ba3d59a0)
