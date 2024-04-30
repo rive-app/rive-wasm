@@ -1196,6 +1196,20 @@ type ObservedObject = {
   element: HTMLCanvasElement;
 };
 
+type MyResizeObserverType = {
+  observe: Function,
+  unobserve: Function,
+  disconnect: Function,
+}
+
+class FakeResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+const MyResizeObserver = globalThis.ResizeObserver || FakeResizeObserver;
+
 /**
  * This class takes care of any observers that will be attached to an animation.
  * It should be treated as a singleton because observers are much more performant
@@ -1205,10 +1219,10 @@ type ObservedObject = {
 class ObjectObservers {
   private _elementsMap: Map<HTMLCanvasElement, ObservedObject> = new Map();
 
-  private _resizeObserver: ResizeObserver;
+  private _resizeObserver: MyResizeObserverType;
 
   constructor() {
-    this._resizeObserver = new ResizeObserver(this._onObserved);
+    this._resizeObserver = new MyResizeObserver(this._onObserved);
   }
 
   /**
