@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.0](https://github.com/rive-app/rive-wasm/compare/2.14.4...2.15.0)
+## [2.15.1](https://github.com/rive-app/rive-wasm/compare/2.15.0...2.15.1)
+
+### Fixed
+
+- fix follow path not working with path as target and shape with 0 opacity [`#7155`](https://github.com/rive-app/rive-wasm/issues/7155)
 
 ### Commits
 
+- GameKit on Windows [`dcf28ad`](https://github.com/rive-app/rive-wasm/commit/dcf28addd6e04a5702004615260a8a5a30659799)
+- add resize observer for rive instances [`1904dfa`](https://github.com/rive-app/rive-wasm/commit/1904dfabe3d4845388b0609b33643dd73e743b3e)
+- initialize audio manager only if an instance needs it [`759dc45`](https://github.com/rive-app/rive-wasm/commit/759dc4542dc926c7cd9772f309e081f9ba3d59a0)
+
+## [2.15.0](https://github.com/rive-app/rive-wasm/compare/2.14.4...2.15.0) - 2024-04-24
+
+### Commits
+
+- chore: tag 2.15.0 [`f69b6d3`](https://github.com/rive-app/rive-wasm/commit/f69b6d3ecd70d498430401accd0e0143afa96343)
 - fix version numbers [`97ff287`](https://github.com/rive-app/rive-wasm/commit/97ff287bbc1c3eb078793a9981d8c80d9ea6b659)
 - Pushing merge, resolved using upstream.\n\n message=feat: add wasm audio out of band [`d169023`](https://github.com/rive-app/rive-wasm/commit/d169023ea28785ccba683836ab7fc8b90112ed8a)
 
