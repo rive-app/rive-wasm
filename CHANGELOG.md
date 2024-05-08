@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.3](https://github.com/rive-app/rive-wasm/compare/2.15.2...2.15.3)
+## [2.15.4](https://github.com/rive-app/rive-wasm/compare/2.15.3...2.15.4)
 
 ### Commits
 
+- Wasm fallback and min safari version [`4e47118`](https://github.com/rive-app/rive-wasm/commit/4e471182c73f3db5c10726ac4d4b46cdd75b9d1d)
+
+## [2.15.3](https://github.com/rive-app/rive-wasm/compare/2.15.2...2.15.3) - 2024-05-08
+
+### Commits
+
+- chore: tag 2.15.3 [`bab22e6`](https://github.com/rive-app/rive-wasm/commit/bab22e63dc955508bfdc3a33b116075a7f3bd736)
 - Add a "path_fuzz" mode to the PLS fuzzer [`8d2a799`](https://github.com/rive-app/rive-wasm/commit/8d2a7997610c92aa5c030527cb55e61468cff80c)
 - Fix ios analyzer [`104f088`](https://github.com/rive-app/rive-wasm/commit/104f088d8800d9d16dedfdf4071711f544ea763c)
 - Add static/dynamic runtime config based on actual target config. [`dd97a36`](https://github.com/rive-app/rive-wasm/commit/dd97a36c091faa2ca0b5f7064509b96304900870)
