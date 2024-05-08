@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.2](https://github.com/rive-app/rive-wasm/compare/2.15.1...2.15.2)
+## [2.15.3](https://github.com/rive-app/rive-wasm/compare/2.15.2...2.15.3)
 
 ### Commits
 
+- Add a "path_fuzz" mode to the PLS fuzzer [`8d2a799`](https://github.com/rive-app/rive-wasm/commit/8d2a7997610c92aa5c030527cb55e61468cff80c)
+- Fix ios analyzer [`104f088`](https://github.com/rive-app/rive-wasm/commit/104f088d8800d9d16dedfdf4071711f544ea763c)
+- Add static/dynamic runtime config based on actual target config. [`dd97a36`](https://github.com/rive-app/rive-wasm/commit/dd97a36c091faa2ca0b5f7064509b96304900870)
+- fix state machine advanceAndApply [`d747731`](https://github.com/rive-app/rive-wasm/commit/d74773114d2e078d810b9ab7aad21cb2ed0bfa3c)
+- Xxxx support target align from position [`3f2bab1`](https://github.com/rive-app/rive-wasm/commit/3f2bab14b7ce33077c8313356bf83d0b0434b19c)
+- Handle NaN in PLS paths and transforms [`3bd7b0b`](https://github.com/rive-app/rive-wasm/commit/3bd7b0ba18fa3b27607946ae447d78bf64899e82)
+
+## [2.15.2](https://github.com/rive-app/rive-wasm/compare/2.15.1...2.15.2) - 2024-04-30
+
+### Commits
+
+- chore: tag 2.15.2 [`e47beb4`](https://github.com/rive-app/rive-wasm/commit/e47beb4cb8e3aa80d980fe320f1729e08f8be7e4)
 - add observer polyfill [`67e826a`](https://github.com/rive-app/rive-wasm/commit/67e826adec0dbf6df33890bd06739c9f1200d9ce)
 
 ## [2.15.1](https://github.com/rive-app/rive-wasm/compare/2.15.0...2.15.1) - 2024-04-30
