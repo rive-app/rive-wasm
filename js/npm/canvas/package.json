@@ -25,6 +25,7 @@
     "rive.js",
     "rive.js.map",
     "rive.wasm",
+    "rive_fallback.wasm",
     "rive.d.ts",
     "rive_advanced.mjs.d.ts"
   ],

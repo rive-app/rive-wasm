@@ -24,6 +24,7 @@
   "files": [
     "rive.js",
     "rive.wasm",
+    "rive_fallback.wasm",
     "rive.js.map",
     "rive.d.ts",
     "rive_advanced.mjs.d.ts"

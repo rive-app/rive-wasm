@@ -48,6 +48,7 @@ node_modules
 /js/npm/canvas_advanced/canvas_advanced.mjs
 /js/npm/canvas_advanced_lite/canvas_advanced.mjs
 /js/npm/**/rive.wasm
+/js/npm/**/rive_fallback.wasm
 /js/npm/**/rive.js
 /js/npm/**/rive.js.map
 /js/npm/**/rive.d.ts

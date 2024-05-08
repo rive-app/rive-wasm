@@ -210,8 +210,10 @@ export class RuntimeLoader {
         }
       })
       .catch(() => {
-        // In case unpkg fails or goes down, we should try to load from jsdelivr
-        const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive.wasm`;
+        // In case unpkg fails, or the wasm was not supported, we try to load the fallback module from jsdelivr.
+        // This `rive_fallback.wasm` is compiled to support older architecture.
+        // TODO: (Gordon): preemptively test browser support and load the correct wasm file. Then use jsdelvr only if unpkg fails.
+        const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive_fallback.wasm`;
         if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
           console.warn(
             `Failed to load WASM from ${RuntimeLoader.wasmURL}, trying jsdelivr as a backup`,
@@ -1197,10 +1199,10 @@ type ObservedObject = {
 };
 
 type MyResizeObserverType = {
-  observe: Function,
-  unobserve: Function,
-  disconnect: Function,
-}
+  observe: Function;
+  unobserve: Function;
+  disconnect: Function;
+};
 
 class FakeResizeObserver {
   observe() {}

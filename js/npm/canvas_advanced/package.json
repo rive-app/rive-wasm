@@ -24,6 +24,7 @@
   "files": [
     "canvas_advanced.mjs",
     "rive.wasm",
+    "rive_fallback.wasm",
     "rive_advanced.mjs.d.ts"
   ],
   "types": "rive_advanced.mjs.d.ts",
