@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.4](https://github.com/rive-app/rive-wasm/compare/2.15.3...2.15.4)
+## [2.15.5](https://github.com/rive-app/rive-wasm/compare/2.15.4...2.15.5)
+
+### Fixed
+
+- Fix an assert in contour_measure.cpp [`#7210`](https://github.com/rive-app/rive-wasm/issues/7210)
 
 ### Commits
 
+- remove harfbuzz flag [`b462cef`](https://github.com/rive-app/rive-wasm/commit/b462cefaafa900d6719323568799eddc87c912d3)
+- Don't defer path update if Shape has a dependent skin [`7a70b1f`](https://github.com/rive-app/rive-wasm/commit/7a70b1fc54d1dac156ae43001a15d27d43a18df0)
+- Add strokes, gradients, and blend modes to path_fuzz [`dfcb2e3`](https://github.com/rive-app/rive-wasm/commit/dfcb2e3d766f69c2c40289d6a5af06690db5cbd3)
+
+## [2.15.4](https://github.com/rive-app/rive-wasm/compare/2.15.3...2.15.4) - 2024-05-08
+
+### Commits
+
+- chore: tag 2.15.4 [`70e26b2`](https://github.com/rive-app/rive-wasm/commit/70e26b2a5a3b763288320f9b448ee5250ab83d1f)
 - Wasm fallback and min safari version [`4e47118`](https://github.com/rive-app/rive-wasm/commit/4e471182c73f3db5c10726ac4d4b46cdd75b9d1d)
 
 ## [2.15.3](https://github.com/rive-app/rive-wasm/compare/2.15.2...2.15.3) - 2024-05-08
