@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.5](https://github.com/rive-app/rive-wasm/compare/2.15.4...2.15.5)
+## [2.15.6](https://github.com/rive-app/rive-wasm/compare/2.15.5...2.15.6)
+
+### Commits
+
+- fix advancing nested animations [`34289df`](https://github.com/rive-app/rive-wasm/commit/34289dfe7fa6bdecef713ea9fe3fb66fe4c7fe76)
+
+## [2.15.5](https://github.com/rive-app/rive-wasm/compare/2.15.4...2.15.5) - 2024-05-09
 
 ### Fixed
 
@@ -13,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.15.5 [`85a1e05`](https://github.com/rive-app/rive-wasm/commit/85a1e05356c13a54c22d0c8b967ea1275b4a4c14)
 - remove harfbuzz flag [`b462cef`](https://github.com/rive-app/rive-wasm/commit/b462cefaafa900d6719323568799eddc87c912d3)
 - Don't defer path update if Shape has a dependent skin [`7a70b1f`](https://github.com/rive-app/rive-wasm/commit/7a70b1fc54d1dac156ae43001a15d27d43a18df0)
 - Add strokes, gradients, and blend modes to path_fuzz [`dfcb2e3`](https://github.com/rive-app/rive-wasm/commit/dfcb2e3d766f69c2c40289d6a5af06690db5cbd3)
