@@ -2231,7 +2231,7 @@ export class Rive {
   // Returns a list of animation names on the chosen artboard
   public get animationNames(): string[] {
     // If the file's not loaded, we got nothing to return
-    if (!this.loaded) {
+    if (!this.loaded || !this.artboard) {
       return [];
     }
     const animationNames: string[] = [];
@@ -2246,7 +2246,7 @@ export class Rive {
    */
   public get stateMachineNames(): string[] {
     // If the file's not loaded, we got nothing to return
-    if (!this.loaded) {
+    if (!this.loaded || !this.artboard) {
       return [];
     }
     const stateMachineNames: string[] = [];
