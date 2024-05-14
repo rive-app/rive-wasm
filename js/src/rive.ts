@@ -1718,6 +1718,9 @@ export class Rive {
     stateMachineNames: string[],
     autoplay: boolean,
   ): void {
+    if(!this.file) {
+      return;
+    }
     // Fetch the artboard
     const rootArtboard = artboardName
       ? this.file.artboardByName(artboardName)
