@@ -929,7 +929,7 @@ export type RiveEventPayload = rc.RiveEvent | rc.OpenUrlEvent;
 // as well as for custom Rive events reported from the state machine defined at design-time.
 export interface Event {
   type: EventType;
-  data?: string | string[] | LoopEvent | number | RiveEventPayload;
+  data?: string | string[] | LoopEvent | number | RiveEventPayload | RiveFile;
 }
 
 /**
@@ -1273,8 +1273,9 @@ const observers = new ObjectObservers();
 // Interface for the Rive static method contructor
 export interface RiveParameters {
   canvas: HTMLCanvasElement | OffscreenCanvas; // canvas is required
-  src?: string; // one of src or buffer is required
-  buffer?: ArrayBuffer; // one of src or buffer is required
+  src?: string; // one of src or buffer or file is required
+  buffer?: ArrayBuffer; // one of src or buffer or file is required
+  riveFile?: RiveFile;
   artboard?: string;
   animations?: string | string[];
   stateMachines?: string | string[];
@@ -1353,6 +1354,7 @@ export interface RiveParameters {
 export interface RiveLoadParameters {
   src?: string;
   buffer?: ArrayBuffer;
+  riveFile?: RiveFile;
   autoplay?: boolean;
   artboard?: string;
   animations?: string | string[];
@@ -1367,6 +1369,152 @@ export interface RiveResetParameters {
   animations?: string | string[];
   stateMachines?: string | string[];
   autoplay?: boolean;
+}
+// Interface to RiveFile.load function
+export interface RiveFileParameters {
+  src?: string;
+  buffer?: ArrayBuffer;
+  assetLoader?: AssetLoadCallback;
+  enableRiveAssetCDN?: boolean;
+  onLoad?: EventCallback;
+  onLoadError?: EventCallback;
+}
+
+export class RiveFile {
+  // Error message for missing source or buffer
+  private static readonly missingErrorMessage: string =
+    "Rive source file or data buffer required";
+
+  // Error message for file load error
+  private static readonly fileLoadErrorMessage: string =
+    "The file failed to load";
+
+  // A url to a Rive file; may be undefined if a buffer is specified
+  private src: string;
+
+  // Raw Rive file data; may be undefined if a src is specified
+  private buffer: ArrayBuffer;
+
+  // Wasm runtime
+  private runtime: rc.RiveCanvas;
+
+  // Runtime file
+  private file: rc.File;
+
+  // AssetLoadCallback: allows customizing asset loading for images and fonts.
+  private assetLoader: AssetLoadCallback;
+
+  // Allow the runtime to automatically load assets hosted in Rive's runtime.
+  private enableRiveAssetCDN: boolean = true;
+
+  // Holds event listeners
+  private eventManager: EventManager;
+
+  private referenceCount: number = 0;
+
+  constructor(params: RiveFileParameters) {
+    this.src = params.src;
+    this.buffer = params.buffer;
+
+    if (params.assetLoader) this.assetLoader = params.assetLoader;
+    this.enableRiveAssetCDN =
+      typeof params.enableRiveAssetCDN == "boolean"
+        ? params.enableRiveAssetCDN
+        : true;
+
+    // New event management system
+    this.eventManager = new EventManager();
+    if (params.onLoad) this.on(EventType.Load, params.onLoad);
+    if (params.onLoadError) this.on(EventType.LoadError, params.onLoadError);
+  }
+
+  private async initData() {
+    if (this.src) {
+      this.buffer = await loadRiveFile(this.src);
+    }
+    let loader;
+    if (this.assetLoader) {
+      loader = new this.runtime.CustomFileAssetLoader({
+        loadContents: this.assetLoader,
+      });
+    }
+    // Load the Rive file
+    this.file = await this.runtime.load(
+      new Uint8Array(this.buffer),
+      loader,
+      this.enableRiveAssetCDN,
+    );
+    if (this.file !== null) {
+      this.eventManager.fire({
+        type: EventType.Load,
+        data: this,
+      });
+    } else {
+      this.eventManager.fire({
+        type: EventType.LoadError,
+        data: null,
+      });
+      throw new Error(RiveFile.fileLoadErrorMessage);
+    }
+  }
+
+  public async init() {
+    // If no source file url specified, it's a bust
+    if (!this.src && !this.buffer) {
+      throw new Error(RiveFile.missingErrorMessage);
+    }
+    this.runtime = await RuntimeLoader.awaitInstance();
+    await this.initData();
+  }
+
+  /**
+   * Subscribe to Rive-generated events
+   * @param type the type of event to subscribe to
+   * @param callback callback to fire when the event occurs
+   */
+  public on(type: EventType, callback: EventCallback) {
+    this.eventManager.add({
+      type: type,
+      callback: callback,
+    });
+  }
+
+  /**
+   * Unsubscribes from a Rive-generated event
+   * @param type the type of event to unsubscribe from
+   * @param callback the callback to unsubscribe
+   */
+  public off(type: EventType, callback: EventCallback) {
+    this.eventManager.remove({
+      type: type,
+      callback: callback,
+    });
+  }
+
+  public cleanup() {
+    this.referenceCount -= 1;
+    if (this.referenceCount <= 0) {
+      this.removeAllRiveEventListeners();
+      this.file?.delete();
+    }
+  }
+
+  /**
+   * Unsubscribes all Rive listeners from an event type, or everything if no type is
+   * given
+   * @param type the type of event to unsubscribe from, or all types if
+   * undefined
+   */
+  public removeAllRiveEventListeners(type?: EventType) {
+    this.eventManager.removeAll(type);
+  }
+
+  public getInstance(): rc.File {
+    if (this.file !== null) {
+      this.referenceCount += 1;
+      return this.file;
+    }
+  }
 }
 
 export class Rive {
@@ -1411,6 +1559,9 @@ export class Rive {
 
   // Runtime file
   private file: rc.File;
+
+  // Rive file instance
+  private riveFile: RiveFile;
 
   // Holds event listeners
   private eventManager: EventManager;
@@ -1457,6 +1608,7 @@ export class Rive {
     }
     this.src = params.src;
     this.buffer = params.buffer;
+    this.riveFile = params.riveFile;
     this.layout = params.layout ?? new Layout();
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
@@ -1503,6 +1655,7 @@ export class Rive {
     this.init({
       src: this.src,
       buffer: this.buffer,
+      riveFile: this.riveFile,
       autoplay: params.autoplay,
       animations: params.animations,
       stateMachines: params.stateMachines,
@@ -1535,6 +1688,7 @@ export class Rive {
   private init({
     src,
     buffer,
+    riveFile,
     animations,
     stateMachines,
     artboard,
@@ -1543,9 +1697,10 @@ export class Rive {
   }: RiveLoadParameters): void {
     this.src = src;
     this.buffer = buffer;
+    this.riveFile = riveFile;
 
     // If no source file url specified, it's a bust
-    if (!this.src && !this.buffer) {
+    if (!this.src && !this.buffer && !this.riveFile) {
       throw new Error(Rive.missingErrorMessage);
     }
 
@@ -1659,24 +1814,17 @@ export class Rive {
     stateMachineNames: string[],
     autoplay: boolean,
   ): Promise<void> {
-    // Load the buffer from the src if provided
-    if (this.src) {
-      this.buffer = await loadRiveFile(this.src);
-    }
-    let loader;
-    if (this.assetLoader) {
-      loader = new this.runtime.CustomFileAssetLoader({
-        loadContents: this.assetLoader,
-      });
-    }
-    // Load the Rive file
-    this.file = await this.runtime.load(
-      new Uint8Array(this.buffer),
-      loader,
-      this.enableRiveAssetCDN,
-    );
-
-    if (this.file) {
+    try {
+      if(this.riveFile == null) {
+        this.riveFile = new RiveFile({
+          src: this.src,
+          buffer: this.buffer,
+          enableRiveAssetCDN: this.enableRiveAssetCDN,
+          assetLoader: this.assetLoader,
+        });
+        await this.riveFile.init();
+      }
+      this.file = this.riveFile.getInstance();
       // Initialize and draw frame
       this.initArtboard(
         artboardName,
@@ -1703,7 +1851,7 @@ export class Rive {
       this.drawFrame();
 
       return Promise.resolve();
-    } else {
+    } catch (error) {
       const msg = "Problem loading file; may be corrupt!";
       console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
@@ -1718,7 +1866,7 @@ export class Rive {
     stateMachineNames: string[],
     autoplay: boolean,
   ): void {
-    if(!this.file) {
+    if (!this.file) {
       return;
     }
     // Fetch the artboard
@@ -1980,8 +2128,9 @@ export class Rive {
     if (this._observed !== null) {
       observers.remove(this._observed);
     }
-    // Delete the rive file
-    this.file?.delete();
+
+    this.riveFile?.cleanup();
+    this.riveFile = null;
     this.file = null;
   }
 
@@ -2162,6 +2311,7 @@ export class Rive {
 
   // Loads a new Rive file, keeping listeners in place
   public load(params: RiveLoadParameters): void {
+    this.file = null;
     // Stop all animations
     this.stop();
     // Reinitialize
