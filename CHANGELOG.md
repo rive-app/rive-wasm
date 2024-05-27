@@ -5,10 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.6](https://github.com/rive-app/rive-wasm/compare/2.15.5...2.15.6)
+## [2.16.0](https://github.com/rive-app/rive-wasm/compare/2.15.6...2.16.0)
+
+### Fixed
+
+- fix for unexpected triggered events [`#7226`](https://github.com/rive-app/rive-wasm/issues/7226)
+- use world bounds for coarse grained collision test [`#7286`](https://github.com/rive-app/rive-wasm/issues/7286)
+- check before using artboard [`#7261`](https://github.com/rive-app/rive-wasm/issues/7261)
 
 ### Commits
 
+- Use unique_ptr in import stack. [`734470c`](https://github.com/rive-app/rive-wasm/commit/734470cd5b1c0287435323828d4fc039117b1183)
+- Xxxx expose rive file to js api [`005e68f`](https://github.com/rive-app/rive-wasm/commit/005e68f2ecea8bf59305dd5f59a260691b2ed68e)
+- Fail early with bad blend modes. [`06db3db`](https://github.com/rive-app/rive-wasm/commit/06db3db4810cc809ac917598e20ce8558ae2e53a)
+- Fix warnings about invalid toolsets [`6037650`](https://github.com/rive-app/rive-wasm/commit/60376507389f5eedf449079e1ccaf299436a76e3)
+- validating core objects property keys on load [`87069a5`](https://github.com/rive-app/rive-wasm/commit/87069a5ba33a5143ea433479751c03646e9dde8d)
+- Make ContourMeasure more robust [`911ea4c`](https://github.com/rive-app/rive-wasm/commit/911ea4ce235455a0c7298ad63372809725b9358d)
+- initialize seed with chrono [`7fd2ab0`](https://github.com/rive-app/rive-wasm/commit/7fd2ab094489a5dbace26500391d859c0a1073b7)
+- Simple libjpeg [`e3e7266`](https://github.com/rive-app/rive-wasm/commit/e3e7266123584a8078edbc6affc4bfe1fb6b4c99)
+- 7261 crash on state machine names [`488eefb`](https://github.com/rive-app/rive-wasm/commit/488eefb007dba22b2081fe910c3326d6e9ad6e03)
+
+## [2.15.6](https://github.com/rive-app/rive-wasm/compare/2.15.5...2.15.6) - 2024-05-10
+
+### Commits
+
+- chore: tag 2.15.6 [`ca24465`](https://github.com/rive-app/rive-wasm/commit/ca24465d03c4c66ad8f0bf6ab5ba43a5f28a2d82)
 - fix advancing nested animations [`34289df`](https://github.com/rive-app/rive-wasm/commit/34289dfe7fa6bdecef713ea9fe3fb66fe4c7fe76)
 
 ## [2.15.5](https://github.com/rive-app/rive-wasm/compare/2.15.4...2.15.5) - 2024-05-09
