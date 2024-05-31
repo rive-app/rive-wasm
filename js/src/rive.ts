@@ -1815,7 +1815,7 @@ export class Rive {
     autoplay: boolean,
   ): Promise<void> {
     try {
-      if(this.riveFile == null) {
+      if (this.riveFile == null) {
         this.riveFile = new RiveFile({
           src: this.src,
           buffer: this.buffer,
@@ -2424,6 +2424,92 @@ export class Rive {
       (m) => m.name === name,
     );
     return stateMachine?.inputs;
+  }
+
+  // Returns the input with the provided name at the given path
+  private retrieveInputAtPath(
+    name: string,
+    path: string,
+  ): rc.SMIInput | undefined {
+    if (!name) {
+      console.warn(`No input name provided for path '${path}'`);
+      return;
+    }
+    if (!this.artboard) {
+      console.warn(
+        `Tried to access input: '${name}', at path: '${path}', but the Artboard is null`,
+      );
+      return;
+    }
+    const input: rc.SMIInput = this.artboard.inputByPath(name, path);
+
+    if (!input) {
+      console.warn(
+        `Could not access an input with name: '${name}', at path:'${path}'`,
+      );
+      return;
+    }
+    return input;
+  }
+
+  /**
+   * Set the boolean input with the provided name at the given path with value
+   * @param input the state machine input name
+   * @param value the value to set the input to
+   * @param path the path the input is located at an artboard level
+   */
+  public setBooleanStateAtPath(
+    inputName: string,
+    value: boolean,
+    path: string,
+  ) {
+    const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
+    if (!input) return;
+
+    if (input.type === StateMachineInputType.Boolean) {
+      input.asBool().value = value;
+    } else {
+      console.warn(
+        `Input with name: '${inputName}', at path:'${path}' is not a boolean`,
+      );
+    }
+  }
+
+  /**
+   * Set the number input with the provided name at the given path with value
+   * @param input the state machine input name
+   * @param value the value to set the input to
+   * @param path the path the input is located at an artboard level
+   */
+  public setNumberStateAtPath(inputName: string, value: number, path: string) {
+    const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
+    if (!input) return;
+
+    if (input.type === StateMachineInputType.Number) {
+      input.asNumber().value = value;
+    } else {
+      console.warn(
+        `Input with name: '${inputName}', at path:'${path}' is not a number`,
+      );
+    }
+  }
+
+  /**
+   * Fire the trigger with the provided name at the given path
+   * @param input the state machine input name
+   * @param path the path the input is located at an artboard level
+   */
+  public fireStateAtPath(inputName: string, path: string) {
+    const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
+    if (!input) return;
+
+    if (input.type === StateMachineInputType.Trigger) {
+      input.asTrigger().fire();
+    } else {
+      console.warn(
+        `Input with name: '${inputName}', at path:'${path}' is not a trigger`,
+      );
+    }
   }
 
   // Returns a list of playing machine names

@@ -1,0 +1,24 @@
+{
+  "name": "parcel_nested_input_example",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "rm -fR docs && parcel build index.html -d docs --public-url ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "audio-play": "^2.3.1",
+    "dat.gui": "^0.7.7",
+    "parcel-bundler": "^1.12.5"
+  },
+  "dependencies": {
+    "@rive-app/canvas": "file:../../../npm/canvas_single",
+    "@rive-app/webgl": "file:../../../npm/webgl_single",
+    "parcel-plugin-asset-copier": "^1.1.0",
+    "src": "^1.1.2"
+  }
+}
