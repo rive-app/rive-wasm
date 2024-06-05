@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.16.0](https://github.com/rive-app/rive-wasm/compare/2.15.6...2.16.0)
+## [2.17.0](https://github.com/rive-app/rive-wasm/compare/2.16.0...2.17.0)
+
+### Commits
+
+- Fix libjpg on Mac Sonoma [`24d5d7b`](https://github.com/rive-app/rive-wasm/commit/24d5d7bbb02fe12c899f40317480deed4c81d362)
+
+## [2.16.0](https://github.com/rive-app/rive-wasm/compare/2.15.6...2.16.0) - 2024-05-27
 
 ### Fixed
 
@@ -15,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.16.0 [`5025113`](https://github.com/rive-app/rive-wasm/commit/5025113ea58988b9347b3cd9e7db2f9d1a2eff7e)
 - Use unique_ptr in import stack. [`734470c`](https://github.com/rive-app/rive-wasm/commit/734470cd5b1c0287435323828d4fc039117b1183)
 - Xxxx expose rive file to js api [`005e68f`](https://github.com/rive-app/rive-wasm/commit/005e68f2ecea8bf59305dd5f59a260691b2ed68e)
 - Fail early with bad blend modes. [`06db3db`](https://github.com/rive-app/rive-wasm/commit/06db3db4810cc809ac917598e20ce8558ae2e53a)
