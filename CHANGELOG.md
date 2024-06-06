@@ -5,10 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.17.0](https://github.com/rive-app/rive-wasm/compare/2.16.0...2.17.0)
+## [2.17.1](https://github.com/rive-app/rive-wasm/compare/2.17.0...2.17.1)
+
+## [2.17.0](https://github.com/rive-app/rive-wasm/compare/2.16.0...2.17.0) - 2024-06-05
 
 ### Commits
 
+- chore: tag 2.17.0 [`3491fba`](https://github.com/rive-app/rive-wasm/commit/3491fbaaf2eb140d5d1bf39af03562f6e4f3e4c6)
 - Fix libjpg on Mac Sonoma [`24d5d7b`](https://github.com/rive-app/rive-wasm/commit/24d5d7bbb02fe12c899f40317480deed4c81d362)
 
 ## [2.16.0](https://github.com/rive-app/rive-wasm/compare/2.15.6...2.16.0) - 2024-05-27
