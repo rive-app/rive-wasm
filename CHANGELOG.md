@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.17.1](https://github.com/rive-app/rive-wasm/compare/2.17.0...2.17.1)
+## [2.17.2](https://github.com/rive-app/rive-wasm/compare/2.17.1...2.17.2)
+
+### Commits
+
+- fix bounds calculation ahead of time [`c4b8395`](https://github.com/rive-app/rive-wasm/commit/c4b8395a58fa8a02b6f109b3f2e8ff14f1bb9f80)
+
+## [2.17.1](https://github.com/rive-app/rive-wasm/compare/2.17.0...2.17.1) - 2024-06-06
+
+### Commits
+
+- chore: tag 2.17.1 [`a75c0d8`](https://github.com/rive-app/rive-wasm/commit/a75c0d81ee1d02cface65ad905a15ac4f4bbd240)
 
 ## [2.17.0](https://github.com/rive-app/rive-wasm/compare/2.16.0...2.17.0) - 2024-06-05
 
