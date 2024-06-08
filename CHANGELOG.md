@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.17.2](https://github.com/rive-app/rive-wasm/compare/2.17.1...2.17.2)
+## [2.17.3](https://github.com/rive-app/rive-wasm/compare/2.17.2...2.17.3)
 
 ### Commits
 
+- mark shape as dirty after flagged as target [`758f278`](https://github.com/rive-app/rive-wasm/commit/758f27874f88f21dbd9fee2ff14e25d35a6578bb)
+- don’t defer updates when a shape/path is used for hit detect [`aee181f`](https://github.com/rive-app/rive-wasm/commit/aee181f49bb9d2bb096078e9031382fb585d3f35)
+- Get rid of MetricsPath. [`e105f85`](https://github.com/rive-app/rive-wasm/commit/e105f85776ea9549bb3a082796edcb7975dc5459)
+
+## [2.17.2](https://github.com/rive-app/rive-wasm/compare/2.17.1...2.17.2) - 2024-06-07
+
+### Commits
+
+- chore: tag 2.17.2 [`c5f9a58`](https://github.com/rive-app/rive-wasm/commit/c5f9a58c8691ebefc1ab53f3f081e7e4a8452f2f)
 - fix bounds calculation ahead of time [`c4b8395`](https://github.com/rive-app/rive-wasm/commit/c4b8395a58fa8a02b6f109b3f2e8ff14f1bb9f80)
 
 ## [2.17.1](https://github.com/rive-app/rive-wasm/compare/2.17.0...2.17.1) - 2024-06-06
