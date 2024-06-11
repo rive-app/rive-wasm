@@ -51,7 +51,7 @@ fi
 
 OPTIONS=1
 PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR "
-PREMAKE_HEAVY_FLAGS="--with_rive_text --with_rive_audio=system "
+PREMAKE_HEAVY_FLAGS="--with_rive_text --with_rive_audio=system --with_rive_layout "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"

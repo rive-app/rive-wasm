@@ -14,6 +14,7 @@ do
         '-fno-rtti',
         '-fno-unwind-tables',
         '--no-entry',
+        '-DYOGA_EXPORT=',
     })
 
     linkoptions({
@@ -80,10 +81,6 @@ do
     })
     flags({ 'FatalCompileWarnings' })
 
-    files({
-        './src/*.cpp',
-    })
-
     links({
         'rive',
     })
@@ -107,6 +104,15 @@ do
         links({
             'rive_harfbuzz',
             'rive_sheenbidi',
+        })
+    end
+
+    filter({ 'options:with_rive_layout' })
+    do
+        defines({ 'YOGA_EXPORT=' })
+        includedirs({ yoga })
+        links({
+            'rive_yoga',
         })
     end
 
