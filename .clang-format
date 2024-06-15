@@ -2,7 +2,6 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 UseTab: Never
 TabWidth: 4
-BreakBeforeBraces: Allman
 IndentCaseLabels: true
 Language: Cpp
 # Force pointers to the type for C++.
