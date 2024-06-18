@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.17.3](https://github.com/rive-app/rive-wasm/compare/2.17.2...2.17.3)
+## [2.18.0](https://github.com/rive-app/rive-wasm/compare/2.17.3...2.18.0)
 
 ### Commits
 
+- Remove redundant "BreakBeforeBraces" in runtime_wasm/.clang-format [`55691eb`](https://github.com/rive-app/rive-wasm/commit/55691eb4893e3056f2d5096fbc3f2e58142e8d79)
+- Optimize image encoding/decoding in debug builds [`4939500`](https://github.com/rive-app/rive-wasm/commit/49395002dc12a8914b90a446c62527b278d666f6)
+- Replace computeIntrinsicSize with measureLayout [`df9107b`](https://github.com/rive-app/rive-wasm/commit/df9107b07ab7d4374f7893f267de61a2b32b5536)
+- Yoga layout runtimes [`6a27ab6`](https://github.com/rive-app/rive-wasm/commit/6a27ab6752903663ff6cfed2debf1e3895ca5684)
+- Nested linear animations report events up to parent artboards [`294546f`](https://github.com/rive-app/rive-wasm/commit/294546f2aa9fdbb040018e486ef309970a6ad81c)
+- more renames for harfbuzz [`4a2ee4c`](https://github.com/rive-app/rive-wasm/commit/4a2ee4ce766e50d9a34384c84e97212b531b8cd2)
+
+## [2.17.3](https://github.com/rive-app/rive-wasm/compare/2.17.2...2.17.3) - 2024-06-08
+
+### Commits
+
+- chore: tag 2.17.3 [`df65156`](https://github.com/rive-app/rive-wasm/commit/df65156fa2177e9caeb760b16beec34943f39aa7)
 - mark shape as dirty after flagged as target [`758f278`](https://github.com/rive-app/rive-wasm/commit/758f27874f88f21dbd9fee2ff14e25d35a6578bb)
 - don’t defer updates when a shape/path is used for hit detect [`aee181f`](https://github.com/rive-app/rive-wasm/commit/aee181f49bb9d2bb096078e9031382fb585d3f35)
 - Get rid of MetricsPath. [`e105f85`](https://github.com/rive-app/rive-wasm/commit/e105f85776ea9549bb3a082796edcb7975dc5459)
