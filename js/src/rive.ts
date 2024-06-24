@@ -1,7 +1,11 @@
 import * as rc from "./rive_advanced.mjs";
 import packageData from "package.json";
 import { Animation } from "./animation";
+import { Layout } from "./layout";
 import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
+
+export * from "./animation";
+export * from "./layout";
 
 // Note: Re-exporting a few types from rive_advanced.mjs to expose for high-level
 // API usage without re-defining their type definition here. May want to revisit
@@ -31,148 +35,6 @@ interface SetupRiveListenersOptions {
  * Type for artboard bounds
  */
 export type Bounds = rc.AABB;
-
-// #region layout
-
-// Fit options for the canvas
-export enum Fit {
-  Cover = "cover",
-  Contain = "contain",
-  Fill = "fill",
-  FitWidth = "fitWidth",
-  FitHeight = "fitHeight",
-  None = "none",
-  ScaleDown = "scaleDown",
-}
-
-// Alignment options for the canvas
-export enum Alignment {
-  Center = "center",
-  TopLeft = "topLeft",
-  TopCenter = "topCenter",
-  TopRight = "topRight",
-  CenterLeft = "centerLeft",
-  CenterRight = "centerRight",
-  BottomLeft = "bottomLeft",
-  BottomCenter = "bottomCenter",
-  BottomRight = "bottomRight",
-}
-
-// Interface for the Layout static method contructor
-export interface LayoutParameters {
-  fit?: Fit;
-  alignment?: Alignment;
-  minX?: number;
-  minY?: number;
-  maxX?: number;
-  maxY?: number;
-}
-
-// Alignment options for Rive animations in a HTML canvas
-export class Layout {
-  // Runtime fit and alignment are accessed every frame, so we cache their
-  // values to save cycles
-  private cachedRuntimeFit: rc.Fit;
-  private cachedRuntimeAlignment: rc.Alignment;
-
-  public readonly fit: Fit;
-  public readonly alignment: Alignment;
-  public readonly minX: number;
-  public readonly minY: number;
-  public readonly maxX: number;
-  public readonly maxY: number;
-
-  constructor(params?: LayoutParameters) {
-    this.fit = params?.fit ?? Fit.Contain;
-    this.alignment = params?.alignment ?? Alignment.Center;
-    this.minX = params?.minX ?? 0;
-    this.minY = params?.minY ?? 0;
-    this.maxX = params?.maxX ?? 0;
-    this.maxY = params?.maxY ?? 0;
-  }
-
-  // Alternative constructor to build a Layout from an interface/object
-  static new({
-    fit,
-    alignment,
-    minX,
-    minY,
-    maxX,
-    maxY,
-  }: LayoutParameters): Layout {
-    console.warn(
-      "This function is deprecated: please use `new Layout({})` instead",
-    );
-    return new Layout({ fit, alignment, minX, minY, maxX, maxY });
-  }
-
-  /**
-   * Makes a copy of the layout, replacing any specified parameters
-   */
-  public copyWith({
-    fit,
-    alignment,
-    minX,
-    minY,
-    maxX,
-    maxY,
-  }: LayoutParameters): Layout {
-    return new Layout({
-      fit: fit ?? this.fit,
-      alignment: alignment ?? this.alignment,
-      minX: minX ?? this.minX,
-      minY: minY ?? this.minY,
-      maxX: maxX ?? this.maxX,
-      maxY: maxY ?? this.maxY,
-    });
-  }
-
-  // Returns fit for the Wasm runtime format
-  public runtimeFit(rive: rc.RiveCanvas): rc.Fit {
-    if (this.cachedRuntimeFit) return this.cachedRuntimeFit;
-
-    let fit;
-    if (this.fit === Fit.Cover) fit = rive.Fit.cover;
-    else if (this.fit === Fit.Contain) fit = rive.Fit.contain;
-    else if (this.fit === Fit.Fill) fit = rive.Fit.fill;
-    else if (this.fit === Fit.FitWidth) fit = rive.Fit.fitWidth;
-    else if (this.fit === Fit.FitHeight) fit = rive.Fit.fitHeight;
-    else if (this.fit === Fit.ScaleDown) fit = rive.Fit.scaleDown;
-    else fit = rive.Fit.none;
-
-    this.cachedRuntimeFit = fit;
-    return fit;
-  }
-
-  // Returns alignment for the Wasm runtime format
-  public runtimeAlignment(rive: rc.RiveCanvas): rc.Alignment {
-    if (this.cachedRuntimeAlignment) return this.cachedRuntimeAlignment;
-
-    let alignment;
-    if (this.alignment === Alignment.TopLeft)
-      alignment = rive.Alignment.topLeft;
-    else if (this.alignment === Alignment.TopCenter)
-      alignment = rive.Alignment.topCenter;
-    else if (this.alignment === Alignment.TopRight)
-      alignment = rive.Alignment.topRight;
-    else if (this.alignment === Alignment.CenterLeft)
-      alignment = rive.Alignment.centerLeft;
-    else if (this.alignment === Alignment.CenterRight)
-      alignment = rive.Alignment.centerRight;
-    else if (this.alignment === Alignment.BottomLeft)
-      alignment = rive.Alignment.bottomLeft;
-    else if (this.alignment === Alignment.BottomCenter)
-      alignment = rive.Alignment.bottomCenter;
-    else if (this.alignment === Alignment.BottomRight)
-      alignment = rive.Alignment.bottomRight;
-    else alignment = rive.Alignment.center;
-
-    this.cachedRuntimeAlignment = alignment;
-    return alignment;
-  }
-}
-
-// #endregion
 
 // #region runtime
 
