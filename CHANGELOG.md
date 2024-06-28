@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.18.0](https://github.com/rive-app/rive-wasm/compare/2.17.3...2.18.0)
+## [2.19.0](https://github.com/rive-app/rive-wasm/compare/2.18.0...2.19.0)
 
 ### Commits
 
+- Miscellaneous Layout UX Fixes [`a13658d`](https://github.com/rive-app/rive-wasm/commit/a13658d0c3285e27011a6f2e6d5b907b133ecc41)
+- Add yoga to thumbnail generator build [`530b19e`](https://github.com/rive-app/rive-wasm/commit/530b19e92538f137844dba0da0c8bcafbe79b2c9)
+- change how viewmodel instances target their viewmodel [`f4b4723`](https://github.com/rive-app/rive-wasm/commit/f4b472382f5080e41c7bba6ebb0ca3d953810659)
+- Xxxx databinding add boolean [`6d5cd89`](https://github.com/rive-app/rive-wasm/commit/6d5cd8909a635184f156be03d1f32d5ceb4025fc)
+- Xxxx data binding data context [`eba2028`](https://github.com/rive-app/rive-wasm/commit/eba2028df0e288baed12bab254dc178b620ec8a0)
+- Animation for Layouts [`7e10a4b`](https://github.com/rive-app/rive-wasm/commit/7e10a4b3d142861e64e21b2568373141e7ed4936)
+- chore: community contribution wasm refactor nested module [`fa1319e`](https://github.com/rive-app/rive-wasm/commit/fa1319ef2d3d83556465adddb0a3c4d83ac9be22)
+- Renames for Yoga and libjpeg [`2890cdf`](https://github.com/rive-app/rive-wasm/commit/2890cdf0e5d77d198ec6d8c8a58dd775bb2b0bc1)
+- Update LayoutComponentStyle bitfields to be compatible with older C++ versions [`00af817`](https://github.com/rive-app/rive-wasm/commit/00af817a8c9f3d938e8d112e73208689baac6414)
+- databinding [`2acc463`](https://github.com/rive-app/rive-wasm/commit/2acc463040091499172466006836d9ef6b5f5fe4)
+
+## [2.18.0](https://github.com/rive-app/rive-wasm/compare/2.17.3...2.18.0) - 2024-06-18
+
+### Commits
+
+- chore: tag 2.18.0 [`f787a83`](https://github.com/rive-app/rive-wasm/commit/f787a83593b7cc853e9793d2831c243944aa4631)
 - Remove redundant "BreakBeforeBraces" in runtime_wasm/.clang-format [`55691eb`](https://github.com/rive-app/rive-wasm/commit/55691eb4893e3056f2d5096fbc3f2e58142e8d79)
 - Optimize image encoding/decoding in debug builds [`4939500`](https://github.com/rive-app/rive-wasm/commit/49395002dc12a8914b90a446c62527b278d666f6)
 - Replace computeIntrinsicSize with measureLayout [`df9107b`](https://github.com/rive-app/rive-wasm/commit/df9107b07ab7d4374f7893f267de61a2b32b5536)
