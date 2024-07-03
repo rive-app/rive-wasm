@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.0](https://github.com/rive-app/rive-wasm/compare/2.18.0...2.19.0)
+## [2.19.1](https://github.com/rive-app/rive-wasm/compare/2.19.0...2.19.1)
+
+### Fixed
+
+- disable fallback font during artboard rendering [`#7479`](https://github.com/rive-app/rive-wasm/issues/7479)
 
 ### Commits
 
+- use varuint for writing/reading objectid, total properties and property key in animation reset [`79fab15`](https://github.com/rive-app/rive-wasm/commit/79fab15d9c7579419683301044d5836d4d77b785)
+- Xxxx transitions with base virtual animation [`e39f0ca`](https://github.com/rive-app/rive-wasm/commit/e39f0ca0eb1a557c29edf7f28a7d8fcb6dedd5ef)
+- Layout bitfield to props with keying [`68818df`](https://github.com/rive-app/rive-wasm/commit/68818df7ad8e42441db1fcb59a10085027698991)
+
+## [2.19.0](https://github.com/rive-app/rive-wasm/compare/2.18.0...2.19.0) - 2024-06-28
+
+### Commits
+
+- chore: tag 2.19.0 [`92dffd6`](https://github.com/rive-app/rive-wasm/commit/92dffd60ed5553dfae588edd684180962094bff0)
 - Miscellaneous Layout UX Fixes [`a13658d`](https://github.com/rive-app/rive-wasm/commit/a13658d0c3285e27011a6f2e6d5b907b133ecc41)
 - Add yoga to thumbnail generator build [`530b19e`](https://github.com/rive-app/rive-wasm/commit/530b19e92538f137844dba0da0c8bcafbe79b2c9)
 - change how viewmodel instances target their viewmodel [`f4b4723`](https://github.com/rive-app/rive-wasm/commit/f4b472382f5080e41c7bba6ebb0ca3d953810659)
