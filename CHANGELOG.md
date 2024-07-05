@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.1](https://github.com/rive-app/rive-wasm/compare/2.19.0...2.19.1)
+## [2.19.2](https://github.com/rive-app/rive-wasm/compare/2.19.1...2.19.2)
+
+### Fixed
+
+- add missing validations [`#7531`](https://github.com/rive-app/rive-wasm/issues/7531)
+
+## [2.19.1](https://github.com/rive-app/rive-wasm/compare/2.19.0...2.19.1) - 2024-07-03
 
 ### Fixed
 
@@ -13,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.19.1 [`7020b01`](https://github.com/rive-app/rive-wasm/commit/7020b01470db40ef300a58aab1a15c75770115a7)
 - use varuint for writing/reading objectid, total properties and property key in animation reset [`79fab15`](https://github.com/rive-app/rive-wasm/commit/79fab15d9c7579419683301044d5836d4d77b785)
 - Xxxx transitions with base virtual animation [`e39f0ca`](https://github.com/rive-app/rive-wasm/commit/e39f0ca0eb1a557c29edf7f28a7d8fcb6dedd5ef)
 - Layout bitfield to props with keying [`68818df`](https://github.com/rive-app/rive-wasm/commit/68818df7ad8e42441db1fcb59a10085027698991)
