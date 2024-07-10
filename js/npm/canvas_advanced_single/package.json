@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/canvas-advanced-single",
-  "version": "2.19.2",
+  "version": "2.19.3",
   "description": "Rive's lightweight low-level canvas based web api all in one js file.",
   "main": "canvas_advanced_single.mjs",
   "homepage": "https://rive.app",

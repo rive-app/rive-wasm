@@ -5,11 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.2](https://github.com/rive-app/rive-wasm/compare/2.19.1...2.19.2)
+## [2.19.3](https://github.com/rive-app/rive-wasm/compare/2.19.2...2.19.3)
+
+### Commits
+
+- change how forAll iterates over children [`caacb99`](https://github.com/rive-app/rive-wasm/commit/caacb99a5b503d3fa56e8e921af2a7015478851c)
+- Fix jpeg and png decode overflows and error handling. [`cf8d1c2`](https://github.com/rive-app/rive-wasm/commit/cf8d1c20074dd12f575e69ecfc7139e25d12fd17)
+
+## [2.19.2](https://github.com/rive-app/rive-wasm/compare/2.19.1...2.19.2) - 2024-07-05
 
 ### Fixed
 
 - add missing validations [`#7531`](https://github.com/rive-app/rive-wasm/issues/7531)
+
+### Commits
+
+- chore: tag 2.19.2 [`7df7c79`](https://github.com/rive-app/rive-wasm/commit/7df7c79bfbad820a0c07683aebab185185003d7d)
 
 ## [2.19.1](https://github.com/rive-app/rive-wasm/compare/2.19.0...2.19.1) - 2024-07-03
 
