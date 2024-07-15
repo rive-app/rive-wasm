@@ -80,13 +80,53 @@ export const registerTouchInteractions = ({
   ) {
     return null;
   }
+  /**
+   * After a touchend event, some browsers may fire synthetic mouse events
+   * (mouseover, mousedown, mousemove, mouseup) if the touch interaction did not cause
+   * any default action (such as scrolling).
+   *
+   * This is done to simulate the behavior of a mouse for applications that do not support
+   * touch events.
+   *
+   * We're keeping track of the previous event to not send the synthetic mouse events if the
+   * touch event was a click (touchstart -> touchend).
+   *
+   * This is only needed when `isTouchScrollEnabled` is false
+   * When true, `preventDefault()` is called which prevents this behaviour.
+   **/
+  let _prevEventType: string | null = null;
+  let _syntheticEventsActive = false;
 
   const processEventCallback = (event: MouseEvent | TouchEvent) => {
+    // Exit early out of all synthetic mouse events
+    // https://stackoverflow.com/questions/9656990/how-to-prevent-simulated-mouse-events-in-mobile-browsers
+    // https://stackoverflow.com/questions/25572070/javascript-touchend-versus-click-dilemma
+    if (_syntheticEventsActive && event instanceof MouseEvent) {
+      // Synthetic event finished
+      if (event.type == "mouseup") {
+        _syntheticEventsActive = false;
+      }
+
+      return;
+    }
+
+    // Test if it's a "touch click". This could cause the browser to send
+    // synthetic mouse events.
+    _syntheticEventsActive =
+      isTouchScrollEnabled &&
+      event.type === "touchend" &&
+      _prevEventType === "touchstart";
+
+    _prevEventType = event.type;
+
     const boundingRect = (
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
-    const { clientX, clientY } = getClientCoordinates(event, isTouchScrollEnabled);
+    const { clientX, clientY } = getClientCoordinates(
+      event,
+      isTouchScrollEnabled,
+    );
     if (!clientX && !clientY) {
       return;
     }
@@ -101,14 +141,14 @@ export const registerTouchInteractions = ({
         maxX: boundingRect.width,
         maxY: boundingRect.height,
       },
-      artboard.bounds
+      artboard.bounds,
     );
     const invertedMatrix = new rive.Mat2D();
     forwardMatrix.invert(invertedMatrix);
     const canvasCoordinatesVector = new rive.Vec2D(canvasX, canvasY);
     const transformedVector = rive.mapXY(
       invertedMatrix,
-      canvasCoordinatesVector
+      canvasCoordinatesVector,
     );
     const transformedX = transformedVector.x();
     const transformedY = transformedVector.y();
@@ -126,7 +166,7 @@ export const registerTouchInteractions = ({
        * exit. We're therefore adding to the translated coordinates on mouseout of a canvas
        * to ensure that we report the mouse has truly exited the hitarea.
        * https://github.com/rive-app/rive-cpp/blob/master/src/animation/state_machine_instance.cpp#L336
-       * 
+       *
        * We add/subtract 10000 to account for when the graphic goes beyond the canvas bound
        * due to for example, a fit: 'cover'. Not perfect, but helps reliably (for now) ensure
        * we report going out of bounds when the mouse is out of the canvas
@@ -135,7 +175,7 @@ export const registerTouchInteractions = ({
         for (const stateMachine of stateMachines) {
           stateMachine.pointerMove(
             transformedX < 0 ? transformedX - 10000 : transformedX + 10000,
-            transformedY < 0 ? transformedY - 10000 : transformedY + 10000
+            transformedY < 0 ? transformedY - 10000 : transformedY + 10000,
           );
         }
         break;
@@ -174,8 +214,12 @@ export const registerTouchInteractions = ({
   canvas.addEventListener("mousemove", callback);
   canvas.addEventListener("mousedown", callback);
   canvas.addEventListener("mouseup", callback);
-  canvas.addEventListener("touchmove", callback);
-  canvas.addEventListener("touchstart", callback);
+  canvas.addEventListener("touchmove", callback, {
+    passive: isTouchScrollEnabled,
+  });
+  canvas.addEventListener("touchstart", callback, {
+    passive: isTouchScrollEnabled,
+  });
   canvas.addEventListener("touchend", callback);
   return () => {
     canvas.removeEventListener("mouseover", callback);
