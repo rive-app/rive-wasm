@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.3](https://github.com/rive-app/rive-wasm/compare/2.19.2...2.19.3)
+## [2.19.4](https://github.com/rive-app/rive-wasm/compare/2.19.3...2.19.4)
+
+### Fixed
+
+- Fix crash when skinnable isn’t found. [`#7317`](https://github.com/rive-app/rive/issues/7317)
 
 ### Commits
 
+- Use "python3" in make_viewer_skia.sh (instead of "python") [`a40411f`](https://github.com/rive-app/rive-wasm/commit/a40411f2082461a2a4f91b5d74eec2a892544e05)
+- Fix build on web. [`1397eb5`](https://github.com/rive-app/rive-wasm/commit/1397eb5975e544593808dcd12769083a0c02f9a0)
+- fix: synthetic browser events [`8136940`](https://github.com/rive-app/rive-wasm/commit/8136940830cd92b83b447255bf4c230c1c09a76e)
+- explicit linux arch [`1389579`](https://github.com/rive-app/rive-wasm/commit/138957923e0f44336ed31388d255e6ea1ab2ce33)
+- handle linux warnings [`c9b4bc2`](https://github.com/rive-app/rive-wasm/commit/c9b4bc2fdb76362b20ed946684758e6ac503baa6)
+- add pic [`6de1c20`](https://github.com/rive-app/rive-wasm/commit/6de1c200a68367ea6a756bce4c70bcaad1ef350a)
+- Fixing windows build with rive_native. [`c6eed70`](https://github.com/rive-app/rive-wasm/commit/c6eed70d0fb6587384524ddd5ac639aad63dbc05)
+- Renderer in editor [`289946e`](https://github.com/rive-app/rive-wasm/commit/289946e39f8f145810b4d41b5765b267650e39d3)
+
+## [2.19.3](https://github.com/rive-app/rive-wasm/compare/2.19.2...2.19.3) - 2024-07-10
+
+### Commits
+
+- chore: tag 2.19.3 [`60ffb77`](https://github.com/rive-app/rive-wasm/commit/60ffb774acb7854b861cd2157c59ddbe5a8ebbcb)
 - change how forAll iterates over children [`caacb99`](https://github.com/rive-app/rive-wasm/commit/caacb99a5b503d3fa56e8e921af2a7015478851c)
 - Fix jpeg and png decode overflows and error handling. [`cf8d1c2`](https://github.com/rive-app/rive-wasm/commit/cf8d1c20074dd12f575e69ecfc7139e25d12fd17)
 
