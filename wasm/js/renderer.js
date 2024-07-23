@@ -946,7 +946,9 @@ Module["onRuntimeInitialized"] = function () {
       },
       set(target, property, value) {
         if (property in c2dSource) {
-          c2dSource[property] = value;
+          newCanvasRenderer._drawList.push(() => {
+            c2dSource[property] = value;
+          });
           return true;
         }
       },
