@@ -5,7 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.4](https://github.com/rive-app/rive-wasm/compare/2.19.3...2.19.4)
+## [2.19.5](https://github.com/rive-app/rive-wasm/compare/2.19.4...2.19.5)
+
+### Fixed
+
+- skip custom events when creating hitshapes [`#7651`](https://github.com/rive-app/rive-wasm/issues/7651)
+
+### Commits
+
+- Make an HBFont from a CTFontRef. [`24cd21b`](https://github.com/rive-app/rive-wasm/commit/24cd21b6b21cc8a783a38ae351835d5249143078)
+- Nested artboard types: node, leaf, layout [`011f67f`](https://github.com/rive-app/rive-wasm/commit/011f67f80456af61b1b41b9556ec0ead7be287fa)
+- Fix: canvas's context2d property update timing [`0509735`](https://github.com/rive-app/rive-wasm/commit/0509735de630d3184e56fc89bae1b6f9b96522b5)
+- Xxxx improve hittest performance [`4de4f7f`](https://github.com/rive-app/rive-wasm/commit/4de4f7fa6c66be7025762da0cadcae41e78f596d)
+- Makeshadersinpremake [`581863f`](https://github.com/rive-app/rive-wasm/commit/581863fbabfa19275ef7be5aa3dd32a1f1c3d678)
+- Layout drawable [`60d7e46`](https://github.com/rive-app/rive-wasm/commit/60d7e4653995de01277e436f8821db9708cfd140)
+- add bindable properties for state machines [`215b81f`](https://github.com/rive-app/rive-wasm/commit/215b81fc249377b7954563384adb5a6891564008)
+- fix spilled time for animations with speed applied to them [`2101454`](https://github.com/rive-app/rive-wasm/commit/210145410ca245abb10eda50dc19b153d0179490)
+- update data bind mode to flags [`2cad929`](https://github.com/rive-app/rive-wasm/commit/2cad929c47491a1a338ccac0c10a592685bf8aa0)
+- Only set Core Audio session category for iOS targets [`57aed5a`](https://github.com/rive-app/rive-wasm/commit/57aed5a218079f671e5072e839549915aa2b0a56)
+- Run tests, bench, gms, & goldens on a physical Pixel 8 on CI [`1c92a83`](https://github.com/rive-app/rive-wasm/commit/1c92a832ff2034a178629ca3354aaf10320046de)
+- Set audio to mix on for iOS (simulator) and Catalyst [`0aee2fc`](https://github.com/rive-app/rive-wasm/commit/0aee2fc68e28b82d1092bccaa7882b736e3b8743)
+- Vulkan! [`bd2869b`](https://github.com/rive-app/rive-wasm/commit/bd2869b77db89d944746c29e05f20917ac5610f4)
+
+## [2.19.4](https://github.com/rive-app/rive-wasm/compare/2.19.3...2.19.4) - 2024-07-16
 
 ### Fixed
 
@@ -13,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.19.4 [`1e53875`](https://github.com/rive-app/rive-wasm/commit/1e53875d82165957afb91b16da056d9ead1cff37)
 - Use "python3" in make_viewer_skia.sh (instead of "python") [`a40411f`](https://github.com/rive-app/rive-wasm/commit/a40411f2082461a2a4f91b5d74eec2a892544e05)
 - Fix build on web. [`1397eb5`](https://github.com/rive-app/rive-wasm/commit/1397eb5975e544593808dcd12769083a0c02f9a0)
 - fix: synthetic browser events [`8136940`](https://github.com/rive-app/rive-wasm/commit/8136940830cd92b83b447255bf4c230c1c09a76e)
