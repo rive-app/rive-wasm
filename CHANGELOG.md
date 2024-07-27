@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.5](https://github.com/rive-app/rive-wasm/compare/2.19.4...2.19.5)
+## [2.19.6](https://github.com/rive-app/rive-wasm/compare/2.19.5...2.19.6)
+
+### Commits
+
+- Simple procedural text rendering API [`0ca3dd8`](https://github.com/rive-app/rive-wasm/commit/0ca3dd888343c5730f9ce96425bdc530755ad160)
+- Add a test for nested events triggering listener in parent [`70513cd`](https://github.com/rive-app/rive-wasm/commit/70513cd7ee9015482fdd1ec8abf3831c45e0204f)
+- Fix for nested events in CPP [`3f0f52f`](https://github.com/rive-app/rive-wasm/commit/3f0f52f4bd5374579226cfba84c7678deeee4451)
+- Add a build_rive.sh script to unify the premake5 build process [`f0a38ea`](https://github.com/rive-app/rive-wasm/commit/f0a38eab8c6c2737a1fd9f0156fa1bdae7f8f403)
+- viewmodel transitions runtime [`e6a9401`](https://github.com/rive-app/rive-wasm/commit/e6a9401bd19bdfb786f40660d5c55e5d58a3bd24)
+- Implement layout scale type in CPP runtime [`a4f5b39`](https://github.com/rive-app/rive-wasm/commit/a4f5b39e3d547bef7ce78d2a1bf5c8291998a4aa)
+
+## [2.19.5](https://github.com/rive-app/rive-wasm/compare/2.19.4...2.19.5) - 2024-07-25
 
 ### Fixed
 
@@ -13,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.19.5 [`e5afac9`](https://github.com/rive-app/rive-wasm/commit/e5afac99ec0b1be58ab568f620404b50113bdb05)
 - Make an HBFont from a CTFontRef. [`24cd21b`](https://github.com/rive-app/rive-wasm/commit/24cd21b6b21cc8a783a38ae351835d5249143078)
 - Nested artboard types: node, leaf, layout [`011f67f`](https://github.com/rive-app/rive-wasm/commit/011f67f80456af61b1b41b9556ec0ead7be287fa)
 - Fix: canvas's context2d property update timing [`0509735`](https://github.com/rive-app/rive-wasm/commit/0509735de630d3184e56fc89bae1b6f9b96522b5)
