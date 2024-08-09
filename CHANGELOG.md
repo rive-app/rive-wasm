@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.6](https://github.com/rive-app/rive-wasm/compare/2.19.5...2.19.6)
+## [2.19.7](https://github.com/rive-app/rive-wasm/compare/2.19.6...2.19.7)
 
 ### Commits
 
+- added a blt command for render targets that do not support VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT [`8e884d5`](https://github.com/rive-app/rive-wasm/commit/8e884d581df99a79d7626f4c257c18a7ca098356)
+- Better premake support for Visual Studio [`10f8181`](https://github.com/rive-app/rive-wasm/commit/10f81817abd5a1b695063b6428af18b15d716b7e)
+- Add Xcode support to build_rive.sh [`0076aa5`](https://github.com/rive-app/rive-wasm/commit/0076aa51f2deda0c3e0c696dbd57bead27cde3d5)
+- Added support for xcode builds [`17b85dc`](https://github.com/rive-app/rive-wasm/commit/17b85dc9743e5bdadd0d72941eb8f83019b582cf)
+- Add width/height overrides for NestedArtboardLayout [`fbb7a53`](https://github.com/rive-app/rive-wasm/commit/fbb7a53a07a8ff8c9b08d4cfd2ec1cd8b461bbac)
+- refactor conditions [`cea2df5`](https://github.com/rive-app/rive-wasm/commit/cea2df5473e4af527056b0fc2e6084a566e442ff)
+- Fix layout shape hug in CPP [`2ff19ff`](https://github.com/rive-app/rive-wasm/commit/2ff19ff6ed2c9a9ed6bf188a3151b02f7c57ff0b)
+- Add a premake message when Xcode command line tools isn't installed [`ef75208`](https://github.com/rive-app/rive-wasm/commit/ef7520853ec791d22109afe51f8f697677b03978)
+- add data converter and data types for conversion [`44b164b`](https://github.com/rive-app/rive-wasm/commit/44b164b462f68bd0683b66b3de08e67d40cafd49)
+- add listener actions support for databind [`8b0b239`](https://github.com/rive-app/rive-wasm/commit/8b0b239d446e372fcd87c665679e1b5994c7d5a2)
+- Fix alignment when flex wrap enabled [`98844f6`](https://github.com/rive-app/rive-wasm/commit/98844f639c572f8f36c9bcd76094f433c8033b98)
+- Buildsystem fixes for build_rive.sh and PLS shaders [`d72fea6`](https://github.com/rive-app/rive-wasm/commit/d72fea66c21528e2d136870822ed89d0ab263889)
+- add click event support [`f926888`](https://github.com/rive-app/rive-wasm/commit/f92688880fb72767aeeb9cc90ff847ab07c789d7)
+- Improve layout animation [`b1ef533`](https://github.com/rive-app/rive-wasm/commit/b1ef533879f1534fb1b39aad05d233c4658d4e4f)
+
+## [2.19.6](https://github.com/rive-app/rive-wasm/compare/2.19.5...2.19.6) - 2024-07-27
+
+### Commits
+
+- chore: tag 2.19.6 [`c74c5a7`](https://github.com/rive-app/rive-wasm/commit/c74c5a7953042e24725f3aae1b80107d6758a17a)
 - Simple procedural text rendering API [`0ca3dd8`](https://github.com/rive-app/rive-wasm/commit/0ca3dd888343c5730f9ce96425bdc530755ad160)
 - Add a test for nested events triggering listener in parent [`70513cd`](https://github.com/rive-app/rive-wasm/commit/70513cd7ee9015482fdd1ec8abf3831c45e0204f)
 - Fix for nested events in CPP [`3f0f52f`](https://github.com/rive-app/rive-wasm/commit/3f0f52f4bd5374579226cfba84c7678deeee4451)

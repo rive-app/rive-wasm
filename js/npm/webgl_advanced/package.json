@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/webgl-advanced",
-  "version": "2.19.6",
+  "version": "2.19.7",
   "description": "Rive's webgl low-level canvas based web api.",
   "main": "webgl_advanced.mjs",
   "homepage": "https://rive.app",
