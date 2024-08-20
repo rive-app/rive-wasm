@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.19.7](https://github.com/rive-app/rive-wasm/compare/2.19.6...2.19.7)
+## [2.20.0](https://github.com/rive-app/rive-wasm/compare/2.19.7...2.20.0)
+
+### Fixed
+
+- fix hovered state of group listeners [`#7838`](https://github.com/rive-app/rive-wasm/issues/7838)
 
 ### Commits
 
+- add arithmetic operation and group converters [`dc326a8`](https://github.com/rive-app/rive-wasm/commit/dc326a8df76fe1baf6bb1e323f92d158e6aee4a9)
+- editor: setting up the update callbacks for n-slicing [`8aae14a`](https://github.com/rive-app/rive-wasm/commit/8aae14a7f6aa421caacc6dd7c6facee602968c3f)
+- Fix for bug in Runtime LayoutComponent proxy [`a845058`](https://github.com/rive-app/rive-wasm/commit/a8450582439477109e876184e526fcb810c492f0)
+- Use artboard properties as transition conditions [`989c2f7`](https://github.com/rive-app/rive-wasm/commit/989c2f78ef5785dee8e11f2dc9dba3f13d7d39a6)
+- Init NestedAnimation's nestedArtboard as nullptr [`3d8a511`](https://github.com/rive-app/rive-wasm/commit/3d8a5118d972c439b750e0582e1fd3c54297550e)
+- added some simple windows build scripts to make building on windows from powershell or command prompt easier [`9da17d4`](https://github.com/rive-app/rive-wasm/commit/9da17d48075274dd533b66727a23e070b0387cee)
+- editor: nine-slicing core data type definitions [`2b463b6`](https://github.com/rive-app/rive-wasm/commit/2b463b624d516485fc4e9e7d7f85612b3d8133d0)
+- Update version to macosx 11 for runtime. [`86d0a9e`](https://github.com/rive-app/rive-wasm/commit/86d0a9e6a99e47d02e96e250241274efc2c8c943)
+- feat: add nested text run getters and setters in Unity [`c5ddfb5`](https://github.com/rive-app/rive-wasm/commit/c5ddfb5c1f94404d27a3058b14eeebfee0dddc33)
+- add two data converters [`9bc6ea7`](https://github.com/rive-app/rive-wasm/commit/9bc6ea7485b919970f0a930c4ad96d2e521e286b)
+
+## [2.19.7](https://github.com/rive-app/rive-wasm/compare/2.19.6...2.19.7) - 2024-08-09
+
+### Commits
+
+- chore: tag 2.19.7 [`12eab45`](https://github.com/rive-app/rive-wasm/commit/12eab45e59cfc71c408e20e6ca82d942f4280a6f)
 - added a blt command for render targets that do not support VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT [`8e884d5`](https://github.com/rive-app/rive-wasm/commit/8e884d581df99a79d7626f4c257c18a7ca098356)
 - Better premake support for Visual Studio [`10f8181`](https://github.com/rive-app/rive-wasm/commit/10f81817abd5a1b695063b6428af18b15d716b7e)
 - Add Xcode support to build_rive.sh [`0076aa5`](https://github.com/rive-app/rive-wasm/commit/0076aa51f2deda0c3e0c696dbd57bead27cde3d5)
