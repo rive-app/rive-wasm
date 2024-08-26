@@ -1,3 +1,3 @@
-[submodule "submodules/rive-cpp"]
-	path = wasm/submodules/rive-cpp
-	url = git@github.com:rive-app/rive-cpp.git
+[submodule "submodules/rive-runtime"]
+	path = wasm/submodules/rive-runtime
+	url = git@github.com:rive-app/rive-runtime.git
