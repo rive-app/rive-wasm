@@ -135,14 +135,14 @@ cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced_single/rive_advance
 echo
 echo "::::: building @rive-app/webgl2_advanced"
 echo
-# OUT_DIR=build/webgl2_advanced/bin/release ./build_wasm.sh -r webgl2 release
-# cp build/webgl2_advanced/bin/release/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
-# cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
-# cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
-# cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
+OUT_DIR=build/webgl2_advanced/bin/release ./build_wasm.sh -r webgl2 release
+cp build/webgl2_advanced/bin/release/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
+cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
 
 echo
 echo "::::: building @rive-app/webgl2_advanced_single"
 echo
-# OUT_DIR=build/webgl2_advanced_single/bin/release ./build_wasm.sh -r webgl2 -s release
+OUT_DIR=build/webgl2_advanced_single/bin/release ./build_wasm.sh -r webgl2 -s release
 # Don't build a package for this one. Just do the build so we can test it.
