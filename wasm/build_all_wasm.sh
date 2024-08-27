@@ -8,8 +8,8 @@ echo "::::: building skia for wasm"
 echo
 path=$(readlink -f "${BASH_SOURCE:-$0}")
 DEV_SCRIPT_DIR=$(dirname $path)
-if [ -d "$DEV_SCRIPT_DIR/submodules/rive-cpp" ]; then
-    pushd submodules/rive-cpp/skia/dependencies
+if [ -d "$DEV_SCRIPT_DIR/submodules/rive-runtime" ]; then
+    pushd submodules/rive-runtime/skia/dependencies
 else
     pushd ../../runtime/skia/dependencies
 fi
