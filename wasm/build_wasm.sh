@@ -89,7 +89,7 @@ done
 OPTION=${!OPTIONS}
 PREMAKE_FLAGS+=$PREMAKE_HEAVY_FLAGS
 if [[ ! -d "../../runtime" ]]; then
-    PREMAKE_FLAGS+="--scripts=./submodules/rive-cpp/build "
+    PREMAKE_FLAGS+="--scripts=./submodules/rive-runtime/build "
 else
     PREMAKE_FLAGS+="--scripts=../../runtime/build "
 fi
