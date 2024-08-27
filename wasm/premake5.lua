@@ -63,7 +63,7 @@ end
 
 filter({})
 
-RIVE_RUNTIME_DIR = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-cpp'
+RIVE_RUNTIME_DIR = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-runtime'
 dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 
 RIVE_PLS_DIR = os.isdir('../../runtime/pls') and '../../runtime/pls' or './submodules/rive-renderer'
