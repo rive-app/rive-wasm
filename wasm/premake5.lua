@@ -66,7 +66,7 @@ filter({})
 RIVE_RUNTIME_DIR = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-runtime'
 dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 
-RIVE_PLS_DIR = os.isdir('../../runtime/pls') and '../../runtime/pls' or './submodules/rive-runtime/pls'
+RIVE_PLS_DIR = os.isdir('../../runtime/renderer') and '../../runtime/renderer' or './submodules/rive-runtime/renderer'
 if _OPTIONS['renderer'] == 'webgl2' then
     dofile(RIVE_PLS_DIR .. '/premake5_pls_renderer.lua')
 end

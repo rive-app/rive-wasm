@@ -2,10 +2,10 @@
 
 #ifdef RIVE_WEBGL2_RENDERER
 
-#include "rive/pls/pls_image.hpp"
-#include "rive/pls/gl/pls_render_context_gl_impl.hpp"
-#include "rive/pls/pls_renderer.hpp"
-#include "rive/pls/gl/pls_render_target_gl.hpp"
+#include "rive/renderer/image.hpp"
+#include "rive/renderer/gl/render_context_gl_impl.hpp"
+#include "rive/renderer/rive_renderer.hpp"
+#include "rive/renderer/gl/render_target_gl.hpp"
 #include "js_alignment.hpp"
 
 #include <emscripten.h>
@@ -22,7 +22,7 @@ using namespace emscripten;
 #include <vector>
 
 using namespace rive;
-using namespace rive::pls;
+using namespace rive::gpu;
 
 class WebGL2Renderer;
 class WebGL2RenderImage;
@@ -33,9 +33,9 @@ using PLSResourceID = uint64_t;
 static std::atomic<PLSResourceID> s_nextWebGL2ImageID;
 static std::atomic<PLSResourceID> s_nextWebGL2BufferID;
 
-// Singleton PLSFactory implementation for WebGL 2.
+// Singleton RiveRenderFactory implementation for WebGL 2.
 // All objects are context free and keyed to actual resources the the specific GL contexts.
-class WebGL2Factory : public PLSFactory
+class WebGL2Factory : public RiveRenderFactory
 {
 public:
     static WebGL2Factory* Instance()
@@ -112,7 +112,7 @@ private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_previousContext;
 };
 
-// Wraps a PLSImage that will be decoded in the future.
+// Wraps an Image that will be decoded in the future.
 class PLSPromiseImage
 {
 public:
@@ -137,12 +137,12 @@ public:
         m_plsImage.reset();
     }
 
-    PLSImage* getPLSImage(const WebGL2Renderer*, const WebGL2RenderImage*);
+    Image* getImage(const WebGL2Renderer*, const WebGL2RenderImage*);
 
 private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL;
     GLuint m_decodingTextureID = 0;
-    rcp<PLSImage> m_plsImage;
+    rcp<Image> m_plsImage;
     PLSResourceID m_frameIDWhenValid = 0;
 };
 
@@ -224,13 +224,13 @@ private:
     PLSResourceID m_mutationID = 0; // Tells when we are out of sync with the WebGL2BufferData.
 };
 
-// Wraps a tightly coupled PLSRenderer and PLSRenderContext, which are tied to a specific WebGL2
+// Wraps a tightly coupled RiveRenderer and RenderContext, which are tied to a specific WebGL2
 // context.
-class WebGL2Renderer : public PLSRenderer
+class WebGL2Renderer : public RiveRenderer
 {
 public:
-    WebGL2Renderer(std::unique_ptr<PLSRenderContext> plsContext, int width, int height) :
-        PLSRenderer(plsContext.get()), m_plsContext(std::move(plsContext))
+    WebGL2Renderer(std::unique_ptr<RenderContext> plsContext, int width, int height) :
+        RiveRenderer(plsContext.get()), m_plsContext(std::move(plsContext))
     {
         resize(width, height);
     }
@@ -248,9 +248,9 @@ public:
 
     PLSResourceID currentFrameID() const { return m_currentFrameID; }
 
-    PLSRenderContextGLImpl* plsContextGL() const
+    RenderContextGLImpl* plsContextGL() const
     {
-        return m_plsContext->static_impl_cast<PLSRenderContextGLImpl>();
+        return m_plsContext->static_impl_cast<RenderContextGLImpl>();
     }
 
     void resize(int width, int height)
@@ -266,10 +266,10 @@ public:
     // TODO: Give this a better name!!
     void clear()
     {
-        PLSRenderContext::FrameDescriptor frameDescriptor = {
+        RenderContext::FrameDescriptor frameDescriptor = {
             .renderTargetWidth = m_renderTarget->width(),
             .renderTargetHeight = m_renderTarget->height(),
-            .loadAction = pls::LoadAction::clear,
+            .loadAction = gpu::LoadAction::clear,
             .clearColor = 0,
         };
         if (m_renderTarget->sampleCount() > 1)
@@ -303,10 +303,10 @@ public:
     void drawImage(const RenderImage* renderImage, BlendMode blendMode, float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (PLSImage* plsImage = getPLSImage(webglRenderImage))
+        if (Image* plsImage = getImage(webglRenderImage))
         {
             // The plsImage is done decoding.
-            PLSRenderer::drawImage(plsImage, blendMode, opacity);
+            RiveRenderer::drawImage(plsImage, blendMode, opacity);
         }
     }
 
@@ -320,20 +320,20 @@ public:
                        float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (PLSImage* plsImage = getPLSImage(webglRenderImage))
+        if (Image* plsImage = getImage(webglRenderImage))
         {
             // The plsImage is done decoding.
             LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
             LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
             LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
-            PLSRenderer::drawImageMesh(plsImage,
-                                       refPLSBuffer(vertexBuffer),
-                                       refPLSBuffer(uvBuffer),
-                                       refPLSBuffer(indexBuffer),
-                                       vertexCount,
-                                       indexCount,
-                                       blendMode,
-                                       opacity);
+            RiveRenderer::drawImageMesh(plsImage,
+                                        refPLSBuffer(vertexBuffer),
+                                        refPLSBuffer(uvBuffer),
+                                        refPLSBuffer(indexBuffer),
+                                        vertexCount,
+                                        indexCount,
+                                        blendMode,
+                                        opacity);
         }
     }
 
@@ -356,11 +356,11 @@ public:
     }
 
 private:
-    PLSImage* getPLSImage(const WebGL2RenderImage* webglImage)
+    Image* getImage(const WebGL2RenderImage* webglImage)
     {
         PLSPromiseImage& promiseImage =
             m_plsPromiseImages.try_emplace(webglImage->uniqueID(), this, webglImage).first->second;
-        return promiseImage.getPLSImage(this, webglImage);
+        return promiseImage.getImage(this, webglImage);
     }
 
     rcp<RenderBuffer> refPLSBuffer(WebGL2RenderBuffer* wglBuff)
@@ -372,7 +372,7 @@ private:
 
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = emscripten_webgl_get_current_context();
 
-    std::unique_ptr<PLSRenderContext> m_plsContext;
+    std::unique_ptr<RenderContext> m_plsContext;
     rcp<FramebufferRenderTargetGL> m_renderTarget;
 
     std::map<PLSResourceID, PLSPromiseImage> m_plsPromiseImages;
@@ -430,8 +430,8 @@ PLSPromiseImage::PLSPromiseImage(const WebGL2Renderer* webglRenderer,
     }
 }
 
-PLSImage* PLSPromiseImage::getPLSImage(const WebGL2Renderer* webglRenderer,
-                                       const WebGL2RenderImage* webglRenderImage)
+Image* PLSPromiseImage::getImage(const WebGL2Renderer* webglRenderer,
+                                 const WebGL2RenderImage* webglRenderImage)
 {
     assert(emscripten_webgl_get_current_context() == m_contextGL);
     if (m_plsImage == nullptr) // Is the image not yet decoded?
@@ -449,7 +449,7 @@ PLSImage* PLSPromiseImage::getPLSImage(const WebGL2Renderer* webglRenderer,
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            m_plsImage = make_rcp<PLSImage>(webglRenderer->plsContextGL()->adoptImageTexture(
+            m_plsImage = make_rcp<Image>(webglRenderer->plsContextGL()->adoptImageTexture(
                 texture_image_width(m_decodingTextureID),
                 texture_image_height(m_decodingTextureID),
                 m_decodingTextureID));
@@ -515,7 +515,7 @@ Factory* jsFactory() { return WebGL2Factory::Instance(); }
 
 WebGL2Renderer* makeWebGL2Renderer(int width, int height)
 {
-    if (auto plsContext = PLSRenderContextGLImpl::MakeContext())
+    if (auto plsContext = RenderContextGLImpl::MakeContext())
     {
         return new WebGL2Renderer(std::move(plsContext), width, height);
     }
