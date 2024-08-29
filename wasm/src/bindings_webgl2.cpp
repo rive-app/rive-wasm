@@ -2,7 +2,7 @@
 
 #ifdef RIVE_WEBGL2_RENDERER
 
-#include "rive/renderer/image.hpp"
+#include "rive/renderer/rive_render_image.hpp"
 #include "rive/renderer/gl/render_context_gl_impl.hpp"
 #include "rive/renderer/rive_renderer.hpp"
 #include "rive/renderer/gl/render_target_gl.hpp"
@@ -124,7 +124,7 @@ public:
     PLSPromiseImage(PLSPromiseImage&& rval) :
         m_contextGL(rval.m_contextGL),
         m_decodingTextureID(rval.m_decodingTextureID),
-        m_plsImage(std::move(rval.m_plsImage))
+        m_renderImage(std::move(rval.m_renderImage))
     {}
 
     ~PLSPromiseImage()
@@ -134,15 +134,15 @@ public:
         {
             glDeleteTextures(1, &m_decodingTextureID);
         }
-        m_plsImage.reset();
+        m_renderImage.reset();
     }
 
-    Image* getImage(const WebGL2Renderer*, const WebGL2RenderImage*);
+    RiveRenderImage* getImage(const WebGL2Renderer*, const WebGL2RenderImage*);
 
 private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL;
     GLuint m_decodingTextureID = 0;
-    rcp<Image> m_plsImage;
+    rcp<RiveRenderImage> m_renderImage;
     PLSResourceID m_frameIDWhenValid = 0;
 };
 
@@ -201,7 +201,7 @@ public:
     ~PLSSynchronizedBuffer()
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-        m_plsBuffer.reset();
+        m_renderBuffer.reset();
     }
 
     rcp<RenderBuffer> get()
@@ -209,18 +209,18 @@ public:
         if (m_mutationID != m_webglBufferData->mutationID())
         {
             ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-            void* contents = m_plsBuffer->map();
-            memcpy(contents, m_webglBufferData->contents(), m_plsBuffer->sizeInBytes());
+            void* contents = m_renderBuffer->map();
+            memcpy(contents, m_webglBufferData->contents(), m_renderBuffer->sizeInBytes());
             m_mutationID = m_webglBufferData->mutationID();
-            m_plsBuffer->unmap();
+            m_renderBuffer->unmap();
         }
-        return m_plsBuffer;
+        return m_renderBuffer;
     }
 
 private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL;
     const rcp<WebGL2BufferData> m_webglBufferData;
-    rcp<RenderBuffer> m_plsBuffer;
+    rcp<RenderBuffer> m_renderBuffer;
     PLSResourceID m_mutationID = 0; // Tells when we are out of sync with the WebGL2BufferData.
 };
 
@@ -229,8 +229,8 @@ private:
 class WebGL2Renderer : public RiveRenderer
 {
 public:
-    WebGL2Renderer(std::unique_ptr<RenderContext> plsContext, int width, int height) :
-        RiveRenderer(plsContext.get()), m_plsContext(std::move(plsContext))
+    WebGL2Renderer(std::unique_ptr<RenderContext> renderContext, int width, int height) :
+        RiveRenderer(renderContext.get()), m_renderContext(std::move(renderContext))
     {
         resize(width, height);
     }
@@ -241,16 +241,16 @@ public:
         m_plsSynchronizedBuffers.clear();
         m_plsPromiseImages.clear();
         m_renderTarget.release();
-        m_plsContext.release();
+        m_renderContext.release();
     }
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL() const { return m_contextGL; }
 
     PLSResourceID currentFrameID() const { return m_currentFrameID; }
 
-    RenderContextGLImpl* plsContextGL() const
+    RenderContextGLImpl* renderContextGL() const
     {
-        return m_plsContext->static_impl_cast<RenderContextGLImpl>();
+        return m_renderContext->static_impl_cast<RenderContextGLImpl>();
     }
 
     void resize(int width, int height)
@@ -277,13 +277,13 @@ public:
             // Use MSAA if we were given a canvas with 'antialias: true'.
             frameDescriptor.msaaSampleCount = m_renderTarget->sampleCount();
         }
-        else if (!m_plsContext->platformFeatures().supportsRasterOrdering &&
-                 !m_plsContext->platformFeatures().supportsFragmentShaderAtomics)
+        else if (!m_renderContext->platformFeatures().supportsRasterOrdering &&
+                 !m_renderContext->platformFeatures().supportsFragmentShaderAtomics)
         {
             // Always use MSAA if we don't have WEBGL_shader_pixel_local_storage.
             frameDescriptor.msaaSampleCount = 4;
         }
-        m_plsContext->beginFrame(std::move(frameDescriptor));
+        m_renderContext->beginFrame(std::move(frameDescriptor));
         ++m_currentFrameID;
     }
 
@@ -304,10 +304,10 @@ public:
     void drawImage(const RenderImage* renderImage, BlendMode blendMode, float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (Image* plsImage = getImage(webglRenderImage))
+        if (RiveRenderImage* renderImage = getImage(webglRenderImage))
         {
-            // The plsImage is done decoding.
-            RiveRenderer::drawImage(plsImage, blendMode, opacity);
+            // The renderImage is done decoding.
+            RiveRenderer::drawImage(renderImage, blendMode, opacity);
         }
     }
 
@@ -321,13 +321,13 @@ public:
                        float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (Image* plsImage = getImage(webglRenderImage))
+        if (RiveRenderImage* renderImage = getImage(webglRenderImage))
         {
-            // The plsImage is done decoding.
+            // The renderImage is done decoding.
             LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
             LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
             LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
-            RiveRenderer::drawImageMesh(plsImage,
+            RiveRenderer::drawImageMesh(renderImage,
                                         refPLSBuffer(vertexBuffer),
                                         refPLSBuffer(uvBuffer),
                                         refPLSBuffer(indexBuffer),
@@ -341,7 +341,7 @@ public:
     void flush()
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-        m_plsContext->flush({.renderTarget = m_renderTarget.get()});
+        m_renderContext->flush({.renderTarget = m_renderTarget.get()});
     }
 
     // Delete our corresponding PLS image when a WebGL2RenderImage is deleted.
@@ -357,7 +357,7 @@ public:
     }
 
 private:
-    Image* getImage(const WebGL2RenderImage* webglImage)
+    RiveRenderImage* getImage(const WebGL2RenderImage* webglImage)
     {
         PLSPromiseImage& promiseImage =
             m_plsPromiseImages.try_emplace(webglImage->uniqueID(), this, webglImage).first->second;
@@ -373,7 +373,7 @@ private:
 
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = emscripten_webgl_get_current_context();
 
-    std::unique_ptr<RenderContext> m_plsContext;
+    std::unique_ptr<RenderContext> m_renderContext;
     rcp<FramebufferRenderTargetGL> m_renderTarget;
 
     std::map<PLSResourceID, PLSPromiseImage> m_plsPromiseImages;
@@ -431,11 +431,11 @@ PLSPromiseImage::PLSPromiseImage(const WebGL2Renderer* webglRenderer,
     }
 }
 
-Image* PLSPromiseImage::getImage(const WebGL2Renderer* webglRenderer,
-                                 const WebGL2RenderImage* webglRenderImage)
+RiveRenderImage* PLSPromiseImage::getImage(const WebGL2Renderer* webglRenderer,
+                                           const WebGL2RenderImage* webglRenderImage)
 {
     assert(emscripten_webgl_get_current_context() == m_contextGL);
-    if (m_plsImage == nullptr) // Is the image not yet decoded?
+    if (m_renderImage == nullptr) // Is the image not yet decoded?
     {
         if (m_decodingTextureID != 0 && is_texture_image_done_decoding(m_decodingTextureID))
         {
@@ -443,33 +443,35 @@ Image* PLSPromiseImage::getImage(const WebGL2Renderer* webglRenderer,
             ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, m_decodingTextureID);
-            webglRenderer->plsContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+            webglRenderer->renderContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
             set_decoded_tex_image_2d(emscripten_webgl_get_current_context(), m_decodingTextureID);
             glGenerateMipmap(GL_TEXTURE_2D);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            m_plsImage = make_rcp<Image>(webglRenderer->plsContextGL()->adoptImageTexture(
-                texture_image_width(m_decodingTextureID),
-                texture_image_height(m_decodingTextureID),
-                m_decodingTextureID));
+            m_renderImage =
+                make_rcp<RiveRenderImage>(webglRenderer->renderContextGL()->adoptImageTexture(
+                    texture_image_width(m_decodingTextureID),
+                    texture_image_height(m_decodingTextureID),
+                    m_decodingTextureID));
             m_decodingTextureID = 0;
-            if (webglRenderImage->width() != m_plsImage->width() ||
-                webglRenderImage->height() != m_plsImage->width())
+            if (webglRenderImage->width() != m_renderImage->width() ||
+                webglRenderImage->height() != m_renderImage->width())
             {
                 assert(webglRenderImage->width() == 0);
                 assert(webglRenderImage->height() == 0);
                 // Update the WebGL2RenderImage's size now that we have a decoded image.
-                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Width = m_plsImage->width();
-                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Height = m_plsImage->height();
+                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Width = m_renderImage->width();
+                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Height =
+                    m_renderImage->height();
             }
             // Don't draw until next frame. Even though the image is fully decoded at this point,
             // the runtime already positioned it based on its previous, potentially empty size.
             m_frameIDWhenValid = webglRenderer->currentFrameID() + 1;
         }
     }
-    return webglRenderer->currentFrameID() >= m_frameIDWhenValid ? m_plsImage.get() : nullptr;
+    return webglRenderer->currentFrameID() >= m_frameIDWhenValid ? m_renderImage.get() : nullptr;
 }
 
 PLSSynchronizedBuffer::PLSSynchronizedBuffer(WebGL2Renderer* webglRenderer,
@@ -478,9 +480,9 @@ PLSSynchronizedBuffer::PLSSynchronizedBuffer(WebGL2Renderer* webglRenderer,
 
 {
     ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-    m_plsBuffer = webglRenderer->plsContextGL()->makeRenderBuffer(webglBuffer->type(),
-                                                                  webglBuffer->flags(),
-                                                                  webglBuffer->sizeInBytes());
+    m_renderBuffer = webglRenderer->renderContextGL()->makeRenderBuffer(webglBuffer->type(),
+                                                                        webglBuffer->flags(),
+                                                                        webglBuffer->sizeInBytes());
 }
 
 rcp<RenderImage> WebGL2Factory::decodeImage(Span<const uint8_t> encodedBytes)
@@ -516,9 +518,9 @@ Factory* jsFactory() { return WebGL2Factory::Instance(); }
 
 WebGL2Renderer* makeWebGL2Renderer(int width, int height)
 {
-    if (auto plsContext = RenderContextGLImpl::MakeContext())
+    if (auto renderContext = RenderContextGLImpl::MakeContext())
     {
-        return new WebGL2Renderer(std::move(plsContext), width, height);
+        return new WebGL2Renderer(std::move(renderContext), width, height);
     }
     return nullptr;
 }
