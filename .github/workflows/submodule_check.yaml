@@ -22,4 +22,5 @@ jobs:
         uses: rive-app/github-actions-submodule-check@v8
         with:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SUBMODULE_MAIN_BRANCH: main
           SUBMODULE_GIT_URL: https://github.com/rive-app/rive-runtime.git
