@@ -4,7 +4,7 @@ on:
   # lets check it when we push to main (we've just done something in android, its a good time to see about this)
   push:
     branches:
-      - main
+      - master
   
   schedule:
     # 8am UTC every day
@@ -22,4 +22,4 @@ jobs:
         uses: rive-app/github-actions-submodule-check@v8
         with:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SUBMODULE_GIT_URL: https://github.com/rive-runtime/rive-runtime.git
+          SUBMODULE_GIT_URL: https://github.com/rive-app/rive-runtime.git
