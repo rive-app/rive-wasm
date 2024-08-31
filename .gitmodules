@@ -1,0 +1,4 @@
+[submodule "wasm/submodules/rive-runtime"]
+	path = wasm/submodules/rive-runtime
+	url = git@github.com:rive-app/rive-runtime.git
+	branch = main
