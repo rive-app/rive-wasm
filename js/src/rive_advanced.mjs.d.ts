@@ -425,7 +425,7 @@ export declare class Artboard {
   stateMachineCount(): number;
   /**
    * Returns a reference for a Bone object of a given name.
-   * Learn more: https://help.rive.app/editor/manipulating-shapes/bones
+   * Learn more: https://rive.app/community/doc/bones/docYyQwxrgI5
    *
    * @param name - Name of the Bone to grab a reference to
    */

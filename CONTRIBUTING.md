@@ -147,7 +147,7 @@ git commit -m "Major: Restructuring the useRive API with new parameters"
 
 These messages help make the changelog clear as to what changes are made for future devs to see.
 
-When changes are merged and releaesd, they are built and deployed to all the variant rive-wasm packages, which you can find [here](https://help.rive.app/runtimes/overview/web-js/canvas-vs-webgl).
+When changes are merged and releaesd, they are built and deployed to all the variant rive-wasm packages, which you can find [here](https://rive.app/community/doc/canvas-vs-webgl/docanjXoQ1uT).
 
 You can find the deploy scripts in `.github/` to see the logic for deploys.
 

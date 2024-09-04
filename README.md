@@ -26,17 +26,23 @@ This library allows full control over Rive files with a high-level API for hooki
 
 :house_with_garden: [Homepage](https://rive.app/)
 
-:blue_book: [General help docs](https://help.rive.app/)
-
-🛠 [Learning Rive](https://rive.app/learn-rive)
+:blue_book: [Rive docs](https://rive.app/community/doc/)
 
 ## Getting started
 
 Follow along with the link below for a quick start in getting Rive JS integrated into your web applications.
 
-[Getting Started with Rive in Web](https://help.rive.app/runtimes/overview/web-js)
+- [Getting Started with Rive in Web](https://rive.app/community/doc/web-js/docvlgbnS1mp)
+- [API documentation](https://rive.app/community/doc/rive-parameters/docHI9ASztXP)
 
-[API documentation](https://help.rive.app/runtimes/overview/web-js/rive-parameters)
+For more information, see the Runtime sections of the Rive help documentation:
+
+- [Animation Playback](https://rive.app/community/doc/animation-playback/docDKKxsr7ko)
+- [Layout](https://rive.app/community/doc/layout/docBl81zd1GB)
+- [State Machines](https://rive.app/community/doc/state-machines/docxeznG7iiK)
+- [Rive Text](https://rive.app/community/doc/text/docn2E6y1lXo)
+- [Rive Events](https://rive.app/community/doc/rive-events/docbOnaeffgr)
+- [Loading Assets](https://rive.app/community/doc/loading-assets/doct4wVHGPgC)
 
 ## Supported browsers
 
@@ -68,7 +74,7 @@ For even more examples and resources on using Rive at runtime or in other tools,
 
 Using `rive-js` or an older version of the runtime and need to learn how to upgrade to the latest version? Check out the migration guides below in our help center that help guide you through major version bumps; breaking changes and all!
 
-[Migration guides](https://help.rive.app/runtimes/overview/web-js/migrating-from-rive-js)
+[Migration guides](https://rive.app/community/doc/migrating-from-rivejs/docX1CbC22dq)
 
 ## Contributing
 
