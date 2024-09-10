@@ -5,7 +5,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.20.0](https://github.com/rive-app/rive-wasm/compare/2.19.7...2.20.0)
+## [2.20.1](https://github.com/rive-app/rive-wasm/compare/2.20.0...2.20.1)
+
+### Merged
+
+- Fixed rive-cpp to rive-runtime [`#367`](https://github.com/rive-app/rive-wasm/pull/367)
+
+### Fixed
+
+- Dance around a driver issue that generates garbage pixels [`#7423`](https://github.com/rive-app/rive-wasm/issues/7423)
+
+### Commits
+
+- Fix dstreadshuffle gm [`5685bac`](https://github.com/rive-app/rive-wasm/commit/5685bac40355c474b588b0a37ad8b0c9a6518fa4)
+- add fixes and code improvements [`6e683b4`](https://github.com/rive-app/rive-wasm/commit/6e683b40c651a2bac4e49bedf6ddbc0ffb4bed3d)
+- Next set skia strip [`bd34bcd`](https://github.com/rive-app/rive-wasm/commit/bd34bcd9eed9624a94459a1656d5b39d5362ebd2)
+- Fix startup freeze on certain Macs [`cef0b02`](https://github.com/rive-app/rive-wasm/commit/cef0b0250179909a6b7059386d0a219394a24b18)
+- skia removal [`04378e0`](https://github.com/rive-app/rive-wasm/commit/04378e086cbe45c879ef4b2afed047f32356391b)
+- add viewmodel trigger support for c++ runtime [`079468b`](https://github.com/rive-app/rive-wasm/commit/079468b6f96187de86867431e6734913992fa4f2)
+- add text vertical alignment [`609d6cd`](https://github.com/rive-app/rive-wasm/commit/609d6cdf21351e613de3dbfbebfa3b587c186e1a)
+- Port to remove skia [`9599c59`](https://github.com/rive-app/rive-wasm/commit/9599c5954261240b0f24e58dd5a9ce1f14f928df)
+- SkChop party! mandoline and cubicpaths [`8a5d84c`](https://github.com/rive-app/rive-wasm/commit/8a5d84cee03a2324e0da8d3b6f41f4c670213bf6)
+- pass wrap separately to support alignments [`9a59693`](https://github.com/rive-app/rive-wasm/commit/9a5969368c937ad896ea87562c4efd9fb6f5c904)
+- removed skia from a few gms [`5a56b0e`](https://github.com/rive-app/rive-wasm/commit/5a56b0eb128b4b185ff019ee13389c1b516d6e61)
+- Remove skia from labyrinth gm [`aec4b42`](https://github.com/rive-app/rive-wasm/commit/aec4b42e2a4673c5cc81f296776f9e0ff61426f8)
+- Remove skia dependencies from strokedlines [`25c76e7`](https://github.com/rive-app/rive-wasm/commit/25c76e7f38dbbf49d671a88207bdea263b629bf2)
+- Add android unit tests and remove running tests in platform testing [`bda1b38`](https://github.com/rive-app/rive-wasm/commit/bda1b387e99f20448561ef1b2ddb52376e7ecb2d)
+- Implement keystrokes for the player test [`9210373`](https://github.com/rive-app/rive-wasm/commit/9210373110694a7dc25f5efc998b5f80a08a479c)
+- rename ios and android tools to tests [`395fd11`](https://github.com/rive-app/rive-wasm/commit/395fd1147490f24f3bf5c8368ac2dd7a07f9272c)
+- Add a mechanism to skip flaky golden tests [`712cf6e`](https://github.com/rive-app/rive-wasm/commit/712cf6e592d99a7ed3cdf8053171b98da3e70a73)
+- Fix glmsaa on Desktop GL drivers [`fd90a29`](https://github.com/rive-app/rive-wasm/commit/fd90a29a6269185bf382cd7022aa11dc097a112f)
+- Update RiveRenderBuffer to support multiple maps per frame [`fd93520`](https://github.com/rive-app/rive-wasm/commit/fd9352033cb972a604ce0874e612aed6641fd17c)
+- inputs ref state machines and components ref artboards [`516bbdf`](https://github.com/rive-app/rive-wasm/commit/516bbdf8f44dd53bc82652bdf1d993c7f8d55f36)
+- fix playback mode and other small fixes [`0922dd8`](https://github.com/rive-app/rive-wasm/commit/0922dd8dda6551e118d686b9a546a103067fb40a)
+- docs: update links [`9e10cae`](https://github.com/rive-app/rive-wasm/commit/9e10cae67e1d69fa359b286b984384ff82f72e77)
+- Add data converters to flutter runtime [`fd6ff86`](https://github.com/rive-app/rive-wasm/commit/fd6ff862e91eadcabfce2a98b22c362965860e5f)
+- Opensource (tools) tests as part of runtime [`45e6540`](https://github.com/rive-app/rive-wasm/commit/45e6540b711de9a9d99ed300a17c7621645873d2)
+- 8020 text fit to box [`759713f`](https://github.com/rive-app/rive-wasm/commit/759713fd3d900b1ab06a1e73994cabfe99303176)
+- Fix dash increment [`7af4040`](https://github.com/rive-app/rive-wasm/commit/7af40405dce8c3bfc7e61687b632491fd6285797)
+- Fixing tool drawing [`f4f8019`](https://github.com/rive-app/rive-wasm/commit/f4f8019b1176c71965a9f19bf9d0999486f93f73)
+- Fix WASM submodule yaml script to use correct branch and repo [`6284221`](https://github.com/rive-app/rive-wasm/commit/6284221716ceee6b5053cadd994f6a3a7a23978a)
+- Update submodule_check.yaml [`8f4a6ea`](https://github.com/rive-app/rive-wasm/commit/8f4a6ea665cbb42dc55cd9f074a7467549aefee9)
+- Update submodule_check.yaml [`cde090e`](https://github.com/rive-app/rive-wasm/commit/cde090ea0b36ed29404e57277feb1b5743b20ab8)
+- Add submodules again [`feb9d00`](https://github.com/rive-app/rive-wasm/commit/feb9d009a9bdc486456c217d0b50048a3528d480)
+- Remove submodules [`15d4cd9`](https://github.com/rive-app/rive-wasm/commit/15d4cd9e4ee65ffd3fd4292a3ef33c6cc6a327d1)
+- Update submodule_check.yaml [`17bf8ca`](https://github.com/rive-app/rive-wasm/commit/17bf8caabf1dc219a2f03f4a1aa10b0787e87f8d)
+- Update .gitmodules [`bd0b77e`](https://github.com/rive-app/rive-wasm/commit/bd0b77e3bbf58b8d57468dc9f62895b057c94cf7)
+- Update .gitmodules [`b14206a`](https://github.com/rive-app/rive-wasm/commit/b14206ad610375220aeb56346e4d29f1007e5850)
+- Update submodule_check.yaml [`1008e71`](https://github.com/rive-app/rive-wasm/commit/1008e71e8ddaf3a254f835396826a03b3cee1df0)
+- Update submodule_check.yaml [`ff521f0`](https://github.com/rive-app/rive-wasm/commit/ff521f066996c4ba1430797504371f1c2f20e21f)
+- Tooling tweaks [`3d5a316`](https://github.com/rive-app/rive-wasm/commit/3d5a316a61b279574a1c4fe316eb0d1a8b25a6c6)
+- Better support for BGRA in D3D [`887e77a`](https://github.com/rive-app/rive-wasm/commit/887e77a8880c59e53f99881938486d332f4b60b3)
+- Namespace corrections to rive instead of gpu [`a0d37e0`](https://github.com/rive-app/rive-wasm/commit/a0d37e0e20bc3b3fe9bafcc5a2eeb220910fd64e)
+- Parallelize SPIRV compilation [`f836caa`](https://github.com/rive-app/rive-wasm/commit/f836caa7d467aa2cef3cdd9b5631eb8ffd813841)
+- Add a "player" app to the tools [`6edb9d7`](https://github.com/rive-app/rive-wasm/commit/6edb9d75dfe262beec2045500af7e892b2ff24a2)
+- Unlink skia from goldens [`3621bd6`](https://github.com/rive-app/rive-wasm/commit/3621bd6baf263759120d0fc7e58146ce901c821c)
+- Rename to remove unneeded pls in variable names [`93b7d09`](https://github.com/rive-app/rive-wasm/commit/93b7d092fe387018c47ca29f9cd6565569a51a48)
+- Support Vulkan on Android [`fb4c788`](https://github.com/rive-app/rive-wasm/commit/fb4c788ab5cc0b88aafce510ed016f3e1017eb01)
+- Change class names to strip PLS [`504f418`](https://github.com/rive-app/rive-wasm/commit/504f41818923faf7c42eb4f45ee8752eb48cc146)
+- Convert rive-cpp to rive-runtime for runtime_wasm [`a78d3e3`](https://github.com/rive-app/rive-wasm/commit/a78d3e309010dafb2c00ead89f0261a234aaf6c5)
+- Layout joysticks runtime [`2746206`](https://github.com/rive-app/rive-wasm/commit/27462064b0ebb8e8f268a947aba5788ae30040c0)
+- runtime: add tiling to n-slicing [`5185a21`](https://github.com/rive-app/rive-wasm/commit/5185a211ff1f850b5c58ce4e2ab7ddfd047d9cf0)
+- Revive the WebGL backend [`45760de`](https://github.com/rive-app/rive-wasm/commit/45760de5a761eaad01386551d5bfb94c4972e487)
+- Nnnn data binding editor native runtime [`6bd3173`](https://github.com/rive-app/rive-wasm/commit/6bd3173049e3b6b3b2cfc27cbc72cbd2d56d7624)
+- fix for syntax issue [`9fb5748`](https://github.com/rive-app/rive-wasm/commit/9fb574876be65227e14835d20f9e139d7dee3c9d)
+- windows editor: fix format check and use raster ordering disabled [`ae9f820`](https://github.com/rive-app/rive-wasm/commit/ae9f820b764ba6621263c6e210e5fcea20fc1741)
+- Fix viewer tess builds [`8767874`](https://github.com/rive-app/rive-wasm/commit/876787428e4062eace44d134fc61e636381e26fd)
+- Update rive cpp for submodules [`fd4d8ad`](https://github.com/rive-app/rive-wasm/commit/fd4d8ad86464ae357df988f7af954ef50aee1f1c)
+- mark dirty when constraint changes [`518494d`](https://github.com/rive-app/rive-wasm/commit/518494d90646dac10188c85180a6dea97d15ac8e)
+- Fix Android goldens [`03b5241`](https://github.com/rive-app/rive-wasm/commit/03b5241db44c22dbeaffb3890d949b462ab3b121)
+- Improve Vulkan loading and organization [`f58a1e7`](https://github.com/rive-app/rive-wasm/commit/f58a1e7c1faa746a2702d87f0b837de185b57a7d)
+- Add webp decoder. [`ad61939`](https://github.com/rive-app/rive-wasm/commit/ad61939a7c79dd6744ec02ce7cde86a033e93052)
+- iOS images unpremult SIMD support [`ad0f6a8`](https://github.com/rive-app/rive-wasm/commit/ad0f6a8b821a92df315c5f18360c14e3cf8795cc)
+
+## [2.20.0](https://github.com/rive-app/rive-wasm/compare/2.19.7...2.20.0) - 2024-08-20
 
 ### Fixed
 
@@ -13,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.20.0 [`9677ba8`](https://github.com/rive-app/rive-wasm/commit/9677ba80e78d20e27693b27681b61614d11f6c44)
 - add arithmetic operation and group converters [`dc326a8`](https://github.com/rive-app/rive-wasm/commit/dc326a8df76fe1baf6bb1e323f92d158e6aee4a9)
 - editor: setting up the update callbacks for n-slicing [`8aae14a`](https://github.com/rive-app/rive-wasm/commit/8aae14a7f6aa421caacc6dd7c6facee602968c3f)
 - Fix for bug in Runtime LayoutComponent proxy [`a845058`](https://github.com/rive-app/rive-wasm/commit/a8450582439477109e876184e526fcb810c492f0)
