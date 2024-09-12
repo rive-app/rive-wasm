@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.20.1](https://github.com/rive-app/rive-wasm/compare/2.20.0...2.20.1)
+## [2.20.2](https://github.com/rive-app/rive-wasm/compare/2.20.1...2.20.2)
+
+### Commits
+
+- Fix intrinsically sizeable bug [`73d0744`](https://github.com/rive-app/rive-wasm/commit/73d0744012c1aac6fa317619a156a73b3ae50c75)
+- bump premake [`db37894`](https://github.com/rive-app/rive-wasm/commit/db378946923e727c774a3a4baf5e2a0883c12f51)
+- Fix default target id for ListenerAlignTarget [`abff70b`](https://github.com/rive-app/rive-wasm/commit/abff70bb5d091c2c9124b1fcebc256a826359240)
+- Add fallback font support for iOS and macOS [`9c668be`](https://github.com/rive-app/rive-wasm/commit/9c668be8a13b0e8b96dfa0d83e1217369420b581)
+
+## [2.20.1](https://github.com/rive-app/rive-wasm/compare/2.20.0...2.20.1) - 2024-09-10
 
 ### Merged
 
@@ -17,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.20.1 [`ddbf59e`](https://github.com/rive-app/rive-wasm/commit/ddbf59ec9399f48082498ce4719fa316ec7f7c32)
 - Fix dstreadshuffle gm [`5685bac`](https://github.com/rive-app/rive-wasm/commit/5685bac40355c474b588b0a37ad8b0c9a6518fa4)
 - add fixes and code improvements [`6e683b4`](https://github.com/rive-app/rive-wasm/commit/6e683b40c651a2bac4e49bedf6ddbc0ffb4bed3d)
 - Next set skia strip [`bd34bcd`](https://github.com/rive-app/rive-wasm/commit/bd34bcd9eed9624a94459a1656d5b39d5362ebd2)
