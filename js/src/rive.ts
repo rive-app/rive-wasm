@@ -2426,6 +2426,95 @@ export class Rive {
     }
   }
 
+  // Returns the TextValueRun object for the provided name at the given path
+  private retrieveTextAtPath(
+    name: string,
+    path: string,
+  ): rc.TextValueRun | undefined {
+    if (!name) {
+      console.warn(`No text name provided for path '${path}'`);
+      return;
+    }
+    if (!path) {
+      console.warn(`No path provided for text '${name}'`);
+      return;
+    }
+    if (!this.artboard) {
+      console.warn(
+        `Tried to access text: '${name}', at path: '${path}', but the Artboard is null`,
+      );
+      return;
+    }
+    const text: rc.TextValueRun = this.artboard.textByPath(name, path);
+    if (!text) {
+      console.warn(
+        `Could not access text with name: '${name}', at path:'${path}'`,
+      );
+      return;
+    }
+    return text;
+  }
+
+  /**
+   * Retrieves the text value for a specified text run at a given path
+   * @param textName The name of the text run
+   * @param path The path to the text run within the artboard
+   * @returns The text value of the text run, or undefined if not found
+   *
+   * @example
+   * // Get the text value for a text run named "title" at one nested artboard deep
+   * const titleText = riveInstance.getTextRunValueAtPath("title", "artboard1");
+   *
+   * @example
+   * // Get the text value for a text run named "subtitle" within a nested group two artboards deep
+   * const subtitleText = riveInstance.getTextRunValueAtPath("subtitle", "group/nestedGroup");
+   *
+   * @remarks
+   * If the text run cannot be found at the specified path, a warning will be logged to the console.
+   */
+  public getTextRunValueAtPath(
+    textName: string,
+    path: string,
+  ): string | undefined {
+    const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
+    if (!run) {
+      console.warn(
+        `Could not get text with name: '${textName}', at path:'${path}'`,
+      );
+      return;
+    }
+    return run.text;
+  }
+
+  /**
+   * Sets the text value for a specified text run at a given path
+   * @param textName The name of the text run
+   * @param value The new text value to set
+   * @param path The path to the text run within the artboard
+   * @returns void
+   *
+   * @example
+   * // Set the text value for a text run named "title" at one nested artboard deep
+   * riveInstance.setTextRunValueAtPath("title", "New Title", "artboard1");
+   *
+   * @example
+   * // Set the text value for a text run named "subtitle" within a nested group two artboards deep
+   * riveInstance.setTextRunValueAtPath("subtitle", "New Subtitle", "group/nestedGroup");
+   *
+   * @remarks
+   * If the text run cannot be found at the specified path, a warning will be logged to the console.
+   */
+  public setTextRunValueAtPath(textName: string, value: string, path: string) {
+    const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
+    if (!run) {
+      console.warn(
+        `Could not set text with name: '${textName}', at path:'${path}'`,
+      );
+      return;
+    }
+    run.text = value;
+  }
+
   // Returns a list of playing machine names
   public get playingStateMachineNames(): string[] {
     // If the file's not loaded, we got nothing to return

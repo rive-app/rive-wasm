@@ -456,6 +456,12 @@ export declare class Artboard {
    * @param path - Path of where the input exists at an artboard level
    */
   inputByPath(name: string, path: string): SMIInput;
+  /**
+   * Returns a reference for a TextValueRun object to get/set a text value for
+   * @param name - Name of the Text Run to grab a reference to
+   * @param path - Path of where the text exists at an artboard level
+   */
+  textByPath(name: string, path: string): TextValueRun;
 }
 
 export declare class Bone extends TransformComponent {

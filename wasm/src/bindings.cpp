@@ -529,6 +529,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                                        const std::string& name,
                                        const std::string& path) { return self.input(name, path); }),
                   allow_raw_pointers())
+        .function(
+            "textByPath",
+            optional_override([](rive::ArtboardInstance& self,
+                                 const std::string& name,
+                                 const std::string& path) { return self.getTextRun(name, path); }),
+            allow_raw_pointers())
         .property("bounds", optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
                       return self.bounds();
                   }))
