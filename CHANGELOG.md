@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.20.2](https://github.com/rive-app/rive-wasm/compare/2.20.1...2.20.2)
+## [2.21.0](https://github.com/rive-app/rive-wasm/compare/2.20.2...2.21.0)
 
 ### Commits
 
+- feat: web nested text runs [`bbd3415`](https://github.com/rive-app/rive-wasm/commit/bbd3415543c6bc7e400401f883d42669a514d534)
+- Updates to layout hug [`e3a66c1`](https://github.com/rive-app/rive-wasm/commit/e3a66c1c7076729778f488128ce03f9b7fe342d3)
+- revisit sync between flutter and c++ runtime [`2c22da4`](https://github.com/rive-app/rive-wasm/commit/2c22da4e1f1006493ba1ad4e9a2c91260f61a7b0)
+
+## [2.20.2](https://github.com/rive-app/rive-wasm/compare/2.20.1...2.20.2) - 2024-09-12
+
+### Commits
+
+- chore: tag 2.20.2 [`c821ea2`](https://github.com/rive-app/rive-wasm/commit/c821ea2711e61f7acbf23684a6c43dbc5a2e5443)
 - Fix intrinsically sizeable bug [`73d0744`](https://github.com/rive-app/rive-wasm/commit/73d0744012c1aac6fa317619a156a73b3ae50c75)
 - bump premake [`db37894`](https://github.com/rive-app/rive-wasm/commit/db378946923e727c774a3a4baf5e2a0883c12f51)
 - Fix default target id for ListenerAlignTarget [`abff70b`](https://github.com/rive-app/rive-wasm/commit/abff70bb5d091c2c9124b1fcebc256a826359240)
