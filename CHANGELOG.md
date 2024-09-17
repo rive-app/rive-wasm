@@ -5,10 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.0](https://github.com/rive-app/rive-wasm/compare/2.20.2...2.21.0)
+## [2.21.1](https://github.com/rive-app/rive-wasm/compare/2.21.0...2.21.1)
 
 ### Commits
 
+- add support for elastic interpolation [`ec68c1d`](https://github.com/rive-app/rive-wasm/commit/ec68c1d7df18ae51d95161de4799bcbaab040130)
+- editor: Stage UI for N-Slicing [`dbbc1cc`](https://github.com/rive-app/rive-wasm/commit/dbbc1cc035d771bb0e46e5e8fda1f8a5e03b5fbd)
+- Add contour measure to Rive Native [`5ccc8d5`](https://github.com/rive-app/rive-wasm/commit/5ccc8d5e4adb34a9def780ff1cf42bb964b4f69b)
+- adding length getter to dash path effect [`7011fea`](https://github.com/rive-app/rive-wasm/commit/7011feaa2e247c6036f11f82b1f28ecc114ce75f)
+- Add NestedArtboardLayout hug [`12ffd5a`](https://github.com/rive-app/rive-wasm/commit/12ffd5af8095a6d501fcd945312b31b12ce2f403)
+- Initial refactor to simplfigy class structure [`edbce23`](https://github.com/rive-app/rive-wasm/commit/edbce235e9488adb000e6bd6f9dea843abc8fbc4)
+- d3d11 simplifications [`e03e06f`](https://github.com/rive-app/rive-wasm/commit/e03e06f12e639533ba239271ff9a937f2e735294)
+- Optimize draw to avoid creating when clip is empty [`45109b7`](https://github.com/rive-app/rive-wasm/commit/45109b77d70cf8adf361e5b617c98be5c1f20673)
+
+## [2.21.0](https://github.com/rive-app/rive-wasm/compare/2.20.2...2.21.0) - 2024-09-13
+
+### Commits
+
+- chore: tag 2.21.0 [`5fe0aa1`](https://github.com/rive-app/rive-wasm/commit/5fe0aa132d408528946f679ad9410616728b00da)
 - feat: web nested text runs [`bbd3415`](https://github.com/rive-app/rive-wasm/commit/bbd3415543c6bc7e400401f883d42669a514d534)
 - Updates to layout hug [`e3a66c1`](https://github.com/rive-app/rive-wasm/commit/e3a66c1c7076729778f488128ce03f9b7fe342d3)
 - revisit sync between flutter and c++ runtime [`2c22da4`](https://github.com/rive-app/rive-wasm/commit/2c22da4e1f1006493ba1ad4e9a2c91260f61a7b0)
