@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.1](https://github.com/rive-app/rive-wasm/compare/2.21.0...2.21.1)
+## [2.21.2](https://github.com/rive-app/rive-wasm/compare/2.21.1...2.21.2)
 
 ### Commits
 
+- Dashing (through the snow) [`033672c`](https://github.com/rive-app/rive-wasm/commit/033672c81fb21e6c963780b8a28ddd59ab97e1af)
+- Update player to run without the python server [`12b6f54`](https://github.com/rive-app/rive-wasm/commit/12b6f54685865e23a707ee69287406a403bbf675)
+- Rename gpuAtomicResolve -&gt; atomicResolve, et. al. [`9aa2941`](https://github.com/rive-app/rive-wasm/commit/9aa29416ea12ad6d3cb2a43f6354d6bc4d6ced19)
+- Overhaul Vulkan synchronization [`aa03eb3`](https://github.com/rive-app/rive-wasm/commit/aa03eb378be6d33865a9132bf8d98b2b57214698)
+- Remove Skia from ios_tests and quit building it on many runners [`7a15466`](https://github.com/rive-app/rive-wasm/commit/7a154664fb2361197cbf9f7e973ed3865e2047a3)
+- Nnnn data context fixes [`fce9bb5`](https://github.com/rive-app/rive-wasm/commit/fce9bb5c9e41a93e87b1465dba196c3d174ad097)
+- Colinear and bounds ffi [`6b2dfa8`](https://github.com/rive-app/rive-wasm/commit/6b2dfa83ce5b655a6859b62c03f35931c53d09e9)
+
+## [2.21.1](https://github.com/rive-app/rive-wasm/compare/2.21.0...2.21.1) - 2024-09-17
+
+### Commits
+
+- chore: tag 2.21.1 [`9ab43ef`](https://github.com/rive-app/rive-wasm/commit/9ab43ef8ae21a457cac535e0e91405cc9d11c7a8)
 - add support for elastic interpolation [`ec68c1d`](https://github.com/rive-app/rive-wasm/commit/ec68c1d7df18ae51d95161de4799bcbaab040130)
 - editor: Stage UI for N-Slicing [`dbbc1cc`](https://github.com/rive-app/rive-wasm/commit/dbbc1cc035d771bb0e46e5e8fda1f8a5e03b5fbd)
 - Add contour measure to Rive Native [`5ccc8d5`](https://github.com/rive-app/rive-wasm/commit/5ccc8d5e4adb34a9def780ff1cf42bb964b4f69b)
