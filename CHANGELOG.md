@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.2](https://github.com/rive-app/rive-wasm/compare/2.21.1...2.21.2)
+## [2.21.3](https://github.com/rive-app/rive-wasm/compare/2.21.2...2.21.3)
+
+### Fixed
+
+- advance iterator until distance does not equal 0 [`#8164`](https://github.com/rive-app/rive-wasm/issues/8164)
 
 ### Commits
 
+- runtime dashing! [`2843d2e`](https://github.com/rive-app/rive-wasm/commit/2843d2e173d9b8a8328dd8af84774e229935757d)
+- fix dash glitch [`a43a70a`](https://github.com/rive-app/rive-wasm/commit/a43a70a7600f408c7c10bd323e0e0aa53c858487)
+
+## [2.21.2](https://github.com/rive-app/rive-wasm/compare/2.21.1...2.21.2) - 2024-09-20
+
+### Commits
+
+- chore: tag 2.21.2 [`1794f74`](https://github.com/rive-app/rive-wasm/commit/1794f744ea9f667953da945398da428e1dd613c4)
 - Dashing (through the snow) [`033672c`](https://github.com/rive-app/rive-wasm/commit/033672c81fb21e6c963780b8a28ddd59ab97e1af)
 - Update player to run without the python server [`12b6f54`](https://github.com/rive-app/rive-wasm/commit/12b6f54685865e23a707ee69287406a403bbf675)
 - Rename gpuAtomicResolve -&gt; atomicResolve, et. al. [`9aa2941`](https://github.com/rive-app/rive-wasm/commit/9aa29416ea12ad6d3cb2a43f6354d6bc4d6ced19)
