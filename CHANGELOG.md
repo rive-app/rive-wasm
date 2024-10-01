@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.3](https://github.com/rive-app/rive-wasm/compare/2.21.2...2.21.3)
+## [2.21.4](https://github.com/rive-app/rive-wasm/compare/2.21.3...2.21.4)
+
+### Commits
+
+- apt install python3-ply [`855d356`](https://github.com/rive-app/rive-wasm/commit/855d356271fed75fa35580697300c28c149a10be)
+- Clone draw for cache optimizations [`209fdcf`](https://github.com/rive-app/rive-wasm/commit/209fdcf7983c63e7c888b4176bd76698cf40873d)
+- Fix layout drag/drop offset [`332c739`](https://github.com/rive-app/rive-wasm/commit/332c739fcbe89493b44b1f9ec7e847edd834268c)
+- fix text origin offset [`6c6da44`](https://github.com/rive-app/rive-wasm/commit/6c6da4460e9663c26996f8c9c349ab03e5e91d47)
+- change dash formula precision [`b39c47f`](https://github.com/rive-app/rive-wasm/commit/b39c47f8bd2d5c6edde1b81e9162113112c46fdd)
+- add bindable layout properties [`bfa9c99`](https://github.com/rive-app/rive-wasm/commit/bfa9c9964693e60a1e62abd7cf47245c42ad607d)
+- add new properties to data bind [`e31c4ff`](https://github.com/rive-app/rive-wasm/commit/e31c4ff398a624243c678045c7b25ef9a6e51dfd)
+- Layout text size fix [`1b63b5d`](https://github.com/rive-app/rive-wasm/commit/1b63b5d1178f8465e1bba1ae50dbcc0f468d3b5e)
+- Add linux build step for rive_native changes [`ecfb8a0`](https://github.com/rive-app/rive-wasm/commit/ecfb8a0f50dc075e7029e238ed8f5d12dcb918a6)
+
+## [2.21.3](https://github.com/rive-app/rive-wasm/compare/2.21.2...2.21.3) - 2024-09-23
 
 ### Fixed
 
@@ -13,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.21.3 [`c8069cb`](https://github.com/rive-app/rive-wasm/commit/c8069cbdc8913ac5e9e17a7316bc4c9f69d8759d)
 - runtime dashing! [`2843d2e`](https://github.com/rive-app/rive-wasm/commit/2843d2e173d9b8a8328dd8af84774e229935757d)
 - fix dash glitch [`a43a70a`](https://github.com/rive-app/rive-wasm/commit/a43a70a7600f408c7c10bd323e0e0aa53c858487)
 
