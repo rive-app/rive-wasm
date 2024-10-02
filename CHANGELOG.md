@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.4](https://github.com/rive-app/rive-wasm/compare/2.21.3...2.21.4)
+## [2.21.5](https://github.com/rive-app/rive-wasm/compare/2.21.4...2.21.5)
 
 ### Commits
 
+- fix uninitialized font features [`2a15ba7`](https://github.com/rive-app/rive-wasm/commit/2a15ba730f5fad00ea9d41b65dfb545bdf4cef37)
+- add text bindable properties [`7b190d2`](https://github.com/rive-app/rive-wasm/commit/7b190d22383743fb2b27ef5ab7f43340c2a5026b)
+- added #ifdef where it was missing [`8ffb7d7`](https://github.com/rive-app/rive-wasm/commit/8ffb7d7fc7b6c75a87e927407ebe224eebe9ea0b)
+
+## [2.21.4](https://github.com/rive-app/rive-wasm/compare/2.21.3...2.21.4) - 2024-10-01
+
+### Commits
+
+- chore: tag 2.21.4 [`ef2138a`](https://github.com/rive-app/rive-wasm/commit/ef2138a21af380c65490abfb0c408d9203c7a042)
 - apt install python3-ply [`855d356`](https://github.com/rive-app/rive-wasm/commit/855d356271fed75fa35580697300c28c149a10be)
 - Clone draw for cache optimizations [`209fdcf`](https://github.com/rive-app/rive-wasm/commit/209fdcf7983c63e7c888b4176bd76698cf40873d)
 - Fix layout drag/drop offset [`332c739`](https://github.com/rive-app/rive-wasm/commit/332c739fcbe89493b44b1f9ec7e847edd834268c)
