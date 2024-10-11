@@ -476,7 +476,8 @@ SK_API void SkDebugf(const char format[], ...) SK_PRINTF_LIKE(1, 2);
 // The if is present so that this can be used with functions marked SK_WARN_UNUSED_RESULT.
 #define SkAssertResult(cond)                                                                       \
     if (cond)                                                                                      \
-    {}                                                                                             \
+    {                                                                                              \
+    }                                                                                              \
     do                                                                                             \
     {                                                                                              \
     } while (false)

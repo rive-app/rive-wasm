@@ -105,7 +105,7 @@ static inline SkScalar SkScalarSquare(SkScalar x) { return x * x; }
 
 #define SkScalarInvert(x) sk_ieee_float_divide_TODO_IS_DIVIDE_BY_ZERO_SAFE_HERE(SK_Scalar1, (x))
 #define SkScalarAve(a, b) (((a) + (b)) * SK_ScalarHalf)
-#define SkScalarHalf(a) ((a)*SK_ScalarHalf)
+#define SkScalarHalf(a) ((a) * SK_ScalarHalf)
 
 #define SkDegreesToRadians(degrees) ((degrees) * (SK_ScalarPI / 180))
 #define SkRadiansToDegrees(radians) ((radians) * (180 / SK_ScalarPI))
