@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.5](https://github.com/rive-app/rive-wasm/compare/2.21.4...2.21.5)
+## [2.21.6](https://github.com/rive-app/rive-wasm/compare/2.21.5...2.21.6)
 
 ### Commits
 
+- Make layout position type and scale type keyable [`dc4ed3c`](https://github.com/rive-app/rive-wasm/commit/dc4ed3c0c3b0be3cd246e5850ec9b2c1c91c659e)
+- Improve batching for interior triangulation draws [`0807424`](https://github.com/rive-app/rive-wasm/commit/0807424df93036db92525c1129d002f4c4a0806c)
+- Unreal Runtime into Mono [`d5590d9`](https://github.com/rive-app/rive-wasm/commit/d5590d9b38a098d41e267959b927c03795c40f8a)
+- Fix runtime joystick with layout position [`7837780`](https://github.com/rive-app/rive-wasm/commit/783778005af743153e79a160b8bd10560ed95897)
+- add bones and joystick bindable properties [`6c4de3f`](https://github.com/rive-app/rive-wasm/commit/6c4de3f2b75b42a70160f000fff210c704e620b7)
+- fix missing data bind path crash [`088da28`](https://github.com/rive-app/rive-wasm/commit/088da28cb387574a810542da5e7f11bff3e79611)
+- Drop the ColumnLimit to 80 for clang-format [`6a08a8f`](https://github.com/rive-app/rive-wasm/commit/6a08a8f2c249547a0f846856b466c190822d58d1)
+- add support for listeners on layout components [`58f66ff`](https://github.com/rive-app/rive-wasm/commit/58f66ff3a03c761708391f527b487589bd2c0367)
+- Optimize atomic rendering for input attachments [`c53b66b`](https://github.com/rive-app/rive-wasm/commit/c53b66b71108ccc3a87914236c5e5ef47bd98840)
+- Prep for rhi [`3042d4a`](https://github.com/rive-app/rive-wasm/commit/3042d4a5bbfb608bc7ac2b3272219e6acc1b9464)
+- Nnnn fix databind state machine shared data context [`84e58b3`](https://github.com/rive-app/rive-wasm/commit/84e58b3a89a2b7628a70487fd342dfef29dba76b)
+- Implement isHidden in DrawableProxy [`4f2ebca`](https://github.com/rive-app/rive-wasm/commit/4f2ebcab3ae7e136c409c5abba5d0c2e82db8113)
+- use shared data context between artboard and state machine [`d6a7da3`](https://github.com/rive-app/rive-wasm/commit/d6a7da3e42b9df118393dd447ecb68e9204a687e)
+- Fix Apple runtime crashes on Macs with non-Apple-Silicon GPUs [`e7dc892`](https://github.com/rive-app/rive-wasm/commit/e7dc892b85acd4bbabf78a0392bc8d70766ad4f7)
+- Drag and drop into layouts without Cmd modifier [`dca198c`](https://github.com/rive-app/rive-wasm/commit/dca198c8977e1cc72cdc7ebfac9711096d0974dd)
+- Layout misc fixes [`df3d71d`](https://github.com/rive-app/rive-wasm/commit/df3d71d1b184c137f92852934c29228b21b4465a)
+- Download python-ply inside of premake [`0a429da`](https://github.com/rive-app/rive-wasm/commit/0a429da09ff7d45b2f6b8626d38c82510e0a1b10)
+- enable all viewmodels as source for a condition [`f24231e`](https://github.com/rive-app/rive-wasm/commit/f24231ecbc4c48e6ed071624ac384bd444d657f4)
+- Calculate LOD ahead of time for image paints [`8249f08`](https://github.com/rive-app/rive-wasm/commit/8249f085a889a9cf12bb392ba168ce2718b02900)
+- Premultiply clear colors [`4dbec87`](https://github.com/rive-app/rive-wasm/commit/4dbec87a7dd6aa7f56be929bca96f630be71969a)
+- add enum bind core property [`0bfd6fc`](https://github.com/rive-app/rive-wasm/commit/0bfd6fcb47070ce1e672a34ca34ac077b67e4c26)
+- Rename InterlockMode::depthStencil to InterlockMode::msaa [`7ee3b0f`](https://github.com/rive-app/rive-wasm/commit/7ee3b0fc15c16d31037ab0581addb3919be75779)
+- add missing dirty flags [`8473774`](https://github.com/rive-app/rive-wasm/commit/84737747362c93bff2b0e7ede422b49b162ef0c4)
+- Fix layout animation not cascading [`8e25224`](https://github.com/rive-app/rive-wasm/commit/8e252240555fce325cc376075b436809a8cb39d3)
+
+## [2.21.5](https://github.com/rive-app/rive-wasm/compare/2.21.4...2.21.5) - 2024-10-02
+
+### Commits
+
+- chore: tag 2.21.5 [`35a620d`](https://github.com/rive-app/rive-wasm/commit/35a620dcf8635c84c804ad2cf96725f7b1c06124)
 - fix uninitialized font features [`2a15ba7`](https://github.com/rive-app/rive-wasm/commit/2a15ba730f5fad00ea9d41b65dfb545bdf4cef37)
 - add text bindable properties [`7b190d2`](https://github.com/rive-app/rive-wasm/commit/7b190d22383743fb2b27ef5ab7f43340c2a5026b)
 - added #ifdef where it was missing [`8ffb7d7`](https://github.com/rive-app/rive-wasm/commit/8ffb7d7fc7b6c75a87e927407ebe224eebe9ea0b)
