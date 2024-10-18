@@ -65,7 +65,7 @@ private:
 
 // High-level, context agnostic RenderImage for the WebGL2 system. Wraps a blob of encoded image
 // data, which is then decoded and uploaded to a texture on each separate context.
-class WebGL2RenderImage : public lite_rtti_override<RenderImage, WebGL2RenderImage>
+class WebGL2RenderImage : public LITE_RTTI_OVERRIDE(RenderImage, WebGL2RenderImage)
 {
 public:
     WebGL2RenderImage(Span<const uint8_t> encodedBytes) :
@@ -171,7 +171,7 @@ private:
 
 // High-level, context agnostic RenderBuffer for the WebGL2 system. Wraps the buffer contents in a
 // shared CPU-side WebGL2BufferData object, against which low-level PLS buffers are synchronized.
-class WebGL2RenderBuffer : public lite_rtti_override<RenderBuffer, WebGL2RenderBuffer>
+class WebGL2RenderBuffer : public LITE_RTTI_OVERRIDE(RenderBuffer, WebGL2RenderBuffer)
 {
 public:
     WebGL2RenderBuffer(RenderBufferType type, RenderBufferFlags flags, size_t sizeInBytes) :
