@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.6](https://github.com/rive-app/rive-wasm/compare/2.21.5...2.21.6)
+## [2.21.7](https://github.com/rive-app/rive-wasm/compare/2.21.6...2.21.7)
 
 ### Commits
 
+- Fix resources getting deleted prematurely in vkutil::ResourcePool [`b2b910b`](https://github.com/rive-app/rive-wasm/commit/b2b910b68f173a4b4fc5d2c63885e3ab2ffbd502)
+- Upgrade legacy artboards to work with layouts [`90dec32`](https://github.com/rive-app/rive-wasm/commit/90dec32b2c254eb713709a04d8f469a5a3fe89e7)
+- Layout fractional sizes & flexBasis [`48eb586`](https://github.com/rive-app/rive-wasm/commit/48eb5860c59f0e1c42158427fc771e7a437115f9)
+- imagediff -&gt; opencv [`3b0d06c`](https://github.com/rive-app/rive-wasm/commit/3b0d06c8047a092bd6e815b0989b7b78b07b0890)
+- Fix crash on controlSize when image not yet available [`61f1f7c`](https://github.com/rive-app/rive-wasm/commit/61f1f7c40db4fdb43493f52bccb4b9f9d992362f)
+- Fix layout size propagation [`98180b8`](https://github.com/rive-app/rive-wasm/commit/98180b8111fd27578fa50758bd24eef775932b6d)
+- Fix for layouts alignment bug when created with fill type [`1bb93d9`](https://github.com/rive-app/rive-wasm/commit/1bb93d967cc28809cf9ad99bf8f582d068e6ff26)
+- Call updateLayoutBounds on NestedArtboardLayout [`2da0f02`](https://github.com/rive-app/rive-wasm/commit/2da0f0271678bd0d5017c8344664b1b2e86394f8)
+- editor: support vector n-slicing in runtime [`25b9319`](https://github.com/rive-app/rive-wasm/commit/25b93198c0f592b643fbca7e6bb8a63ef8067a75)
+- Nnnn text alignment and fit [`dd778a3`](https://github.com/rive-app/rive-wasm/commit/dd778a3d6a2b9b4a3b097322f40fa1a1916ad82d)
+- hierarchical updates to layout [`ee83d7d`](https://github.com/rive-app/rive-wasm/commit/ee83d7d24b8a335de2b21ee2630839b08896ca4f)
+- Do not load files with invalid paint mutators. [`c97600b`](https://github.com/rive-app/rive-wasm/commit/c97600b27b8ed22a93fa293556a253c7b860741f)
+- testing animation smoothing [`0773a72`](https://github.com/rive-app/rive-wasm/commit/0773a7271d3f8a1d74e21fbadadf999a47c7acf8)
+- NestedArtboardLayout marks its parent artboard layoutNodeDirty [`507580b`](https://github.com/rive-app/rive-wasm/commit/507580b59ef1e259f76a4fc2e5d7cf1d5f103f3d)
+- Nnnn system data enums [`9a34d99`](https://github.com/rive-app/rive-wasm/commit/9a34d995f9199f524c45d6f171fdcf740dbb8d16)
+- LayoutComponent clip defaults to false. [`c52014a`](https://github.com/rive-app/rive-wasm/commit/c52014a74e231c66940c8e53abb0257227820c35)
+- Add AdvancingComponent & animate flag to advance() [`9e03bb5`](https://github.com/rive-app/rive-wasm/commit/9e03bb5a0245c981d4648b889b30ff29567c54cb)
+- use worldBounds for hittesting [`8c711a6`](https://github.com/rive-app/rive-wasm/commit/8c711a6c577ca91336c9b860071fc82743208f3e)
+- Deterministic lite rtti [`0944238`](https://github.com/rive-app/rive-wasm/commit/09442383ef96874164fc23b1272ea58fc6c46bf0)
+- audio engine: fix order of uninit of context and engine [`3e57e8e`](https://github.com/rive-app/rive-wasm/commit/3e57e8edfa14a3b086a71e4ec6693c9c19c5d519)
+- reset effects when path changes [`f3c317f`](https://github.com/rive-app/rive-wasm/commit/f3c317f5d3109af11963b130f46a32389c9e3cff)
+- Add a clockwise fill experiment [`779dfce`](https://github.com/rive-app/rive-wasm/commit/779dfce1d23302ced8424bf0024237ee48396b6d)
+- Batch interior triangulation draws [`99c580f`](https://github.com/rive-app/rive-wasm/commit/99c580f3019c2bc01c186ccd9986ab37a08587b8)
+- Fix layout animation runtime [`ff2973b`](https://github.com/rive-app/rive-wasm/commit/ff2973b3162697a45dff2762c36eefa381577657)
+
+## [2.21.6](https://github.com/rive-app/rive-wasm/compare/2.21.5...2.21.6) - 2024-10-15
+
+### Commits
+
+- chore: tag 2.21.6 [`3d8c81a`](https://github.com/rive-app/rive-wasm/commit/3d8c81a6982de6a5c2b786ffaa8cd4e32734565d)
 - Make layout position type and scale type keyable [`dc4ed3c`](https://github.com/rive-app/rive-wasm/commit/dc4ed3c0c3b0be3cd246e5850ec9b2c1c91c659e)
 - Improve batching for interior triangulation draws [`0807424`](https://github.com/rive-app/rive-wasm/commit/0807424df93036db92525c1129d002f4c4a0806c)
 - Unreal Runtime into Mono [`d5590d9`](https://github.com/rive-app/rive-wasm/commit/d5590d9b38a098d41e267959b927c03795c40f8a)
