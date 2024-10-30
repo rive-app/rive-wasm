@@ -560,8 +560,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
                                        Fit fit,
                                        JsAlignment alignment,
                                        const AABB& frame,
-                                       const AABB& content) {
-                      self.align(fit, convertAlignment(alignment), frame, content);
+                                       const AABB& content,
+                                       const float scaleFactor = 1.0f) {
+                      self.align(fit, convertAlignment(alignment), frame, content, scaleFactor);
                   }));
     class_<WebGL2Renderer, base<Renderer>>("WebGL2Renderer")
         .function("clear", &WebGL2Renderer::clear)

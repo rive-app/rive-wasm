@@ -1018,6 +1018,17 @@ Module["onRuntimeInitialized"] = function () {
     });
   };
 
+  let align = Module["RendererWrapper"]["prototype"]["align"];
+  Module["RendererWrapper"]["prototype"]["align"] = function (
+    fit,
+    alignment,
+    frame,
+    content,
+    scaleFactor = 1.0
+  ) {
+    align.call(this, fit, alignment, frame, content, scaleFactor);
+  };
+
   const _animationCallbackHandler = new AnimationCallbackHandler();
   Module["requestAnimationFrame"] =
     _animationCallbackHandler.requestAnimationFrame.bind(

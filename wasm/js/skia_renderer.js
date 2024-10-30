@@ -40,9 +40,16 @@ Module["onRuntimeInitialized"] = function () {
       this._drawList.push(_offscreenGL["transform"].bind(_offscreenGL, xform));
     };
 
-    this["align"] = function (fit, align, from, to) {
+    this["align"] = function (fit, align, from, to, scaleFactor = 1.0) {
       this._drawList.push(
-        _offscreenGL["align"].bind(_offscreenGL, fit, align, from, to)
+        _offscreenGL["align"].bind(
+          _offscreenGL,
+          fit,
+          align,
+          from,
+          to,
+          scaleFactor
+        )
       );
     };
 
@@ -334,5 +341,16 @@ Module["onRuntimeInitialized"] = function () {
   Module["decodeImage"] = function (bytes, onComplete) {
     let image = Module["decodeImageSkia"](bytes);
     onComplete(image);
+  };
+
+  let align = Module["Renderer"]["prototype"]["align"];
+  Module["Renderer"]["prototype"]["align"] = function (
+    fit,
+    alignment,
+    frame,
+    content,
+    scaleFactor = 1.0
+  ) {
+    align.call(this, fit, alignment, frame, content, scaleFactor);
   };
 };

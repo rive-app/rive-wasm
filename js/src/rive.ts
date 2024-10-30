@@ -43,6 +43,7 @@ export enum Fit {
   FitHeight = "fitHeight",
   None = "none",
   ScaleDown = "scaleDown",
+  Layout = "layout",
 }
 
 // Alignment options for the canvas
@@ -62,6 +63,7 @@ export enum Alignment {
 export interface LayoutParameters {
   fit?: Fit;
   alignment?: Alignment;
+  layoutScaleFactor?: number;
   minX?: number;
   minY?: number;
   maxX?: number;
@@ -77,6 +79,7 @@ export class Layout {
 
   public readonly fit: Fit;
   public readonly alignment: Alignment;
+  public readonly layoutScaleFactor: number;
   public readonly minX: number;
   public readonly minY: number;
   public readonly maxX: number;
@@ -85,6 +88,7 @@ export class Layout {
   constructor(params?: LayoutParameters) {
     this.fit = params?.fit ?? Fit.Contain;
     this.alignment = params?.alignment ?? Alignment.Center;
+    this.layoutScaleFactor = params?.layoutScaleFactor ?? 1;
     this.minX = params?.minX ?? 0;
     this.minY = params?.minY ?? 0;
     this.maxX = params?.maxX ?? 0;
@@ -112,6 +116,7 @@ export class Layout {
   public copyWith({
     fit,
     alignment,
+    layoutScaleFactor,
     minX,
     minY,
     maxX,
@@ -120,6 +125,7 @@ export class Layout {
     return new Layout({
       fit: fit ?? this.fit,
       alignment: alignment ?? this.alignment,
+      layoutScaleFactor: layoutScaleFactor ?? this.layoutScaleFactor,
       minX: minX ?? this.minX,
       minY: minY ?? this.minY,
       maxX: maxX ?? this.maxX,
@@ -138,6 +144,7 @@ export class Layout {
     else if (this.fit === Fit.FitWidth) fit = rive.Fit.fitWidth;
     else if (this.fit === Fit.FitHeight) fit = rive.Fit.fitHeight;
     else if (this.fit === Fit.ScaleDown) fit = rive.Fit.scaleDown;
+    else if (this.fit === Fit.Layout) fit = rive.Fit.layout;
     else fit = rive.Fit.none;
 
     this.cachedRuntimeFit = fit;
@@ -1503,6 +1510,8 @@ export class Rive {
   // Keep a local value of the set volume to update it asynchronously
   private _volume = 1;
 
+  private _devicePixelRatioUsed = 1;
+
   // Whether the canvas element's size is 0
   private _hasZeroSize = false;
 
@@ -2009,6 +2018,7 @@ export class Rive {
         maxY: _layout.maxY,
       },
       artboard.bounds,
+      this._devicePixelRatioUsed * _layout.layoutScaleFactor,
     );
   }
 
@@ -2276,10 +2286,17 @@ export class Rive {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
       const { width, height } = this.canvas.getBoundingClientRect();
       const dpr = customDevicePixelRatio || window.devicePixelRatio || 1;
+      this._devicePixelRatioUsed = dpr;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
       this.startRendering();
       this.resizeToCanvas();
+
+      if (this.layout.fit === Fit.Layout) {
+        const scaleFactor = this._layout.layoutScaleFactor;
+        this.artboard.width = width / scaleFactor;
+        this.artboard.height = height / scaleFactor;
+      }
     }
   }
 

@@ -182,8 +182,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
                                        rive::Fit fit,
                                        JsAlignment alignment,
                                        const rive::AABB& frame,
-                                       const rive::AABB& content) {
-                      self.align(fit, convertAlignment(alignment), frame, content);
+                                       const rive::AABB& content,
+                                       const float scaleFactor = 1.0f) {
+                      self.align(fit, convertAlignment(alignment), frame, content, scaleFactor);
                   }));
     class_<WebGLSkiaRenderer, base<rive::Renderer>>("WebGLRenderer")
         .function("clear", &WebGLSkiaRenderer::clear)

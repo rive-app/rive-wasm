@@ -93,4 +93,22 @@ Module["onRuntimeInitialized"] = function () {
       },
     }
   );
+
+  let computeAlignment = Module["computeAlignment"];
+  Module["computeAlignment"] = function (
+    fit,
+    alignment,
+    frame,
+    content,
+    scaleFactor = 1.0
+  ) {
+    return computeAlignment.call(
+      this,
+      fit,
+      alignment,
+      frame,
+      content,
+      scaleFactor
+    );
+  };
 };

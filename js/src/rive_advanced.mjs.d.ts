@@ -69,6 +69,7 @@ export interface RiveCanvas {
    * @param frame - AABB object representing the bounds of the canvas frame
    * @param content - AABB object representing the bounds of what to draw the Rive onto
    * (i.e an artboard's size)
+   * @param scaleFactor - Scale factor of the artboard when using `Fit.layout`
    * @returns Mat2D - A Mat2D view matrix
    */
   computeAlignment(
@@ -76,7 +77,9 @@ export interface RiveCanvas {
     alignment: Alignment,
     frame: AABB,
     content: AABB,
+    scaleFactor?: number,
   ): Mat2D;
+
   mapXY(matrix: Mat2D, canvasPoints: Vec2D): Vec2D;
   /**
    * A Rive-specific requestAnimationFrame function; this must be used instead of the global
@@ -205,8 +208,15 @@ export declare class Renderer extends RendererWrapper {
    * @param alignment - Alignment enum value
    * @param frame - Bounds of the canvas space
    * @param content - Bounds of the Rive content
+   * @param _scaleFactor - Scale factor of the artboard when using `Fit.layout`
    */
-  align(fit: Fit, alignment: Alignment, frame: AABB, content: AABB): void;
+  align(
+    fit: Fit,
+    alignment: Alignment,
+    frame: AABB,
+    content: AABB,
+    scaleFactor?: number,
+  ): void;
 }
 
 export declare class CommandPath {}
@@ -462,6 +472,20 @@ export declare class Artboard {
    * @param path - Path of where the text exists at an artboard level
    */
   textByPath(name: string, path: string): TextValueRun;
+  /**
+   * Getter and setter for the artboard width
+   */
+  get width(): number;
+  set width(val: number);
+  /**
+   * Getter and setter for the artboard height
+   */
+  get height(): number;
+  set height(val: number);
+  /**
+   * Reset the artboard size to the original value
+   */
+  resetArtboardSize(): void;
 }
 
 export declare class Bone extends TransformComponent {
@@ -791,6 +815,7 @@ export enum Fit {
   fitHeight,
   none,
   scaleDown,
+  layout,
 }
 
 export enum RenderPaintStyle {

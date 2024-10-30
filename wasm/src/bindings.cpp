@@ -99,9 +99,13 @@ rive::Alignment convertAlignment(JsAlignment alignment)
     return rive::Alignment::center;
 }
 
-rive::Mat2D computeAlignment(rive::Fit fit, JsAlignment alignment, rive::AABB orig, rive::AABB dest)
+rive::Mat2D computeAlignment(rive::Fit fit,
+                             JsAlignment alignment,
+                             rive::AABB orig,
+                             rive::AABB dest,
+                             const float scaleFactor = 1.0f)
 {
-    return rive::computeAlignment(fit, convertAlignment(alignment), orig, dest);
+    return rive::computeAlignment(fit, convertAlignment(alignment), orig, dest, scaleFactor);
 }
 
 rive::Vec2D mapXY(rive::Mat2D invertedMatrix, rive::Vec2D canvasVector)
@@ -535,9 +539,21 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                                  const std::string& name,
                                  const std::string& path) { return self.getTextRun(name, path); }),
             allow_raw_pointers())
+        .function("resetArtboardSize",
+                  optional_override([](rive::ArtboardInstance& self) {
+                      self.width(self.originalWidth());
+                      self.height(self.originalHeight());
+                  }),
+                  allow_raw_pointers())
         .property("bounds", optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
                       return self.bounds();
                   }))
+        .property("width",
+                  select_overload<float() const>(&rive::ArtboardInstance::width),
+                  select_overload<void(float)>(&rive::ArtboardInstance::width))
+        .property("height",
+                  select_overload<float() const>(&rive::ArtboardInstance::height),
+                  select_overload<void(float)>(&rive::ArtboardInstance::height))
         .property("frameOrigin",
                   select_overload<bool() const>(&rive::Artboard::frameOrigin),
                   select_overload<void(bool)>(&rive::Artboard::frameOrigin))
@@ -809,7 +825,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .value("fitWidth", rive::Fit::fitWidth)
         .value("fitHeight", rive::Fit::fitHeight)
         .value("none", rive::Fit::none)
-        .value("scaleDown", rive::Fit::scaleDown);
+        .value("scaleDown", rive::Fit::scaleDown)
+        .value("layout", rive::Fit::layout);
 
     enum_<JsAlignment>("Alignment")
         .value("topLeft", JsAlignment::topLeft)

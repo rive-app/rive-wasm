@@ -91,9 +91,13 @@ public:
                    transform.ty());
     }
 
-    void align(rive::Fit fit, JsAlignment alignment, const rive::AABB& foo, const rive::AABB& bar)
+    void align(rive::Fit fit,
+               JsAlignment alignment,
+               const rive::AABB& foo,
+               const rive::AABB& bar,
+               const float scaleFactor = 1.0f)
     {
-        transform(computeAlignment(fit, convertAlignment(alignment), foo, bar));
+        transform(computeAlignment(fit, convertAlignment(alignment), foo, bar, scaleFactor));
     }
 
     void drawPath(rive::RenderPath* path, rive::RenderPaint* paint) override
