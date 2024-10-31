@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.22.0](https://github.com/rive-app/rive-wasm/compare/2.21.7...2.22.0)
+## [2.23.0](https://github.com/rive-app/rive-wasm/compare/2.22.0...2.23.0)
+
+### Merged
+
+- chore: tag 2.22.0 [`#372`](https://github.com/rive-app/rive-wasm/pull/372)
 
 ### Commits
 
+- feat: add responsive layout properties and other fixes [`e9364ca`](https://github.com/rive-app/rive-wasm/commit/e9364cacc2e221b22a1772690daaf18a85271f12)
+- add viewmodel and data enum system core objects [`0f38187`](https://github.com/rive-app/rive-wasm/commit/0f38187682960dd3ea2fdb08718f9242c52a43aa)
+- editor: bug fixes for image n-slicing [`39c7e39`](https://github.com/rive-app/rive-wasm/commit/39c7e3986032a4cfc5836a3121b7e43149c2bf3a)
+- Nnnn fix layout hittest order [`d3624f3`](https://github.com/rive-app/rive-wasm/commit/d3624f3f55b971b7abdd3b38409496e1626c0626)
+- editor: vector n-slicer should clamp all shapes contained [`bacab18`](https://github.com/rive-app/rive-wasm/commit/bacab18e8d0a7c7f1ff7e60adca780a8f2fae218)
+- fix for image_diff not correctly outputting newline in status file [`93b28a1`](https://github.com/rive-app/rive-wasm/commit/93b28a1bde63ebb78aca1f87d3ec5e128a96a86d)
+- Expose RenderContext methods for allocating tessellation vertices [`41edba5`](https://github.com/rive-app/rive-wasm/commit/41edba5a5323c3e25cb69b06c45900fd63a6fe79)
+
+## [2.22.0](https://github.com/rive-app/rive-wasm/compare/2.21.7...2.22.0) - 2024-10-30
+
+### Commits
+
+- chore: tag 2.22.0 [`dd1acc1`](https://github.com/rive-app/rive-wasm/commit/dd1acc146224477bab80c96bba107c728cf17073)
 - feat: add runtime layout fit type for ios, android, web [`7e555bb`](https://github.com/rive-app/rive-wasm/commit/7e555bb61e05b74e00d2eace61af74d8bf7db83d)
 - Make build script work on mac [`a2836ae`](https://github.com/rive-app/rive-wasm/commit/a2836aee735bf237f362051191bdfd4a8a3b61e6)
 - fix for imagediff avrg being wrong [`b5a6323`](https://github.com/rive-app/rive-wasm/commit/b5a6323f7dc6c05e07cd3c27e1da3edfef2794af)
