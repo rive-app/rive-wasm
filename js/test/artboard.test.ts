@@ -79,4 +79,32 @@ test("Artboard bounds can be retrieved from a loaded Rive file", (done) => {
   });
 });
 
+test("Artboard width and height can be get/set from a loaded Rive file", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    artboard: "MyArtboard",
+    buffer: stateMachineFileBuffer,
+    onLoad: () => {
+      const initialWidth = r.artboardWidth;
+      const initialHeight = r.artboardHeight;
+
+      expect(initialWidth).toBe(500);
+      expect(initialHeight).toBe(500);
+
+      r.artboardWidth = 1000;
+      r.artboardHeight = 1000;
+
+      expect(r.artboardWidth).toBe(1000);
+      expect(r.artboardHeight).toBe(1000);
+
+      r.resetArtboardSize();
+
+      expect(r.artboardWidth).toBe(initialWidth);
+      expect(r.artboardHeight).toBe(initialHeight);
+      done();
+    },
+  });
+});
+
 // #endregion

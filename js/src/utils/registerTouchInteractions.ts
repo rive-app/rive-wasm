@@ -9,6 +9,7 @@ export interface TouchInteractionsParams {
   fit: rc.Fit;
   alignment: rc.Alignment;
   isTouchScrollEnabled?: boolean;
+  layoutScaleFactor?: number;
 }
 
 interface ClientCoordinates {
@@ -69,6 +70,7 @@ export const registerTouchInteractions = ({
   fit,
   alignment,
   isTouchScrollEnabled = false,
+  layoutScaleFactor = 1.0,
 }: TouchInteractionsParams) => {
   if (
     !canvas ||
@@ -142,6 +144,7 @@ export const registerTouchInteractions = ({
         maxY: boundingRect.height,
       },
       artboard.bounds,
+      layoutScaleFactor,
     );
     const invertedMatrix = new rive.Mat2D();
     forwardMatrix.invert(invertedMatrix);

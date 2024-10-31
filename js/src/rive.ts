@@ -1510,6 +1510,13 @@ export class Rive {
   // Keep a local value of the set volume to update it asynchronously
   private _volume = 1;
 
+  // Keep a local value of the set width to update it asynchronously
+  private _artboardWidth: number | undefined = undefined;
+
+  // Keep a local value of the set height to update it asynchronously
+  private _artboardHeight: number | undefined = undefined;
+
+  // Keep a local value of the device pixel ratio used in rendering and canvas/artboard resizing
   private _devicePixelRatioUsed = 1;
 
   // Whether the canvas element's size is 0
@@ -1700,6 +1707,7 @@ export class Rive {
         fit: this._layout.runtimeFit(this.runtime),
         alignment: this._layout.runtimeAlignment(this.runtime),
         isTouchScrollEnabled: touchScrollEnabledOption,
+        layoutScaleFactor: this._layout.layoutScaleFactor,
       });
     }
   }
@@ -1730,6 +1738,16 @@ export class Rive {
     }
   }
 
+  private initArtboardSize() {
+    if (!this.artboard) return;
+
+    // Use preset values if they are not undefined
+    this._artboardWidth = this.artboard.width =
+      this._artboardWidth || this.artboard.width;
+    this._artboardHeight = this.artboard.height =
+      this._artboardHeight || this.artboard.height;
+  }
+
   // Initializes runtime with Rive data and preps for playing
   private async initData(
     artboardName: string,
@@ -1755,6 +1773,9 @@ export class Rive {
         stateMachineNames,
         autoplay,
       );
+
+      // Initialize the artboard size
+      this.initArtboardSize();
 
       // Check for audio
       this.initializeAudio();
@@ -2280,13 +2301,18 @@ export class Rive {
    * Accounts for devicePixelRatio as a multiplier to render the size of the canvas drawing surface.
    * Uses the size of the backing canvas to set new width/height attributes. Need to re-render
    * and resize the layout to match the new drawing surface afterwards.
-   * Useful function for consumers to include in a window resize listener
+   * Useful function for consumers to include in a window resize listener.
+   *
+   * This method will set the {@link devicePixelRatioUsed} property.
+   *
+   * Optionally, you can provide a {@link customDevicePixelRatio} to provide a
+   * custom value.
    */
   public resizeDrawingSurfaceToCanvas(customDevicePixelRatio?: number) {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
       const { width, height } = this.canvas.getBoundingClientRect();
       const dpr = customDevicePixelRatio || window.devicePixelRatio || 1;
-      this._devicePixelRatioUsed = dpr;
+      this.devicePixelRatioUsed = dpr;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
       this.startRendering();
@@ -2761,7 +2787,7 @@ export class Rive {
   }
 
   /**
-   * getter and setter for the volume of the artboard
+   * Getter / Setter for the volume of the artboard
    */
   public get volume(): number {
     if (this.artboard && this.artboard.volume !== this._volume) {
@@ -2775,6 +2801,84 @@ export class Rive {
     if (this.artboard) {
       this.artboard.volume = value * audioManager.systemVolume;
     }
+  }
+
+  /**
+   * The width of the artboard.
+   *
+   * This will return undefined if the artboard is not loaded yet and a custom
+   * width has not been set.
+   *
+   * Do not set this value manually when using {@link resizeDrawingSurfaceToCanvas}
+   * with a {@link Layout.fit} of {@link Fit.Layout}, as the artboard width is
+   * automatically set.
+   */
+  public get artboardWidth(): number | undefined {
+    if (this.artboard) {
+      return this.artboard.width;
+    }
+    return this._artboardWidth;
+  }
+
+  public set artboardWidth(value: number) {
+    this._artboardWidth = value;
+    if (this.artboard) {
+      this.artboard.width = value;
+    }
+  }
+
+  /**
+   * The height of the artboard.
+   *
+   * This will return undefined if the artboard is not loaded yet and a custom
+   * height has not been set.
+   *
+   * Do not set this value manually when using {@link resizeDrawingSurfaceToCanvas}
+   * with a {@link Layout.fit} of {@link Fit.Layout}, as the artboard height is
+   * automatically set.
+   */
+  public get artboardHeight(): number | undefined {
+    if (this.artboard) {
+      return this.artboard.height;
+    }
+    return this._artboardHeight;
+  }
+
+  public set artboardHeight(value: number) {
+    this._artboardHeight = value;
+
+    if (this.artboard) {
+      this.artboard.height = value;
+    }
+  }
+
+  /**
+   * Reset the artboard size to its original values.
+   */
+  public resetArtboardSize() {
+    if (this.artboard) {
+      this.artboard.resetArtboardSize();
+      this._artboardWidth = this.artboard.width;
+      this._artboardHeight = this.artboard.height;
+    } else {
+      // If the artboard isn't loaded, we need to reset the custom width and height
+      this._artboardWidth = undefined;
+      this._artboardHeight = undefined;
+    }
+  }
+
+  /**
+   * The device pixel ratio used in rendering and canvas/artboard resizing.
+   *
+   * This value will be overidden by the device pixel ratio used in
+   * {@link resizeDrawingSurfaceToCanvas}. If you use that method, do not set this value.
+   */
+  public get devicePixelRatioUsed(): number {
+    return this._devicePixelRatioUsed;
+  }
+
+  public set devicePixelRatioUsed(value: number) {
+    this._devicePixelRatioUsed = value;
   }
 }
 

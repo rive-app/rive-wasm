@@ -98,4 +98,31 @@ test("Layouts can be copied with overridden values", (): void => {
   expect(layout.maxY).toBe(40);
 });
 
+test("New Layout with Fit.Layout works as expected", (): void => {
+  let layout = new rive.Layout({
+    fit: rive.Fit.Layout,
+    layoutScaleFactor: 2,
+  });
+
+  expect(layout.fit).toBe(rive.Fit.Layout);
+  expect(layout.layoutScaleFactor).toBe(2);
+});
+
+test("layoutScaleFactor can be copied with overridden values", (): void => {
+  let layout = new rive.Layout({
+    fit: rive.Fit.Layout,
+    layoutScaleFactor: 2,
+  });
+
+  expect(layout.fit).toBe(rive.Fit.Layout);
+  expect(layout.layoutScaleFactor).toBe(2);
+
+  layout = layout.copyWith({
+    layoutScaleFactor: 3,
+  });
+
+  expect(layout.fit).toBe(rive.Fit.Layout);
+  expect(layout.layoutScaleFactor).toBe(3);
+});
+
 // #endregion
