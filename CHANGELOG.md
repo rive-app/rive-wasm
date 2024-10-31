@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.21.7](https://github.com/rive-app/rive-wasm/compare/2.21.6...2.21.7)
+## [2.22.0](https://github.com/rive-app/rive-wasm/compare/2.21.7...2.22.0)
 
 ### Commits
 
+- feat: add runtime layout fit type for ios, android, web [`7e555bb`](https://github.com/rive-app/rive-wasm/commit/7e555bb61e05b74e00d2eace61af74d8bf7db83d)
+- Make build script work on mac [`a2836ae`](https://github.com/rive-app/rive-wasm/commit/a2836aee735bf237f362051191bdfd4a8a3b61e6)
+- fix for imagediff avrg being wrong [`b5a6323`](https://github.com/rive-app/rive-wasm/commit/b5a6323f7dc6c05e07cd3c27e1da3edfef2794af)
+
+## [2.21.7](https://github.com/rive-app/rive-wasm/compare/2.21.6...2.21.7) - 2024-10-29
+
+### Commits
+
+- chore: tag 2.21.7 [`3482d32`](https://github.com/rive-app/rive-wasm/commit/3482d3211ff6a6bee303fa6fdc26474531357bf8)
 - Fix resources getting deleted prematurely in vkutil::ResourcePool [`b2b910b`](https://github.com/rive-app/rive-wasm/commit/b2b910b68f173a4b4fc5d2c63885e3ab2ffbd502)
 - Upgrade legacy artboards to work with layouts [`90dec32`](https://github.com/rive-app/rive-wasm/commit/90dec32b2c254eb713709a04d8f469a5a3fe89e7)
 - Layout fractional sizes & flexBasis [`48eb586`](https://github.com/rive-app/rive-wasm/commit/48eb5860c59f0e1c42158427fc771e7a437115f9)
