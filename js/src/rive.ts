@@ -217,23 +217,49 @@ export class RuntimeLoader {
           RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        // Capture specific error details
+        const errorDetails = {
+          message: error?.message || "Unknown error",
+          type: error?.name || "Error",
+          // Some browsers may provide additional WebAssembly-specific details
+          wasmError:
+            error instanceof WebAssembly.CompileError ||
+            error instanceof WebAssembly.RuntimeError,
+          originalError: error,
+        };
+
+        // Log detailed error for debugging
+        console.debug("Rive WASM load error details:", errorDetails);
+
         // In case unpkg fails, or the wasm was not supported, we try to load the fallback module from jsdelivr.
         // This `rive_fallback.wasm` is compiled to support older architecture.
         // TODO: (Gordon): preemptively test browser support and load the correct wasm file. Then use jsdelvr only if unpkg fails.
         const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive_fallback.wasm`;
         if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
           console.warn(
-            `Failed to load WASM from ${RuntimeLoader.wasmURL}, trying jsdelivr as a backup`,
+            `Failed to load WASM from ${RuntimeLoader.wasmURL} (${errorDetails.message}), trying jsdelivr as a backup`,
           );
           RuntimeLoader.setWasmUrl(backupJsdelivrUrl);
           RuntimeLoader.loadRuntime();
         } else {
-          console.error(
-            "Could not load Rive WASM file from unpkg or jsdelivr, network connection may be down, or \
-        you may need to call set a new WASM source via RuntimeLoader.setWasmUrl() and call \
-        RuntimeLoader.loadRuntime() again",
-          );
+          const errorMessage = [
+            `Could not load Rive WASM file from ${RuntimeLoader.wasmURL} or ${backupJsdelivrUrl}.`,
+            "Possible reasons:",
+            "- Network connection is down",
+            "- WebAssembly is not supported in this environment",
+            "- The WASM file is corrupted or incompatible",
+            "\nError details:",
+            `- Type: ${errorDetails.type}`,
+            `- Message: ${errorDetails.message}`,
+            `- WebAssembly-specific error: ${errorDetails.wasmError}`,
+            "\nTo resolve, you may need to:",
+            "1. Check your network connection",
+            "2. Set a new WASM source via RuntimeLoader.setWasmUrl()",
+            "3. Call RuntimeLoader.loadRuntime() again",
+          ].join("\n");
+
+          console.error(errorMessage);
         }
       });
   }
@@ -262,6 +288,11 @@ export class RuntimeLoader {
   // Manually sets the wasm url
   public static setWasmUrl(url: string): void {
     RuntimeLoader.wasmURL = url;
+  }
+
+  // Gets the current wasm url
+  public static getWasmUrl(): string {
+    return RuntimeLoader.wasmURL;
   }
 }
 
