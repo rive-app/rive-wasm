@@ -370,13 +370,13 @@ export declare class Artboard {
   /**
    * Getter and setter for the artboard width
    */
-  get artboardWidth(): number | undefined;
+  get artboardWidth(): number;
   set artboardWidth(val: number);
 
   /**
    * Getter and setter for the artboard height
    */
-  get artboardHeight(): number | undefined;
+  get artboardHeight(): number;
   set artboardHeight(val: number);
 
   /**

@@ -2837,18 +2837,18 @@ export class Rive {
   /**
    * The width of the artboard.
    *
-   * This will return undefined if the artboard is not loaded yet and a custom
+   * This will return 0 if the artboard is not loaded yet and a custom
    * width has not been set.
    *
    * Do not set this value manually when using {@link resizeDrawingSurfaceToCanvas}
    * with a {@link Layout.fit} of {@link Fit.Layout}, as the artboard width is
    * automatically set.
    */
-  public get artboardWidth(): number | undefined {
+  public get artboardWidth(): number {
     if (this.artboard) {
       return this.artboard.width;
     }
-    return this._artboardWidth;
+    return this._artboardWidth ?? 0;
   }
 
   public set artboardWidth(value: number) {
@@ -2861,18 +2861,18 @@ export class Rive {
   /**
    * The height of the artboard.
    *
-   * This will return undefined if the artboard is not loaded yet and a custom
+   * This will return 0 if the artboard is not loaded yet and a custom
    * height has not been set.
    *
    * Do not set this value manually when using {@link resizeDrawingSurfaceToCanvas}
    * with a {@link Layout.fit} of {@link Fit.Layout}, as the artboard height is
    * automatically set.
    */
-  public get artboardHeight(): number | undefined {
+  public get artboardHeight(): number {
     if (this.artboard) {
       return this.artboard.height;
     }
-    return this._artboardHeight;
+    return this._artboardHeight ?? 0;
   }
 
   public set artboardHeight(value: number) {

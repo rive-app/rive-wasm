@@ -13,19 +13,18 @@ const artboardInitialHeight = 500;
 let mockGetBoundingClientRect: jest.SpyInstance;
 
 beforeEach(() => {
-  mockGetBoundingClientRect = jest.spyOn(
-    HTMLElement.prototype,
-    'getBoundingClientRect'
-  ).mockImplementation(() => ({
-    width: canvasInitialWidth,
-    height: canvasInitialHeight,
-    top: 0,
-    left: 0,
-    right: canvasInitialWidth,
-    bottom: canvasInitialHeight,
-    x: 0,
-    y: 0,
-  }));
+  mockGetBoundingClientRect = jest
+    .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+    .mockImplementation(() => ({
+      width: canvasInitialWidth,
+      height: canvasInitialHeight,
+      top: 0,
+      left: 0,
+      right: canvasInitialWidth,
+      bottom: canvasInitialHeight,
+      x: 0,
+      y: 0,
+    }));
 });
 
 afterEach(() => {
@@ -46,7 +45,6 @@ test("Layout of type Fit.Layout adjusts artboard and canvas size", (done) => {
       fit: rive.Fit.Layout,
     }),
     onLoad: () => {
-
       // Validate initial sizes
       expect(r.artboardWidth).toBe(artboardInitialWidth);
       expect(r.artboardHeight).toBe(artboardInitialHeight);
@@ -93,7 +91,6 @@ test("Layout of type Fit.Layout adjusts artboard and canvas size", (done) => {
       expect(r.artboardWidth).toBe(canvas.width / devicePixelRatio);
       expect(r.artboardHeight).toBe(canvasInitialHeight);
       expect(r.artboardHeight).toBe(canvas.height / devicePixelRatio);
-
 
       // Change layout scale factor to 2
       var layoutScaleFactor = 2;
@@ -154,19 +151,17 @@ test("Artboard size can be set before onLoad", (done) => {
 
       done();
     },
-
   });
   // Artboard width should be undefined before onLoad
-  expect(r.artboardWidth).toBe(undefined);
+  expect(r.artboardWidth).toBe(0);
   // Artboard height should be undefined before onLoad
-  expect(r.artboardHeight).toBe(undefined);
+  expect(r.artboardHeight).toBe(0);
 
   // Set artboard width and height before onLoad
   r.artboardWidth = 100;
   r.artboardHeight = 200;
   expect(r.artboardWidth).toBe(100);
   expect(r.artboardHeight).toBe(200);
-
 });
 
 test("devicePixelRatioUsed can be get/set", (done) => {
