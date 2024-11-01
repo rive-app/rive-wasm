@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.0](https://github.com/rive-app/rive-wasm/compare/2.22.0...2.23.0)
+## [2.23.1](https://github.com/rive-app/rive-wasm/compare/2.23.0...2.23.1)
+
+### Commits
+
+- TypeScript missing layout type declarations [`4756b75`](https://github.com/rive-app/rive-wasm/commit/4756b75328900e575c0f9e0264eff65608bca39e)
+- Ensure LayoutComponent doesnt try to access bg path if layout not compiled in [`5b0fb1e`](https://github.com/rive-app/rive-wasm/commit/5b0fb1e83a229376b33afc9e8c0fee0a2ecd9e1a)
+- Updating to latest harfbuzz for coretext issue [`176a24c`](https://github.com/rive-app/rive-wasm/commit/176a24cb65b416ea7e2a9079352b51e6fba3398f)
+
+## [2.23.0](https://github.com/rive-app/rive-wasm/compare/2.22.0...2.23.0) - 2024-10-31
 
 ### Merged
 
@@ -13,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.23.0 [`9531669`](https://github.com/rive-app/rive-wasm/commit/953166978370a84571b0f8210a2cc0c40ff43bf1)
 - feat: add responsive layout properties and other fixes [`e9364ca`](https://github.com/rive-app/rive-wasm/commit/e9364cacc2e221b22a1772690daaf18a85271f12)
 - add viewmodel and data enum system core objects [`0f38187`](https://github.com/rive-app/rive-wasm/commit/0f38187682960dd3ea2fdb08718f9242c52a43aa)
 - editor: bug fixes for image n-slicing [`39c7e39`](https://github.com/rive-app/rive-wasm/commit/39c7e3986032a4cfc5836a3121b7e43149c2bf3a)
