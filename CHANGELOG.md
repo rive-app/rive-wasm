@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.2](https://github.com/rive-app/rive-wasm/compare/2.23.1...2.23.2)
+## [2.23.3](https://github.com/rive-app/rive-wasm/compare/2.23.2...2.23.3)
 
 ### Commits
 
+- refactor: remove undefined for get artboard width and height [`6b49f3f`](https://github.com/rive-app/rive-wasm/commit/6b49f3fc65e6bd5561ce7cb9b3ef338aa81d0e19)
+- runtime: add support for gradients in vector n-slicer [`6baef86`](https://github.com/rive-app/rive-wasm/commit/6baef864408bf114d1ba348ca6f31afc9a6f5785)
+- Add an experimental "clockwiseAtomic" rendering mode [`2b824d7`](https://github.com/rive-app/rive-wasm/commit/2b824d7a8dec41efb5fbab35f638c1c6968623aa)
+
+## [2.23.2](https://github.com/rive-app/rive-wasm/compare/2.23.1...2.23.2) - 2024-11-01
+
+### Commits
+
+- chore: tag 2.23.2 [`b6fa9d2`](https://github.com/rive-app/rive-wasm/commit/b6fa9d29fc1dd89751453c5ccc3a1b47c157fee0)
 - chore: wasm expanded error messages [`0d113ce`](https://github.com/rive-app/rive-wasm/commit/0d113cea516d8c3a7949c212524ad2fbef712aa4)
 
 ## [2.23.1](https://github.com/rive-app/rive-wasm/compare/2.23.0...2.23.1) - 2024-11-01
