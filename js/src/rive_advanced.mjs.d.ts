@@ -366,6 +366,29 @@ export declare class Artboard {
    */
   get volume(): number;
   set volume(val: number);
+
+  /**
+   * Getter and setter for the artboard width
+   */
+  get artboardWidth(): number;
+  set artboardWidth(val: number);
+
+  /**
+   * Getter and setter for the artboard height
+   */
+  get artboardHeight(): number;
+  set artboardHeight(val: number);
+
+  /**
+   * Getter and setter used in rendering and canvas/artboard resizing
+   */
+  get devicePixelRatioUsed(): number;
+  set devicePixelRatioUsed(val: number);
+
+  /**
+   * Reset the artboard size to its original values
+   */
+  resetArtboardSize(): void;
   /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this
    * instance when no longer in use
