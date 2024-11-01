@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.1](https://github.com/rive-app/rive-wasm/compare/2.23.0...2.23.1)
+## [2.23.2](https://github.com/rive-app/rive-wasm/compare/2.23.1...2.23.2)
 
 ### Commits
 
+- chore: wasm expanded error messages [`0d113ce`](https://github.com/rive-app/rive-wasm/commit/0d113cea516d8c3a7949c212524ad2fbef712aa4)
+
+## [2.23.1](https://github.com/rive-app/rive-wasm/compare/2.23.0...2.23.1) - 2024-11-01
+
+### Commits
+
+- chore: tag 2.23.1 [`781cfb4`](https://github.com/rive-app/rive-wasm/commit/781cfb4dce8acb1b5456a5980277fc702af32387)
 - TypeScript missing layout type declarations [`4756b75`](https://github.com/rive-app/rive-wasm/commit/4756b75328900e575c0f9e0264eff65608bca39e)
 - Ensure LayoutComponent doesnt try to access bg path if layout not compiled in [`5b0fb1e`](https://github.com/rive-app/rive-wasm/commit/5b0fb1e83a229376b33afc9e8c0fee0a2ecd9e1a)
 - Updating to latest harfbuzz for coretext issue [`176a24c`](https://github.com/rive-app/rive-wasm/commit/176a24cb65b416ea7e2a9079352b51e6fba3398f)
