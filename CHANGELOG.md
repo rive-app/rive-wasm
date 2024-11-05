@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.3](https://github.com/rive-app/rive-wasm/compare/2.23.2...2.23.3)
+## [2.23.4](https://github.com/rive-app/rive-wasm/compare/2.23.3...2.23.4)
 
 ### Commits
 
+- Layout Fixes [`85f3ba1`](https://github.com/rive-app/rive-wasm/commit/85f3ba1068fe988fb3cf8ab162252330f8579fb4)
+- Use imageAsset size for layout [`99eb5ae`](https://github.com/rive-app/rive-wasm/commit/99eb5ae893b038460802aea6584f0f0189ddaf6a)
+- Fix inconsistent layout overflow behavior [`207bbd1`](https://github.com/rive-app/rive-wasm/commit/207bbd1395c68bb46e9726e4879d8ab599c4ac16)
+- Artboard object validation [`f3d7484`](https://github.com/rive-app/rive-wasm/commit/f3d7484dcb3f5f835bdcc185cff6dc988333c890)
+- search for ios sysroot only when necessary [`aa6b70e`](https://github.com/rive-app/rive-wasm/commit/aa6b70e9e9894ec9cecf03fb6d1e8b9346e201b3)
+
+## [2.23.3](https://github.com/rive-app/rive-wasm/compare/2.23.2...2.23.3) - 2024-11-01
+
+### Commits
+
+- chore: tag 2.23.3 [`a435dfb`](https://github.com/rive-app/rive-wasm/commit/a435dfb28841c3d78481d9b98d7e8a84eb9ce50e)
 - refactor: remove undefined for get artboard width and height [`6b49f3f`](https://github.com/rive-app/rive-wasm/commit/6b49f3fc65e6bd5561ce7cb9b3ef338aa81d0e19)
 - runtime: add support for gradients in vector n-slicer [`6baef86`](https://github.com/rive-app/rive-wasm/commit/6baef864408bf114d1ba348ca6f31afc9a6f5785)
 - Add an experimental "clockwiseAtomic" rendering mode [`2b824d7`](https://github.com/rive-app/rive-wasm/commit/2b824d7a8dec41efb5fbab35f638c1c6968623aa)
