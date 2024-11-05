@@ -30,8 +30,9 @@ class WebGL2RenderBuffer;
 
 using PLSResourceID = uint64_t;
 
-static std::atomic<PLSResourceID> s_nextWebGL2ImageID;
 static std::atomic<PLSResourceID> s_nextWebGL2BufferID;
+
+#define EXPORT extern "C" EMSCRIPTEN_KEEPALIVE
 
 // Singleton RiveRenderFactory implementation for WebGL 2.
 // All objects are context free and keyed to actual resources the the specific GL contexts.
@@ -49,7 +50,6 @@ public:
     void unregisterContext(WebGL2Renderer* renderer) { m_renderers.erase(renderer); }
 
     // Hooks for WebGL 2 objects to notify all contexts when they get deleted.
-    void onWebGL2ImageDeleted(WebGL2RenderImage*);
     void onWebGL2BufferDeleted(WebGL2RenderBuffer*);
 
     rcp<RenderImage> decodeImage(Span<const uint8_t> encodedBytes) override;
@@ -61,29 +61,6 @@ private:
     WebGL2Factory() = default;
 
     std::set<WebGL2Renderer*> m_renderers;
-};
-
-// High-level, context agnostic RenderImage for the WebGL2 system. Wraps a blob of encoded image
-// data, which is then decoded and uploaded to a texture on each separate context.
-class WebGL2RenderImage : public LITE_RTTI_OVERRIDE(RenderImage, WebGL2RenderImage)
-{
-public:
-    WebGL2RenderImage(Span<const uint8_t> encodedBytes) :
-        m_encodedBytes(encodedBytes.begin(), encodedBytes.end())
-    {
-        m_Width = 0;
-        m_Height = 0;
-    }
-
-    ~WebGL2RenderImage() { WebGL2Factory::Instance()->onWebGL2ImageDeleted(this); }
-
-    PLSResourceID uniqueID() const { return m_uniqueID; }
-    const std::vector<const uint8_t>& encodedBytes() const { return m_encodedBytes; }
-
-private:
-    friend class PLSPromiseImage;
-    const PLSResourceID m_uniqueID = ++s_nextWebGL2ImageID;
-    const std::vector<const uint8_t> m_encodedBytes;
 };
 
 // RAII utility to set and restore the current GL context.
@@ -112,39 +89,91 @@ private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_previousContext;
 };
 
-// Wraps an Image that will be decoded in the future.
-class PLSPromiseImage
+EM_JS(void, decode_image, (uintptr_t renderImage, uintptr_t imgDataPtr, int imgDataLength), {
+    var images = Module["images"];
+    if (!images)
+    {
+        images = new Map();
+        Module["images"] = images;
+    }
+
+    var image = new Image();
+    images.set(renderImage, image);
+    // Copy heap as it's a SharedBufferArray which cannot be used for
+    // Blob.
+    var sourceView = Module["HEAP8"].subarray(imgDataPtr, imgDataPtr + imgDataLength);
+    var buffer = new Uint8Array(imgDataLength);
+    buffer.set(sourceView);
+    image.src = URL.createObjectURL(new Blob([buffer], {
+        type:
+            "image/png"
+    }));
+    image.onload = function() { Module["_setWebImage"](renderImage, image.width, image.height); };
+});
+
+EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uintptr_t renderImage), {
+    var images = Module["images"];
+    if (!images)
+    {
+        return;
+    }
+
+    var image = images.get(renderImage);
+    if (!image)
+    {
+        console.log("NO IMAGE");
+        return;
+    }
+    gl = GL.getContext(gl).GLctx;
+    console.log("GL IS", gl, image);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    images.delete(renderImage);
+});
+
+// High-level, context agnostic RenderImage for the WebGL2 system. Wraps a blob of encoded image
+// data, which is then decoded and uploaded to a texture on each separate context.
+class WebGL2RenderImage : public LITE_RTTI_OVERRIDE(RenderImage, WebGL2RenderImage)
 {
 public:
-    PLSPromiseImage(const PLSPromiseImage&) = delete;
-    PLSPromiseImage& operator=(const PLSPromiseImage&) = delete;
+    WebGL2RenderImage(Span<const uint8_t> encodedBytes)
+    {
+        m_Width = 0;
+        m_Height = 0;
 
-    PLSPromiseImage(const WebGL2Renderer*, const WebGL2RenderImage*);
+        ref();
+        decode_image(reinterpret_cast<uintptr_t>(this),
+                     reinterpret_cast<uintptr_t>(encodedBytes.data()),
+                     encodedBytes.size());
+    }
 
-    PLSPromiseImage(PLSPromiseImage&& rval) :
-        m_contextGL(rval.m_contextGL),
-        m_decodingTextureID(rval.m_decodingTextureID),
-        m_renderImage(std::move(rval.m_renderImage))
-    {}
-
-    ~PLSPromiseImage()
+    ~WebGL2RenderImage()
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-        if (m_decodingTextureID != 0)
-        {
-            glDeleteTextures(1, &m_decodingTextureID);
-        }
         m_renderImage.reset();
     }
 
-    RiveRenderImage* getImage(const WebGL2Renderer*, const WebGL2RenderImage*);
+    void setWebImage(int width, int height)
+    {
+        m_Width = width;
+        m_Height = height;
+        m_readyToUpload = true;
+        decodedAsync();
+    }
 
 private:
-    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL;
-    GLuint m_decodingTextureID = 0;
+    bool m_readyToUpload = false;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = 0;
     rcp<RiveRenderImage> m_renderImage;
-    PLSResourceID m_frameIDWhenValid = 0;
+
+public:
+    RenderImage* prep(WebGL2Renderer* webglRenderer, const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context);
 };
+
+EXPORT void setWebImage(WebGL2RenderImage* renderImage, int width, int height)
+{
+    renderImage->setWebImage(width, height);
+    renderImage->unref();
+}
 
 // Shared object that holds the contents of a WebGL2Buffer. PLS buffers are synchronized to these
 // contents on every draw.
@@ -239,7 +268,6 @@ public:
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
         m_plsSynchronizedBuffers.clear();
-        m_plsPromiseImages.clear();
         m_renderTarget.release();
         m_renderContext.release();
     }
@@ -304,7 +332,8 @@ public:
     void drawImage(const RenderImage* renderImage, BlendMode blendMode, float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (RiveRenderImage* renderImage = getImage(webglRenderImage))
+        renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
+        if (renderImage != nullptr)
         {
             // The renderImage is done decoding.
             RiveRenderer::drawImage(renderImage, blendMode, opacity);
@@ -321,7 +350,8 @@ public:
                        float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        if (RiveRenderImage* renderImage = getImage(webglRenderImage))
+        renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
+        if (renderImage != nullptr)
         {
             // The renderImage is done decoding.
             LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
@@ -344,12 +374,6 @@ public:
         m_renderContext->flush({.renderTarget = m_renderTarget.get()});
     }
 
-    // Delete our corresponding PLS image when a WebGL2RenderImage is deleted.
-    void onWebGL2ImageDeleted(PLSResourceID webglImageID)
-    {
-        m_plsPromiseImages.erase(webglImageID);
-    }
-
     // Delete our corresponding PLS buffer when a WebGL2RenderBuffer is deleted.
     void onWebGL2BufferDeleted(PLSResourceID webglBufferID)
     {
@@ -357,13 +381,6 @@ public:
     }
 
 private:
-    RiveRenderImage* getImage(const WebGL2RenderImage* webglImage)
-    {
-        PLSPromiseImage& promiseImage =
-            m_plsPromiseImages.try_emplace(webglImage->uniqueID(), this, webglImage).first->second;
-        return promiseImage.getImage(this, webglImage);
-    }
-
     rcp<RenderBuffer> refPLSBuffer(WebGL2RenderBuffer* wglBuff)
     {
         PLSSynchronizedBuffer& synchronizedBuffer =
@@ -376,102 +393,33 @@ private:
     std::unique_ptr<RenderContext> m_renderContext;
     rcp<FramebufferRenderTargetGL> m_renderTarget;
 
-    std::map<PLSResourceID, PLSPromiseImage> m_plsPromiseImages;
     std::map<PLSResourceID, PLSSynchronizedBuffer> m_plsSynchronizedBuffers;
 
     PLSResourceID m_currentFrameID = 0;
 };
 
-EM_JS(void, begin_texture_image_decode, (GLuint texture, uintptr_t imgDataPtr, int imgDataLength), {
-    texture = GL.textures[texture];
-    texture.image = new Image();
-    texture.image.src = URL.createObjectURL(
-        new Blob([Module["HEAP8"].subarray(imgDataPtr, imgDataPtr + imgDataLength)]),
-        {type : "image/png"});
-    texture.complete = false;
-});
-
-EM_JS(bool, is_texture_image_done_decoding, (GLuint texture), {
-    texture = GL.textures[texture];
-    return texture.complete || texture.image.complete;
-});
-
-EM_JS(void, set_decoded_tex_image_2d, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, GLuint texture), {
-    gl = GL.getContext(gl).GLctx;
-    texture = GL.textures[texture];
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
-    texture.imageWidth = texture.image.width;
-    texture.imageHeight = texture.image.height;
-    texture.complete = true;
-    delete texture.image;
-});
-
-EM_JS(int, texture_image_width, (GLuint texture), {
-    texture = GL.textures[texture];
-    return texture.imageWidth;
-});
-
-EM_JS(int, texture_image_height, (GLuint texture), {
-    texture = GL.textures[texture];
-    return texture.imageHeight;
-});
-
-PLSPromiseImage::PLSPromiseImage(const WebGL2Renderer* webglRenderer,
-                                 const WebGL2RenderImage* webglRenderImage) :
-    m_contextGL(webglRenderer->contextGL())
+RenderImage* WebGL2RenderImage::prep(WebGL2Renderer* webglRenderer,
+                                     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
 {
-    ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-    glGenTextures(1, &m_decodingTextureID);
-    if (m_decodingTextureID != 0)
+    if (m_readyToUpload)
     {
-        begin_texture_image_decode(
-            m_decodingTextureID,
-            reinterpret_cast<uintptr_t>(webglRenderImage->encodedBytes().data()),
-            webglRenderImage->encodedBytes().size());
+        m_readyToUpload = false;
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL = context);
+        GLuint textureId = 0;
+        glGenTextures(1, &textureId);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        webglRenderer->renderContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        upload_image(emscripten_webgl_get_current_context(), reinterpret_cast<uintptr_t>(this));
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        m_renderImage = make_rcp<RiveRenderImage>(
+            webglRenderer->renderContextGL()->adoptImageTexture(m_Width, m_Height, textureId));
     }
-}
-
-RiveRenderImage* PLSPromiseImage::getImage(const WebGL2Renderer* webglRenderer,
-                                           const WebGL2RenderImage* webglRenderImage)
-{
-    assert(emscripten_webgl_get_current_context() == m_contextGL);
-    if (m_renderImage == nullptr) // Is the image not yet decoded?
-    {
-        if (m_decodingTextureID != 0 && is_texture_image_done_decoding(m_decodingTextureID))
-        {
-            // The HTML image just finished decoding.
-            ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, m_decodingTextureID);
-            webglRenderer->renderContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-            set_decoded_tex_image_2d(emscripten_webgl_get_current_context(), m_decodingTextureID);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            m_renderImage =
-                make_rcp<RiveRenderImage>(webglRenderer->renderContextGL()->adoptImageTexture(
-                    texture_image_width(m_decodingTextureID),
-                    texture_image_height(m_decodingTextureID),
-                    m_decodingTextureID));
-            m_decodingTextureID = 0;
-            if (webglRenderImage->width() != m_renderImage->width() ||
-                webglRenderImage->height() != m_renderImage->width())
-            {
-                assert(webglRenderImage->width() == 0);
-                assert(webglRenderImage->height() == 0);
-                // Update the WebGL2RenderImage's size now that we have a decoded image.
-                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Width = m_renderImage->width();
-                const_cast<WebGL2RenderImage*>(webglRenderImage)->m_Height =
-                    m_renderImage->height();
-            }
-            // Don't draw until next frame. Even though the image is fully decoded at this point,
-            // the runtime already positioned it based on its previous, potentially empty size.
-            m_frameIDWhenValid = webglRenderer->currentFrameID() + 1;
-        }
-    }
-    return webglRenderer->currentFrameID() >= m_frameIDWhenValid ? m_renderImage.get() : nullptr;
+    return m_renderImage.get();
 }
 
 PLSSynchronizedBuffer::PLSSynchronizedBuffer(WebGL2Renderer* webglRenderer,
@@ -495,14 +443,6 @@ rcp<RenderBuffer> WebGL2Factory::makeRenderBuffer(RenderBufferType type,
                                                   size_t sizeInBytes)
 {
     return make_rcp<WebGL2RenderBuffer>(type, flags, sizeInBytes);
-}
-
-void WebGL2Factory::onWebGL2ImageDeleted(WebGL2RenderImage* webglRenderImage)
-{
-    for (WebGL2Renderer* renderer : m_renderers)
-    {
-        renderer->onWebGL2ImageDeleted(webglRenderImage->uniqueID());
-    }
 }
 
 void WebGL2Factory::onWebGL2BufferDeleted(WebGL2RenderBuffer* webglRenderBuffer)
