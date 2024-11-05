@@ -722,7 +722,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 
     class_<rive::StateMachineInstance>("StateMachineInstance")
         .constructor<rive::StateMachine*, rive::ArtboardInstance*>()
-        .function("advance", &rive::StateMachineInstance::advance, allow_raw_pointers())
+        .function(
+            "advance",
+            optional_override([](rive::StateMachineInstance& self, float elapsedTime) -> bool {
+                return self.advance(elapsedTime);
+            }))
         .function("inputCount", &rive::StateMachineInstance::inputCount)
         .function("input", &rive::StateMachineInstance::input, allow_raw_pointers())
         .function("pointerDown",
