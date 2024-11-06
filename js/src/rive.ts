@@ -1489,7 +1489,7 @@ export class Rive {
   private loaded = false;
 
   // Reference of an object that handles any observers for the animation
-  private _observed: ObservedObject | null;
+  private _observed: ObservedObject | null = null;
 
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
