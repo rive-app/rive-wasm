@@ -121,11 +121,9 @@ EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uintptr_t renderI
     var image = images.get(renderImage);
     if (!image)
     {
-        console.log("NO IMAGE");
         return;
     }
     gl = GL.getContext(gl).GLctx;
-    console.log("GL IS", gl, image);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     images.delete(renderImage);
 });
