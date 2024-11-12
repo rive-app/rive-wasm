@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.4](https://github.com/rive-app/rive-wasm/compare/2.23.3...2.23.4)
+## [2.23.5](https://github.com/rive-app/rive-wasm/compare/2.23.4...2.23.5)
 
 ### Commits
 
+- new arithmetic data converter that uses a viewmodel as input [`4760ce0`](https://github.com/rive-app/rive-wasm/commit/4760ce00a65a1223529079640fd9e57983eff019)
+- Unreal build use build rive.sh [`d011659`](https://github.com/rive-app/rive-wasm/commit/d0116592f35fc9e68d97dbe08e65d3dad9310136)
+- default data converters runtime [`77506e1`](https://github.com/rive-app/rive-wasm/commit/77506e1792c6dc2b8506f41755cdee93ecb0c7f9)
+- LayoutComponent updates properly when scaleType changes [`a29740e`](https://github.com/rive-app/rive-wasm/commit/a29740e716d530aebc41096cb43de8185526aa22)
+- fix data enum importer [`8cf5f53`](https://github.com/rive-app/rive-wasm/commit/8cf5f539cbb2356d2f2e40131f3ea5fe0f1d94cc)
+- Fix marking nested artboard layout dirty [`3f0b159`](https://github.com/rive-app/rive-wasm/commit/3f0b159518ac1eef91700ed05aa5e04ebaea6f9b)
+- add feather property [`332d4d9`](https://github.com/rive-app/rive-wasm/commit/332d4d938fab1bae1f9a53ffdd095a726c204f99)
+- Pass scaleType down to sizeable children [`4ec459b`](https://github.com/rive-app/rive-wasm/commit/4ec459b41556c23bd5748c44b52c8186a12c6ede)
+- don't expose yoga includes [`2b61bf0`](https://github.com/rive-app/rive-wasm/commit/2b61bf0dc7791c1f1e7e69a07c499aea73b74f56)
+- Nnnn render update fixes [`ef56e95`](https://github.com/rive-app/rive-wasm/commit/ef56e958c0d47003e83857a4ecd910b9f6539cc0)
+- editor and runtime: fix vector n-slicer hit area [`d19e19a`](https://github.com/rive-app/rive-wasm/commit/d19e19a2f8394310be5aab6accd358fac7b9413c)
+- Rename "atlas" -&gt; "coverage" in the clockwise shader [`2b97cb3`](https://github.com/rive-app/rive-wasm/commit/2b97cb373a9f048b2c2b4ca9c982ee6122d91e88)
+- Fix bidi [`8b171cc`](https://github.com/rive-app/rive-wasm/commit/8b171cc1b5165c00a880a2b435bcd7ba320fd9c1)
+- conditionnally  add dirt and advance [`4592ea6`](https://github.com/rive-app/rive-wasm/commit/4592ea6eb341e7103d0a4f21851d6746a615a61b)
+- Updates to AdvanceFlags [`a8533d1`](https://github.com/rive-app/rive-wasm/commit/a8533d1aa1446cddfa4a884b94fcd60cce2430c6)
+- Add AdvanceFlags [`a61e482`](https://github.com/rive-app/rive-wasm/commit/a61e4826f7083204228e1ad171bf97abdbfc0d18)
+- Fix for layout shape paint bug [`3ffb67a`](https://github.com/rive-app/rive-wasm/commit/3ffb67afff632aa8f1be9ea21e9d2d0e32c8a43c)
+- editor and runtime: allow vertices in a vector nslicer to be out of bounds [`9138225`](https://github.com/rive-app/rive-wasm/commit/9138225b8667d11fd492ff59039074b77f0c21f7)
+- add data bind support for vertex properties [`4fc1131`](https://github.com/rive-app/rive-wasm/commit/4fc1131b031c477db0e68a8646f06e0e2658704b)
+- Nnnn merge fills and strokes [`37478e7`](https://github.com/rive-app/rive-wasm/commit/37478e766e61a13aae5d0d2ddf3ad57529ec3302)
+- Use renderImage size to scale images in layouts [`4b88f4f`](https://github.com/rive-app/rive-wasm/commit/4b88f4f933180f9677d2684d726b9f3092065fac)
+- editor: NSlicer should not clamp children [`f933f68`](https://github.com/rive-app/rive-wasm/commit/f933f689e748312b187e1513c87775cf51168c15)
+- web: decode image on demand, not render [`eaa5ae8`](https://github.com/rive-app/rive-wasm/commit/eaa5ae8bf5e4e1a3d78e47abee0bd946d49325e8)
+- Working on option C for update cycle [`1a877b8`](https://github.com/rive-app/rive-wasm/commit/1a877b833531fab116963c08824d8e3b071e0c2a)
+
+## [2.23.4](https://github.com/rive-app/rive-wasm/compare/2.23.3...2.23.4) - 2024-11-05
+
+### Commits
+
+- chore: tag 2.23.4 [`52a43b2`](https://github.com/rive-app/rive-wasm/commit/52a43b287fd4a2ef45052a57bfbd6a5a80ff8ca0)
 - Layout Fixes [`85f3ba1`](https://github.com/rive-app/rive-wasm/commit/85f3ba1068fe988fb3cf8ab162252330f8579fb4)
 - Use imageAsset size for layout [`99eb5ae`](https://github.com/rive-app/rive-wasm/commit/99eb5ae893b038460802aea6584f0f0189ddaf6a)
 - Fix inconsistent layout overflow behavior [`207bbd1`](https://github.com/rive-app/rive-wasm/commit/207bbd1395c68bb46e9726e4879d8ab599c4ac16)
