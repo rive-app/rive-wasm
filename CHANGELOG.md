@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.5](https://github.com/rive-app/rive-wasm/compare/2.23.4...2.23.5)
+## [2.23.6](https://github.com/rive-app/rive-wasm/compare/2.23.5...2.23.6)
 
 ### Commits
 
+- Work around Galaxy S22 compiler bugs [`a8e812b`](https://github.com/rive-app/rive-wasm/commit/a8e812b16d5b8bd3278dc2b09164a0201ed4680d)
+- invert order of advance between parent and child [`25bd2da`](https://github.com/rive-app/rive-wasm/commit/25bd2da9f020d13c2f10d08b22c31979d8c1c443)
+- Prevent NestedArtboard advance when not playing [`ac99796`](https://github.com/rive-app/rive-wasm/commit/ac9979647e5dc79231de6734243958a5537a2307)
+- Rhi typeless uav support [`14aae87`](https://github.com/rive-app/rive-wasm/commit/14aae87a10c8d2c5486aea0a9e2f8484c75ca0f9)
+- Remove web console spam [`2245c55`](https://github.com/rive-app/rive-wasm/commit/2245c55a86c9e5832a8362e7d214d89f52387edc)
+
+## [2.23.5](https://github.com/rive-app/rive-wasm/compare/2.23.4...2.23.5) - 2024-11-12
+
+### Commits
+
+- chore: tag 2.23.5 [`e357815`](https://github.com/rive-app/rive-wasm/commit/e3578154b08990be4011ce91509cd6503c0c7010)
 - new arithmetic data converter that uses a viewmodel as input [`4760ce0`](https://github.com/rive-app/rive-wasm/commit/4760ce00a65a1223529079640fd9e57983eff019)
 - Unreal build use build rive.sh [`d011659`](https://github.com/rive-app/rive-wasm/commit/d0116592f35fc9e68d97dbe08e65d3dad9310136)
 - default data converters runtime [`77506e1`](https://github.com/rive-app/rive-wasm/commit/77506e1792c6dc2b8506f41755cdee93ecb0c7f9)
