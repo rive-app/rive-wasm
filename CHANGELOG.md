@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.6](https://github.com/rive-app/rive-wasm/compare/2.23.5...2.23.6)
+## [2.23.7](https://github.com/rive-app/rive-wasm/compare/2.23.6...2.23.7)
 
 ### Commits
 
+- accept constraints without targets [`b0c82e9`](https://github.com/rive-app/rive-wasm/commit/b0c82e97690b71517932eda1c55419bf3d391159)
+
+## [2.23.6](https://github.com/rive-app/rive-wasm/compare/2.23.5...2.23.6) - 2024-11-13
+
+### Commits
+
+- chore: tag 2.23.6 [`0b685c7`](https://github.com/rive-app/rive-wasm/commit/0b685c774d513a3a69badc21ddd9cf2f7be98a40)
 - Work around Galaxy S22 compiler bugs [`a8e812b`](https://github.com/rive-app/rive-wasm/commit/a8e812b16d5b8bd3278dc2b09164a0201ed4680d)
 - invert order of advance between parent and child [`25bd2da`](https://github.com/rive-app/rive-wasm/commit/25bd2da9f020d13c2f10d08b22c31979d8c1c443)
 - Prevent NestedArtboard advance when not playing [`ac99796`](https://github.com/rive-app/rive-wasm/commit/ac9979647e5dc79231de6734243958a5537a2307)
