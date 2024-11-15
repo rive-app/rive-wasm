@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.7](https://github.com/rive-app/rive-wasm/compare/2.23.6...2.23.7)
+## [2.23.8](https://github.com/rive-app/rive-wasm/compare/2.23.7...2.23.8)
 
 ### Commits
 
+- Dart bump to 3.5.0 [`e942590`](https://github.com/rive-app/rive-wasm/commit/e94259088f28bf7aa5d067f0492340e39f7e76be)
+- Nnnn joystick not advancing [`256f69c`](https://github.com/rive-app/rive-wasm/commit/256f69c929e266f22e78ca833054b52f6b1033c6)
+- Add a skeleton workflow for android gms on browserstack [`2e4dde2`](https://github.com/rive-app/rive-wasm/commit/2e4dde2000900a211a4d77e5aa9200ff2bb84b05)
+- Render gms to the screen when the test app is launched without a harness [`19345b2`](https://github.com/rive-app/rive-wasm/commit/19345b2c5d1dd5dcb5900645c5450cc36785268a)
+- return keep going when a state machine has changed its state [`891de52`](https://github.com/rive-app/rive-wasm/commit/891de52cc9a3f64585d3ac42b38c1b74a471a3fe)
+
+## [2.23.7](https://github.com/rive-app/rive-wasm/compare/2.23.6...2.23.7) - 2024-11-14
+
+### Commits
+
+- chore: tag 2.23.7 [`087e7f4`](https://github.com/rive-app/rive-wasm/commit/087e7f41f306f853a0aa12918d4b6fd8e7d4983e)
 - accept constraints without targets [`b0c82e9`](https://github.com/rive-app/rive-wasm/commit/b0c82e97690b71517932eda1c55419bf3d391159)
 
 ## [2.23.6](https://github.com/rive-app/rive-wasm/compare/2.23.5...2.23.6) - 2024-11-13
