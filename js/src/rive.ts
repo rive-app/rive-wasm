@@ -2251,7 +2251,10 @@ export class Rive {
       });
       return;
     }
-    this.animator.stop(animationNames);
+    // If there is no artboard, this.animator will be undefined
+    if (this.animator) {
+      this.animator.stop(animationNames);
+    }
     if (this.eventCleanup) {
       this.eventCleanup();
     }
