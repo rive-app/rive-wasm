@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.9](https://github.com/rive-app/rive-wasm/compare/2.23.8...2.23.9)
+## [2.23.10](https://github.com/rive-app/rive-wasm/compare/2.23.9...2.23.10)
+
+### Merged
+
+- bug: check for animator before running animator.stop [`#378`](https://github.com/rive-app/rive-wasm/pull/378)
 
 ### Commits
 
+- Fix bug in draw key [`4489228`](https://github.com/rive-app/rive-wasm/commit/4489228c853628c9ab56ceb91da88208cbc2c916)
+
+## [2.23.9](https://github.com/rive-app/rive-wasm/compare/2.23.8...2.23.9) - 2024-11-21
+
+### Commits
+
+- chore: tag 2.23.9 [`91ce4bf`](https://github.com/rive-app/rive-wasm/commit/91ce4bf47529a05e89da5361d035ea76c1cc6f95)
 - fix for incorrect android build option [`7f68602`](https://github.com/rive-app/rive-wasm/commit/7f686021521c3a16eec97f29fa72505def6de4d6)
 - Switch from preferLowPowerToHighPerformance to powerPreference [`219dd45`](https://github.com/rive-app/rive-wasm/commit/219dd45ec2091dd9b84e7fb30ac7c10c3fad3f57)
 - Update linear animation advanceAndApply to return if more animation remains [`6180cc0`](https://github.com/rive-app/rive-wasm/commit/6180cc001dc681eedffa7dd545479e72b52fddef)
