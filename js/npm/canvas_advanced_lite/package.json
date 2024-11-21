@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/canvas-advanced-lite",
-  "version": "2.23.8",
+  "version": "2.23.9",
   "description": "Rive's lite low-level canvas based web api.",
   "main": "canvas_advanced.mjs",
   "homepage": "https://rive.app",

@@ -5,10 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.8](https://github.com/rive-app/rive-wasm/compare/2.23.7...2.23.8)
+## [2.23.9](https://github.com/rive-app/rive-wasm/compare/2.23.8...2.23.9)
 
 ### Commits
 
+- fix for incorrect android build option [`7f68602`](https://github.com/rive-app/rive-wasm/commit/7f686021521c3a16eec97f29fa72505def6de4d6)
+- Switch from preferLowPowerToHighPerformance to powerPreference [`219dd45`](https://github.com/rive-app/rive-wasm/commit/219dd45ec2091dd9b84e7fb30ac7c10c3fad3f57)
+- Update linear animation advanceAndApply to return if more animation remains [`6180cc0`](https://github.com/rive-app/rive-wasm/commit/6180cc001dc681eedffa7dd545479e72b52fddef)
+- Add check to TextModifierGroup to prevent out of bounds access [`1b07a2e`](https://github.com/rive-app/rive-wasm/commit/1b07a2e3dd60c5a693237e74f10b6ee174a8d1ec)
+- editor: update the repeat limit for n-slicing [`afb039c`](https://github.com/rive-app/rive-wasm/commit/afb039c575e569b48cee6f787b4312fa78b7e860)
+- CoreText fallback shaper ex [`137ed73`](https://github.com/rive-app/rive-wasm/commit/137ed73f78932dc249d5bf693e8acf2ac7fd5b05)
+- image diff hiistogram mode [`2375384`](https://github.com/rive-app/rive-wasm/commit/237538427ab71cf9f3d2e0b22eaa7c5780035a49)
+- feat: expose hit test to runtimes [`1682660`](https://github.com/rive-app/rive-wasm/commit/1682660764a0ae5f2333b2ae35d98fccd8b51832)
+- Fixup android_gms_browserstack [`3e048e4`](https://github.com/rive-app/rive-wasm/commit/3e048e4866310d0f890481f071290e4807cecf32)
+- Nnnn range data converter [`4cf0b41`](https://github.com/rive-app/rive-wasm/commit/4cf0b4198fd415a0c39e36db3f7be3d963164876)
+- Normalize GM tests [`ed4feae`](https://github.com/rive-app/rive-wasm/commit/ed4feaeb7d43195b9dac44cdeaba0ecb15a47da5)
+- Rename USING_DEPTH_STENCIL to RENDERING_MODE_MSAA [`28e9f3c`](https://github.com/rive-app/rive-wasm/commit/28e9f3c4e50680cd24e1cecec7e8a97b8a1cb3ce)
+- Fix invalid memory access [`82de4ad`](https://github.com/rive-app/rive-wasm/commit/82de4add012b939714aa8e66d50228453e4a43b8)
+- Fix clip planes on S22/Xclipse/ANGLE [`8c0b53c`](https://github.com/rive-app/rive-wasm/commit/8c0b53ce55407090b64a3be07d4c9eb278a83359)
+- Add an android_gms job to browserstack [`9dda5c8`](https://github.com/rive-app/rive-wasm/commit/9dda5c8889a3ee5e88f014327ef59ce87d38eac8)
+- editor: be more mindful of sending dirt recursively when n-slicing [`f7b5a23`](https://github.com/rive-app/rive-wasm/commit/f7b5a23a31b954cb865b598175490e254e0a37e1)
+- Fix NestedAnimation skipping export too late [`f13a928`](https://github.com/rive-app/rive-wasm/commit/f13a928651f3ecd7583833b77e7a519fcf8c6e44)
+
+## [2.23.8](https://github.com/rive-app/rive-wasm/compare/2.23.7...2.23.8) - 2024-11-15
+
+### Commits
+
+- chore: tag 2.23.8 [`9900b9d`](https://github.com/rive-app/rive-wasm/commit/9900b9d68cbf09639c79ff9425edf10826393531)
 - Dart bump to 3.5.0 [`e942590`](https://github.com/rive-app/rive-wasm/commit/e94259088f28bf7aa5d067f0492340e39f7e76be)
 - Nnnn joystick not advancing [`256f69c`](https://github.com/rive-app/rive-wasm/commit/256f69c929e266f22e78ca833054b52f6b1033c6)
 - Add a skeleton workflow for android gms on browserstack [`2e4dde2`](https://github.com/rive-app/rive-wasm/commit/2e4dde2000900a211a4d77e5aa9200ff2bb84b05)
