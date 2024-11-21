@@ -71,7 +71,7 @@ Module["onRuntimeInitialized"] = function () {
       "antialias": enableMSAA,
       "premultipliedAlpha": true,
       "preserveDrawingBuffer": 0,
-      "preferLowPowerToHighPerformance": 0,
+      "powerPreference": "high-performance",
       "failIfMajorPerformanceCaveat": 0,
       "enableExtensionsByDefault": false,
       "explicitSwapControl": 0,

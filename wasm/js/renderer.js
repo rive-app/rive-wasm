@@ -50,7 +50,7 @@ const offscreenWebGL = new (function () {
         "antialias": 0,
         "premultipliedAlpha": 1,
         "preserveDrawingBuffer": 0,
-        "preferLowPowerToHighPerformance": 0,
+        "powerPreference": "high-performance",
         "failIfMajorPerformanceCaveat": 0,
         "enableExtensionsByDefault": 1,
         "explicitSwapControl": 1,
