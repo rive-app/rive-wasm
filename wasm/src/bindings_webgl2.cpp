@@ -125,6 +125,20 @@ EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uintptr_t renderI
     }
     gl = GL.getContext(gl).GLctx;
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+});
+
+EM_JS(void, delete_image, (uintptr_t renderImage), {
+    var images = Module["images"];
+    if (!images)
+    {
+        return;
+    }
+
+    var image = images.get(renderImage);
+    if (!image)
+    {
+        return;
+    }
     images.delete(renderImage);
 });
 
@@ -147,6 +161,7 @@ public:
     ~WebGL2RenderImage()
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        delete_image(reinterpret_cast<uintptr_t>(this));
         m_renderImage.reset();
     }
 
@@ -399,9 +414,14 @@ private:
 RenderImage* WebGL2RenderImage::prep(WebGL2Renderer* webglRenderer,
                                      const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
 {
+    // Only return the existing render image if its from the same context,
+    // otherwise we need to re-upload.
+    if (context == m_contextGL && m_renderImage)
+    {
+        return m_renderImage.get();
+    }
     if (m_readyToUpload)
     {
-        m_readyToUpload = false;
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL = context);
         GLuint textureId = 0;
         glGenTextures(1, &textureId);
