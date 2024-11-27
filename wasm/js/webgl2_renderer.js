@@ -103,24 +103,43 @@ Module["onRuntimeInitialized"] = function () {
         offscreenCanvas.width = 1;
         offscreenCanvas.height = 1;
         _offscreenGL = makeGLRenderer(offscreenCanvas, enableMSAA);
+
         _offscreenGL._hasPixelLocalStorage =
               Boolean(_offscreenGL._gl.getExtension("WEBGL_shader_pixel_local_storage"));
+
         _offscreenGL._maxRTSize = Math.min(
           _offscreenGL._gl.getParameter(_offscreenGL._gl.MAX_RENDERBUFFER_SIZE),
           _offscreenGL._gl.getParameter(_offscreenGL._gl.MAX_TEXTURE_SIZE)
         );
+
+        // WEBGL_shader_pixel_local_storage works without MSAA.
+        _offscreenGL._enableAntialiasCanvas = !_offscreenGL._hasPixelLocalStorage
+
+        const webglDebugInfo = _offscreenGL._gl.getExtension("WEBGL_debug_renderer_info")
+        if (webglDebugInfo) {
+          const vendor = _offscreenGL._gl.getParameter(webglDebugInfo.UNMASKED_VENDOR_WEBGL);
+          const renderer = _offscreenGL._gl.getParameter(webglDebugInfo.UNMASKED_RENDERER_WEBGL);
+          if (vendor.includes("Google") && renderer.includes("ANGLE Metal Renderer")) {
+            // We experience flickering on Chrome/Metal when using a WebGL context with
+            // "antialias:true". This appears to be a synchronization issue internal to the browser.
+            // Avoid "antialias:true" in this case, opting instead to do our own internal MSAA.
+            _offscreenGL._enableAntialiasCanvas = false
+          }
+        }
+
         return _offscreenGL;
       }
+
       _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/true);
-      if (_offscreenGL._hasPixelLocalStorage) {
-        // This browser has WEBGL_shader_pixel_local_storage! Re-create the offscreen without MSAA.
+      if (!_offscreenGL._enableAntialiasCanvas) {
+        // This browser prefers "antialias:false". Re-create the offscreen without MSAA.
         _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/false);
       }
     }
     if (useOffScreenRenderer) {
       return new OffscreenRenderer(canvas);
     }
-    return makeGLRenderer(canvas, /*enableMSAA =*/!_offscreenGL._hasPixelLocalStorage);
+    return makeGLRenderer(canvas, /*enableMSAA =*/_offscreenGL._enableAntialiasCanvas);
   };
 
   const wasmDraw = Module["Artboard"]["prototype"]["draw"];
