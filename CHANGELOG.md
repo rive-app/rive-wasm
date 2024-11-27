@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.10](https://github.com/rive-app/rive-wasm/compare/2.23.9...2.23.10)
+## [2.23.11](https://github.com/rive-app/rive-wasm/compare/2.23.10...2.23.11)
+
+### Commits
+
+- Re-upload webgl texture data if context changes. [`a76c5aa`](https://github.com/rive-app/rive-wasm/commit/a76c5aa01c543cd3cdd92f7b9bdf8efecb2a365b)
+- Support supplying mobile fallback fonts by style with caching [`b0b8382`](https://github.com/rive-app/rive-wasm/commit/b0b838266d48463c4d6643d1539292c21a47ac43)
+- fixed url for canddiates and goldens in not pack mode [`50e5f75`](https://github.com/rive-app/rive-wasm/commit/50e5f750cafc23b7c464bb7f70028a7db47af366)
+- Fix flicker on webgl2 runtime [`84a6e9b`](https://github.com/rive-app/rive-wasm/commit/84a6e9b9be2cec7b1025110435b1bcb607aa6c0b)
+- treat remapped animations as always settled [`1d31192`](https://github.com/rive-app/rive-wasm/commit/1d3119229c18c208cc20c69b470e665a7ff16083)
+- update measure function to use its text wrap and max size [`01c8bc6`](https://github.com/rive-app/rive-wasm/commit/01c8bc6b7920a85cc728a9d332ac0cbf6fb10c5e)
+- add support for standalone custom properties to bind values to [`11392cd`](https://github.com/rive-app/rive-wasm/commit/11392cdb43e298089dce7013deaf6d29eb7f9576)
+- Dx11 support [`9031503`](https://github.com/rive-app/rive-wasm/commit/9031503e2b2951d7e513056ee00b1f17928f3625)
+- support wrapping text in auto width inside a layout [`f200b48`](https://github.com/rive-app/rive-wasm/commit/f200b483f96b643413ec152bd8825cbcdadbae76)
+- fixed workflow stuff [`df9e923`](https://github.com/rive-app/rive-wasm/commit/df9e923f701562dc6b0c847b4e15ca76e81ddabf)
+- updates to diff.py [`442fd8f`](https://github.com/rive-app/rive-wasm/commit/442fd8f155730399865d71df0cc3a98c5cbe47cb)
+
+## [2.23.10](https://github.com/rive-app/rive-wasm/compare/2.23.9...2.23.10) - 2024-11-21
 
 ### Merged
 
@@ -13,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.23.10 [`b0a9ad1`](https://github.com/rive-app/rive-wasm/commit/b0a9ad1999a616ba5ada3c948876b63c2eabe27b)
 - Fix bug in draw key [`4489228`](https://github.com/rive-app/rive-wasm/commit/4489228c853628c9ab56ceb91da88208cbc2c916)
 
 ## [2.23.9](https://github.com/rive-app/rive-wasm/compare/2.23.8...2.23.9) - 2024-11-21
