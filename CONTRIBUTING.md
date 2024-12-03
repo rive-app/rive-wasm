@@ -29,26 +29,53 @@ For each of the variants above, there are two sets of APIs to use for rendering 
 
 ### Installation
 
-1. Clone the project down
-2. `cd` into the `js` folder from the top level of the project, and run `npm i` to install all dependencies
-3. Pull down the underlying `rive-runtime` submodule, which should be pointing to a specific commit.
+
+
+1. Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). We build against `v3.1.43` in rive-wasm, so make sure to install and activate that version.
+2. Install [Premake5](https://premake.github.io/) and add it to your `PATH`.
+3. Install [Ninja](https://ninja-build.org/).
 
 ```sh
-# First time through if you just pulled down the project
+# Clone the Project
+git clone git@github.com:rive-app/rive-wasm.git
+
+# Install dependencies
+cd rive-wasm/js
+npm i
+
+cd ../
+
+# Pull down the underlying rive-runtime
 git submodule update --init --recursive
 
-# When updating the submodule after the initial pull
-git submodule update --recursive
+# When updating the submodule after the initial installation
+# git submodule update --recursive
 
-cd submodules/rive-runtime
-git checkout origin/master
-cd ../../..
+# Make sure the submodule is on the main branch
+cd wasm/submodules/rive-runtime/
+git checkout main
+
+cd ../../../js
+
+# Build the latest WASM and builds for JS API's (high and low level)
+# into the `npm/` folder. This may take some time, grab a coffee!
+# This should finish with Webpack building the JS bundles for the
+# high-level API packages (more on that below)
+./build.sh
+
 ```
 
-4. Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html). We build against `v3.1.43` in rive-wasm, so make sure to install and activate that version.
-5. Install [Premake5](https://premake.github.io/) and add it to your PATH
+#### Troubleshooting
 
-6. `cd` back into the `js` folder and run `./build.sh` from your terminal/shell to build the latest WASM and builds for JS API's (high and low level) into the `npm/` folder. This may take some time, grab a coffee! This should finish with Webpack building the JS bundles for the high-level API packages (more on that below)
+Error: `./get_skia.sh: line 31: python: command not found`:
+
+```sh
+# Install Python 3.9 with Homebrew
+brew install python
+
+# Add a symlink
+ln -s  /usr/local/bin/python3.9 /usr/local/bin/python
+```
 
 ### High-level API development
 
