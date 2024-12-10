@@ -1,6 +1,13 @@
+# 🚨 Deprecated Package Notice
+
+**This package, `@rive-app/webgl`, is deprecated and will no longer receive updates or maintenance.**
+
+We highly recommend switching to the newer package for improved features, performance, and support:
+👉 **[@rive-app/webgl2](https://www.npmjs.com/package/@rive-app/webgl2)**
+
 ![npm](https://img.shields.io/npm/v/@rive-app/webgl)
 
-# Rive 
+# Rive
 High-level Rive API using WebGL. Please see https://github.com/rive-app/rive-wasm for a list of all the available web runtimes and their details.
 
 ## WebGL
