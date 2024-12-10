@@ -5,7 +5,64 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.23.10](https://github.com/rive-app/rive-wasm/compare/2.23.9...2.23.10)
+## [2.24.0](https://github.com/rive-app/rive-wasm/compare/2.23.11...2.24.0)
+
+### Commits
+
+- call syncStyleChanges on update [`f3dad6c`](https://github.com/rive-app/rive-wasm/commit/f3dad6c42dcc3d22534b7ea12f4544cd3b45b05c)
+- Override layoutcomponent x/y using layoutX/Y [`4d22301`](https://github.com/rive-app/rive-wasm/commit/4d22301354a04ae2c5c79caf498ed4ffdfcd2537)
+- Nnnn data bind fixes part 3 [`44cbbab`](https://github.com/rive-app/rive-wasm/commit/44cbbab8f6e3fa9ab41b2fa9df6938feb79f104c)
+- Instance data converters when attached to data binding objects [`6b7b0e0`](https://github.com/rive-app/rive-wasm/commit/6b7b0e048e9f814b443d24aed43291048ba0eb00)
+- Snap verycomplexgrad gm stops to pixel boundaries [`f8a670b`](https://github.com/rive-app/rive-wasm/commit/f8a670b0cda39b65ec66766b56c6d26131145d31)
+- ScrollBar constraint autosize toggle [`0402232`](https://github.com/rive-app/rive-wasm/commit/0402232be54e62de1799b6726c2b5e0a4af74e97)
+- Don't use GL_PIXEL_UNPACK_BUFFER [`2ce84e1`](https://github.com/rive-app/rive-wasm/commit/2ce84e163e0d11a7220483c45458145b9395b238)
+- Add "no_rive_jpeg" and "no_rive_png" build options [`2d24da1`](https://github.com/rive-app/rive-wasm/commit/2d24da1e7d9c745e8cfad1d9704ccd0eae18e58b)
+- Improve scroll time precision on web [`2af3d4a`](https://github.com/rive-app/rive-wasm/commit/2af3d4abca07db495677d9ab11450cd14420f3de)
+- Scroll fixes [`bfbd505`](https://github.com/rive-app/rive-wasm/commit/bfbd505b82fcfba1f197c04344688e01cb99c0d2)
+- re add clean to diff [`0030752`](https://github.com/rive-app/rive-wasm/commit/0030752dc493c29cb22286a00f915ad0ef3f361d)
+- do not break when component is found [`97dd12b`](https://github.com/rive-app/rive-wasm/commit/97dd12b14932ac2fcfd1699ece42984305a91f2c)
+- Add yoga renames to non-v2 lua build scripts [`27b1cc2`](https://github.com/rive-app/rive-wasm/commit/27b1cc23db26f5e199c8beb474adc6b5f6186124)
+- Fix integer precision issues with pathID in vertex shaders [`6c95555`](https://github.com/rive-app/rive-wasm/commit/6c955553be1e0e4fc428550eed505c61ba92d6ef)
+- use draw proxy for scroll bar draggables [`d779b42`](https://github.com/rive-app/rive-wasm/commit/d779b422661e17dd86840cfaf5d30dccb061dbd2)
+- GL fixes for Imagination PowerVR GPUs [`f422181`](https://github.com/rive-app/rive-wasm/commit/f4221818ce195a53b4f99f2612fe425310ff49c4)
+- Fix scrollbar thumb offset [`de3ed1a`](https://github.com/rive-app/rive-wasm/commit/de3ed1ad1851b8364ea6d917298b79a725c67ca5)
+- Sort by % diff pixels in diff.py when histogram is equal [`d93862d`](https://github.com/rive-app/rive-wasm/commit/d93862dd46ead201a57ba89e191e3dc74a63a19c)
+- fix sorting hittable components [`b7ac41e`](https://github.com/rive-app/rive-wasm/commit/b7ac41ee7a6644e76f815bef940720fd95ca2251)
+- fix crash when dividing by 0 [`afa4319`](https://github.com/rive-app/rive-wasm/commit/afa4319aa27c97cd4b2d89c8db547b87d5e0879f)
+- Nnnn scrolling override poc part 2 [`6c3957b`](https://github.com/rive-app/rive-wasm/commit/6c3957b8e106f0c5dd7c1e6614c1fcc38e49719c)
+- Small Scroll fixes [`6f021c1`](https://github.com/rive-app/rive-wasm/commit/6f021c117596c4a43c264eb5cbc5211faf9ad5cf)
+- Make scroll physics core objects [`8994905`](https://github.com/rive-app/rive-wasm/commit/8994905aba92d210c97c462a679586acd7cfd922)
+- made compatable with python 9_9 [`39315d5`](https://github.com/rive-app/rive-wasm/commit/39315d5dd14042e6f1c8b0a428870d647fbff5f0)
+- diff.py: don't count identicals as differences [`c1b772c`](https://github.com/rive-app/rive-wasm/commit/c1b772c643d9e196013bf6c08b260daf22cb0688)
+- added some changes to make building easier for unreal [`be92419`](https://github.com/rive-app/rive-wasm/commit/be92419931630d4b5e88c471d6dcb32475ff6836)
+- use actual sizes for calculating position offset [`9a64a15`](https://github.com/rive-app/rive-wasm/commit/9a64a15fb996ede0f463f9dcbee660a0b59536f1)
+- skip object on animation reset if it is null [`d6b1a38`](https://github.com/rive-app/rive-wasm/commit/d6b1a38b434f6741c5fde224057635a42f19c5ea)
+- remove letter spacing subtraction [`c3cab24`](https://github.com/rive-app/rive-wasm/commit/c3cab24237cb21817979ccb218c7c0017833d4c6)
+- fix fatal warnings compiler flag to use latest version [`b576768`](https://github.com/rive-app/rive-wasm/commit/b576768a5085de5266843aa3789f5856b939e8f6)
+- Draggables (aka scrolling) [`c8aaac2`](https://github.com/rive-app/rive-wasm/commit/c8aaac279b54bace2745b7b039a793e7d033cd12)
+- Nnnn data bind fixes part 2 [`7597a9b`](https://github.com/rive-app/rive-wasm/commit/7597a9b2307e1f6bb334469aa6810cef2d306599)
+- make nested animation properties bindable [`02f3c3d`](https://github.com/rive-app/rive-wasm/commit/02f3c3dd02f82ffd096738a28fd1291dab0d3a9c)
+- Layout display & animation duration keyable [`699c53f`](https://github.com/rive-app/rive-wasm/commit/699c53fc320268053614beefb5645294227f3471)
+- Add Android Gold checks [`5216d40`](https://github.com/rive-app/rive-wasm/commit/5216d40d501a126ba721cec9f2d70f0527255c07)
+
+## [2.23.11](https://github.com/rive-app/rive-wasm/compare/2.23.10...2.23.11) - 2024-11-27
+
+### Commits
+
+- chore: tag 2.23.11 [`d8f45bc`](https://github.com/rive-app/rive-wasm/commit/d8f45bc36dfb415e1b148d559ccaf8b9e40b3d60)
+- Re-upload webgl texture data if context changes. [`a76c5aa`](https://github.com/rive-app/rive-wasm/commit/a76c5aa01c543cd3cdd92f7b9bdf8efecb2a365b)
+- Support supplying mobile fallback fonts by style with caching [`b0b8382`](https://github.com/rive-app/rive-wasm/commit/b0b838266d48463c4d6643d1539292c21a47ac43)
+- fixed url for canddiates and goldens in not pack mode [`50e5f75`](https://github.com/rive-app/rive-wasm/commit/50e5f750cafc23b7c464bb7f70028a7db47af366)
+- Fix flicker on webgl2 runtime [`84a6e9b`](https://github.com/rive-app/rive-wasm/commit/84a6e9b9be2cec7b1025110435b1bcb607aa6c0b)
+- treat remapped animations as always settled [`1d31192`](https://github.com/rive-app/rive-wasm/commit/1d3119229c18c208cc20c69b470e665a7ff16083)
+- update measure function to use its text wrap and max size [`01c8bc6`](https://github.com/rive-app/rive-wasm/commit/01c8bc6b7920a85cc728a9d332ac0cbf6fb10c5e)
+- add support for standalone custom properties to bind values to [`11392cd`](https://github.com/rive-app/rive-wasm/commit/11392cdb43e298089dce7013deaf6d29eb7f9576)
+- Dx11 support [`9031503`](https://github.com/rive-app/rive-wasm/commit/9031503e2b2951d7e513056ee00b1f17928f3625)
+- support wrapping text in auto width inside a layout [`f200b48`](https://github.com/rive-app/rive-wasm/commit/f200b483f96b643413ec152bd8825cbcdadbae76)
+- fixed workflow stuff [`df9e923`](https://github.com/rive-app/rive-wasm/commit/df9e923f701562dc6b0c847b4e15ca76e81ddabf)
+- updates to diff.py [`442fd8f`](https://github.com/rive-app/rive-wasm/commit/442fd8f155730399865d71df0cc3a98c5cbe47cb)
+
+## [2.23.10](https://github.com/rive-app/rive-wasm/compare/2.23.9...2.23.10) - 2024-11-21
 
 ### Merged
 
@@ -13,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.23.10 [`b0a9ad1`](https://github.com/rive-app/rive-wasm/commit/b0a9ad1999a616ba5ada3c948876b63c2eabe27b)
 - Fix bug in draw key [`4489228`](https://github.com/rive-app/rive-wasm/commit/4489228c853628c9ab56ceb91da88208cbc2c916)
 
 ## [2.23.9](https://github.com/rive-app/rive-wasm/compare/2.23.8...2.23.9) - 2024-11-21
