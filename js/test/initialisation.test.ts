@@ -272,7 +272,7 @@ test("Rive deletes instances on the cleanup", (done) => {
       expect(r.activeArtboard).toBe("MyArtboard");
       r.cleanup();
       expect(r.activeArtboard).toBe("");
-      expect(r["renderer"]).not.toBeNull();
+      expect(r["renderer"]).toBeNull();
       done();
     },
   });

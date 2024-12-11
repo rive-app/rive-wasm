@@ -344,6 +344,13 @@ export class StateMachineInput {
       this.runtimeInput.fire();
     }
   }
+
+  /**
+   * Deletes the input
+   */
+  public delete(): void {
+    this.runtimeInput = null;
+  }
 }
 
 export enum RiveEventType {
@@ -462,6 +469,10 @@ class StateMachine {
    * state machine is no more.
    */
   public cleanup() {
+    this.inputs.forEach((input) => {
+      input.delete();
+    });
+    this.inputs.length = 0;
     this.instance.delete();
   }
 }
@@ -1489,7 +1500,7 @@ export class Rive {
   private loaded = false;
 
   // Reference of an object that handles any observers for the animation
-  private _observed: ObservedObject | null;
+  private _observed: ObservedObject | null = null;
 
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
@@ -1680,6 +1691,9 @@ export class Rive {
       .then((runtime) => {
         this.runtime = runtime;
 
+        this.removeRiveListeners();
+        this.deleteRiveRenderer();
+
         // Get the canvas where you want to render the animation and create a renderer
         this.renderer = this.runtime.makeRenderer(
           this.canvas,
@@ -1749,6 +1763,7 @@ export class Rive {
   public removeRiveListeners(): void {
     if (this.eventCleanup) {
       this.eventCleanup();
+      this.eventCleanup = null;
     }
   }
 
@@ -2104,10 +2119,12 @@ export class Rive {
     if (this._observed !== null) {
       observers.remove(this._observed);
     }
+    this.removeRiveListeners();
 
     this.riveFile?.cleanup();
     this.riveFile = null;
     this.file = null;
+    this.deleteRiveRenderer();
   }
 
   /**
