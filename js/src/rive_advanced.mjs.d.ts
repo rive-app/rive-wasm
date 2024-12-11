@@ -731,6 +731,12 @@ export declare class StateMachineInstance {
    */
   advance(sec: number): boolean;
   /**
+   * Advances/scrubs the StateMachineInstance by the set amount of seconds. Note that this will
+   * apply changes to the properties of objects in the Artboard.
+   * @param sec - Scrub the state machine instance by a number of seconds
+   */
+  advanceAndApply(sec: number): boolean;
+  /**
    * Returns the number of states changed while the state machine played
    * @returns Number of states changed in the duration of the state machine played
    */

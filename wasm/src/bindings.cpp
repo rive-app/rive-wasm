@@ -727,6 +727,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             optional_override([](rive::StateMachineInstance& self, float elapsedTime) -> bool {
                 return self.advance(elapsedTime);
             }))
+        .function("advanceAndApply",
+                  optional_override([](rive::StateMachineInstance& self, double seconds) -> bool {
+                      return self.advanceAndApply(seconds);
+                  }),
+                  allow_raw_pointers())
         .function("inputCount", &rive::StateMachineInstance::inputCount)
         .function("input", &rive::StateMachineInstance::input, allow_raw_pointers())
         .function("pointerDown",

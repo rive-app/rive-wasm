@@ -408,6 +408,14 @@ class StateMachine {
   }
 
   /**
+   * Advances the state machine instance by a given time and apply changes to artboard.
+   * @param time - the time to advance the animation by in seconds
+   */
+  public advanceAndApply(time: number) {
+    this.instance.advanceAndApply(time);
+  }
+
+  /**
    * Returns the number of events reported from the last advance call
    * @returns Number of events reported
    */
@@ -1564,6 +1572,9 @@ export class Rive {
   // Whether the canvas element's size is 0
   private _hasZeroSize = false;
 
+  // Audio event listener
+  private _audioEventListener: EventListener | null = null;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1774,11 +1785,12 @@ export class Rive {
   private initializeAudio() {
     // Initialize audio if needed
     if (audioManager.status == SystemAudioStatus.UNAVAILABLE) {
-      if (this.artboard?.hasAudio) {
-        audioManager.add({
+      if (this.artboard?.hasAudio && this._audioEventListener === null) {
+        this._audioEventListener = {
           type: EventType.AudioStatusChange,
           callback: () => this.onSystemAudioChanged(),
-        });
+        };
+        audioManager.add(this._audioEventListener);
         audioManager.establishAudio();
       }
     }
@@ -2009,13 +2021,15 @@ export class Rive {
           }
         }
       }
-      stateMachine.advance(elapsedTime);
+      stateMachine.advanceAndApply(elapsedTime);
       // stateMachine.instance.apply(this.artboard);
     }
 
     // Once the animations have been applied to the artboard, advance it
     // by the elapsed time.
-    this.artboard.advance(elapsedTime);
+    if (this.animator.stateMachines.length == 0) {
+      this.artboard.advance(elapsedTime);
+    }
 
     const { renderer } = this;
     // Canvas must be wiped to prevent artifacts
@@ -2125,6 +2139,10 @@ export class Rive {
     this.riveFile = null;
     this.file = null;
     this.deleteRiveRenderer();
+    if (this._audioEventListener !== null) {
+      audioManager.remove(this._audioEventListener);
+      this._audioEventListener = null;
+    }
   }
 
   /**
