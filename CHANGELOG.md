@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.24.0](https://github.com/rive-app/rive-wasm/compare/2.23.11...2.24.0)
+## [2.24.1](https://github.com/rive-app/rive-wasm/compare/2.24.0...2.24.1)
 
 ### Commits
 
+- call delete methods on cleanup [`0cc2564`](https://github.com/rive-app/rive-wasm/commit/0cc2564123f7c745550f38a628565a45ccd2b0e8)
+- Nnnn system data enums part 3 [`3fd3825`](https://github.com/rive-app/rive-wasm/commit/3fd3825e1bdc86a8f9db5e1992d4684dbe7ca250)
+- diff.py updates [`de52e49`](https://github.com/rive-app/rive-wasm/commit/de52e4915e5cb992fe1b026e5dc87aa50353a840)
+- Allow $JAVA_HOME without java installed in deploy_tests.py [`c8b5d31`](https://github.com/rive-app/rive-wasm/commit/c8b5d31dcd2f4713313d358fd1b9b71e7ec0ba75)
+
+## [2.24.0](https://github.com/rive-app/rive-wasm/compare/2.23.11...2.24.0) - 2024-12-10
+
+### Commits
+
+- chore: tag 2.24.0 [`e9fd61a`](https://github.com/rive-app/rive-wasm/commit/e9fd61a7ac4e622fa3062edc1f4a40945d264af6)
 - call syncStyleChanges on update [`f3dad6c`](https://github.com/rive-app/rive-wasm/commit/f3dad6c42dcc3d22534b7ea12f4544cd3b45b05c)
 - Override layoutcomponent x/y using layoutX/Y [`4d22301`](https://github.com/rive-app/rive-wasm/commit/4d22301354a04ae2c5c79caf498ed4ffdfcd2537)
 - Nnnn data bind fixes part 3 [`44cbbab`](https://github.com/rive-app/rive-wasm/commit/44cbbab8f6e3fa9ab41b2fa9df6938feb79f104c)
