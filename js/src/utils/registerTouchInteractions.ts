@@ -176,10 +176,7 @@ export const registerTouchInteractions = ({
        */
       case "mouseout":
         for (const stateMachine of stateMachines) {
-          stateMachine.pointerMove(
-            transformedX < 0 ? transformedX - 10000 : transformedX + 10000,
-            transformedY < 0 ? transformedY - 10000 : transformedY + 10000,
-          );
+          stateMachine.pointerMove(transformedX, transformedY);
         }
         break;
 

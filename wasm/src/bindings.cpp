@@ -115,7 +115,7 @@ rive::Vec2D mapXY(rive::Mat2D invertedMatrix, rive::Vec2D canvasVector)
 
 bool hasListeners(rive::StateMachineInstance* smi)
 {
-    if (smi->stateMachine()->listenerCount() != 0)
+    if (smi->hasListeners())
     {
         return true;
     }

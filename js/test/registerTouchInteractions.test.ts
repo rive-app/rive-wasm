@@ -133,7 +133,7 @@ test("mouseout event can invoke pointerMove with out of bounds coordinates", ():
   );
 
   expect(mockStateMachines[0].pointerDown).not.toBeCalled();
-  expect(mockStateMachines[0].pointerMove).toBeCalledWith(-10001, 10001);
+  expect(mockStateMachines[0].pointerMove).toBeCalledWith(-1, 1);
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
 
