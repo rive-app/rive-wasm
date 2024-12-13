@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.0](https://github.com/rive-app/rive-wasm/compare/2.24.1...2.25.0)
+## [2.25.1](https://github.com/rive-app/rive-wasm/compare/2.25.0...2.25.1)
 
 ### Commits
 
+- fix artboard origin offset [`6990ba0`](https://github.com/rive-app/rive-wasm/commit/6990ba03dc3bb3f4c2d9e598d701c07fe5e18e56)
+- Convert unity builds to use build_rive.sh [`95b463b`](https://github.com/rive-app/rive-wasm/commit/95b463b55aaa7392ee86bad5528c144f1d81e220)
+- Tag custom premake builds on v5.0.0-beta3 [`903837f`](https://github.com/rive-app/rive-wasm/commit/903837f9efdefd658445a0abb909ebce47340afd)
+- Fix layout display issues [`87e5ace`](https://github.com/rive-app/rive-wasm/commit/87e5aced153df152f2c7612225134108ecbddbc0)
+- Add visionOS and tvOS support to Apple runtime [`6e6c5a6`](https://github.com/rive-app/rive-wasm/commit/6e6c5a6bd2ac90c7df35632d5eec80326ba89567)
+- fix triggers reset [`ed12347`](https://github.com/rive-app/rive-wasm/commit/ed1234735120ac24e2dd83313faabe760d108130)
+- Prevent negative layout size [`8e579e6`](https://github.com/rive-app/rive-wasm/commit/8e579e63b04ed2626a6b38ca6118494d71318aca)
+- Nnnn use advance and apply in js runtime [`e5cbb51`](https://github.com/rive-app/rive-wasm/commit/e5cbb5143440f0c8377fe81f3cd16a2ac041cb14)
+- add data binding blend states support [`fec7d19`](https://github.com/rive-app/rive-wasm/commit/fec7d1991b53b1a0e7f01f7260e89e4592b8b389)
+- Nnnn instance data converters part 3 [`c4094a4`](https://github.com/rive-app/rive-wasm/commit/c4094a4aee18405f748cdd26067cc9cfbbe7c498)
+
+## [2.25.0](https://github.com/rive-app/rive-wasm/compare/2.24.1...2.25.0) - 2024-12-11
+
+### Commits
+
+- chore: tag 2.25.0 [`6e748fd`](https://github.com/rive-app/rive-wasm/commit/6e748fdd87dd6c333e23d98e8a234f12c5156843)
 - Nnnn fix js runtime listeners check [`ffe2b72`](https://github.com/rive-app/rive-wasm/commit/ffe2b7225286d18aafd65d2222604866484a478d)
 - added missing_goldens and missing_candidates to diff.py result [`f2862ca`](https://github.com/rive-app/rive-wasm/commit/f2862caa3492b8c718ae2f44af6217ff8fcfb28e)
 
