@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.1](https://github.com/rive-app/rive-wasm/compare/2.25.0...2.25.1)
+## [2.25.2](https://github.com/rive-app/rive-wasm/compare/2.25.1...2.25.2)
 
 ### Commits
 
+- do not exclude proxies from drawables list [`2c7bedb`](https://github.com/rive-app/rive-wasm/commit/2c7bedbd3345a0f3a981ad67f8adc457406927c4)
+- Scripting begins! [`bcddcd6`](https://github.com/rive-app/rive-wasm/commit/bcddcd673d79e3f728415acbcab65fe9dbfef19d)
+- GL MSAA tweaks [`1f8f6ac`](https://github.com/rive-app/rive-wasm/commit/1f8f6ac2ed4d22e3839112d6edc5d96d79a229a2)
+- More android tuning for PowerVR [`67b9730`](https://github.com/rive-app/rive-wasm/commit/67b973012bf6e06bd10c655efd3b46175bd2a4d8)
+- Work around gradient sync issues on Oppo Reno 3 Pro [`353a88e`](https://github.com/rive-app/rive-wasm/commit/353a88e6f7d134f7d5c498b0a395d9cf9e5b1a8f)
+
+## [2.25.1](https://github.com/rive-app/rive-wasm/compare/2.25.0...2.25.1) - 2024-12-13
+
+### Commits
+
+- chore: tag 2.25.1 [`97b914b`](https://github.com/rive-app/rive-wasm/commit/97b914bb94645b7f11a32b628995d409b9b6c7d3)
 - fix artboard origin offset [`6990ba0`](https://github.com/rive-app/rive-wasm/commit/6990ba03dc3bb3f4c2d9e598d701c07fe5e18e56)
 - Convert unity builds to use build_rive.sh [`95b463b`](https://github.com/rive-app/rive-wasm/commit/95b463b55aaa7392ee86bad5528c144f1d81e220)
 - Tag custom premake builds on v5.0.0-beta3 [`903837f`](https://github.com/rive-app/rive-wasm/commit/903837f9efdefd658445a0abb909ebce47340afd)
