@@ -421,7 +421,6 @@ Module["onRuntimeInitialized"] = function () {
   const stroke = RenderPaintStyle.stroke;
 
   const evenOdd = FillRule.evenOdd;
-  const nonZero = FillRule.nonZero;
 
   let _nextImageUniqueID = 1;
 

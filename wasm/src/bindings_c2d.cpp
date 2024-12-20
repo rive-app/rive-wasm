@@ -441,7 +441,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
 
     enum_<rive::FillRule>("FillRule")
         .value("nonZero", rive::FillRule::nonZero)
-        .value("evenOdd", rive::FillRule::evenOdd);
+        .value("evenOdd", rive::FillRule::evenOdd)
+        .value("clockwise", rive::FillRule::clockwise);
 
     enum_<rive::StrokeCap>("StrokeCap")
         .value("butt", rive::StrokeCap::butt)
