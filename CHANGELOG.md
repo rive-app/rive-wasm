@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.2](https://github.com/rive-app/rive-wasm/compare/2.25.1...2.25.2)
+## [2.25.3](https://github.com/rive-app/rive-wasm/compare/2.25.2...2.25.3)
 
 ### Commits
 
+- Merge path_utils.hpp and eval_cubic.hpp into the core runtime [`7d9839b`](https://github.com/rive-app/rive-wasm/commit/7d9839b8ff90ac32bb93011f83616c14b44905fa)
+- Ensure child layouts mark dirty when flex direction changes [`4119aee`](https://github.com/rive-app/rive-wasm/commit/4119aeecc3b54d79f071d5074165cc9690ff744f)
+- Fix straight lines being detected as cusps [`07d25f4`](https://github.com/rive-app/rive-wasm/commit/07d25f4bcf7e05d17335bf133914c4c8b5917998)
+- Add FillRule::clockwise to the runtime [`fce78ad`](https://github.com/rive-app/rive-wasm/commit/fce78adadcdc082677157839741bb90c34d9275a)
+- add bind once support [`150ac04`](https://github.com/rive-app/rive-wasm/commit/150ac04d3892083b813f0dfd9b8f02211e016cad)
+- do not use frameOrigin to validate if artboard has its origin translated [`f860745`](https://github.com/rive-app/rive-wasm/commit/f860745006a82513ead8fa0c4c2a59e106ef505b)
+- editor: minor text fixes [`fce3945`](https://github.com/rive-app/rive-wasm/commit/fce39459d6328309a3532dd176a27de9498d2bd1)
+- Replace Swiftshader with Nvidia gpu runner [`7e07b9f`](https://github.com/rive-app/rive-wasm/commit/7e07b9fcdd23fe48883482611b05622437c96201)
+- improve error reporting if exe in deploy script does not exist [`f6776b6`](https://github.com/rive-app/rive-wasm/commit/f6776b649e47a1418cb97369f600e4f06d1598ff)
+- Set supportsRasterOrdering in the webgpu backend [`900e120`](https://github.com/rive-app/rive-wasm/commit/900e12077f48cfa1f37524a8e78e2d5f98462295)
+- editor: allow hit testing over text and text runs [`d221331`](https://github.com/rive-app/rive-wasm/commit/d22133100cbfe16555ba8ac0c61b6f63544fe284)
+- rename property to avoid conflict with code generation [`52b62a9`](https://github.com/rive-app/rive-wasm/commit/52b62a91a0c9e0756fc905650d25637e807450f5)
+
+## [2.25.2](https://github.com/rive-app/rive-wasm/compare/2.25.1...2.25.2) - 2024-12-17
+
+### Commits
+
+- chore: tag 2.25.2 [`9e8c50c`](https://github.com/rive-app/rive-wasm/commit/9e8c50cfb1c8decea154af3f6081dcd32d1bfeb2)
 - do not exclude proxies from drawables list [`2c7bedb`](https://github.com/rive-app/rive-wasm/commit/2c7bedbd3345a0f3a981ad67f8adc457406927c4)
 - Scripting begins! [`bcddcd6`](https://github.com/rive-app/rive-wasm/commit/bcddcd673d79e3f728415acbcab65fe9dbfef19d)
 - GL MSAA tweaks [`1f8f6ac`](https://github.com/rive-app/rive-wasm/commit/1f8f6ac2ed4d22e3839112d6edc5d96d79a229a2)
