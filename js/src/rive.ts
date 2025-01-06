@@ -1743,6 +1743,9 @@ export class Rive {
   public setupRiveListeners(
     riveListenerOptions?: SetupRiveListenersOptions,
   ): void {
+    if(this.eventCleanup) {
+      this.eventCleanup();
+    }
     if (!this.shouldDisableRiveListeners) {
       const activeStateMachines = (this.animator.stateMachines || [])
         .filter((sm) => sm.playing && this.runtime.hasListeners(sm.instance))

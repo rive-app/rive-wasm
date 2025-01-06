@@ -61,6 +61,10 @@ Module["onRuntimeInitialized"] = function () {
         flushOffscreenRenderers();
       }
     };
+
+    // Empty delete method to allow calling delete from the rive file without causing a crash
+    this["delete"] = function () {
+    };
   }
 
   function makeGLRenderer(canvas, enableMSAA = false) {
