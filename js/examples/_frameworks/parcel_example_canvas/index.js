@@ -2,16 +2,17 @@ import "regenerator-runtime";
 import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas";
 // import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas-lite";
 //import { Rive, Fit, Alignment, Layout } from "@rive-app/webgl";
-import AvatarAnimation from "./look.riv";
-import TapeMeshAnimation from "./tape.riv";
-import BirdAnimation from "./birb.riv";
-import TruckAnimation from "./truck.riv";
-import SwitchAnimation from "./switch_event_example.riv";
-import NestedDefaultAnimation from "./nested_default.riv";
-import JigSaw from "./jigsaw.riv";
-import StringRive from "./string.riv";
-import RatingAnimation from "./rating_animation.riv";
-import TextAnimation from "./text_test_2.riv";
+
+const AvatarAnimation = new URL("./look.riv", import.meta.url);
+const TapeMeshAnimation = new URL("./tape.riv", import.meta.url);
+const BirdAnimation = new URL("./birb.riv", import.meta.url);
+const TruckAnimation = new URL("./truck.riv", import.meta.url);
+const SwitchAnimation = new URL("./switch_event_example.riv", import.meta.url);
+const NestedDefaultAnimation = new URL("./nested_default.riv", import.meta.url);
+const JigSaw = new URL("./jigsaw.riv", import.meta.url);
+const StringRive = new URL("./string.riv", import.meta.url);
+const RatingAnimation = new URL("./rating_animation.riv", import.meta.url);
+const TextAnimation = new URL("./text_test_2.riv", import.meta.url);
 
 const RIVE_EXAMPLES = {
   0: {

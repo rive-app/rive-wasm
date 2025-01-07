@@ -1,14 +1,15 @@
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 // import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 
-
-import SampleImage from "./asset_load_check.riv";
-
+const SampleImage = new URL("./asset_load_check.riv", import.meta.url);
 
 let lastTime;
 
 async function main() {
   let rive = await RiveCanvas();
+  const canvas = document.getElementById("canvas0") as HTMLCanvasElement;
+  const renderer = rive.makeRenderer(canvas, true);
+
   // Instance the Rive runtime (this does WASM stuff).
   // Get some rive file bytes (we uploaded piggy.riv into this
   // sandbox, you can see it in the file list on the left.)
@@ -50,14 +51,13 @@ async function main() {
       "https://cdn.rive.app/runtime/flutter/send-flowers.ttf",
     ];
     for (let i = 0; i < urls.length; i++) {
-      fetch(urls[i]).then(async  (res) => {
-        rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => { 
+      fetch(urls[i]).then(async (res) => {
+        rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => {
           fontCache.push(font);
           if (fontCache.length === urls.length) {
             resolve();
           }
         });
-        
       });
     }
   });
@@ -77,11 +77,11 @@ async function main() {
   };
 
   const randomImageAsset = (asset) => {
-    fetch("https://picsum.photos/1000/1500").then(async  (res) => {
+    fetch("https://picsum.photos/1000/1500").then(async (res) => {
       rive.decodeImage(new Uint8Array(await res.arrayBuffer()), (image) => {
         asset.setRenderImage(image);
         requestAnimationFrame(draw);
-        // IMPORTANT: call unref, so that we do not keep the asset alive with 
+        // IMPORTANT: call unref, so that we do not keep the asset alive with
         // a reference from javascript.
         image.unref();
       });
@@ -98,16 +98,15 @@ async function main() {
       "https://cdn.rive.app/runtime/flutter/send-flowers.ttf",
     ];
 
-    fetch(urls[fontIndex++ % urls.length]).then(async  (res) => {
-      rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => { 
+    fetch(urls[fontIndex++ % urls.length]).then(async (res) => {
+      rive.decodeFont(new Uint8Array(await res.arrayBuffer()), (font) => {
         asset.setFont(font);
-  
+
         requestAnimationFrame(draw);
-        // IMPORTANT: call unref, so that we do not keep the asset alive with 
+        // IMPORTANT: call unref, so that we do not keep the asset alive with
         // a reference from javascript.
         font.unref();
       });
-      
     });
   };
 
@@ -115,7 +114,7 @@ async function main() {
     fileBytes,
     new rive.CustomFileAssetLoader({
       loadContents: (asset, inBandBytes) => {
-        if (inBandBytes.length > 0) { 
+        if (inBandBytes.length > 0) {
           return false;
         }
         if (asset.cdnUuid.length > 0) {
@@ -158,7 +157,7 @@ async function main() {
         });
         return false;
       },
-    }),
+    })
   );
 
   artboard = file.defaultArtboard();
@@ -166,10 +165,9 @@ async function main() {
     artboard.animationByIndex(0),
     artboard
   );
-  const canvas = document.getElementById("canvas0") as HTMLCanvasElement;
   canvas.onclick = () => {
-    if (onDemandImage)randomImageAsset(onDemandImage);
-    if (onDemandFont)randomFontAsset(onDemandFont);
+    if (onDemandImage) randomImageAsset(onDemandImage);
+    if (onDemandFont) randomFontAsset(onDemandFont);
     if (cachedImage) cachedImageAsset(cachedImage);
     if (cachedFont) cachedFontAsset(cachedFont);
   };
@@ -181,8 +179,6 @@ async function main() {
   }
   window.onresize = computeSize;
   computeSize();
-
-  const renderer = rive.makeRenderer(canvas, true);
 
   function draw(time) {
     if (!renderer) {
@@ -217,7 +213,7 @@ async function main() {
       artboard.draw(renderer);
       renderer.restore();
     }
-    
+
     renderer.flush();
 
     // Draw more if we want to.

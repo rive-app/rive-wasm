@@ -4,8 +4,12 @@ import * as rive from "../src/rive";
 
 import { loadFile } from "./helpers";
 
-
-const testTextRunValue = (r: rive.Rive, runName: string, path: string, expectedValue: string) => {
+const testTextRunValue = (
+  r: rive.Rive,
+  runName: string,
+  path: string,
+  expectedValue: string,
+) => {
   const text = r.getTextRunValueAtPath(runName, path);
   expect(text).toBe(expectedValue);
 
@@ -16,7 +20,7 @@ const testTextRunValue = (r: rive.Rive, runName: string, path: string, expectedV
 };
 
 // #region nested text
-test("Rive updates nested text runs", async (done) => {
+test("Rive updates nested text runs", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -25,18 +29,38 @@ test("Rive updates nested text runs", async (done) => {
     onLoad: () => {
       testTextRunValue(r, "ArtboardBRun", "ArtboardB-1", "Artboard B Run");
       testTextRunValue(r, "ArtboardBRun", "ArtboardB-2", "Artboard B Run");
-      testTextRunValue(r, "ArtboardCRun", "ArtboardB-1/ArtboardC-1", "Artboard C Run");
-      testTextRunValue(r, "ArtboardCRun", "ArtboardB-1/ArtboardC-2", "Artboard C Run");
-      testTextRunValue(r, "ArtboardCRun", "ArtboardB-2/ArtboardC-1", "Artboard C Run");
-      testTextRunValue(r, "ArtboardCRun", "ArtboardB-2/ArtboardC-2", "Artboard C Run");
+      testTextRunValue(
+        r,
+        "ArtboardCRun",
+        "ArtboardB-1/ArtboardC-1",
+        "Artboard C Run",
+      );
+      testTextRunValue(
+        r,
+        "ArtboardCRun",
+        "ArtboardB-1/ArtboardC-2",
+        "Artboard C Run",
+      );
+      testTextRunValue(
+        r,
+        "ArtboardCRun",
+        "ArtboardB-2/ArtboardC-1",
+        "Artboard C Run",
+      );
+      testTextRunValue(
+        r,
+        "ArtboardCRun",
+        "ArtboardB-2/ArtboardC-2",
+        "Artboard C Run",
+      );
 
       done();
     },
   });
 });
 
-test("Rive returns undefined if not provided the correct name of a nested text run", async (done) => {
-  const mock =  jest.fn();
+test("Rive returns undefined if not provided the correct name of a nested text run", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -49,14 +73,16 @@ test("Rive returns undefined if not provided the correct name of a nested text r
       const path = "ArtboardB-1/ArtboardC-1";
       const text = r.getTextRunValueAtPath(textName, path);
       expect(text).toBeUndefined();
-      expect(mock).toBeCalledWith(`Could not get text with name: '${textName}', at path:'${path}'`);
+      expect(mock).toBeCalledWith(
+        `Could not get text with name: '${textName}', at path:'${path}'`,
+      );
       done();
     },
   });
 });
 
-test("Rive returns undefined if not provided the correct path of a nested text run", async (done) => {
-  const mock =  jest.fn();
+test("Rive returns undefined if not provided the correct path of a nested text run", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
@@ -68,14 +94,16 @@ test("Rive returns undefined if not provided the correct path of a nested text r
       const path = "ArtboardB-1/ArtboardC-Wrong";
       const text = r.getTextRunValueAtPath(textName, path);
       expect(text).toBeUndefined();
-      expect(mock).toBeCalledWith(`Could not get text with name: '${textName}', at path:'${path}'`);
+      expect(mock).toBeCalledWith(
+        `Could not get text with name: '${textName}', at path:'${path}'`,
+      );
       done();
     },
   });
 });
 
-test("Rive logs a warning if the nested text run is not found for the correct run name", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if the nested text run is not found for the correct run name", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -87,14 +115,16 @@ test("Rive logs a warning if the nested text run is not found for the correct ru
       const textName = "WrongRun";
       const path = "ArtboardB-1/ArtboardC-1";
       r.setTextRunValueAtPath(textName, "New Value", path);
-      expect(mock).toBeCalledWith(`Could not set text with name: '${textName}', at path:'${path}'`);
+      expect(mock).toBeCalledWith(
+        `Could not set text with name: '${textName}', at path:'${path}'`,
+      );
       done();
     },
   });
 });
 
-test("Rive logs a warning if the nested text run is not found for the correct path", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if the nested text run is not found for the correct path", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -106,14 +136,16 @@ test("Rive logs a warning if the nested text run is not found for the correct pa
       const textName = "ArtboardCRun";
       const path = "ArtboardB-1/ArtboardC-Wrong";
       r.setTextRunValueAtPath(textName, "New Value", path);
-      expect(mock).toBeCalledWith(`Could not set text with name: '${textName}', at path:'${path}'`);
+      expect(mock).toBeCalledWith(
+        `Could not set text with name: '${textName}', at path:'${path}'`,
+      );
       done();
     },
   });
 });
 
-test("Rive logs a warning if an undefined text name is provided when getting a nested text run value", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if an undefined text name is provided when getting a nested text run value", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -130,8 +162,8 @@ test("Rive logs a warning if an undefined text name is provided when getting a n
   });
 });
 
-test("Rive logs a warning if an undefined text name is provided when setting a nested text run value", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if an undefined text name is provided when setting a nested text run value", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -148,8 +180,8 @@ test("Rive logs a warning if an undefined text name is provided when setting a n
   });
 });
 
-test("Rive logs a warning if an undefined path is provided when getting a nested text run value", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if an undefined path is provided when getting a nested text run value", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");
@@ -166,8 +198,8 @@ test("Rive logs a warning if an undefined path is provided when getting a nested
   });
 });
 
-test("Rive logs a warning if an undefined path is provided when setting a nested text run value", async (done) => {
-  const mock =  jest.fn();
+test("Rive logs a warning if an undefined path is provided when setting a nested text run value", (done) => {
+  const mock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(mock);
 
   const canvas = document.createElement("canvas");

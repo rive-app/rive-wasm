@@ -78,10 +78,10 @@ test("Playing animations can be manually started, paused, and restarted", (done)
 
 // #endregion
 
-
 // #region scrubbing
 
 test("An animation can be played and scrubbed without altering playback state", (done) => {
+  let isDone = false;
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -100,7 +100,11 @@ test("An animation can be played and scrubbed without altering playback state", 
       const firstAnimation = r.animationNames[0];
       r.scrub(firstAnimation, 0.8);
       expect(r.isPlaying).toBeFalsy();
-      done();
+      // TODO: we call done multiple times
+      if (!isDone) {
+        isDone = true;
+        done();
+      }
     },
   });
 });

@@ -1,7 +1,7 @@
 import Rive from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
 // import Rive from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
 
-import LayoutRivFile from "./layout_test.riv";
+const LayoutRivFile = new URL("./layout_test.riv", import.meta.url);
 
 let lastTime: number;
 

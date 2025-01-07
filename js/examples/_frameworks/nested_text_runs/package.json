@@ -6,18 +6,15 @@
   "main": "src/index.js",
   "scripts": {
     "start": "parcel index.html",
-    "build": "rm -fR docs && parcel build index.html -d docs --public-url ."
+    "build": "parcel build index.html --public-url ."
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "audio-play": "^2.3.1",
-    "dat.gui": "^0.7.7",
-    "parcel-bundler": "^1.12.5"
+    "parcel": "^2.13.3"
   },
   "dependencies": {
     "@rive-app/canvas": "file:../../../npm/canvas_single",
-    "parcel-plugin-asset-copier": "^1.1.0",
-    "src": "^1.1.2"
+    "regenerator-runtime": "^0.14.1"
   }
 }

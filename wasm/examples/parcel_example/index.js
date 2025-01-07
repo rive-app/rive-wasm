@@ -19,13 +19,13 @@ import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_s
 
 // import {checkForLeaks} from "./checkForLeaks";
 
-import AvatarAnimation from "./look.riv";
-import TapeMeshAnimation from "./tape.riv";
-import BirdAnimation from "./birb.riv";
-import TruckAnimation from "./truck.riv";
-import BallAnimation from "./ball.riv";
-import SwitchAnimation from "./switch_event_example.riv";
-import TestText from "./text_test_2.riv";
+const AvatarAnimation = new URL("./look.riv", import.meta.url);
+const TapeMeshAnimation = new URL("./tape.riv", import.meta.url);
+const BirdAnimation = new URL("./birb.riv", import.meta.url);
+const TruckAnimation = new URL("./truck.riv", import.meta.url);
+const BallAnimation = new URL("./ball.riv", import.meta.url);
+const SwitchAnimation = new URL("./switch_event_example.riv", import.meta.url);
+const TestText = new URL("./text_test_2.riv", import.meta.url);
 import "./main.css";
 
 const RIVE_EXAMPLES = {
@@ -65,6 +65,7 @@ const RIVE_EXAMPLES = {
 
 // Load in the Rive File, retrieve the default artboard, a named state machine, or a named animation
 async function retrieveRiveContents({ rive, num }) {
+  let artboard, stateMachine, animation;
   async function loadDefault() {
     const riveEx = RIVE_EXAMPLES[num % Object.keys(RIVE_EXAMPLES).length];
     const { hasStateMachine } = riveEx;
@@ -86,8 +87,6 @@ async function retrieveRiveContents({ rive, num }) {
     }
   }
   await loadDefault();
-
-  let artboard, stateMachine, animation;
 
   return { artboard, stateMachine, animation };
 }

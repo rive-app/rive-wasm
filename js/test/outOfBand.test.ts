@@ -3,7 +3,7 @@
 import * as rive from "../src/rive";
 import { loadFile } from "./helpers";
 
-test("Ensure onAsset called with hosted asset, contains cdn information.", async (done) => {
+test("Ensure onAsset called with hosted asset, contains cdn information.", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -23,7 +23,7 @@ test("Ensure onAsset called with hosted asset, contains cdn information.", async
   });
 });
 
-test("Ensure onAsset called with embedded asset, contains bytes.", async (done) => {
+test("Ensure onAsset called with embedded asset, contains bytes.", async () => {
   const mock = jest.fn();
   window.URL.createObjectURL = mock;
   const canvas = document.createElement("canvas");
@@ -51,11 +51,9 @@ test("Ensure onAsset called with embedded asset, contains bytes.", async (done) 
   // should be initialized once a file is read
   expect(window.URL.createObjectURL).toHaveBeenCalledTimes(1);
   expect(mock.mock.calls[0][0].size).toBe(308);
-
-  done();
 });
 
-test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", async (done) => {
+test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -74,7 +72,7 @@ test("Ensure onAsset called with referenced asset, contains no cdn/byte informat
   });
 });
 
-test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", async (done) => {
+test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -93,7 +91,7 @@ test("Ensure onAsset called with referenced asset, contains no cdn/byte informat
   });
 });
 
-test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", async (done) => {
+test("Ensure onAsset called with referenced asset, contains no cdn/byte information.", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -112,7 +110,8 @@ test("Ensure onAsset called with referenced asset, contains no cdn/byte informat
   });
 });
 
-test("Test audio asset has correct data", async (done) => {
+test("Test audio asset has correct data", (done) => {
+  let expected = 2;
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -131,7 +130,8 @@ test("Test audio asset has correct data", async (done) => {
         expect(asset.uniqueFilename).toBe("embedded-0.wav");
         expect(asset.fileExtension).toBe("wav");
       }
-      done();
+      expected--;
+      if (expected == 0) done();
       return false;
     },
   });

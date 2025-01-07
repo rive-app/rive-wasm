@@ -2,9 +2,9 @@ import RiveCanvas, {
   Artboard,
   SMIInput,
   StateMachineInstance,
-  CanvasRendererProxy
+  CanvasRendererProxy,
 } from "@rive-app/canvas-advanced-single";
-import Centaur from "./centaur.riv";
+const Centaur = new URL("./centaur.riv", import.meta.url);
 
 interface AppleInstanceData {
   x: number;
@@ -83,13 +83,12 @@ async function main() {
 
       const appleInstance = {
         x: -appleBounds.maxX + Math.random() * appleBounds.maxX * 3,
-        y: -appleBounds.maxY + Math.random() * -appleBounds.maxY,
+        y: -appleBounds.maxY + (Math.random() * -appleBounds.maxY) / 2,
         artboard: aplInstance,
         machine: appleMachine,
         explodeTrigger: explodeTrigger,
       };
-      appleMachine.advance(0);
-      appleInstance.artboard.advance(0);
+      appleMachine.advanceAndApply(0);
 
       apples.add(appleInstance);
     }
@@ -180,9 +179,9 @@ async function main() {
       (targetMoveSpeed - currentMoveSpeed) * Math.min(1, elapsedSeconds * 10);
     characterX += elapsedSeconds * currentMoveSpeed;
 
-    // Instead of cleraing, let's just fill with a color that's not white.
-    // renderer.fillStyle = "#888";
-    // renderer.fillRect(0, 0, canvas.width, canvas.height);
+    // Instead of clearing, let's just fill with a color that's not white.
+    renderer.fillStyle = "#888";
+    renderer.fillRect(0, 0, canvas.width, canvas.height);
     renderer.save();
     // Compute the view matrix so that we can invert it to go from screen
     // space (like cursors) to character's artboard space.
@@ -200,6 +199,10 @@ async function main() {
 
     // Transform by the view matrix.
     renderer.transform(fwdMatrix);
+    renderer.translate(
+      canvas.width / 2 - characterWidth / 2,
+      canvas.height / 2
+    );
     // Invert the view matrix in order to go from cursor to artboard space.
     if (fwdMatrix.invert(inverseViewMatrix)) {
       const x =
@@ -210,6 +213,8 @@ async function main() {
         inverseViewMatrix.xy * cursorX +
         inverseViewMatrix.yy * cursorY +
         inverseViewMatrix.ty;
+
+      // console.log(x, y);
 
       // Check if we should invert the character's direction by comparing
       // the world location of the cursor to the world location of the
@@ -277,6 +282,7 @@ async function main() {
       }
       translation.x += heading.x * elapsedSeconds * 3000;
       translation.y += heading.y * elapsedSeconds * 3000;
+
       heading.y += elapsedSeconds;
       // Normalize heading.
       const length = heading.x * heading.x + heading.y * heading.y;
@@ -293,7 +299,7 @@ async function main() {
 
       renderer.save();
       renderer.translate(x, y);
-      machine.advance(elapsedSeconds);
+      machine.advanceAndApply(elapsedSeconds);
       const stateChangeCount = machine.stateChangedCount();
       for (let i = 0; i < stateChangeCount; i++) {
         if (machine.stateChangedNameByIndex(i) === "exit") {
@@ -301,7 +307,7 @@ async function main() {
           removedApples = true;
         }
       }
-      artboard.advance(elapsedSeconds);
+      // artboard.advance(elapsedSeconds);
       artboard.draw(renderer);
       renderer.restore();
     }

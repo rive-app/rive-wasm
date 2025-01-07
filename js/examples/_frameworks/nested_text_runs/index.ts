@@ -1,6 +1,10 @@
 import "regenerator-runtime";
 import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
-import RiveNestedTextRuns from "/assets/runtime_nested_text_runs.riv";
+
+const RiveNestedTextRuns = new URL(
+  "/assets/runtime_nested_text_runs.riv",
+  import.meta.url,
+);
 
 async function loadRiveFile() {
   return await (await fetch(new Request(RiveNestedTextRuns))).arrayBuffer();

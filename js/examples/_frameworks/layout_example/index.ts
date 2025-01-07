@@ -1,6 +1,7 @@
 import "regenerator-runtime";
 import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
-import RiveLayoutTest from "/assets/layout_test.riv";
+
+const RiveLayoutTest = new URL("/assets/layout_test.riv", import.meta.url);
 
 async function loadRiveFile() {
   return await (await fetch(new Request(RiveLayoutTest))).arrayBuffer();

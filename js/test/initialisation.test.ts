@@ -2,14 +2,29 @@
 // which means there is no loading an external WASM file for tests
 import * as rc from "../src/rive_advanced.mjs";
 import * as rive from "../src/rive";
-import { pingPongRiveFileBuffer, corruptRiveFileBuffer, loopRiveFileBuffer, oneShotRiveFileBuffer, stateMachineFileBuffer } from "./assets/bytes";
+import {
+  pingPongRiveFileBuffer,
+  corruptRiveFileBuffer,
+  loopRiveFileBuffer,
+  oneShotRiveFileBuffer,
+  stateMachineFileBuffer,
+} from "./assets/bytes";
+
+function setTimeoutPromise(callback, ms) {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      const output = callback();
+      resolve(output);
+    }, ms),
+  );
+}
 
 // #region setup and teardown
 
 beforeEach(() => {
   // needed to prevent logging bad header on the corrupt file loader
   // not sure why mocking in that function does not work
-  jest.spyOn(console, "error").mockImplementation(() => { });
+  jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {});
@@ -18,29 +33,33 @@ afterEach(() => {});
 
 // #region runtime loading
 
-test("Runtime can be loaded using callbacks", async (done) => {
+test("Runtime can be loaded using callbacks", async () => {
+  let callbacksSucceeded = 0;
   const callback1: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
     expect(runtime.Fit.none).toBeDefined();
     expect(runtime.Fit.cover).toBeDefined();
     expect(runtime.Fit.none).not.toBe(runtime.Fit.cover);
+    callbacksSucceeded += 1;
   };
 
   const callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void =>
     expect(runtime).toBeDefined();
+  callbacksSucceeded += 1;
 
   const callback3: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
-    done();
+    callbacksSucceeded += 1;
   };
 
   rive.RuntimeLoader.getInstance(callback1);
   rive.RuntimeLoader.getInstance(callback2);
   // Delay 1 second to let library load
-  setTimeout(() => rive.RuntimeLoader.getInstance(callback3), 500);
+  await setTimeoutPromise(() => rive.RuntimeLoader.getInstance(callback3), 500);
+  expect(callbacksSucceeded).toBe(3);
 });
 
-test("Runtime can be loaded using promises", async (done) => {
+test("Runtime can be loaded using promises", async () => {
   const rive1: rc.RiveCanvas = await rive.RuntimeLoader.awaitInstance();
   expect(rive1).toBeDefined();
   expect(rive1.Fit.none).toBeDefined();
@@ -51,11 +70,10 @@ test("Runtime can be loaded using promises", async (done) => {
   expect(rive2).toBeDefined;
   expect(rive2).toBe(rive1);
 
-  setTimeout(async () => {
+  await setTimeoutPromise(async () => {
     const rive3 = await rive.RuntimeLoader.awaitInstance();
     expect(rive3).toBeDefined;
     expect(rive3).toBe(rive2);
-    done();
   }, 500);
 });
 
@@ -84,11 +102,11 @@ test("Rive objects initialize correctly", (done) => {
   });
 });
 
-test("Corrupt Rive file cause explosions", async (done) => {
+test("Corrupt Rive file cause explosions", async () => {
   // this test also causes two errors to be logged
   // but they seem to get logged outside the scope of the file load.
-  const warningMock = jest.fn()
-  const errorMock = jest.fn()
+  const warningMock = jest.fn();
+  const errorMock = jest.fn();
   jest.spyOn(console, "warn").mockImplementation(warningMock);
   jest.spyOn(console, "error").mockImplementation(errorMock);
   const canvas = document.createElement("canvas");
@@ -97,18 +115,18 @@ test("Corrupt Rive file cause explosions", async (done) => {
     new rive.Rive({
       canvas: canvas,
       buffer: corruptRiveFileBuffer,
-      onLoadError: () => { 
+      onLoadError: () => {
         resolve();
-      }
-,
-      onLoad: () => { expect(false).toBeTruthy() },
+      },
+      onLoad: () => {
+        expect(false).toBeTruthy();
+      },
     });
   });
-  expect(warningMock).toBeCalledWith('Problem loading file; may be corrupt!');
+  expect(warningMock).toBeCalledWith("Problem loading file; may be corrupt!");
   // racy should we add "waitFor"
   await new Promise((r) => setTimeout(r, 50));
-  expect(errorMock).toBeCalledWith('Problem loading file; may be corrupt!');
-  done();
+  expect(errorMock).toBeCalledWith("Problem loading file; may be corrupt!");
 });
 
 // #endregion
@@ -175,8 +193,6 @@ test("Layout is set to canvas dimensions if not specified", (done) => {
 
 // #endregion
 
-
-
 // #region Rive properties
 
 test("Rive file contents can be read", (done) => {
@@ -194,29 +210,29 @@ test("Rive file contents can be read", (done) => {
       expect(contents.artboards[0].animations).toBeDefined();
       expect(contents.artboards[0].animations).toHaveLength(6);
       expect(contents.artboards[0].animations[0]).toBe(
-        "WorkAreaPingPongAnimation"
+        "WorkAreaPingPongAnimation",
       );
       expect(contents.artboards[0].stateMachines).toBeDefined();
       expect(contents.artboards[0].stateMachines).toHaveLength(1);
       expect(contents.artboards[0].stateMachines[0].name).toBe("StateMachine");
       expect(contents.artboards[0].stateMachines[0].inputs).toHaveLength(3);
       expect(contents.artboards[0].stateMachines[0].inputs[0].name).toBe(
-        "MyNum"
+        "MyNum",
       );
       expect(contents.artboards[0].stateMachines[0].inputs[0].type).toBe(
-        rive.StateMachineInputType.Number
+        rive.StateMachineInputType.Number,
       );
       expect(contents.artboards[0].stateMachines[0].inputs[1].name).toBe(
-        "MyBool"
+        "MyBool",
       );
       expect(contents.artboards[0].stateMachines[0].inputs[1].type).toBe(
-        rive.StateMachineInputType.Boolean
+        rive.StateMachineInputType.Boolean,
       );
       expect(contents.artboards[0].stateMachines[0].inputs[2].name).toBe(
-        "MyTrig"
+        "MyTrig",
       );
       expect(contents.artboards[0].stateMachines[0].inputs[2].type).toBe(
-        rive.StateMachineInputType.Trigger
+        rive.StateMachineInputType.Trigger,
       );
       done();
     },
@@ -224,7 +240,6 @@ test("Rive file contents can be read", (done) => {
 });
 
 // #endregion
-
 
 // #region resetting
 
@@ -309,7 +324,10 @@ test("Rive renderer is deleted on deleteRiveRenderer", (done) => {
 test("Two Rive renderers can be deleted in reverse order", (done) => {
   const canvas1 = document.createElement("canvas");
   const canvas2 = document.createElement("canvas");
-  let r1 : rive.Rive, r2 : rive.Rive, r1DrawCountWithR2Stopped = 0, r2DrawCount = 0;
+  let r1: rive.Rive,
+    r2: rive.Rive,
+    r1DrawCountWithR2Stopped = 0,
+    r2DrawCount = 0;
   r1 = new rive.Rive({
     canvas: canvas1,
     buffer: stateMachineFileBuffer,
@@ -317,8 +335,7 @@ test("Two Rive renderers can be deleted in reverse order", (done) => {
     artboard: "MyArtboard",
     onAdvance: (event: rive.Event) => {
       // Draw until r2 has stopped for a while (make sure we have the final draw).
-      if (r2 && r2.isStopped)
-         ++r1DrawCountWithR2Stopped;
+      if (r2 && r2.isStopped) ++r1DrawCountWithR2Stopped;
       if (r1DrawCountWithR2Stopped >= 3) {
         // Cleanup in reverse order.
         r2.cleanup();
@@ -337,8 +354,7 @@ test("Two Rive renderers can be deleted in reverse order", (done) => {
     autoplay: true,
     onAdvance: (event: rive.Event) => {
       ++r2DrawCount;
-      if (r2DrawCount >= 3)
-        r2.stop();
+      if (r2DrawCount >= 3) r2.stop();
     },
   });
 });

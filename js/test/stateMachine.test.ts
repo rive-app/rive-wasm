@@ -45,7 +45,7 @@ test("Instanced state machine inputs can be retrieved", (done) => {
       expect(stateMachineInputs).toHaveLength(3);
 
       expect(stateMachineInputs[0].type).toBe(
-        rive.StateMachineInputType.Number
+        rive.StateMachineInputType.Number,
       );
       expect(stateMachineInputs[0].name).toBe("MyNum");
       expect(stateMachineInputs[0].value).toBe(0);
@@ -53,7 +53,7 @@ test("Instanced state machine inputs can be retrieved", (done) => {
       expect(stateMachineInputs[0].value).toBe(12);
 
       expect(stateMachineInputs[1].type).toBe(
-        rive.StateMachineInputType.Boolean
+        rive.StateMachineInputType.Boolean,
       );
       expect(stateMachineInputs[1].name).toBe("MyBool");
       expect(stateMachineInputs[1].value).toBe(false);
@@ -61,7 +61,7 @@ test("Instanced state machine inputs can be retrieved", (done) => {
       expect(stateMachineInputs[1].value).toBe(true);
 
       expect(stateMachineInputs[2].type).toBe(
-        rive.StateMachineInputType.Trigger
+        rive.StateMachineInputType.Trigger,
       );
       expect(stateMachineInputs[2].name).toBe("MyTrig");
       expect(stateMachineInputs[2].value).toBeUndefined();
@@ -75,6 +75,7 @@ test("Instanced state machine inputs can be retrieved", (done) => {
 test("Playing state machines can be manually started, paused, and restarted", (done) => {
   const canvas = document.createElement("canvas");
   let hasPaused = false;
+  let isDone = false;
 
   const r = new rive.Rive({
     canvas: canvas,
@@ -90,7 +91,12 @@ test("Playing state machines can be manually started, paused, and restarted", (d
       expect(r.isStopped).toBeFalsy();
       expect(r.isPaused).toBeFalsy();
       expect(r.isPlaying).toBeTruthy();
-      hasPaused ? done() : r.pause();
+      if (hasPaused && !isDone) {
+        isDone = true;
+        done();
+      } else if (!hasPaused) {
+        r.pause();
+      }
     },
     onPause: (event: rive.Event) => {
       expect(r.isPaused).toBeTruthy();
@@ -168,7 +174,7 @@ test("Advance event is not triggered when state machine is paused", (done) => {
       setTimeout(() => {
         // Rive draws one more frame before pausing at the end of a render loop
         expect(hasAdvancedMock.mock.calls.length).toBe(
-          advancedCallbackCount + 1
+          advancedCallbackCount + 1,
         );
         done();
       }, 50);

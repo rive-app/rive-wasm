@@ -1,7 +1,11 @@
 import "regenerator-runtime";
 import { Rive, Fit, Alignment, Layout } from "@rive-app/canvas";
 // import { Rive, Fit, Alignment, Layout } from "@rive-app/webgl";
-import RiveNestedInputs from "/assets/runtime_nested_inputs.riv";
+
+const RiveNestedInputs = new URL(
+  "/assets/runtime_nested_inputs.riv",
+  import.meta.url,
+);
 
 async function loadRiveFile() {
   return await (await fetch(new Request(RiveNestedInputs))).arrayBuffer();

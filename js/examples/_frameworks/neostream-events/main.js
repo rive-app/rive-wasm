@@ -1,5 +1,5 @@
-import './style.css'
-import neoStream from './neostreamv2.riv'
+import "./style.css";
+import neoStream from "./neostreamv2.riv";
 import PopupAudio from "/audio/FlameIntro.wav";
 import WindAudio from "/audio/Wind.wav";
 import FireballAudio from "/audio/FireBall.wav";
@@ -12,22 +12,22 @@ import Punch4Audio from "/audio/punch4.wav";
 import Fall1Audio from "/audio/BodyFallWoodFloor.wav";
 import Fall2Audio from "/audio/BodyFallCement.wav";
 import Fall3Audio from "/audio/BodyFallMat.wav";
-import { Rive, Fit, Alignment, Layout, EventType } from "@rive-app/canvas";
+import * as rive from "@rive-app/canvas";
+const { Rive, Fit, Alignment, Layout, EventType } = rive;
 
 async function loadRiveFile() {
   const bytes = await (await fetch(new Request(neoStream))).arrayBuffer();
   return { bytes };
 }
 
-const riveCanvas = document.getElementById("rive-canvas")
-const textElement = document.getElementById("side-element")
-
+const riveCanvas = document.getElementById("rive-canvas");
+const textElement = document.getElementById("side-element");
 
 window.startDemo = function () {
   document.getElementById("demo").style.display = "flex";
   document.getElementById("start-button").style.display = "none";
   main();
-}
+};
 
 export async function main() {
   const { bytes } = await loadRiveFile();
@@ -43,7 +43,7 @@ export async function main() {
     }),
     onLoad: () => {
       r.resizeDrawingSurfaceToCanvas();
-    }
+    },
   });
 
   function onRiveEventReceived(riveEvent) {
@@ -56,11 +56,10 @@ export async function main() {
       case "ButtonHover":
         if (riveEvent.data.properties["isHovering"]) {
           const audio = new Audio(FireballAudio);
-          audio.play()
+          audio.play();
           document.body.style.cursor = "pointer";
         } else {
           document.body.style.cursor = "auto";
-
         }
         break;
       case "Sound":
@@ -81,36 +80,35 @@ export async function main() {
     () => {
       r.resizeDrawingSurfaceToCanvas();
     },
-    false
+    false,
   );
 }
 
 function playSoundByName(soundName) {
   switch (soundName) {
     case "pop":
-      playPopupSound()
+      playPopupSound();
       break;
     case "wind":
-      playWindSound()
+      playWindSound();
       break;
     case "fall":
-      playFallSound()
+      playFallSound();
       break;
     case "hit":
-      playHitSound()
+      playHitSound();
       break;
     case "jump":
-      playJumpSound()
+      playJumpSound();
       break;
     case "duck":
-      playDuckSound()
+      playDuckSound();
       break;
     default:
-      console.log("Unhandled sound: " + soundName)
+      console.log("Unhandled sound: " + soundName);
       break;
   }
 }
-
 
 function playPopupSound() {
   const audioIntro = new Audio(PopupAudio);

@@ -27,11 +27,15 @@ import {
 //   decodeImage,
 //   decodeFont,
 // } from "@rive-app/webgl";
-import RiveTextAndImageFile from "./asset_load_check.riv";
-import RiveAudioFile from "/assets/ping_pong_audio_demo.riv";
-import AudioRacket1 from "./assets/racket1-59343.wav";
-import AudioRacket2 from "./assets/racket2-59344.wav";
-import AudioTable from "./assets/table-59328.wav";
+
+const RiveTextAndImageFile = new URL("./asset_load_check.riv", import.meta.url);
+const RiveAudioFile = new URL(
+  "/assets/ping_pong_audio_demo.riv",
+  import.meta.url,
+);
+const AudioRacket1 = new URL("./assets/racket1-59343.wav", import.meta.url);
+const AudioRacket2 = new URL("./assets/racket2-59344.wav", import.meta.url);
+const AudioTable = new URL("./assets/table-59328.wav", import.meta.url);
 
 let fontIndex = 0;
 
@@ -85,7 +89,7 @@ const loadAudioAssetByUniqueName = (asset: AudioAsset) => {
   }
 };
 
-async function _loadAudioAsset(asset: AudioAsset, file: string) {
+async function _loadAudioAsset(asset: AudioAsset, file: URL) {
   fetch(new Request(file)).then(async (res) => {
     const audio = await decodeAudio(new Uint8Array(await res.arrayBuffer()));
     asset.setAudioSource(audio);
