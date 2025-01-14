@@ -5,10 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.3](https://github.com/rive-app/rive-wasm/compare/2.25.2...2.25.3)
+## [2.25.4](https://github.com/rive-app/rive-wasm/compare/2.25.3...2.25.4)
+
+### Fixed
+
+- fix crash calling delete on offscreen canvas [`#382`](https://github.com/rive-app/rive-wasm/issues/382)
 
 ### Commits
 
+- Runtime fix for image scale with mesh [`9511360`](https://github.com/rive-app/rive-wasm/commit/9511360b5a13cf2ca272b80b80052f1b219b5478)
+- editor+runtime: fix text hit-testing on a locally transformed text [`5ec2d7a`](https://github.com/rive-app/rive-wasm/commit/5ec2d7aac097ef3d6d54ef23e75f451085113976)
+- Reduce the number of GradientSpans [`f16d673`](https://github.com/rive-app/rive-wasm/commit/f16d6739c49d3ffcc220ff267a9388282ce82b4a)
+- Update webgpu/glsl permutation #defines to "true" [`6476d8b`](https://github.com/rive-app/rive-wasm/commit/6476d8b32fd6a55a648f1f63a821726cc603c1ea)
+- Delete the simple gradient texture transfer [`d1c16ea`](https://github.com/rive-app/rive-wasm/commit/d1c16eac6fe93ec0348a5745ad1b17dc7dcbb91f)
+- Security warnings [`8f84708`](https://github.com/rive-app/rive-wasm/commit/8f84708403e91e34c670c20298682ec0a8471725)
+- add histogram arg to check golds to pass thru to diff.py [`05ad8f2`](https://github.com/rive-app/rive-wasm/commit/05ad8f204b6e8ec8f15c2a030c009bcf680b51ab)
+- move advanced call after update [`8b29800`](https://github.com/rive-app/rive-wasm/commit/8b29800034a96687cd69b45f7b515cae015f143c)
+- Reset scroll constraint when state machine not running [`2f8a762`](https://github.com/rive-app/rive-wasm/commit/2f8a762589e2f91cd3ae716a8efc977aea7f53fb)
+
+## [2.25.3](https://github.com/rive-app/rive-wasm/compare/2.25.2...2.25.3) - 2024-12-24
+
+### Commits
+
+- chore: tag 2.25.3 [`33215f3`](https://github.com/rive-app/rive-wasm/commit/33215f3ccd1dfe6a20f46af9bbe2c2587885ff9e)
 - Merge path_utils.hpp and eval_cubic.hpp into the core runtime [`7d9839b`](https://github.com/rive-app/rive-wasm/commit/7d9839b8ff90ac32bb93011f83616c14b44905fa)
 - Ensure child layouts mark dirty when flex direction changes [`4119aee`](https://github.com/rive-app/rive-wasm/commit/4119aeecc3b54d79f071d5074165cc9690ff744f)
 - Fix straight lines being detected as cusps [`07d25f4`](https://github.com/rive-app/rive-wasm/commit/07d25f4bcf7e05d17335bf133914c4c8b5917998)
