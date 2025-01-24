@@ -1510,6 +1510,9 @@ export class Rive {
   // Reference of an object that handles any observers for the animation
   private _observed: ObservedObject | null = null;
 
+  // Stores a custom device pixel ratio set by the user
+  private _customDevicePixelRatio: number = 0;
+
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
    * commands (e.g. contents) can be called as soon as the file is loaded.
@@ -1575,6 +1578,9 @@ export class Rive {
   // Audio event listener
   private _audioEventListener: EventListener | null = null;
 
+  // draw method bound to the class
+  private _boundDraw: (t: number) => void | null = null;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1582,6 +1588,7 @@ export class Rive {
   public isTouchScrollEnabled = false;
 
   constructor(params: RiveParameters) {
+    this._boundDraw = this.draw.bind(this);
     this.canvas = params.canvas;
     if (params.canvas.constructor === HTMLCanvasElement) {
       this._observed = observers.add(
@@ -1662,7 +1669,9 @@ export class Rive {
 
   private onCanvasResize = (hasZeroSize: boolean) => {
     this._hasZeroSize = hasZeroSize;
-    if (!this._layout.maxX || !this._layout.maxY) {
+    if (!hasZeroSize) {
+      this.resizeDrawingSurfaceToCanvas();
+    } else if (!this._layout.maxX || !this._layout.maxY) {
       this.resizeToCanvas();
     }
   };
@@ -1743,7 +1752,7 @@ export class Rive {
   public setupRiveListeners(
     riveListenerOptions?: SetupRiveListenersOptions,
   ): void {
-    if(this.eventCleanup) {
+    if (this.eventCleanup) {
       this.eventCleanup();
     }
     if (!this.shouldDisableRiveListeners) {
@@ -1927,7 +1936,13 @@ export class Rive {
 
   // Draws the current artboard frame
   public drawFrame() {
-    this.startRendering();
+    if (document?.timeline?.currentTime) {
+      if (this.loaded && this.artboard && !this.frameRequestId) {
+        this._boundDraw(document!.timeline!.currentTime as number);
+      }
+    } else {
+      this.startRendering();
+    }
   }
 
   // Tracks the last timestamp at which the animation was rendered. Used only in
@@ -2382,13 +2397,16 @@ export class Rive {
    */
   public resizeDrawingSurfaceToCanvas(customDevicePixelRatio?: number) {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
+      if (!isNaN(customDevicePixelRatio)) {
+        this._customDevicePixelRatio = customDevicePixelRatio;
+      }
       const { width, height } = this.canvas.getBoundingClientRect();
-      const dpr = customDevicePixelRatio || window.devicePixelRatio || 1;
+      const dpr = this._customDevicePixelRatio || window.devicePixelRatio || 1;
       this.devicePixelRatioUsed = dpr;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
-      this.startRendering();
       this.resizeToCanvas();
+      this.drawFrame();
 
       if (this.layout.fit === Fit.Layout) {
         const scaleFactor = this._layout.layoutScaleFactor;
@@ -2790,10 +2808,10 @@ export class Rive {
     if (this.loaded && this.artboard && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
         this.frameRequestId = this.runtime.requestAnimationFrame(
-          this.draw.bind(this),
+          this._boundDraw,
         );
       } else {
-        this.frameRequestId = requestAnimationFrame(this.draw.bind(this));
+        this.frameRequestId = requestAnimationFrame(this._boundDraw);
       }
     }
   }
