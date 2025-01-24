@@ -5,7 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.4](https://github.com/rive-app/rive-wasm/compare/2.25.3...2.25.4)
+## [2.25.6](https://github.com/rive-app/rive-wasm/compare/2.25.4...2.25.6)
+
+### Commits
+
+- update version [`6f56d08`](https://github.com/rive-app/rive-wasm/commit/6f56d0834bcbcc32a660c5597860eca769f2756f)
+- update submodule [`09bb67a`](https://github.com/rive-app/rive-wasm/commit/09bb67abe5f1c9a8fdd1bc8fea27e6d87c141e4a)
+- Propagate layout's display to children in runtime [`3d72627`](https://github.com/rive-app/rive-wasm/commit/3d726274b3e96a597809c1223c6258126b89b5fe)
+- editor+runtime: fix slow hit-testing [`974c871`](https://github.com/rive-app/rive-wasm/commit/974c871372fc83f44d054d57080f1f2674057f00)
+- Fix more bit rotting in webgpu_player [`28b9a36`](https://github.com/rive-app/rive-wasm/commit/28b9a366377859e57b485ce9df540038cf26b5e5)
+- Work around Android GL driver bugs that surfaced with the feather change [`4da0ca1`](https://github.com/rive-app/rive-wasm/commit/4da0ca14a03c75cf5e3fd60c6dee28c6392fa0cb)
+- Require Android NDK r27c from premake [`f3ea5a7`](https://github.com/rive-app/rive-wasm/commit/f3ea5a71fe93e63887a310d451b1a07d895269f7)
+- Add an android_api option for premake [`ed98921`](https://github.com/rive-app/rive-wasm/commit/ed98921fd29815252e0db06a11374d0618125f42)
+- Converter inspectors Part 1 [`1d15fb0`](https://github.com/rive-app/rive-wasm/commit/1d15fb019f6fd5325d956b8b11d8a44c9124ed89)
+- feather v1 [`e09ce3a`](https://github.com/rive-app/rive-wasm/commit/e09ce3a8a021a67d734fc58e635f2849db0e61aa)
+- Update the atan2 definition in shaders [`53a0c4d`](https://github.com/rive-app/rive-wasm/commit/53a0c4d663bf9e493a60d0b637b88cd9b276852e)
+- Nnnn add extra functionality to string converter [`a105c3e`](https://github.com/rive-app/rive-wasm/commit/a105c3ef216a71a7899142959728c6a6bf527f58)
+- add atan2 [`5d5b660`](https://github.com/rive-app/rive-wasm/commit/5d5b660672192caf371cac759583d44617169921)
+- Fix layout animation repeat [`eeb74d5`](https://github.com/rive-app/rive-wasm/commit/eeb74d5086b7b7efb4775348b69cf17ee96275e8)
+- initial work for testing data binding in the editor [`af9a1f3`](https://github.com/rive-app/rive-wasm/commit/af9a1f30a9e51e2b790d502f20e94b8984cd5340)
+- only reset state change on new frame [`487a8f2`](https://github.com/rive-app/rive-wasm/commit/487a8f26ffc39127c415b2d25a0b0b40fb9a9259)
+- export data enum names [`8d0dee9`](https://github.com/rive-app/rive-wasm/commit/8d0dee9667c7bc4ba15991ab2acd145527fc28ea)
+- Vulkan Support ! [`005d0c8`](https://github.com/rive-app/rive-wasm/commit/005d0c8f2c23bafbb73e3c9352c489ce69b5c834)
+- use triggers per state machine layer [`447fcfe`](https://github.com/rive-app/rive-wasm/commit/447fcfeda7a03b98e97082180838e4d2f78b21d2)
+- More Android GL fixes [`0b0477a`](https://github.com/rive-app/rive-wasm/commit/0b0477ae79534ac3d8c40bf2bb2d46b74812fc21)
+- add more arithmetic operations [`a7aec29`](https://github.com/rive-app/rive-wasm/commit/a7aec299b631d833d3988d14eb4109e85c7d57b2)
+- Fix premake tag [`6809244`](https://github.com/rive-app/rive-wasm/commit/680924479e094cc27dd8f982b82a67b5739112d3)
+
+## [2.25.4](https://github.com/rive-app/rive-wasm/compare/2.25.3...2.25.4) - 2025-01-14
 
 ### Fixed
 
@@ -13,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.25.4 [`d287dec`](https://github.com/rive-app/rive-wasm/commit/d287dece001d4c82da2450a1a736eb0488bac889)
 - Runtime fix for image scale with mesh [`9511360`](https://github.com/rive-app/rive-wasm/commit/9511360b5a13cf2ca272b80b80052f1b219b5478)
 - editor+runtime: fix text hit-testing on a locally transformed text [`5ec2d7a`](https://github.com/rive-app/rive-wasm/commit/5ec2d7aac097ef3d6d54ef23e75f451085113976)
 - Reduce the number of GradientSpans [`f16d673`](https://github.com/rive-app/rive-wasm/commit/f16d6739c49d3ffcc220ff267a9388282ce82b4a)
