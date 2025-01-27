@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.6](https://github.com/rive-app/rive-wasm/compare/2.25.4...2.25.6)
+## [2.25.7](https://github.com/rive-app/rive-wasm/compare/2.25.6...2.25.7)
 
 ### Commits
 
+- update submodule [`4a117d5`](https://github.com/rive-app/rive-wasm/commit/4a117d5743f990bb9ddf8d3f113b61491002f89e)
+
+## [2.25.6](https://github.com/rive-app/rive-wasm/compare/2.25.4...2.25.6) - 2025-01-24
+
+### Commits
+
+- chore: tag 2.25.6 [`254b8a8`](https://github.com/rive-app/rive-wasm/commit/254b8a84df37c84adb46fc04342bc5986fd52e6c)
 - update version [`6f56d08`](https://github.com/rive-app/rive-wasm/commit/6f56d0834bcbcc32a660c5597860eca769f2756f)
 - update submodule [`09bb67a`](https://github.com/rive-app/rive-wasm/commit/09bb67abe5f1c9a8fdd1bc8fea27e6d87c141e4a)
 - Propagate layout's display to children in runtime [`3d72627`](https://github.com/rive-app/rive-wasm/commit/3d726274b3e96a597809c1223c6258126b89b5fe)
