@@ -3,6 +3,10 @@ import packageData from "package.json";
 import { Animation } from "./animation";
 import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
 
+class RiveError extends Error {
+  public isHandledError = true;
+}
+
 // Note: Re-exporting a few types from rive_advanced.mjs to expose for high-level
 // API usage without re-defining their type definition here. May want to revisit
 // and see if we want to expose both types from rive.ts and rive_advanced.mjs in
@@ -31,6 +35,12 @@ interface SetupRiveListenersOptions {
  * Type for artboard bounds
  */
 export type Bounds = rc.AABB;
+
+// #regions helpers
+const resolveErrorMessage = (error: any): string =>
+  error && error.isHandledError
+    ? error.message
+    : "Problem loading file; may be corrupt!";
 
 // #region layout
 
@@ -1383,6 +1393,8 @@ export class RiveFile {
 
   private referenceCount: number = 0;
 
+  private destroyed: boolean = false;
+
   constructor(params: RiveFileParameters) {
     this.src = params.src;
     this.buffer = params.buffer;
@@ -1403,6 +1415,9 @@ export class RiveFile {
     if (this.src) {
       this.buffer = await loadRiveFile(this.src);
     }
+    if (this.destroyed) {
+      return;
+    }
     let loader;
     if (this.assetLoader) {
       loader = new this.runtime.CustomFileAssetLoader({
@@ -1415,6 +1430,11 @@ export class RiveFile {
       loader,
       this.enableRiveAssetCDN,
     );
+    if (this.destroyed) {
+      this.file?.delete();
+      this.file = null;
+      return;
+    }
     if (this.file !== null) {
       this.eventManager.fire({
         type: EventType.Load,
@@ -1435,6 +1455,10 @@ export class RiveFile {
       throw new Error(RiveFile.missingErrorMessage);
     }
     this.runtime = await RuntimeLoader.awaitInstance();
+    
+    if (this.destroyed) {
+      return;
+    }
     await this.initData();
   }
 
@@ -1467,6 +1491,8 @@ export class RiveFile {
     if (this.referenceCount <= 0) {
       this.removeAllRiveEventListeners();
       this.file?.delete();
+      this.file = null;
+      this.destroyed = true;
     }
   }
 
@@ -1552,6 +1578,10 @@ export class Rive {
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
     "Rive source file or data buffer required";
+
+  // Error message for removed rive file
+  private static readonly cleanupErrorMessage: string =
+    "Attempt to use file after calling cleanup.";
 
   private shouldDisableRiveListeners = false;
 
@@ -1835,6 +1865,10 @@ export class Rive {
         });
         await this.riveFile.init();
       }
+      // Check for riveFile in case it has been cleaned up while initializing;
+      if (!this.riveFile) {
+        throw new RiveError(Rive.cleanupErrorMessage);
+      }
       this.file = this.riveFile.getInstance();
       // Initialize and draw frame
       this.initArtboard(
@@ -1866,7 +1900,7 @@ export class Rive {
 
       return Promise.resolve();
     } catch (error) {
-      const msg = "Problem loading file; may be corrupt!";
+      const msg = resolveErrorMessage(error);
       console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);

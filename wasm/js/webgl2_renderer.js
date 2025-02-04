@@ -96,6 +96,12 @@ Module["onRuntimeInitialized"] = function () {
     renderer._width = canvas.width;
     renderer._height = canvas.height;
     renderer._gl = gl;
+    var nativeDelete = renderer.delete;
+    renderer.delete = function () {
+      nativeDelete.call(this);
+      GL.deleteContext(this._handle);
+      this._handle = this._canvas = this._width = this._width = this._gl = null;
+    };
     return renderer;
   }
 

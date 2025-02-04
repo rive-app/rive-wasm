@@ -281,8 +281,8 @@ public:
     {
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
         m_plsSynchronizedBuffers.clear();
-        m_renderTarget.release();
-        m_renderContext.release();
+        m_renderTarget = nullptr;
+        m_renderContext = nullptr;
     }
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL() const { return m_contextGL; }
