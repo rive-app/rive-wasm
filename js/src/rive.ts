@@ -1536,8 +1536,6 @@ export class Rive {
   // Reference of an object that handles any observers for the animation
   private _observed: ObservedObject | null = null;
 
-  // Stores a custom device pixel ratio set by the user
-  private _customDevicePixelRatio: number = 0;
 
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
@@ -1698,9 +1696,12 @@ export class Rive {
   }
 
   private onCanvasResize = (hasZeroSize: boolean) => {
+    const toggledDisplay = this._hasZeroSize !== hasZeroSize; 
     this._hasZeroSize = hasZeroSize;
     if (!hasZeroSize) {
-      this.resizeDrawingSurfaceToCanvas();
+      if(toggledDisplay) {
+        this.resizeDrawingSurfaceToCanvas();
+      }
     } else if (!this._layout.maxX || !this._layout.maxY) {
       this.resizeToCanvas();
     }
@@ -2431,11 +2432,8 @@ export class Rive {
    */
   public resizeDrawingSurfaceToCanvas(customDevicePixelRatio?: number) {
     if (this.canvas instanceof HTMLCanvasElement && !!window) {
-      if (!isNaN(customDevicePixelRatio)) {
-        this._customDevicePixelRatio = customDevicePixelRatio;
-      }
       const { width, height } = this.canvas.getBoundingClientRect();
-      const dpr = this._customDevicePixelRatio || window.devicePixelRatio || 1;
+      const dpr = customDevicePixelRatio || window.devicePixelRatio || 1;
       this.devicePixelRatioUsed = dpr;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
