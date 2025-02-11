@@ -5,7 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.25.4](https://github.com/rive-app/rive-wasm/compare/2.25.3...2.25.4)
+## [2.26.0](https://github.com/rive-app/rive-wasm/compare/2.25.7...2.26.0)
+
+### Commits
+
+- Fix Yoga crash with percent margin [`7aaccaf`](https://github.com/rive-app/rive-wasm/commit/7aaccaf123b6388905084d7acbb83f576dd7c70d)
+- Make the segmentation of feathered curves more uniform [`599f3c2`](https://github.com/rive-app/rive-wasm/commit/599f3c28d28cbc01bb4ae5da2f6783b1b636b45f)
+- Add some .rivs with feathering to golden tests [`d69c474`](https://github.com/rive-app/rive-wasm/commit/d69c474c2c20cc271c79da515efc46e3c7c90a8e)
+- add support for non exportable view model instances [`e8d69a0`](https://github.com/rive-app/rive-wasm/commit/e8d69a0fcd4ac059ce5dc9c6f29b93a48b576fe8)
+- Nnnn feather fixes 2 [`60ab2bc`](https://github.com/rive-app/rive-wasm/commit/60ab2bccc9cda2f9d43b218dd2f2b0ee99e1a03d)
+- Implement a feather atlas for msaa [`0934ed7`](https://github.com/rive-app/rive-wasm/commit/0934ed7fe7365a9b88266ff5484593fa496d5f8c)
+- change lerp [`5dc8ea2`](https://github.com/rive-app/rive-wasm/commit/5dc8ea23c9256162527a6994f44b7033487553d3)
+- Update layout display before propagating to children [`66fc897`](https://github.com/rive-app/rive-wasm/commit/66fc897a620cf833bfaaef0e6273a9a79962e3ef)
+- Nnnn data bind fixes 5 [`9ceb6c9`](https://github.com/rive-app/rive-wasm/commit/9ceb6c99ea5db2f409778c0c58e0d17b2d6cdfff)
+- Delete the draw cache [`8d89434`](https://github.com/rive-app/rive-wasm/commit/8d894346681b772303f5edfe1d85e8fe30ee3ffd)
+- remove custom device pixel ratio [`488c4e9`](https://github.com/rive-app/rive-wasm/commit/488c4e9595003875520cbe1a73d6a9545dea6780)
+- Fix NestedArtboardLeaf render when parent is a group [`9edc36e`](https://github.com/rive-app/rive-wasm/commit/9edc36e91e55eabbf96b5121862aaadeedcaf66f)
+- add support for uint properties [`6b811a2`](https://github.com/rive-app/rive-wasm/commit/6b811a27b93f22352de00a0fe424f7e6d502f25f)
+- Adapt ScrollConstraint to work with NestedArtboardLayouts [`fbfb052`](https://github.com/rive-app/rive-wasm/commit/fbfb052181b21b463e3f3619650beb91ec58e013)
+- Foreground fill fix [`e750efc`](https://github.com/rive-app/rive-wasm/commit/e750efcb6487f135484a32f0a2a57d0b54ef74d0)
+- fix backwards path with multiple segments [`1f7d8d6`](https://github.com/rive-app/rive-wasm/commit/1f7d8d67b0b31e9c648bc6292c462cee4f64e72a)
+- fix gap in trim paths [`0731cc9`](https://github.com/rive-app/rive-wasm/commit/0731cc98b921be345297f9038e30ca3776f3d5d4)
+- Fix MSAA stencil settings for clockwise paths [`8f6767a`](https://github.com/rive-app/rive-wasm/commit/8f6767ab19dd8422994db484b4f6300a2347ff67)
+- use clockwise flag at runtime [`8674d5b`](https://github.com/rive-app/rive-wasm/commit/8674d5b1bd191bd7b1e723ffe775af2d2a1688c9)
+- Fix webgpu defines for image meshes [`b4c0c22`](https://github.com/rive-app/rive-wasm/commit/b4c0c22f259ce4cc1204d7a715d0bf9867e6aa1d)
+- Simplify the feather integral calculations [`02a7f5b`](https://github.com/rive-app/rive-wasm/commit/02a7f5bc897bd9fb527bd4dfcf9a2929ff4b4796)
+- Improve feathered curve chopping [`e4655df`](https://github.com/rive-app/rive-wasm/commit/e4655dfad92f6a3d137c4912ebc3e8a1efb16d69)
+- extend string converter [`1cd9bee`](https://github.com/rive-app/rive-wasm/commit/1cd9beede50d3a7c0fb51d2e184fc203ad5354dd)
+- Update to 5 5 [`8b45668`](https://github.com/rive-app/rive-wasm/commit/8b45668d7a5578a45b86962cd330a368fd3916d8)
+- Nnnn fix js memory leak 2 [`e13ae01`](https://github.com/rive-app/rive-wasm/commit/e13ae015f714c783bb97a67a161035beaabc2bdd)
+- run code generators to fix outdated values [`24083c0`](https://github.com/rive-app/rive-wasm/commit/24083c00d082de232f41ef730113aa99ae6d2bfa)
+- fix sync with state machine triggers [`6961eb3`](https://github.com/rive-app/rive-wasm/commit/6961eb3273d61d1f8bad55e1e13511676a0ee94e)
+- Improve layout display change handling [`d799963`](https://github.com/rive-app/rive-wasm/commit/d7999634b37b7628314c9de97a2f298711521a21)
+- add support to round decimals in to string converter [`8e4e39b`](https://github.com/rive-app/rive-wasm/commit/8e4e39b3b95999aeb2cd4776c1dc599648b38861)
+- Fix feathered corners [`9bd4cc6`](https://github.com/rive-app/rive-wasm/commit/9bd4cc6e3cafa39e70b8df433a91413dc6877587)
+- Implementing ScrollPercent and ScrollIndex properties [`54cf936`](https://github.com/rive-app/rive-wasm/commit/54cf936bd92f909390a20cec2cd0534737c8f914)
+- Remove Skia from android runtime [`8cb1c6c`](https://github.com/rive-app/rive-wasm/commit/8cb1c6c000e9129522a6a30c2e71a100136d1a85)
+- Turn storage buffers back on for Android ANGLE [`38e656d`](https://github.com/rive-app/rive-wasm/commit/38e656d0dd9c3754f9e85adefb9c1aaae8474074)
+- Player mouse events [`312cde2`](https://github.com/rive-app/rive-wasm/commit/312cde2a50d75697e0c9071b48b61cf95738a637)
+- add time based converter interpolator [`0f67412`](https://github.com/rive-app/rive-wasm/commit/0f674126f32ba9bb22c295c11068413da99ac3de)
+- make opacity bindable [`8888dc8`](https://github.com/rive-app/rive-wasm/commit/8888dc874ca8aa4a49b0ce6c765e8bddcdf13ae0)
+- fix bad property in animation at load [`5831a06`](https://github.com/rive-app/rive-wasm/commit/5831a0610f0d4aa8bb0f3de87ab1112a4ecdb0bf)
+- Fix for Windows android builds. [`d85ba0e`](https://github.com/rive-app/rive-wasm/commit/d85ba0e6491707a99cab89bb91bf2f2dd06fabe7)
+- Get hug working with text autoHeight [`b074534`](https://github.com/rive-app/rive-wasm/commit/b074534e72df0f7982ea8df46df61c8c093600ec)
+- change inherit blend mode default value to 127 [`eba94e3`](https://github.com/rive-app/rive-wasm/commit/eba94e3c575ecdd2e61e449de8a2678e50098907)
+- Nnnn feather fixes [`583325f`](https://github.com/rive-app/rive-wasm/commit/583325f8f6507b9ec22d7245c96dc845c09aa376)
+- Nnnn fix invalid viewmodel properties [`df7b8cd`](https://github.com/rive-app/rive-wasm/commit/df7b8cdbb687b366bd4c43808c96b837fbf1f2d4)
+- use transition only when it has been selected [`aad4b69`](https://github.com/rive-app/rive-wasm/commit/aad4b6947bc8b9a51f8082d5f5eab6e856335841)
+- add support to disable layers in state machines [`33de4d3`](https://github.com/rive-app/rive-wasm/commit/33de4d3f89caf622dc0ffeb7b245a68ca0c2d346)
+- resize canvas when visible [`55e8cc3`](https://github.com/rive-app/rive-wasm/commit/55e8cc3381b98bc1b0ed436847160eea17ea784d)
+- check whether state can change before evaluating conditions [`085a75d`](https://github.com/rive-app/rive-wasm/commit/085a75d4393b5466af4450968774f9e53322e2b9)
+- Which way is up? [`e0ba592`](https://github.com/rive-app/rive-wasm/commit/e0ba592f62f6e9d23538864451abc530b38713fc)
+- Editor + Runtime Feathers! [`0d94e21`](https://github.com/rive-app/rive-wasm/commit/0d94e217e5244524dabd2fe9eceaa911bae76051)
+- Fix the notorious pnglibconf.h error for v2 [`bb9fd3b`](https://github.com/rive-app/rive-wasm/commit/bb9fd3bd683a6d95739c3d546883d81542c24114)
+
+## [2.25.7](https://github.com/rive-app/rive-wasm/compare/2.25.6...2.25.7) - 2025-01-27
+
+### Commits
+
+- chore: tag 2.25.7 [`3480319`](https://github.com/rive-app/rive-wasm/commit/3480319fa2e3a6f83e71c7e1e4d333587d6685c2)
+- update submodule [`4a117d5`](https://github.com/rive-app/rive-wasm/commit/4a117d5743f990bb9ddf8d3f113b61491002f89e)
+
+## [2.25.6](https://github.com/rive-app/rive-wasm/compare/2.25.4...2.25.6) - 2025-01-24
+
+### Commits
+
+- chore: tag 2.25.6 [`254b8a8`](https://github.com/rive-app/rive-wasm/commit/254b8a84df37c84adb46fc04342bc5986fd52e6c)
+- update version [`6f56d08`](https://github.com/rive-app/rive-wasm/commit/6f56d0834bcbcc32a660c5597860eca769f2756f)
+- update submodule [`09bb67a`](https://github.com/rive-app/rive-wasm/commit/09bb67abe5f1c9a8fdd1bc8fea27e6d87c141e4a)
+- Propagate layout's display to children in runtime [`3d72627`](https://github.com/rive-app/rive-wasm/commit/3d726274b3e96a597809c1223c6258126b89b5fe)
+- editor+runtime: fix slow hit-testing [`974c871`](https://github.com/rive-app/rive-wasm/commit/974c871372fc83f44d054d57080f1f2674057f00)
+- Fix more bit rotting in webgpu_player [`28b9a36`](https://github.com/rive-app/rive-wasm/commit/28b9a366377859e57b485ce9df540038cf26b5e5)
+- Work around Android GL driver bugs that surfaced with the feather change [`4da0ca1`](https://github.com/rive-app/rive-wasm/commit/4da0ca14a03c75cf5e3fd60c6dee28c6392fa0cb)
+- Require Android NDK r27c from premake [`f3ea5a7`](https://github.com/rive-app/rive-wasm/commit/f3ea5a71fe93e63887a310d451b1a07d895269f7)
+- Add an android_api option for premake [`ed98921`](https://github.com/rive-app/rive-wasm/commit/ed98921fd29815252e0db06a11374d0618125f42)
+- Converter inspectors Part 1 [`1d15fb0`](https://github.com/rive-app/rive-wasm/commit/1d15fb019f6fd5325d956b8b11d8a44c9124ed89)
+- feather v1 [`e09ce3a`](https://github.com/rive-app/rive-wasm/commit/e09ce3a8a021a67d734fc58e635f2849db0e61aa)
+- Update the atan2 definition in shaders [`53a0c4d`](https://github.com/rive-app/rive-wasm/commit/53a0c4d663bf9e493a60d0b637b88cd9b276852e)
+- Nnnn add extra functionality to string converter [`a105c3e`](https://github.com/rive-app/rive-wasm/commit/a105c3ef216a71a7899142959728c6a6bf527f58)
+- add atan2 [`5d5b660`](https://github.com/rive-app/rive-wasm/commit/5d5b660672192caf371cac759583d44617169921)
+- Fix layout animation repeat [`eeb74d5`](https://github.com/rive-app/rive-wasm/commit/eeb74d5086b7b7efb4775348b69cf17ee96275e8)
+- initial work for testing data binding in the editor [`af9a1f3`](https://github.com/rive-app/rive-wasm/commit/af9a1f30a9e51e2b790d502f20e94b8984cd5340)
+- only reset state change on new frame [`487a8f2`](https://github.com/rive-app/rive-wasm/commit/487a8f26ffc39127c415b2d25a0b0b40fb9a9259)
+- export data enum names [`8d0dee9`](https://github.com/rive-app/rive-wasm/commit/8d0dee9667c7bc4ba15991ab2acd145527fc28ea)
+- Vulkan Support ! [`005d0c8`](https://github.com/rive-app/rive-wasm/commit/005d0c8f2c23bafbb73e3c9352c489ce69b5c834)
+- use triggers per state machine layer [`447fcfe`](https://github.com/rive-app/rive-wasm/commit/447fcfeda7a03b98e97082180838e4d2f78b21d2)
+- More Android GL fixes [`0b0477a`](https://github.com/rive-app/rive-wasm/commit/0b0477ae79534ac3d8c40bf2bb2d46b74812fc21)
+- add more arithmetic operations [`a7aec29`](https://github.com/rive-app/rive-wasm/commit/a7aec299b631d833d3988d14eb4109e85c7d57b2)
+- Fix premake tag [`6809244`](https://github.com/rive-app/rive-wasm/commit/680924479e094cc27dd8f982b82a67b5739112d3)
+
+## [2.25.4](https://github.com/rive-app/rive-wasm/compare/2.25.3...2.25.4) - 2025-01-14
 
 ### Fixed
 
@@ -13,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.25.4 [`d287dec`](https://github.com/rive-app/rive-wasm/commit/d287dece001d4c82da2450a1a736eb0488bac889)
 - Runtime fix for image scale with mesh [`9511360`](https://github.com/rive-app/rive-wasm/commit/9511360b5a13cf2ca272b80b80052f1b219b5478)
 - editor+runtime: fix text hit-testing on a locally transformed text [`5ec2d7a`](https://github.com/rive-app/rive-wasm/commit/5ec2d7aac097ef3d6d54ef23e75f451085113976)
 - Reduce the number of GradientSpans [`f16d673`](https://github.com/rive-app/rive-wasm/commit/f16d6739c49d3ffcc220ff267a9388282ce82b4a)
