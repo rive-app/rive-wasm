@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.0](https://github.com/rive-app/rive-wasm/compare/2.25.7...2.26.0)
+## [2.26.1](https://github.com/rive-app/rive-wasm/compare/2.26.0...2.26.1)
 
 ### Commits
 
+- Draw large feathers at lower resolution [`cbc7e66`](https://github.com/rive-app/rive-wasm/commit/cbc7e66e170b4d83e11db8b7de562e5cef9be1a3)
+
+## [2.26.0](https://github.com/rive-app/rive-wasm/compare/2.25.7...2.26.0) - 2025-02-11
+
+### Commits
+
+- chore: tag 2.26.0 [`53a3706`](https://github.com/rive-app/rive-wasm/commit/53a37065fd64548f4619961a9c8a810ca331cf02)
 - Fix Yoga crash with percent margin [`7aaccaf`](https://github.com/rive-app/rive-wasm/commit/7aaccaf123b6388905084d7acbb83f576dd7c70d)
 - Make the segmentation of feathered curves more uniform [`599f3c2`](https://github.com/rive-app/rive-wasm/commit/599f3c28d28cbc01bb4ae5da2f6783b1b636b45f)
 - Add some .rivs with feathering to golden tests [`d69c474`](https://github.com/rive-app/rive-wasm/commit/d69c474c2c20cc271c79da515efc46e3c7c90a8e)
