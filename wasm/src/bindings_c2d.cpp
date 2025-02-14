@@ -156,6 +156,35 @@ public:
 
     void rewind() override { call<void>("rewind"); }
 
+    void addRawPath(const rive::RawPath& path) override
+    {
+        // It might be faster to do this on the JS side, and just pass up the arrays...
+        // for now, we do it one segment at a time (each turns into an up-call to JS)
+        const rive::Vec2D* pts = path.points().data();
+        for (auto v : path.verbs())
+        {
+            switch ((rive::PathVerb)v)
+            {
+                case rive::PathVerb::move:
+                    move(*pts++);
+                    break;
+                case rive::PathVerb::line:
+                    line(*pts++);
+                    break;
+                case rive::PathVerb::cubic:
+                    cubic(pts[0], pts[1], pts[2]);
+                    pts += 3;
+                    break;
+                case rive::PathVerb::close:
+                    close();
+                    break;
+                default:
+                    assert(false); // unexpected verb
+            }
+        }
+        assert(pts - path.points().data() == path.points().size());
+    }
+
     void addRenderPath(rive::RenderPath* path, const rive::Mat2D& transform) override
     {
         float xx = transform.xx();
@@ -339,33 +368,9 @@ class C2DFactory : public Factory
     {
         val renderPath = val::module_property("renderFactory").call<val>("makeRenderPath");
         auto ptr = renderPath.as<RenderPath*>(allow_raw_pointers());
+        ptr->addRawPath(path);
 
-        // It might be faster to do this on the JS side, and just pass up the arrays...
-        // for now, we do it one segment at a time (each turns into an up-call to JS)
         ptr->fillRule(fr);
-        const Vec2D* pts = path.points().data();
-        for (auto v : path.verbs())
-        {
-            switch ((PathVerb)v)
-            {
-                case PathVerb::move:
-                    ptr->move(*pts++);
-                    break;
-                case PathVerb::line:
-                    ptr->line(*pts++);
-                    break;
-                case PathVerb::cubic:
-                    ptr->cubic(pts[0], pts[1], pts[2]);
-                    pts += 3;
-                    break;
-                case PathVerb::close:
-                    ptr->close();
-                    break;
-                default:
-                    assert(false); // unexpected verb
-            }
-        }
-        assert(pts - path.points().data() == path.points().size());
 
         return rcp(ptr); // Adopt this ref without increasing the refcount.
     }
