@@ -359,6 +359,47 @@ test("Two Rive renderers can be deleted in reverse order", (done) => {
   });
 });
 
+test("Rive deletes rive file instance on the cleanup", async () => {
+  const canvas = document.createElement("canvas");
+  const riveFile = new rive.RiveFile({
+    buffer: stateMachineFileBuffer,
+  });
+  await riveFile.init();
+
+  await new Promise<void>((resolve) => {
+    const r = new rive.Rive({
+      canvas: canvas,
+      riveFile: riveFile,
+      autoplay: true,
+      artboard: "MyArtboard",
+      onLoad: () => {
+        expect(r.activeArtboard).toBe("MyArtboard");
+        expect(riveFile.referenceCount).toBe(1);
+        r.cleanup();
+        expect(riveFile.referenceCount).toBe(0);
+        resolve();
+      },
+    });
+  });
+});
+
+test("Cleaning up file before load does not reduce reference count", async () => {
+  const canvas = document.createElement("canvas");
+  const riveFile = new rive.RiveFile({
+    buffer: stateMachineFileBuffer,
+  });
+  await riveFile.init();
+  const r = new rive.Rive({
+    canvas: canvas,
+    riveFile: riveFile,
+    autoplay: true,
+    artboard: "MyArtboard",
+  });
+  expect(riveFile.referenceCount).toBe(0);
+  r.cleanup();
+  expect(riveFile.referenceCount).toBe(0);
+});
+
 // #endregion
 
 // #region sizing the canvas

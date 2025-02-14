@@ -1455,7 +1455,7 @@ export class RiveFile {
       throw new Error(RiveFile.missingErrorMessage);
     }
     this.runtime = await RuntimeLoader.awaitInstance();
-    
+
     if (this.destroyed) {
       return;
     }
@@ -1533,9 +1533,11 @@ export class Rive {
   // Tracks if a Rive file is loaded
   private loaded = false;
 
+  // Tracks if a Rive file is destroyed
+  private destroyed = false;
+
   // Reference of an object that handles any observers for the animation
   private _observed: ObservedObject | null = null;
-
 
   /**
    * Tracks if a Rive file is loaded; we need this in addition to loaded as some
@@ -1696,10 +1698,10 @@ export class Rive {
   }
 
   private onCanvasResize = (hasZeroSize: boolean) => {
-    const toggledDisplay = this._hasZeroSize !== hasZeroSize; 
+    const toggledDisplay = this._hasZeroSize !== hasZeroSize;
     this._hasZeroSize = hasZeroSize;
     if (!hasZeroSize) {
-      if(toggledDisplay) {
+      if (toggledDisplay) {
         this.resizeDrawingSurfaceToCanvas();
       }
     } else if (!this._layout.maxX || !this._layout.maxY) {
@@ -1718,13 +1720,16 @@ export class Rive {
     autoplay = false,
     useOffscreenRenderer = false,
   }: RiveLoadParameters): void {
+    if (this.destroyed) {
+      return;
+    }
     this.src = src;
     this.buffer = buffer;
     this.riveFile = riveFile;
 
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer && !this.riveFile) {
-      throw new Error(Rive.missingErrorMessage);
+      throw new RiveError(Rive.missingErrorMessage);
     }
 
     // List of animations that should be initialized.
@@ -1740,6 +1745,9 @@ export class Rive {
     // Ensure the runtime is loaded
     RuntimeLoader.awaitInstance()
       .then((runtime) => {
+        if (this.destroyed) {
+          return;
+        }
         this.runtime = runtime;
 
         this.removeRiveListeners();
@@ -2178,6 +2186,7 @@ export class Rive {
    * Rive class
    */
   public cleanup() {
+    this.destroyed = true;
     // Stop the renderer if it hasn't already been stopped.
     this.stopRendering();
     // Clean up any artboard, animation or state machine instances.
@@ -2187,10 +2196,11 @@ export class Rive {
       observers.remove(this._observed);
     }
     this.removeRiveListeners();
-
-    this.riveFile?.cleanup();
+    if (this.file) {
+      this.riveFile?.cleanup();
+      this.file = null;
+    }
     this.riveFile = null;
-    this.file = null;
     this.deleteRiveRenderer();
     if (this._audioEventListener !== null) {
       audioManager.remove(this._audioEventListener);
