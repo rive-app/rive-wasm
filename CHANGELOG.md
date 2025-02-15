@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.1](https://github.com/rive-app/rive-wasm/compare/2.26.0...2.26.1)
+## [2.26.2](https://github.com/rive-app/rive-wasm/compare/2.26.1...2.26.2)
 
 ### Commits
 
+- fix dash with world path [`a162559`](https://github.com/rive-app/rive-wasm/commit/a16255963b4b0c62d760b5dd9bcbc84ce223351b)
+- Add RenderPath::addRawPath [`623cde3`](https://github.com/rive-app/rive-wasm/commit/623cde378c6d5d020c383c0f48a77b21ccea16d6)
+- only cleanup rive file if an instance of the file has been loaded [`31944b1`](https://github.com/rive-app/rive-wasm/commit/31944b1abf9904c664ab755b6226e4634ceaa722)
+- add support for paths as holes [`351e8b7`](https://github.com/rive-app/rive-wasm/commit/351e8b7f3810d2b56824e6fcea7994ef1795f12c)
+- Revert checks when using percent margin [`7ea17e5`](https://github.com/rive-app/rive-wasm/commit/7ea17e54f09719021a43871b0676e009d3c18747)
+- add support for negative corner radius [`12084bd`](https://github.com/rive-app/rive-wasm/commit/12084bda60f0ef66bd80654c87620cab529be625)
+- invalidate parent paint when dash is invalidated [`0166094`](https://github.com/rive-app/rive-wasm/commit/0166094876db532d9f0deef96bb6aa8c5cad98b1)
+- Update premake to use latest patched Yoga [`9e02015`](https://github.com/rive-app/rive-wasm/commit/9e0201598c5923368b786dbd816cbfe29e2e509a)
+- make decodeFont and decodeAudio non virtual [`8216582`](https://github.com/rive-app/rive-wasm/commit/82165829b7dc64b73107e350ecd718ecee299475)
+- Use hardware textureGather on hlsl [`eeec66c`](https://github.com/rive-app/rive-wasm/commit/eeec66c75207bea051a9e64f84751c72c1104820)
+
+## [2.26.1](https://github.com/rive-app/rive-wasm/compare/2.26.0...2.26.1) - 2025-02-11
+
+### Commits
+
+- chore: tag 2.26.1 [`b95ac36`](https://github.com/rive-app/rive-wasm/commit/b95ac36b638fa5d510f942d6207a533f373c4243)
 - Draw large feathers at lower resolution [`cbc7e66`](https://github.com/rive-app/rive-wasm/commit/cbc7e66e170b4d83e11db8b7de562e5cef9be1a3)
 
 ## [2.26.0](https://github.com/rive-app/rive-wasm/compare/2.25.7...2.26.0) - 2025-02-11
