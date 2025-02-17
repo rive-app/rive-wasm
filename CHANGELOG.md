@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.2](https://github.com/rive-app/rive-wasm/compare/2.26.1...2.26.2)
+## [2.26.3](https://github.com/rive-app/rive-wasm/compare/2.26.2...2.26.3)
 
 ### Commits
 
+- Only use GL_R32F for the atlas if EXT_float_blend is supported [`6740fb7`](https://github.com/rive-app/rive-wasm/commit/6740fb70cde672fe961938c2303450c5de27d9f1)
+
+## [2.26.2](https://github.com/rive-app/rive-wasm/compare/2.26.1...2.26.2) - 2025-02-15
+
+### Commits
+
+- chore: tag 2.26.2 [`9e93415`](https://github.com/rive-app/rive-wasm/commit/9e9341515f4d16d233d31a7f0b2c0ac36c2271b9)
 - fix dash with world path [`a162559`](https://github.com/rive-app/rive-wasm/commit/a16255963b4b0c62d760b5dd9bcbc84ce223351b)
 - Add RenderPath::addRawPath [`623cde3`](https://github.com/rive-app/rive-wasm/commit/623cde378c6d5d020c383c0f48a77b21ccea16d6)
 - only cleanup rive file if an instance of the file has been loaded [`31944b1`](https://github.com/rive-app/rive-wasm/commit/31944b1abf9904c664ab755b6226e4634ceaa722)
