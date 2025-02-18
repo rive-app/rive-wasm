@@ -133,6 +133,13 @@ cp build/webgl_advanced_single/bin/release/webgl_advanced_single.mjs ../js/npm/w
 cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl_advanced_single/rive_advanced.mjs.d.ts
 
 echo
+echo "::::: building @rive-app/webgl2_advanced fallback"
+echo
+OUT_DIR=build/webgl2_advanced/bin/release ./build_wasm.sh -c -r webgl2 release
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive_fallback.wasm
+cp build/webgl2_advanced/bin/release/webgl2_advanced.wasm ../js/npm/webgl2/rive_fallback.wasm
+
+echo
 echo "::::: building @rive-app/webgl2_advanced"
 echo
 OUT_DIR=build/webgl2_advanced/bin/release ./build_wasm.sh -r webgl2 release
