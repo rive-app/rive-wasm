@@ -133,7 +133,7 @@ Module["onRuntimeInitialized"] = function () {
             // We experience flickering on Chrome/Metal when using a WebGL context with
             // "antialias:true". This appears to be a synchronization issue internal to the browser.
             // Avoid "antialias:true" in this case, opting instead to do our own internal MSAA.
-            _offscreenGL._enableAntialiasCanvas = false
+            _offscreenGL._enableAntialiasCanvas = false;
           }
         }
 
@@ -149,7 +149,17 @@ Module["onRuntimeInitialized"] = function () {
     if (useOffScreenRenderer) {
       return new OffscreenRenderer(canvas);
     }
-    return makeGLRenderer(canvas, /*enableMSAA =*/_offscreenGL._enableAntialiasCanvas);
+    return makeGLRenderer(
+      canvas,
+      /*enableMSAA =*/ _offscreenGL._enableAntialiasCanvas
+    );
+  };
+
+  const nativeDelete = Module["Artboard"]["prototype"]["delete"];
+
+  Module["Artboard"]["prototype"]["delete"] = function () {
+    this.artboardDeleted = true;
+    nativeDelete.call(this);
   };
 
   const wasmDraw = Module["Artboard"]["prototype"]["draw"];
@@ -157,7 +167,12 @@ Module["onRuntimeInitialized"] = function () {
     if (renderer._drawList) {
       // TODO: Is this safe? If the artboard is mutable, are we OK with rendering whatever
       // state it's in during flush time, rather than right now?
-      renderer._drawList.push(wasmDraw.bind(this, renderer._realRenderer));
+      renderer._drawList.push(() => {
+        if (this.artboardDeleted) {
+          return;
+        }
+        wasmDraw.call(this, renderer._realRenderer);
+      });
     } else {
       wasmDraw.call(this, renderer);
     }
