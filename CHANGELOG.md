@@ -5,10 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.3](https://github.com/rive-app/rive-wasm/compare/2.26.2...2.26.3)
+## [2.26.4](https://github.com/rive-app/rive-wasm/compare/2.26.3...2.26.4)
 
 ### Commits
 
+- invalidate stroke effects when path changes [`d3ec52e`](https://github.com/rive-app/rive-wasm/commit/d3ec52eff648ed1be08c394dd24e33eedef741ba)
+- testing codecov [`8291c08`](https://github.com/rive-app/rive-wasm/commit/8291c08646be6dedfefbb515bf2faa790c90ee1d)
+- Move curve softening math for feathers to the GPU [`5601f68`](https://github.com/rive-app/rive-wasm/commit/5601f68e77d290e5d4335d7f5047f3f08e736104)
+- Adding more layout unit tests [`8f22fd8`](https://github.com/rive-app/rive-wasm/commit/8f22fd860a2e3102d8751b54ea7aa696c3d654f5)
+- test actual amplitude computation [`f8fe65e`](https://github.com/rive-app/rive-wasm/commit/f8fe65eea93a69ba055356a26f39a339c2963034)
+- Infra fixups [`ea2d457`](https://github.com/rive-app/rive-wasm/commit/ea2d457e36c02898e81831253a26862f80e1e175)
+- Report runtime test coverage [`916df5e`](https://github.com/rive-app/rive-wasm/commit/916df5e3c9aa07e46ec89c3f635fc10f49b75bd0)
+- Rename gold/ to zzzgold/ [`dfabbe0`](https://github.com/rive-app/rive-wasm/commit/dfabbe02d33d54713986e3018486d34bedfcd7b6)
+- Move feather join tessellation to the draw shader [`bba50d6`](https://github.com/rive-app/rive-wasm/commit/bba50d65b44fa1e2651f69566569c9b5d9a3a232)
+- Nnnn listeners export fixes [`a2c2410`](https://github.com/rive-app/rive-wasm/commit/a2c2410c923b1ee996a8726b39963549a82e6ac8)
+- editor+runtime: allow setting tolerance to path measure [`48033a2`](https://github.com/rive-app/rive-wasm/commit/48033a2d22481b6f9f779ea0bfab23620180f7cf)
+- resort glyphs to compensate core text auto sorting [`779f0c7`](https://github.com/rive-app/rive-wasm/commit/779f0c709ca642e0d4b547a70ea31b41d7c5752c)
+- Simplify the GMs registry [`d298bc0`](https://github.com/rive-app/rive-wasm/commit/d298bc07a04b9140d4c6554633f4a6c5a3567c23)
+- Unify Vulkan descriptor set layouts [`7b6597f`](https://github.com/rive-app/rive-wasm/commit/7b6597fe8588643ccf1d04dffbd08bf8a55dc158)
+- use quadToCubic instead of quadTo [`afc73ee`](https://github.com/rive-app/rive-wasm/commit/afc73eeb07ce26f6e0825b8e3350501f43cab7c5)
+- runtime: text follow path using text modifiers [`20efb55`](https://github.com/rive-app/rive-wasm/commit/20efb55d03a3459341721b5ba4162be2ee1c0927)
+- Gm no static registry [`d1c7f32`](https://github.com/rive-app/rive-wasm/commit/d1c7f32788571b334fa78fb39197d5dd94f58ca0)
+- Fix Layout Style CPP callbacks [`8648138`](https://github.com/rive-app/rive-wasm/commit/86481389aedf4631cf2f63cf5ed48ea1ed9547a6)
+- cherry pick stack vector use in vulkan impl [`f3fc3bc`](https://github.com/rive-app/rive-wasm/commit/f3fc3bca27b2e69d6e6503884705e66470505798)
+- add converters support in conditions state machines [`be9e356`](https://github.com/rive-app/rive-wasm/commit/be9e35617ee7d80946024159e7fc90832e4eafab)
+- Change Scroll DraggableProxy to use drawProxy [`e8ad32b`](https://github.com/rive-app/rive-wasm/commit/e8ad32b4149ea800c90d011cc33b9a981fe5dcbb)
+- Turn off android file logging by default [`73f6164`](https://github.com/rive-app/rive-wasm/commit/73f616411a7deff1d0d856c1707782d3a3fb6c1f)
+- Renderer shader hotloading [`9d21d1e`](https://github.com/rive-app/rive-wasm/commit/9d21d1e04cb5c95face3786cd66ca60fb2a5cefb)
+- Fix a crash on Galaxy A10 (Mali-G71) [`e2fc399`](https://github.com/rive-app/rive-wasm/commit/e2fc39994c06db8b8448a6f50309023551929803)
+- Math formula converter [`e63796c`](https://github.com/rive-app/rive-wasm/commit/e63796c48eab7c7f8271652d57d21a6087280d1e)
+- skip draw calls if artboard has been deleted [`6148920`](https://github.com/rive-app/rive-wasm/commit/61489207d0596cadc5d8307091112a1933e14182)
+- Fix up android browserstack gms [`53d5f01`](https://github.com/rive-app/rive-wasm/commit/53d5f01191e5c2bde08b700120c9a84ecda590b6)
+- runtime: refactor text.buildRenderStyles [`658390b`](https://github.com/rive-app/rive-wasm/commit/658390b6ac902254c6dfe45c82b91df200d89473)
+- Nnnn duplicate state layers [`55be6b0`](https://github.com/rive-app/rive-wasm/commit/55be6b0d6f728fc80c44d64949b424fcf8d1ee86)
+- Nnnn apply target to source on change [`5b60eef`](https://github.com/rive-app/rive-wasm/commit/5b60eefa5826fc7e53ffb71613b78c58e5bf94c3)
+- Convert the feather texture to a texture1d array [`84a1061`](https://github.com/rive-app/rive-wasm/commit/84a10610cbe650b9425089746655e4bf975ecde8)
+- feat: add webgl2 fallback wasm [`00bf54c`](https://github.com/rive-app/rive-wasm/commit/00bf54c410afec63b5958174439ea5e0e3f122b7)
+- Nnnn add blend mode text support [`428c237`](https://github.com/rive-app/rive-wasm/commit/428c23719f7270bfee04f4da48f16e1539953f2f)
+- Fix layout update on font load [`a7fd388`](https://github.com/rive-app/rive-wasm/commit/a7fd3880d9524970ca5c1d8b747062d90523a81a)
+
+## [2.26.3](https://github.com/rive-app/rive-wasm/compare/2.26.2...2.26.3) - 2025-02-17
+
+### Commits
+
+- chore: tag 2.26.3 [`ccd1fa9`](https://github.com/rive-app/rive-wasm/commit/ccd1fa9cb6e3a70a38e3cff32459b2b11fca057b)
 - Only use GL_R32F for the atlas if EXT_float_blend is supported [`6740fb7`](https://github.com/rive-app/rive-wasm/commit/6740fb70cde672fe961938c2303450c5de27d9f1)
 
 ## [2.26.2](https://github.com/rive-app/rive-wasm/compare/2.26.1...2.26.2) - 2025-02-15
