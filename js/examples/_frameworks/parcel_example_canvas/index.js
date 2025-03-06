@@ -87,6 +87,7 @@ async function main(num) {
       fit: Fit.Contain,
       alignment: Alignment.Center,
     }),
+    autoBind: true,
     ...(riveEx.hasStateMachine && { stateMachines: riveEx.stateMachine }),
   });
   function onRiveEventReceived(riveEvent) {

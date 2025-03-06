@@ -335,6 +335,35 @@ export declare class File {
    * @returns Number of artboards in the Rive file
    */
   artboardCount(): number;
+  /**
+   * Returns the number of View Models in the Rive File
+   * @returns Number of view models in the Rive file
+   */
+  viewModelCount(): number;
+  /**
+   * Returns a view model by the index in which it is located in the file
+   * @returns ViewModel
+   */
+  viewModelByIndex(index: number): ViewModel;
+  /**
+   * Returns a view model by name
+   * @returns ViewModel
+   */
+  viewModelByName(name: string): ViewModel;
+
+  /**
+   * Returns the default view model for the provided artboard
+   * @returns ViewModel
+   */
+  defaultArtboardViewModel(artboard: Artboard): ViewModel;
+
+  /**
+   * Returns a list of all data enums
+   * @returns DataEnum array in the Rive file
+   */
+  enums(): DataEnum[];
+
+
 
   delete(): void;
 }
@@ -509,6 +538,11 @@ export declare class Artboard {
    * Reset the artboard size to the original value
    */
   resetArtboardSize(): void;
+  /**
+   * binds the view model instance to the artboard
+   * @param instance - Renderer context to draw with
+   */
+  bindViewModelInstance(instance: ViewModelInstance): void;
 }
 
 export declare class Bone extends TransformComponent {
@@ -796,6 +830,12 @@ export declare class StateMachineInstance {
    * when no longer in use
    */
   delete(): void;
+
+  /**
+   * binds the view model instance to the state machine
+   * @param instance - Renderer context to draw with
+   */
+  bindViewModelInstance(instance: ViewModelInstance): void;
 }
 
 export declare class SMIInput {
@@ -826,6 +866,83 @@ export declare class SMIInput {
   asTrigger(): SMIInput;
 }
 
+export declare type ViewModelProperty = {
+  name: string;
+  type: DataType;
+};
+
+export declare class ViewModelInstanceValue {
+  get hasChanged(): boolean;
+  clearChanges(): void;
+  get name(): string;
+}
+
+export declare class ViewModelInstanceNumber extends ViewModelInstanceValue {
+  get value(): number;
+  set value(val: number);
+}
+
+export declare class ViewModelInstanceTrigger extends ViewModelInstanceValue {
+  trigger(): void;
+}
+
+export declare class ViewModelInstanceString extends ViewModelInstanceValue {
+  get value(): string;
+  set value(val: string);
+}
+
+
+export declare class ViewModelInstanceBoolean extends ViewModelInstanceValue {
+  get value(): boolean;
+  set value(val: boolean);
+}
+
+export declare class ViewModelInstanceColor extends ViewModelInstanceValue {
+  get value(): number;
+  set value(val: number);
+  rgb(r: number, g: number, b: number): void;
+  argb(a: number, r: number, g: number, b: number): void;
+  alpha(a: number): void;
+}
+
+export declare class ViewModelInstanceEnum extends ViewModelInstanceValue {
+  get value(): string;
+  set value(val: string);
+  get valueIndex(): number;
+  set valueIndex(val: number);
+  get values(): string[];
+}
+
+export declare class ViewModelInstance {
+  get propertyCount(): number;
+  number(path: string): ViewModelInstanceNumber;
+  string(path: string): ViewModelInstanceString;
+  boolean(path: string): ViewModelInstanceBoolean;
+  color(path: string): ViewModelInstanceColor;
+  enum(path: string): ViewModelInstanceEnum;
+  trigger(path: string): ViewModelInstanceTrigger;
+  viewModel(path: string): ViewModelInstance;
+  delete(): void;
+  getProperties(): ViewModelProperty[];
+}
+
+export declare class ViewModel {
+  get instanceCount(): number;
+  instanceByIndex(index: number): ViewModelInstance;
+  instanceByName(name: string): ViewModelInstance;
+  defaultInstance(): ViewModelInstance;
+  instance(): ViewModelInstance;
+  getProperties(): ViewModelProperty[];
+  getInstanceNames(): string[];
+  get propertyCount(): number;
+  get name(): string;
+}
+
+export declare class DataEnum {
+  get name(): string;
+  get values(): string[];
+}
+
 export declare class SMIBool {}
 
 export declare class SMINumber {}
@@ -835,6 +952,18 @@ export declare class SMITrigger {}
 ///////////
 // ENUMS //
 ///////////
+
+export enum DataType {
+  none,
+  string,
+  number,
+  boolean,
+  color,
+  list,
+  enumType,
+  trigger,
+  viewModel,
+}
 
 export enum Fit {
   fill,

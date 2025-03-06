@@ -40,6 +40,18 @@
 #include "rive/text/text_value_run.hpp"
 #include "rive/text/text.hpp"
 #include "rive/transform_component.hpp"
+#include "rive/viewmodel/viewmodel.hpp"
+#include "rive/viewmodel/viewmodel_instance.hpp"
+#include "rive/viewmodel/runtime/viewmodel_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_runtime.hpp"
+#include "rive/viewmodel/viewmodel_instance_number.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_value_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_color_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_boolean_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_number_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_string_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_trigger_runtime.hpp"
+#include "rive/viewmodel/viewmodel_instance_string.hpp"
 
 #include "js_alignment.hpp"
 #include "js_asset.hpp"
@@ -201,6 +213,63 @@ emscripten::val createRiveEventObject(rive::Event* event)
         eventObject.set("properties", propertiesObject);
     }
     return eventObject;
+}
+
+emscripten::val createDataEnumObject(rive::DataEnum* dataEnum)
+{
+    emscripten::val dataEnumObject = emscripten::val::object();
+    dataEnumObject.set("name", dataEnum->enumName());
+    emscripten::val dataEnumValues = emscripten::val::array();
+    for (auto& value : dataEnum->values())
+    {
+        auto name = value->key();
+        dataEnumValues.call<void>("push", name);
+    }
+    dataEnumObject.set("values", dataEnumValues);
+    return dataEnumObject;
+}
+
+emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
+{
+    emscripten::val jsProperties = emscripten::val::array();
+    for (const auto& prop : properties)
+    {
+        emscripten::val jsProp = emscripten::val::object();
+        jsProp.set("name", prop.name);
+        std::string val = "none";
+        switch (prop.type)
+        {
+            case rive::DataType::string:
+                val = "string";
+                break;
+            case rive::DataType::number:
+                val = "number";
+                break;
+            case rive::DataType::boolean:
+                val = "boolean";
+                break;
+            case rive::DataType::color:
+                val = "color";
+                break;
+            case rive::DataType::list:
+                val = "list";
+                break;
+            case rive::DataType::enumType:
+                val = "enumType";
+                break;
+            case rive::DataType::trigger:
+                val = "trigger";
+                break;
+            case rive::DataType::viewModel:
+                val = "viewModel";
+                break;
+            default:
+                break;
+        }
+        jsProp.set("type", val);
+        jsProperties.call<void>("push", jsProp);
+    }
+    return jsProperties;
 }
 
 class DynamicRectanizer
@@ -418,7 +487,37 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                 return self.artboardAt(index).release();
             }),
             allow_raw_pointers())
-        .function("artboardCount", &rive::File::artboardCount);
+        .function("artboardCount", &rive::File::artboardCount)
+        .function("viewModelCount", &rive::File::viewModelCount)
+        .function(
+            "viewModelByIndex",
+            optional_override([](const rive::File& self, size_t index) -> rive::ViewModelRuntime* {
+                return self.viewModelByIndex(index);
+            }),
+            allow_raw_pointers())
+        .function("viewModelByName",
+                  optional_override(
+                      [](const rive::File& self, std::string name) -> rive::ViewModelRuntime* {
+                          return self.viewModelByName(name);
+                      }),
+                  allow_raw_pointers())
+        .function("defaultArtboardViewModel",
+                  optional_override([](const rive::File& self,
+                                       rive::Artboard* artboard) -> rive::ViewModelRuntime* {
+                      return self.defaultArtboardViewModel(artboard);
+                  }),
+                  allow_raw_pointers())
+        .function("enums",
+                  optional_override([](const rive::File& self) {
+                      emscripten::val jsProperties = emscripten::val::array();
+                      for (auto& dataEnum : self.enums())
+                      {
+                          auto enumObject = createDataEnumObject(dataEnum);
+                          jsProperties.call<void>("push", enumObject);
+                      }
+                      return jsProperties;
+                  }),
+                  allow_raw_pointers());
     class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
     class_<AudioWrapper>("AudioWrapper").function("unref", &AudioWrapper::unref);
     class_<rive::Artboard>("ArtboardBase");
@@ -543,6 +642,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::ArtboardInstance& self) {
                       self.width(self.originalWidth());
                       self.height(self.originalHeight());
+                  }),
+                  allow_raw_pointers())
+        .function("bindViewModelInstance",
+                  optional_override([](rive::ArtboardInstance& self,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) {
+                      self.bindViewModelInstance(runtimeInstance->instance());
                   }),
                   allow_raw_pointers())
         .property("bounds", optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
@@ -780,7 +885,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                     }
                 return "unknown";
             }),
-            allow_raw_pointers());
+            allow_raw_pointers())
+        .function("bindViewModelInstance",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) {
+                      self.bindViewModelInstance(runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers());
 
     class_<rive::SMIInput>("SMIInput")
         .property("type", &rive::SMIInput::inputCoreType)
@@ -867,7 +978,181 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   pure_virtual(),
                   allow_raw_pointers())
         .allow_subclass<FileAssetLoaderWrapper>("FileAssetLoaderWrapper");
-
+    class_<rive::ViewModelRuntime>("ViewModel")
+        .property("propertyCount", &rive::ViewModelRuntime::propertyCount)
+        .property("name", &rive::ViewModelRuntime::name)
+        .property("instanceCount",
+                  select_overload<size_t() const>(&rive::ViewModelRuntime::instanceCount))
+        .function("instanceByIndex",
+                  optional_override([](const rive::ViewModelRuntime& self,
+                                       size_t index) -> rive::ViewModelInstanceRuntime* {
+                      return self.createInstanceFromIndex(index);
+                  }),
+                  allow_raw_pointers())
+        .function("instanceByName",
+                  optional_override([](const rive::ViewModelRuntime& self,
+                                       std::string name) -> rive::ViewModelInstanceRuntime* {
+                      return self.createInstanceFromName(name);
+                  }),
+                  allow_raw_pointers())
+        .function("getProperties",
+                  optional_override([](rive::ViewModelRuntime& self) {
+                      auto properties = self.properties();
+                      return buildProperties(properties);
+                  }),
+                  allow_raw_pointers())
+        .function("getInstanceNames",
+                  optional_override([](rive::ViewModelRuntime& self) {
+                      auto names = self.instanceNames();
+                      emscripten::val jsProperties = emscripten::val::array();
+                      for (auto name : names)
+                      {
+                          jsProperties.call<void>("push", name);
+                      }
+                      return jsProperties;
+                  }),
+                  allow_raw_pointers())
+        .function("defaultInstance",
+                  optional_override(
+                      [](const rive::ViewModelRuntime& self) -> rive::ViewModelInstanceRuntime* {
+                          return self.createDefaultInstance();
+                      }),
+                  allow_raw_pointers())
+        .function("instance",
+                  optional_override(
+                      [](const rive::ViewModelRuntime& self) -> rive::ViewModelInstanceRuntime* {
+                          return self.createInstance();
+                      }),
+                  allow_raw_pointers());
+    class_<rive::ViewModelInstanceRuntime>("ViewModelInstance")
+        .property("propertyCount",
+                  select_overload<size_t() const>(&rive::ViewModelInstanceRuntime::propertyCount))
+        .function(
+            "number",
+            optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                 const std::string& path) -> rive::ViewModelInstanceNumberRuntime* {
+                return self.propertyNumber(path);
+            }),
+            allow_raw_pointers())
+        .function(
+            "string",
+            optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                 const std::string& path) -> rive::ViewModelInstanceStringRuntime* {
+                return self.propertyString(path);
+            }),
+            allow_raw_pointers())
+        .function("boolean",
+                  optional_override(
+                      [](const rive::ViewModelInstanceRuntime& self,
+                         const std::string& path) -> rive::ViewModelInstanceBooleanRuntime* {
+                          return self.propertyBoolean(path);
+                      }),
+                  allow_raw_pointers())
+        .function(
+            "color",
+            optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                 const std::string& path) -> rive::ViewModelInstanceColorRuntime* {
+                return self.propertyColor(path);
+            }),
+            allow_raw_pointers())
+        .function(
+            "enum",
+            optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                 const std::string& path) -> rive::ViewModelInstanceEnumRuntime* {
+                return self.propertyEnum(path);
+            }),
+            allow_raw_pointers())
+        .function("trigger",
+                  optional_override(
+                      [](const rive::ViewModelInstanceRuntime& self,
+                         const std::string& path) -> rive::ViewModelInstanceTriggerRuntime* {
+                          return self.propertyTrigger(path);
+                      }),
+                  allow_raw_pointers())
+        .function("viewModel",
+                  optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                       const std::string& path) -> rive::ViewModelInstanceRuntime* {
+                      return self.propertyViewModel(path);
+                  }),
+                  allow_raw_pointers())
+        .function("getProperties",
+                  optional_override([](rive::ViewModelInstanceRuntime& self) {
+                      auto properties = self.properties();
+                      return buildProperties(properties);
+                  }),
+                  allow_raw_pointers());
+    class_<rive::ViewModelInstanceValueRuntime>("ViewModelInstanceValue")
+        .property(
+            "name",
+            select_overload<const std::string&() const>(&rive::ViewModelInstanceValueRuntime::name))
+        .property("hasChanged",
+                  select_overload<bool() const>(&rive::ViewModelInstanceValueRuntime::hasChanged))
+        .function("clearChanges",
+                  optional_override([](rive::ViewModelInstanceValueRuntime& self) {
+                      return self.clearChanges();
+                  }),
+                  allow_raw_pointers());
+    class_<rive::ViewModelInstanceNumberRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceNumber")
+        .property("value",
+                  select_overload<float() const>(&rive::ViewModelInstanceNumberRuntime::value),
+                  select_overload<void(float)>(&rive::ViewModelInstanceNumberRuntime::value));
+    class_<rive::ViewModelInstanceBooleanRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceBoolean")
+        .property("value",
+                  select_overload<bool() const>(&rive::ViewModelInstanceBooleanRuntime::value),
+                  select_overload<void(bool)>(&rive::ViewModelInstanceBooleanRuntime::value));
+    class_<rive::ViewModelInstanceColorRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceColor")
+        .property("value",
+                  select_overload<int() const>(&rive::ViewModelInstanceColorRuntime::value),
+                  select_overload<void(int)>(&rive::ViewModelInstanceColorRuntime::value))
+        .function(
+            "rgb",
+            optional_override([](rive::ViewModelInstanceColorRuntime& self, int r, int g, int b) {
+                self.rgb(r, g, b);
+            }),
+            allow_raw_pointers())
+        .function("argb",
+                  optional_override(
+                      [](rive::ViewModelInstanceColorRuntime& self, int a, int r, int g, int b) {
+                          self.argb(a, r, g, b);
+                      }),
+                  allow_raw_pointers())
+        .function("alpha",
+                  optional_override(
+                      [](rive::ViewModelInstanceColorRuntime& self, int a) { self.alpha(a); }),
+                  allow_raw_pointers());
+    class_<rive::ViewModelInstanceStringRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceString")
+        .property("value",
+                  select_overload<const std::string&() const>(
+                      &rive::ViewModelInstanceStringRuntime::value),
+                  select_overload<void(std::string)>(&rive::ViewModelInstanceStringRuntime::value));
+    class_<rive::ViewModelInstanceTriggerRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceTrigger")
+        .function(
+            "trigger",
+            optional_override([](rive::ViewModelInstanceTriggerRuntime& self) { self.trigger(); }),
+            allow_raw_pointers());
+    class_<rive::ViewModelInstanceEnumRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceEnum")
+        .property("value",
+                  select_overload<std::string() const>(&rive::ViewModelInstanceEnumRuntime::value),
+                  select_overload<void(std::string)>(&rive::ViewModelInstanceEnumRuntime::value))
+        .property(
+            "valueIndex",
+            select_overload<uint32_t() const>(&rive::ViewModelInstanceEnumRuntime::valueIndex),
+            select_overload<void(uint32_t)>(&rive::ViewModelInstanceEnumRuntime::valueIndex))
+        .property("values", optional_override([](const rive::ViewModelInstanceEnumRuntime& self) {
+                      auto values = self.values();
+                      emscripten::val jsValues = emscripten::val::array();
+                      for (auto value : values)
+                      {
+                          jsValues.call<void>("push", value);
+                      }
+                      return jsValues;
+                  }));
 #ifdef DEBUG
     function("doLeakCheck", &__lsan_do_recoverable_leak_check);
 #endif

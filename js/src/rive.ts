@@ -493,6 +493,12 @@ class StateMachine {
     this.inputs.length = 0;
     this.instance.delete();
   }
+
+  public bindViewModelInstance(viewModelInstance: ViewModelInstance) {
+    if (viewModelInstance.runtimeInstance != null) {
+      this.instance.bindViewModelInstance(viewModelInstance.runtimeInstance);
+    }
+  }
 }
 
 // #endregion
@@ -1292,6 +1298,10 @@ export interface RiveParameters {
    * EventType.RiveEvent
    */
   automaticallyHandleEvents?: boolean;
+  /**
+   * Rive will look for a default view model and view model instance to bind to the artboard
+   */
+  autoBind?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1337,6 +1347,7 @@ export interface RiveLoadParameters {
   buffer?: ArrayBuffer;
   riveFile?: RiveFile;
   autoplay?: boolean;
+  autoBind?: boolean;
   artboard?: string;
   animations?: string | string[];
   stateMachines?: string | string[];
@@ -1350,6 +1361,7 @@ export interface RiveResetParameters {
   animations?: string | string[];
   stateMachines?: string | string[];
   autoplay?: boolean;
+  autoBind?: boolean;
 }
 // Interface to RiveFile.load function
 export interface RiveFileParameters {
@@ -1611,6 +1623,9 @@ export class Rive {
   // draw method bound to the class
   private _boundDraw: (t: number) => void | null = null;
 
+  private _viewModelInstance: ViewModelInstance | null = null;
+  private _dataEnums: DataEnum[] | null = null;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1677,6 +1692,7 @@ export class Rive {
       buffer: this.buffer,
       riveFile: this.riveFile,
       autoplay: params.autoplay,
+      autoBind: params.autoBind,
       animations: params.animations,
       stateMachines: params.stateMachines,
       artboard: params.artboard,
@@ -1719,6 +1735,7 @@ export class Rive {
     artboard,
     autoplay = false,
     useOffscreenRenderer = false,
+    autoBind = false,
   }: RiveLoadParameters): void {
     if (this.destroyed) {
       return;
@@ -1771,6 +1788,7 @@ export class Rive {
           startingAnimationNames,
           startingStateMachineNames,
           autoplay,
+          autoBind,
         )
           .then(() => this.setupRiveListeners())
           .catch((e) => {
@@ -1863,6 +1881,7 @@ export class Rive {
     animationNames: string[],
     stateMachineNames: string[],
     autoplay: boolean,
+    autoBind: boolean,
   ): Promise<void> {
     try {
       if (this.riveFile == null) {
@@ -1885,6 +1904,7 @@ export class Rive {
         animationNames,
         stateMachineNames,
         autoplay,
+        autoBind,
       );
 
       // Initialize the artboard size
@@ -1922,6 +1942,7 @@ export class Rive {
     animationNames: string[],
     stateMachineNames: string[],
     autoplay: boolean,
+    autoBind: boolean,
   ): void {
     if (!this.file) {
       return;
@@ -1975,6 +1996,20 @@ export class Rive {
         data: instanceNames,
       },
     });
+
+    if (autoBind) {
+      const viewModel = this.file.defaultArtboardViewModel(rootArtboard);
+      if (viewModel !== null) {
+        const runtimeInstance = viewModel.defaultInstance();
+        if (runtimeInstance !== null) {
+          const viewModelInstance = new ViewModelInstance(
+            runtimeInstance,
+            null,
+          );
+          this.bindViewModelInstance(viewModelInstance);
+        }
+      }
+    }
   }
 
   // Draws the current artboard frame
@@ -2127,6 +2162,8 @@ export class Rive {
       this.durations.shift();
     }
 
+    this._viewModelInstance?.handleCallbacks();
+
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
     if (this.animator.isPlaying) {
@@ -2206,6 +2243,9 @@ export class Rive {
       audioManager.remove(this._audioEventListener);
       this._audioEventListener = null;
     }
+    this._viewModelInstance?.cleanup();
+    this._viewModelInstance = null;
+    this._dataEnums = null;
   }
 
   /**
@@ -2372,6 +2412,7 @@ export class Rive {
     const animationNames = mapToStringArray(params?.animations);
     const stateMachineNames = mapToStringArray(params?.stateMachines);
     const autoplay = params?.autoplay ?? false;
+    const autoBind = params?.autoBind ?? false;
 
     // Stop everything and clean up
     this.cleanupInstances();
@@ -2382,6 +2423,7 @@ export class Rive {
       animationNames,
       stateMachineNames,
       autoplay,
+      autoBind,
     );
     this.taskQueue.process();
   }
@@ -3011,6 +3053,501 @@ export class Rive {
 
   public set devicePixelRatioUsed(value: number) {
     this._devicePixelRatioUsed = value;
+  }
+
+  /**
+   * Initialize the data context with the view model instance.
+   */
+  public bindViewModelInstance(viewModelInstance: ViewModelInstance | null) {
+    if (this.artboard) {
+      this._viewModelInstance?.cleanup();
+      if (viewModelInstance && viewModelInstance.runtimeInstance) {
+        this._viewModelInstance = viewModelInstance;
+        this.artboard.bindViewModelInstance(viewModelInstance.runtimeInstance);
+        this.animator.stateMachines.forEach((stateMachine) =>
+          stateMachine.bindViewModelInstance(viewModelInstance),
+        );
+        viewModelInstance.incrementReferenceCount();
+      }
+    }
+  }
+
+  public get viewModelInstance(): ViewModelInstance | null {
+    return this._viewModelInstance;
+  }
+
+  public viewModelByIndex(index: number): ViewModel | null {
+    const viewModel = this.file.viewModelByIndex(index);
+    if (viewModel !== null) {
+      return new ViewModel(viewModel);
+    }
+    return null;
+  }
+
+  public viewModelByName(name: string): ViewModel | null {
+    const viewModel = this.file.viewModelByName(name);
+    if (viewModel !== null) {
+      return new ViewModel(viewModel);
+    }
+    return null;
+  }
+
+  public enums(): DataEnum[] {
+    if (this._dataEnums === null) {
+      const dataEnums = this.file.enums();
+      this._dataEnums = dataEnums.map((dataEnum) => {
+        return new DataEnum(dataEnum);
+      });
+    }
+    return this._dataEnums;
+  }
+
+  public defaultViewModel(): ViewModel | null {
+    if (this.artboard) {
+      const viewModel = this.file.defaultArtboardViewModel(this.artboard);
+      if (viewModel) {
+        return new ViewModel(viewModel);
+      }
+    }
+    return null;
+  }
+}
+
+export class ViewModel {
+  private _viewModel: rc.ViewModel;
+
+  constructor(viewModel: rc.ViewModel) {
+    this._viewModel = viewModel;
+  }
+
+  public get instanceCount(): number {
+    return this._viewModel.instanceCount;
+  }
+
+  public get name(): string {
+    return this._viewModel.name;
+  }
+
+  public instanceByIndex(index: number): ViewModelInstance | null {
+    const instance = this._viewModel.instanceByIndex(index);
+    if (instance !== null) {
+      return new ViewModelInstance(instance, null);
+    }
+    return null;
+  }
+
+  public instanceByName(name: string): ViewModelInstance | null {
+    const instance = this._viewModel.instanceByName(name);
+    if (instance !== null) {
+      return new ViewModelInstance(instance, null);
+    }
+    return null;
+  }
+
+  public defaultInstance(): ViewModelInstance | null {
+    const runtimeInstance = this._viewModel.defaultInstance();
+    if (runtimeInstance !== null) {
+      return new ViewModelInstance(runtimeInstance, null);
+    }
+    return null;
+  }
+
+  public instance(): ViewModelInstance | null {
+    const runtimeInstance = this._viewModel.instance();
+    if (runtimeInstance !== null) {
+      return new ViewModelInstance(runtimeInstance, null);
+    }
+    return null;
+  }
+
+  public get properties(): rc.ViewModelProperty[] {
+    return this._viewModel.getProperties();
+  }
+
+  public get instanceNames(): string[] {
+    return this._viewModel.getInstanceNames();
+  }
+}
+
+export class DataEnum {
+  private _dataEnum: rc.DataEnum;
+
+  constructor(dataEnum: rc.DataEnum) {
+    this._dataEnum = dataEnum;
+  }
+
+  public get name(): string {
+    return this._dataEnum.name;
+  }
+
+  public get values(): string[] {
+    return this._dataEnum.values;
+  }
+}
+
+export class ViewModelInstance {
+  private _runtimeInstance: rc.ViewModelInstance | null;
+
+  private _root: ViewModelInstance;
+
+  private _propertiesWithCallbacks: ViewModelInstanceValue[] = [];
+
+  private _referenceCount = 0;
+
+  constructor(
+    runtimeInstance: rc.ViewModelInstance,
+    root: ViewModelInstance | null,
+  ) {
+    this._runtimeInstance = runtimeInstance;
+    this._root = root || this;
+  }
+
+  public get runtimeInstance(): rc.ViewModelInstance | null {
+    return this._runtimeInstance;
+  }
+
+  public handleCallbacks() {
+    if (this._propertiesWithCallbacks.length !== 0) {
+      this._propertiesWithCallbacks.forEach((property) => {
+        property.handleCallbacks();
+      });
+    }
+  }
+
+  private clearCallbacks() {
+    this._propertiesWithCallbacks.forEach((property) => {
+      property.clearCallbacks();
+    });
+  }
+
+  /**
+   * method to access a property instance of type number belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public number(path: string): ViewModelInstanceNumber | null {
+    const instance = this._runtimeInstance?.number(path);
+    if (instance) {
+      return new ViewModelInstanceNumber(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a property instance of type string belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public string(path: string): ViewModelInstanceString | null {
+    const instance = this._runtimeInstance?.string(path);
+    if (instance) {
+      return new ViewModelInstanceString(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a property instance of type boolean belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public boolean(path: string): ViewModelInstanceBoolean | null {
+    const instance = this._runtimeInstance?.boolean(path);
+    if (instance) {
+      return new ViewModelInstanceBoolean(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a property instance of type color belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public color(path: string): ViewModelInstanceColor | null {
+    const instance = this._runtimeInstance?.color(path);
+    if (instance) {
+      return new ViewModelInstanceColor(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a property instance of type trigger belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public trigger(path: string): ViewModelInstanceTrigger | null {
+    const instance = this._runtimeInstance?.trigger(path);
+    if (instance) {
+      return new ViewModelInstanceTrigger(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a property instance of type enum belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public enum(path: string): ViewModelInstanceEnum | null {
+    const instance = this._runtimeInstance?.enum(path);
+    if (instance) {
+      return new ViewModelInstanceEnum(instance, this._root);
+    }
+    return null;
+  }
+
+  /**
+   * method to access a view model property instance belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the number property
+   */
+  public viewModel(path: string): ViewModelInstance | null {
+    const viewModelInstance = this._runtimeInstance?.viewModel(path);
+    if (viewModelInstance) {
+      return new ViewModelInstance(viewModelInstance, this._root);
+    }
+    return null;
+  }
+
+  /*
+   * method for internal use, it shouldn't be called externally
+   */
+  public addToCallbacks(property: ViewModelInstanceValue) {
+    if (!this._propertiesWithCallbacks.includes(property)) {
+      this._propertiesWithCallbacks.push(property);
+    }
+  }
+
+  /*
+   * method for internal use, it shouldn't be called externally
+   */
+  public removeFromCallbacks(property: ViewModelInstanceValue) {
+    if (this._propertiesWithCallbacks.includes(property)) {
+      this._propertiesWithCallbacks = this._propertiesWithCallbacks.filter(
+        (prop) => prop !== property,
+      );
+    }
+  }
+
+  public get properties(): rc.ViewModelProperty[] {
+    return (
+      this._runtimeInstance?.getProperties().map((prop) => ({ ...prop })) || []
+    );
+  }
+
+  public incrementReferenceCount() {
+    this._referenceCount++;
+  }
+
+  public cleanup() {
+    this._referenceCount--;
+    if (this._referenceCount <= 0) {
+      this._runtimeInstance?.delete();
+      this._runtimeInstance = null;
+      this.clearCallbacks();
+      this._propertiesWithCallbacks = [];
+    }
+  }
+}
+
+export class ViewModelInstanceValue {
+  protected _rootViewModel: ViewModelInstance;
+  protected callbacks: EventCallback[] = [];
+  protected _viewModelInstanceValue: rc.ViewModelInstanceValue;
+  constructor(instance: rc.ViewModelInstanceValue, root: ViewModelInstance) {
+    this._viewModelInstanceValue = instance;
+    this._rootViewModel = root;
+  }
+
+  public on(callback: EventCallback) {
+    // Since we don't clean the changed flag for properties that don't have listeners,
+    // we clean it the first time we add a listener to it
+    if (this.callbacks.length === 0) {
+      this._viewModelInstanceValue.clearChanges();
+    }
+    if (!this.callbacks.includes(callback)) {
+      this.callbacks.push(callback);
+      this._rootViewModel.addToCallbacks(this);
+    }
+  }
+  public off(callback?: EventCallback) {
+    if (!callback) {
+      this.callbacks.length = 0;
+    } else {
+      this.callbacks = this.callbacks.filter((cb) => cb !== callback);
+    }
+    if (this.callbacks.length === 0) {
+      this._rootViewModel.removeFromCallbacks(this);
+    }
+  }
+  public internalHandleCallback(callback: Function) {}
+
+  public handleCallbacks() {
+    if (this._viewModelInstanceValue.hasChanged) {
+      this._viewModelInstanceValue.clearChanges();
+      this.callbacks.forEach((callback) => {
+        this.internalHandleCallback(callback);
+      });
+    }
+  }
+
+  public clearCallbacks() {
+    this.callbacks.length = 0;
+  }
+
+  public get name() {
+    return this._viewModelInstanceValue.name;
+  }
+}
+
+export class ViewModelInstanceString extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceString, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public get value(): string {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceString).value;
+  }
+
+  public set value(val: string) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceString).value = val;
+  }
+  public internalHandleCallback(callback: Function) {
+    callback(this.value);
+  }
+}
+
+export class ViewModelInstanceNumber extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceNumber, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public get value(): number {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceNumber).value;
+  }
+
+  public set value(val: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceNumber).value = val;
+  }
+  public internalHandleCallback(callback: Function) {
+    callback(this.value);
+  }
+}
+
+export class ViewModelInstanceBoolean extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceBoolean, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public get value(): boolean {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceBoolean).value;
+  }
+
+  public set value(val: boolean) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceBoolean).value = val;
+  }
+  public internalHandleCallback(callback: Function) {
+    callback(this.value);
+  }
+}
+
+export class ViewModelInstanceTrigger extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceTrigger, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public trigger(): void {
+    return (
+      this._viewModelInstanceValue as rc.ViewModelInstanceTrigger
+    ).trigger();
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback();
+  }
+}
+
+export class ViewModelInstanceEnum extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceEnum, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public get value(): string {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).value;
+  }
+
+  public set value(val: string) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).value = val;
+  }
+
+  public set valueIndex(val: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).valueIndex = val;
+  }
+
+  public get valueIndex(): number {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceEnum)
+      .valueIndex;
+  }
+
+  public get values(): string[] {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).values;
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback(this.value);
+  }
+}
+
+export class ViewModelInstanceColor extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceColor, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public get value(): number {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceColor).value;
+  }
+
+  public set value(val: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).value = val;
+  }
+
+  public rgb(r: number, g: number, b: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).rgb(r, g, b);
+  }
+
+  public rgba(r: number, g: number, b: number, a: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).argb(
+      a,
+      r,
+      g,
+      b,
+    );
+  }
+
+  public argb(a: number, r: number, g: number, b: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).argb(
+      a,
+      r,
+      g,
+      b,
+    );
+  }
+
+  // Value 0 to 255
+  public alpha(a: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).alpha(a);
+  }
+
+  // Value 0 to 1
+  public opacity(o: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceColor).alpha(
+      Math.round(Math.max(0, Math.min(1, o)) * 255),
+    );
+  }
+  public internalHandleCallback(callback: Function) {
+    callback(this.value);
   }
 }
 
