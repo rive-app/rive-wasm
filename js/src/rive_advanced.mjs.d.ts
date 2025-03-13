@@ -363,8 +363,6 @@ export declare class File {
    */
   enums(): DataEnum[];
 
-
-
   delete(): void;
 }
 
@@ -891,7 +889,6 @@ export declare class ViewModelInstanceString extends ViewModelInstanceValue {
   set value(val: string);
 }
 
-
 export declare class ViewModelInstanceBoolean extends ViewModelInstanceValue {
   get value(): boolean;
   set value(val: boolean);
@@ -922,6 +919,9 @@ export declare class ViewModelInstance {
   enum(path: string): ViewModelInstanceEnum;
   trigger(path: string): ViewModelInstanceTrigger;
   viewModel(path: string): ViewModelInstance;
+  replaceViewModel(path: string, value: ViewModelInstance): boolean;
+  incrementReferenceCount(): void;
+  decrementReferenceCount(): void;
   delete(): void;
   getProperties(): ViewModelProperty[];
 }

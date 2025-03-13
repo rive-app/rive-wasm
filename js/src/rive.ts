@@ -3059,15 +3059,15 @@ export class Rive {
    * Initialize the data context with the view model instance.
    */
   public bindViewModelInstance(viewModelInstance: ViewModelInstance | null) {
-    if (this.artboard) {
-      this._viewModelInstance?.cleanup();
+    if (this.artboard && !this.destroyed) {
       if (viewModelInstance && viewModelInstance.runtimeInstance) {
+        viewModelInstance.internalIncrementReferenceCount();
+        this._viewModelInstance?.cleanup();
         this._viewModelInstance = viewModelInstance;
         this.artboard.bindViewModelInstance(viewModelInstance.runtimeInstance);
         this.animator.stateMachines.forEach((stateMachine) =>
           stateMachine.bindViewModelInstance(viewModelInstance),
         );
-        viewModelInstance.incrementReferenceCount();
       }
     }
   }
@@ -3311,6 +3311,21 @@ export class ViewModelInstance {
     return null;
   }
 
+  /**
+   * method to replace a view model property with another view model value
+   * @param path - path to the view model property
+   * @param value - view model that will replace the original
+   */
+  public replaceViewModel(path: string, value: ViewModelInstance): boolean {
+    if (value.runtimeInstance !== null) {
+      return (
+        this._runtimeInstance?.replaceViewModel(path, value.runtimeInstance!) ||
+        false
+      );
+    }
+    return false;
+  }
+
   /*
    * method for internal use, it shouldn't be called externally
    */
@@ -3331,20 +3346,37 @@ export class ViewModelInstance {
     }
   }
 
+  /*
+   * method to add one to the reference counter of the instance.
+   * Use if the file owning the reference is destroyed but the instance needs to stay around
+   */
+  public incrementReferenceCount() {
+    this._referenceCount++;
+    this._runtimeInstance?.incrementReferenceCount();
+  }
+
+  /*
+   * method to subtract one to the reference counter of the instance.
+   * Use if incrementReferenceCount has been called
+   */
+  public decrementReferenceCount() {
+    this._referenceCount--;
+    this._runtimeInstance?.decrementReferenceCount();
+  }
+
   public get properties(): rc.ViewModelProperty[] {
     return (
       this._runtimeInstance?.getProperties().map((prop) => ({ ...prop })) || []
     );
   }
 
-  public incrementReferenceCount() {
+  public internalIncrementReferenceCount() {
     this._referenceCount++;
   }
 
   public cleanup() {
     this._referenceCount--;
     if (this._referenceCount <= 0) {
-      this._runtimeInstance?.delete();
       this._runtimeInstance = null;
       this.clearCallbacks();
       this._propertiesWithCallbacks = [];

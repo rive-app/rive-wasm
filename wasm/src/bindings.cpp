@@ -1025,8 +1025,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       }),
                   allow_raw_pointers());
     class_<rive::ViewModelInstanceRuntime>("ViewModelInstance")
-        .property("propertyCount",
-                  select_overload<size_t() const>(&rive::ViewModelInstanceRuntime::propertyCount))
         .function(
             "number",
             optional_override([](const rive::ViewModelInstanceRuntime& self,
@@ -1075,6 +1073,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       return self.propertyViewModel(path);
                   }),
                   allow_raw_pointers())
+        .function("replaceViewModel",
+                  optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                       const std::string& path,
+                                       rive::ViewModelInstanceRuntime* value) -> bool {
+                      return self.replaceViewModel(path, value);
+                  }),
+                  allow_raw_pointers())
+        .function("incrementReferenceCount",
+                  optional_override([](const rive::ViewModelInstanceRuntime& self) { self.ref(); }),
+                  allow_raw_pointers())
+        .function(
+            "decerementReferenceCount",
+            optional_override([](const rive::ViewModelInstanceRuntime& self) { self.unref(); }),
+            allow_raw_pointers())
         .function("getProperties",
                   optional_override([](rive::ViewModelInstanceRuntime& self) {
                       auto properties = self.properties();
