@@ -362,8 +362,8 @@ test("Canvas has listeners attached once play() is invoked with a state machine"
       expect(listenerSpy).not.toHaveBeenCalled();
       r.play(stateMachineName);
     },
-    onStateChange: () => {
-      // onStateChange invoked after play() is called
+    onAdvance: () => {
+      // onAdvance invoked after play() is called
       expect(listenerSpy).toHaveBeenCalled();
       done();
     },
@@ -386,8 +386,8 @@ test("Canvas has listeners detached once stop() is invoked with a state machine"
       expect(removeEventListenerSpy).not.toHaveBeenCalled();
       r.play(stateMachineName);
     },
-    onStateChange: () => {
-      // onStateChange invoked after play() is called
+    onAdvance: () => {
+      // onAdvance invoked after play() is called
       expect(addEventListenerSpy).toHaveBeenCalled();
       r.stop(stateMachineName);
       expect(removeEventListenerSpy).toHaveBeenCalled();

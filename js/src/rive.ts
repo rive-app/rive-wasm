@@ -665,6 +665,9 @@ class Animator {
             this.artboard,
           );
           this.stateMachines.push(newStateMachine);
+          if (!playing) {
+            newStateMachine.advanceAndApply(0);
+          }
         } else {
           // In order to maintain compatibility with current behavior, if a state machine is not found
           // we look for an animation with the same name
@@ -2017,6 +2020,7 @@ export class Rive {
     if (document?.timeline?.currentTime) {
       if (this.loaded && this.artboard && !this.frameRequestId) {
         this._boundDraw(document!.timeline!.currentTime as number);
+        this.runtime?.resolveAnimationFrame();
       }
     } else {
       this.startRendering();
