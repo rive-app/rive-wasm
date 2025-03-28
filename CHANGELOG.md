@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.5](https://github.com/rive-app/rive-wasm/compare/2.26.4...2.26.5)
+## [2.26.6](https://github.com/rive-app/rive-wasm/compare/2.26.5...2.26.6)
 
 ### Commits
 
+- Fix for layoutstyle dirt continually being added in nested artboards [`2b374ed`](https://github.com/rive-app/rive-wasm/commit/2b374ed61f156a9b493f0f59a4df4a52e9de30e3)
+- Improve numeric stability of blend modes [`7d66f8d`](https://github.com/rive-app/rive-wasm/commit/7d66f8d5d3eb2a19531edafe2f6c8582ff8a2a48)
+- Fix Layout issue with image when N-slice applied [`6ac3ea6`](https://github.com/rive-app/rive-wasm/commit/6ac3ea6d9451e3803e074250495eeb6f5b93ffce)
+- Accept a raw VkImageView in the Vulkan renderTarget [`b77de73`](https://github.com/rive-app/rive-wasm/commit/b77de735c43b4438eb7636395eeaeb8d04125bb9)
+- Only call gms_build_registry() once [`8635692`](https://github.com/rive-app/rive-wasm/commit/86356926a6cc87a2bb15d39b63bf90d4de51aaa3)
+- Overhaul Vulkan synchronization [`13803e1`](https://github.com/rive-app/rive-wasm/commit/13803e16bd9decc5b1d8efb1a62199a71c142530)
+- Begin rework of Vulkan synchronization [`527c69a`](https://github.com/rive-app/rive-wasm/commit/527c69a264dbd691fa5a62955ee304dcafb25842)
+
+## [2.26.5](https://github.com/rive-app/rive-wasm/compare/2.26.4...2.26.5) - 2025-03-24
+
+### Commits
+
+- chore: tag 2.26.5 [`b81ee8c`](https://github.com/rive-app/rive-wasm/commit/b81ee8c7c63d58275676b4073d725c2e467f44c2)
 - resolve frame on draw [`5ad1b6c`](https://github.com/rive-app/rive-wasm/commit/5ad1b6c58b41b7e64e6e1f5a0a6d6583cbeebe76)
 - More cleanups for Vulkan bootstrapping [`7f5399a`](https://github.com/rive-app/rive-wasm/commit/7f5399aca416c5f256f49f7bbacb32164f6f5ad4)
 - Reduce the # of arguments required for Vulkan context creation [`96606a3`](https://github.com/rive-app/rive-wasm/commit/96606a37ff86e27e567aae1b48255f52788dafd3)
