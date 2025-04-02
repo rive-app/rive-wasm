@@ -1703,6 +1703,10 @@ export class Rive {
     });
   }
 
+  public get viewModelCount(): number {
+    return this.file.viewModelCount();
+  }
+
   // Alternative constructor to build a Rive instance from an interface/object
   public static new(params: RiveParameters): Rive {
     console.warn(
