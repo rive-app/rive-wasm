@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.6](https://github.com/rive-app/rive-wasm/compare/2.26.5...2.26.6)
+## [2.26.7](https://github.com/rive-app/rive-wasm/compare/2.26.6...2.26.7)
 
 ### Commits
 
+- feat: return string reference from vm instance runtime name [`6aa5884`](https://github.com/rive-app/rive-wasm/commit/6aa588457c1bf6f766f6770a7d5f60b5c1d93045)
+- Listener Silver and How to make a Silver [`f9e160d`](https://github.com/rive-app/rive-wasm/commit/f9e160defde06de5227cd9e0095c2da37f672c9c)
+- Revisit numeric stability for colordodge and colorburn [`d980de4`](https://github.com/rive-app/rive-wasm/commit/d980de4ca74cdaa91f7f48db47ea41f7786cd228)
+- Nnnn viewmodel runtime updates [`04d0289`](https://github.com/rive-app/rive-wasm/commit/04d02890e48521cd93078a9fb78a104f1a90e481)
+- Nnnn data bind fixes 9 [`e465dd2`](https://github.com/rive-app/rive-wasm/commit/e465dd24d42d8dbfb6af59da876d0fd989e34a6d)
+- Silvers [`7516a96`](https://github.com/rive-app/rive-wasm/commit/7516a961a3b0767dfb6785617fd52e9aa9a57f8f)
+- Remove a spurious print from WebGPU mipmap generation [`b785d37`](https://github.com/rive-app/rive-wasm/commit/b785d3774250c6a513b3603c10e6a10e20a92d4c)
+- Make elastic scroll properties bindable [`bc7cb6f`](https://github.com/rive-app/rive-wasm/commit/bc7cb6fa54d9ac8ed1ddf86b3ca8a9a21b19cb26)
+- More WebGPU fixups [`c150414`](https://github.com/rive-app/rive-wasm/commit/c1504145859c6e70934e23aaea9c49d02717de64)
+- Nnnn data bind mode design [`9d22aa4`](https://github.com/rive-app/rive-wasm/commit/9d22aa4b87351f0a9ff9db3f6f5aaed291de11cd)
+- Implement mipmaps in WebGPU [`1e21d48`](https://github.com/rive-app/rive-wasm/commit/1e21d48b4f96de7da24ea9b5326025ec12a2a34a)
+
+## [2.26.6](https://github.com/rive-app/rive-wasm/compare/2.26.5...2.26.6) - 2025-03-28
+
+### Commits
+
+- chore: tag 2.26.6 [`a11796d`](https://github.com/rive-app/rive-wasm/commit/a11796df55350f9712ed0568de1f4933f8893445)
 - Fix for layoutstyle dirt continually being added in nested artboards [`2b374ed`](https://github.com/rive-app/rive-wasm/commit/2b374ed61f156a9b493f0f59a4df4a52e9de30e3)
 - Improve numeric stability of blend modes [`7d66f8d`](https://github.com/rive-app/rive-wasm/commit/7d66f8d5d3eb2a19531edafe2f6c8582ff8a2a48)
 - Fix Layout issue with image when N-slice applied [`6ac3ea6`](https://github.com/rive-app/rive-wasm/commit/6ac3ea6d9451e3803e074250495eeb6f5b93ffce)
