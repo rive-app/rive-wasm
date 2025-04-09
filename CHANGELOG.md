@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.7](https://github.com/rive-app/rive-wasm/compare/2.26.6...2.26.7)
+## [2.26.8](https://github.com/rive-app/rive-wasm/compare/2.26.7...2.26.8)
 
 ### Commits
 
+- Fix GL buffer race condition [`cffce0b`](https://github.com/rive-app/rive-wasm/commit/cffce0bd31a07a93a227cea528d309862abd25b5)
+- Fix rendering corruption from nested clipIDs [`32f2d67`](https://github.com/rive-app/rive-wasm/commit/32f2d67c58c0e7679556c869ae4a8db2d566c330)
+- add support for joystick time based dependents [`ff0c058`](https://github.com/rive-app/rive-wasm/commit/ff0c0583f42eee2deda30ef303e44f4ab68a2046)
+- Switch image textures to premultiplied alpha [`c459f8b`](https://github.com/rive-app/rive-wasm/commit/c459f8b9d727b40aa9ee9e4e90e6515bd662a5a9)
+- rive-runtime pull silver rivs [`80d698b`](https://github.com/rive-app/rive-wasm/commit/80d698b8d857f3d24d965ccbe67f553f01831885)
+- Fix glfw working path [`afebe86`](https://github.com/rive-app/rive-wasm/commit/afebe86bb7c4f4b32b0de4e551aa2d803e000613)
+- Fix Rive-runtime tests [`682230d`](https://github.com/rive-app/rive-wasm/commit/682230dc7e9056980454c60c6dd2743c786e3a79)
+- Nnnn conditionnally export images and artboards [`0d551eb`](https://github.com/rive-app/rive-wasm/commit/0d551eb3e12c1cffbd6a48a769d7cf3a49f5316e)
+- Component Lists (Dart) [`609752c`](https://github.com/rive-app/rive-wasm/commit/609752caf7ec5ef0483e75787b438d78b8c577ba)
+- check for msbuild so we know if we need to load the vs environment [`7560c2d`](https://github.com/rive-app/rive-wasm/commit/7560c2da312bbaebbd7ee03830100efa946d2cd0)
+- Update ANGLE_shader_pixel_local_storage usage [`400a833`](https://github.com/rive-app/rive-wasm/commit/400a833fb90872f29e29b68570e23ff7fe2beae9)
+- Libraries [`8283125`](https://github.com/rive-app/rive-wasm/commit/8283125292e6c398579796ddf547795c5823b112)
+
+## [2.26.7](https://github.com/rive-app/rive-wasm/compare/2.26.6...2.26.7) - 2025-04-03
+
+### Commits
+
+- chore: tag 2.26.7 [`44e5ccd`](https://github.com/rive-app/rive-wasm/commit/44e5ccd4330641ba4f5804f9c8813546a9db6375)
 - feat: return string reference from vm instance runtime name [`6aa5884`](https://github.com/rive-app/rive-wasm/commit/6aa588457c1bf6f766f6770a7d5f60b5c1d93045)
 - Listener Silver and How to make a Silver [`f9e160d`](https://github.com/rive-app/rive-wasm/commit/f9e160defde06de5227cd9e0095c2da37f672c9c)
 - Revisit numeric stability for colordodge and colorburn [`d980de4`](https://github.com/rive-app/rive-wasm/commit/d980de4ca74cdaa91f7f48db47ea41f7786cd228)
