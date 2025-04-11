@@ -3,6 +3,23 @@
 import * as rive from "../src/rive";
 import { stateMachineFileBuffer } from "./assets/bytes";
 
+const originalErrorLog = console.error;
+const originalWarnLog = console.warn;
+const errorLogMock = jest.fn();
+const warnLogMock = jest.fn();
+
+beforeEach(() => {
+  errorLogMock.mockClear();
+  console.error = errorLogMock;
+  warnLogMock.mockClear();
+  console.warn = warnLogMock;
+});
+
+afterEach(() => {
+  console.error = originalErrorLog;
+  console.error = originalWarnLog;
+});
+
 // #region state machine
 
 test("State machine names can be retrieved", (done) => {
@@ -180,6 +197,43 @@ test("Advance event is not triggered when state machine is paused", (done) => {
       }, 50);
     },
     onAdvance: hasAdvancedMock,
+  });
+});
+
+test("State machine with wrong name logs a warning and an error", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: ["wrong!"],
+    onLoad: () => {
+      expect(warnLogMock.mock.calls.length).toBe(1);
+      expect(warnLogMock.mock.lastCall[0]).toBe(
+        "State Machine with name wrong! not found.",
+      );
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Animation with name wrong! not found.",
+      );
+      done();
+    },
+  });
+});
+
+test("Animation with wrong name logs a warning and an error", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    animations: ["wrong!"],
+    onLoad: () => {
+      expect(warnLogMock.mock.calls.length).toBe(0);
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Animation with name wrong! not found.",
+      );
+      done();
+    },
   });
 });
 

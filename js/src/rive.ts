@@ -634,6 +634,8 @@ class Animator {
           newAnimation.advance(0);
           newAnimation.apply(1.0);
           this.animations.push(newAnimation);
+        } else {
+          console.error(`Animation with name ${animatables[i]} not found.`);
         }
       }
     }
@@ -669,6 +671,7 @@ class Animator {
             newStateMachine.advanceAndApply(0);
           }
         } else {
+          console.warn(`State Machine with name ${animatables[i]} not found.`);
           // In order to maintain compatibility with current behavior, if a state machine is not found
           // we look for an animation with the same name
           this.initLinearAnimations([animatables[i]], playing);

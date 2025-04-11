@@ -4,6 +4,18 @@ import * as rive from "../src/rive";
 
 import { loadFile } from "./helpers";
 
+const originalErrorLog = console.error;
+const errorLogMock = jest.fn();
+
+beforeEach(() => {
+  errorLogMock.mockClear();
+  console.error = errorLogMock;
+});
+
+afterEach(() => {
+  console.error = originalErrorLog;
+});
+
 test("Autobinds correctly to the right view model instance", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
@@ -160,8 +172,97 @@ test("Replacing the wrong view model instance type gets rejected", (done) => {
       expect(viewModelInstance).not.toBe(null);
       const viewModel2 = r.viewModelByName("vm2");
       const viewModelInstance2 = viewModel2!.defaultInstance();
-      const replaced = viewModelInstance?.replaceViewModel("vm2/vm3", viewModelInstance2!);
+      const replaced = viewModelInstance?.replaceViewModel(
+        "vm2/vm3",
+        viewModelInstance2!,
+      );
       expect(replaced).toBe(false);
+
+      done();
+    },
+  });
+});
+
+test("Loads an invalid view model.", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: false,
+    onLoad: () => {
+      const viewModel = r.viewModelByName("vm1x");
+      expect(viewModel).toBe(null);
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Could not find View Model named vm1x.",
+      );
+
+      done();
+    },
+  });
+});
+
+test("Cannot auto bind artboard.", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    artboard: "disconnected",
+
+    onLoad: () => {
+      const vmi = r.viewModelInstance;
+      expect(vmi).toBe(null);
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Could not find a View Model linked to Artboard disconnected.",
+      );
+
+      done();
+    },
+  });
+});
+
+test("Loads an invalid view model instance by name.", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: false,
+    onLoad: () => {
+      const viewModel = r.viewModelByName("vm1");
+      expect(viewModel).not.toBe(null);
+      const viewModelInstance = viewModel?.instanceByName("wrong-name");
+      expect(viewModelInstance).toBe(null);
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Could not find View Model Instance named wrong-name. Was it marked to export with the file?",
+      );
+
+      done();
+    },
+  });
+});
+
+test.only("Loads an invalid view model instance by index.", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: false,
+    onLoad: () => {
+      const viewModel = r.viewModelByName("vm1");
+      expect(viewModel).not.toBe(null);
+      const viewModelInstance = viewModel?.instanceByIndex(10);
+      expect(viewModelInstance).toBe(null);
+      expect(errorLogMock.mock.calls.length).toBe(1);
+      expect(errorLogMock.mock.lastCall[0]).toBe(
+        "Could not find View Model Instance. Index 10 is out of range.",
+      );
 
       done();
     },
