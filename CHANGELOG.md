@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.8](https://github.com/rive-app/rive-wasm/compare/2.26.7...2.26.8)
+## [2.26.9](https://github.com/rive-app/rive-wasm/compare/2.26.8...2.26.9)
 
 ### Commits
 
+- chore: flush rive runtime change [`7b9604f`](https://github.com/rive-app/rive-wasm/commit/7b9604f2c7291c7ef96638004f8cb15ef99b66d5)
+
+## [2.26.8](https://github.com/rive-app/rive-wasm/compare/2.26.7...2.26.8) - 2025-04-09
+
+### Commits
+
+- chore: tag 2.26.8 [`1c2423a`](https://github.com/rive-app/rive-wasm/commit/1c2423a9eda589c32e39c1fef86f5ac27105f55d)
 - Fix GL buffer race condition [`cffce0b`](https://github.com/rive-app/rive-wasm/commit/cffce0bd31a07a93a227cea528d309862abd25b5)
 - Fix rendering corruption from nested clipIDs [`32f2d67`](https://github.com/rive-app/rive-wasm/commit/32f2d67c58c0e7679556c869ae4a8db2d566c330)
 - add support for joystick time based dependents [`ff0c058`](https://github.com/rive-app/rive-wasm/commit/ff0c0583f42eee2deda30ef303e44f4ab68a2046)
