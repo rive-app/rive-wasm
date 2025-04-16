@@ -5,10 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.26.9](https://github.com/rive-app/rive-wasm/compare/2.26.8...2.26.9)
+## [2.27.0](https://github.com/rive-app/rive-wasm/compare/2.26.9...2.27.0)
+
+### Fixed
+
+- libraries: serialize library artboards as local artboards [`#9324`](https://github.com/rive-app/rive/issues/9324)
 
 ### Commits
 
+- refactor: Work out low level barriers at the RenderContext level [`e929b59`](https://github.com/rive-app/rive-wasm/commit/e929b59db20d07eac953239ce776afb5fd7bb5ce)
+- docs: update community links [`b95afe8`](https://github.com/rive-app/rive-wasm/commit/b95afe80ef77b72acc85033d65ae8e330cb07c89)
+- remove cache for build js [`752de29`](https://github.com/rive-app/rive-wasm/commit/752de29b11b2438514dbd7da528bf6b2c4b9b58f)
+- fix: data converter range mapper argument order [`94a6092`](https://github.com/rive-app/rive-wasm/commit/94a6092d3bc8cabfc10c0520eeab3c7a48a139b6)
+- fix: access enums data [`ba0d064`](https://github.com/rive-app/rive-wasm/commit/ba0d06441dafe39771368c007adc5770fc33e5e8)
+- fix: stroke effects not updating with text modifiers [`b37a672`](https://github.com/rive-app/rive-wasm/commit/b37a672a738a84988cb606ad59fc8558b6632267)
+- refactor(renderer): pulled out decodeImage from context helper and made it platform decode [`523c6c8`](https://github.com/rive-app/rive-wasm/commit/523c6c8c45d063502a92135f619ad1b773179c18)
+- fix: contour bugs with new RectanglesToContour [`0f626e5`](https://github.com/rive-app/rive-wasm/commit/0f626e5c39299be173f406437d3395996c127e58)
+- fix crash if operation stack is 0 in a malformed formula [`27e5c84`](https://github.com/rive-app/rive-wasm/commit/27e5c844347caa96874eb0c7c291ac77d95ded95)
+- Make RectanglesToContour more memory efficient (particularly for re-runs). [`b4ed26e`](https://github.com/rive-app/rive-wasm/commit/b4ed26edf01ba261a8a2c88df4e7484c9394be10)
+- adds a text listener silver [`d99f4f5`](https://github.com/rive-app/rive-wasm/commit/d99f4f5bbdcc99b5fdffa2ce51cfdfdb5e0c0839)
+- fix coverage reports [`f081b93`](https://github.com/rive-app/rive-wasm/commit/f081b93d3f553ba8e62e67da45cb99af28dcff32)
+- refactor(renderer): Consolidate MSAA depth/stencil settings [`d2ef4dd`](https://github.com/rive-app/rive-wasm/commit/d2ef4dd04df55e680a56b8590f6c3e881b746db9)
+- log error with missing components [`6c38d65`](https://github.com/rive-app/rive-wasm/commit/6c38d6500a479417fa6b97bb8f512006ed61061c)
+
+## [2.26.9](https://github.com/rive-app/rive-wasm/compare/2.26.8...2.26.9) - 2025-04-11
+
+### Commits
+
+- chore: tag 2.26.9 [`201f01b`](https://github.com/rive-app/rive-wasm/commit/201f01b8fddf8fb80270400b4fab950091e42373)
 - chore: flush rive runtime change [`7b9604f`](https://github.com/rive-app/rive-wasm/commit/7b9604f2c7291c7ef96638004f8cb15ef99b66d5)
 
 ## [2.26.8](https://github.com/rive-app/rive-wasm/compare/2.26.7...2.26.8) - 2025-04-09
