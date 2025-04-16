@@ -23,7 +23,6 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
         with:
           version: 3.1.43
-          actions-cache-folder: "emsdk-cache"
       - name: Configure venv
         run: |
           python3 -m venv .venv
