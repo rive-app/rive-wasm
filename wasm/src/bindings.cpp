@@ -1084,7 +1084,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](const rive::ViewModelInstanceRuntime& self) { self.ref(); }),
                   allow_raw_pointers())
         .function(
-            "decerementReferenceCount",
+            "decrementReferenceCount",
             optional_override([](const rive::ViewModelInstanceRuntime& self) { self.unref(); }),
             allow_raw_pointers())
         .function("getProperties",
