@@ -26,23 +26,24 @@ This library allows full control over Rive files with a high-level API for hooki
 
 :house_with_garden: [Homepage](https://rive.app/)
 
-:blue_book: [Rive docs](https://rive.app/community/doc/)
+:blue_book: [Rive docs](https://rive.app/docs/getting-started/introduction)
 
 ## Getting started
 
 Follow along with the link below for a quick start in getting Rive JS integrated into your web applications.
 
-- [Getting Started with Rive in Web](https://rive.app/community/doc/web-js/docvlgbnS1mp)
-- [API documentation](https://rive.app/community/doc/rive-parameters/docHI9ASztXP)
+- [Getting Started with Rive in Web](https://rive.app/docs/runtimes/web/web-js)
+- [API documentation](https://rive.app/docs/runtimes/web/rive-parameters)
 
 For more information, see the Runtime sections of the Rive help documentation:
 
-- [Animation Playback](https://rive.app/community/doc/animation-playback/docDKKxsr7ko)
-- [Layout](https://rive.app/community/doc/layout/docBl81zd1GB)
-- [State Machines](https://rive.app/community/doc/state-machines/docxeznG7iiK)
-- [Rive Text](https://rive.app/community/doc/text/docn2E6y1lXo)
-- [Rive Events](https://rive.app/community/doc/rive-events/docbOnaeffgr)
-- [Loading Assets](https://rive.app/community/doc/loading-assets/doct4wVHGPgC)
+- [Animation Playback](https://rive.app/docs/runtimes/animation-playback)
+- [Layout](https://rive.app/docs/runtimes/layout)
+- [State Machines](https://rive.app/docs/runtimes/state-machines)
+- [Data Binding](https://rive.app/docs/runtimes/data-binding)
+- [Rive Text](https://rive.app/docs/runtimes/text)
+- [Rive Events](https://rive.app/docs/runtimes/rive-events)
+- [Loading Assets](https://rive.app/docs/runtimes/loading-assets)
 
 ## Supported browsers
 
@@ -74,7 +75,7 @@ For even more examples and resources on using Rive at runtime or in other tools,
 
 Using `rive-js` or an older version of the runtime and need to learn how to upgrade to the latest version? Check out the migration guides below in our help center that help guide you through major version bumps; breaking changes and all!
 
-[Migration guides](https://rive.app/community/doc/migrating-from-rivejs/docX1CbC22dq)
+[Migration guides](https://rive.app/docs/runtimes/web/migrating-from-rive-js)
 
 ## Contributing
 

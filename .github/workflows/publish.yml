@@ -30,7 +30,6 @@ jobs:
         uses: mymindstorm/setup-emsdk@v11
         with:
           version: 3.1.43
-          actions-cache-folder: "emsdk-cache"
       - name: Setup Git config
         run: |
           git config --local user.email 'hello@rive.app'
