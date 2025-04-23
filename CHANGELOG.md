@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.0](https://github.com/rive-app/rive-wasm/compare/2.26.9...2.27.0)
+## [2.27.1](https://github.com/rive-app/rive-wasm/compare/2.27.0...2.27.1)
+
+### Commits
+
+- fix(vulkan): Fix input attachmens on AMD (#9513) e5dc0b989c [`5f68f1d`](https://github.com/rive-app/rive-wasm/commit/5f68f1d3aaf6b551e978f208991f7290c02e835d)
+- refactor(vulkan): Move shaders to a different cpp file [`4767fca`](https://github.com/rive-app/rive-wasm/commit/4767fcafba82732865b941677d723c3260f78654)
+- feat(vulkan): Implement coalesced resolve [`2b0ca72`](https://github.com/rive-app/rive-wasm/commit/2b0ca727db47576c0194e12b9dd4903d4a1e66ae)
+- fix: update data binds when events from children are notified [`e682268`](https://github.com/rive-app/rive-wasm/commit/e6822681d37942e1fc89677db565e949762f3ecd)
+- Component List in CPP [`e5551c1`](https://github.com/rive-app/rive-wasm/commit/e5551c1577f47bcae7914a5f8c698b5df1caab9c)
+- feat(vulkan): Use VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL [`e1fa494`](https://github.com/rive-app/rive-wasm/commit/e1fa494d023a9b87e4838b7a22a35f548d0ef5ba)
+- refactor(vulkan): Make RenderTargetVulkan more generic [`6404809`](https://github.com/rive-app/rive-wasm/commit/6404809c2ecacb532e7cd0721f1125f552ec5738)
+- fix: 32-bit Vulkan builds on Android [`edc1deb`](https://github.com/rive-app/rive-wasm/commit/edc1debb7159b4574681d04b4f12ea27ea4a550f)
+- fix: Fix release build [`da86fc6`](https://github.com/rive-app/rive-wasm/commit/da86fc60d11b35ccce8e99ddd1bb51ee912be114)
+- refactor: Put blend state in PipelineState [`081c949`](https://github.com/rive-app/rive-wasm/commit/081c9494616e278ac86234ba68aaaedd0b8c854d)
+- library: allow loading library that uses another library [`d532bbb`](https://github.com/rive-app/rive-wasm/commit/d532bbb2fbe9a5c782264438d444d7c1f853bf72)
+
+## [2.27.0](https://github.com/rive-app/rive-wasm/compare/2.26.9...2.27.0) - 2025-04-16
 
 ### Fixed
 
@@ -13,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.27.0 [`b391663`](https://github.com/rive-app/rive-wasm/commit/b391663baab45b058ecbaf501d84ec003606ec6d)
 - refactor: Work out low level barriers at the RenderContext level [`e929b59`](https://github.com/rive-app/rive-wasm/commit/e929b59db20d07eac953239ce776afb5fd7bb5ce)
 - docs: update community links [`b95afe8`](https://github.com/rive-app/rive-wasm/commit/b95afe80ef77b72acc85033d65ae8e330cb07c89)
 - remove cache for build js [`752de29`](https://github.com/rive-app/rive-wasm/commit/752de29b11b2438514dbd7da528bf6b2c4b9b58f)
