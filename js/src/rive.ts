@@ -3208,6 +3208,7 @@ enum PropertyType {
   Color = "color",
   Trigger = "trigger",
   Enum = "enum",
+  List = "list",
 }
 
 export class ViewModelInstance {
@@ -3436,6 +3437,15 @@ export class ViewModelInstance {
           );
         }
         break;
+      case PropertyType.List:
+        instance = this._runtimeInstance?.list(pathSegments[index]) ?? null;
+        if (instance !== null) {
+          return new ViewModelInstanceList(
+            instance as rc.ViewModelInstanceList,
+            this,
+          );
+        }
+        break;
     }
     return null;
   }
@@ -3533,6 +3543,19 @@ export class ViewModelInstance {
       PropertyType.Enum,
     );
     return viewmodelInstanceValue as ViewModelInstanceEnum | null;
+  }
+
+  /**
+   * method to access a property instance of type list belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the list property
+   */
+  public list(path: string): ViewModelInstanceList | null {
+    const viewmodelInstanceValue = this.propertyFromPath(
+      path,
+      PropertyType.List,
+    );
+    return viewmodelInstanceValue as ViewModelInstanceList | null;
   }
 
   /**
@@ -3813,6 +3836,53 @@ export class ViewModelInstanceEnum extends ViewModelInstanceValue {
 
   public internalHandleCallback(callback: Function) {
     callback(this.value);
+  }
+}
+
+export class ViewModelInstanceList extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceList, parent: ViewModelInstance) {
+    super(instance, parent);
+  }
+
+  public get length(): number {
+    return (this._viewModelInstanceValue as rc.ViewModelInstanceList).size;
+  }
+
+  public addInstance(instance: ViewModelInstance) {
+    if (instance.runtimeInstance != null) {
+      (this._viewModelInstanceValue as rc.ViewModelInstanceList).addInstance(
+        instance.runtimeInstance!,
+      );
+    }
+  }
+
+  public removeInstance(instance: ViewModelInstance) {
+    if (instance.runtimeInstance != null) {
+      (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstance(
+        instance.runtimeInstance!,
+      );
+    }
+  }
+
+  public removeInstanceAt(index: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstanceAt(
+      index,
+    );
+  }
+
+  public instanceAt(index: number): ViewModelInstance | null {
+    const runtimeInstance = (
+      this._viewModelInstanceValue as rc.ViewModelInstanceList
+    ).instanceAt(index);
+    if (runtimeInstance != null) {
+      const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
+      return viewModelInstance;
+    }
+    return null;
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback();
   }
 }
 

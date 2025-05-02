@@ -910,6 +910,14 @@ export declare class ViewModelInstanceEnum extends ViewModelInstanceValue {
   get values(): string[];
 }
 
+export declare class ViewModelInstanceList extends ViewModelInstanceValue {
+  get size(): number;
+  addInstance(vmi: ViewModelInstance): void;
+  removeInstance(vmi: ViewModelInstance): void;
+  removeInstanceAt(index: number): void;
+  instanceAt(index: number): ViewModelInstance;
+}
+
 export declare class ViewModelInstance {
   get propertyCount(): number;
   number(path: string): ViewModelInstanceNumber;
@@ -918,6 +926,7 @@ export declare class ViewModelInstance {
   color(path: string): ViewModelInstanceColor;
   enum(path: string): ViewModelInstanceEnum;
   trigger(path: string): ViewModelInstanceTrigger;
+  list(path: string): ViewModelInstanceList;
   viewModel(path: string): ViewModelInstance;
   replaceViewModel(path: string, value: ViewModelInstance): boolean;
   incrementReferenceCount(): void;

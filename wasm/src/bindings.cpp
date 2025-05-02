@@ -51,6 +51,7 @@
 #include "rive/viewmodel/runtime/viewmodel_instance_number_runtime.hpp"
 #include "rive/viewmodel/runtime/viewmodel_instance_string_runtime.hpp"
 #include "rive/viewmodel/runtime/viewmodel_instance_trigger_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_list_runtime.hpp"
 #include "rive/viewmodel/viewmodel_instance_string.hpp"
 
 #include "js_alignment.hpp"
@@ -1067,6 +1068,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                           return self.propertyTrigger(path);
                       }),
                   allow_raw_pointers())
+        .function(
+            "list",
+            optional_override([](const rive::ViewModelInstanceRuntime& self,
+                                 const std::string& path) -> rive::ViewModelInstanceListRuntime* {
+                return self.propertyList(path);
+            }),
+            allow_raw_pointers())
         .function("viewModel",
                   optional_override([](const rive::ViewModelInstanceRuntime& self,
                                        const std::string& path) -> rive::ViewModelInstanceRuntime* {
@@ -1165,6 +1173,32 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       }
                       return jsValues;
                   }));
+    class_<rive::ViewModelInstanceListRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceList")
+        .property("size",
+                  select_overload<size_t() const>(&rive::ViewModelInstanceListRuntime::size))
+        .function("addInstance",
+                  optional_override(
+                      [](rive::ViewModelInstanceListRuntime& self,
+                         rive::ViewModelInstanceRuntime* instance) { self.addInstance(instance); }),
+                  allow_raw_pointers())
+        .function("instanceAt",
+                  optional_override([](rive::ViewModelInstanceListRuntime& self,
+                                       int index) -> rive::ViewModelInstanceRuntime* {
+                      return self.instanceAt(index);
+                  }),
+                  allow_raw_pointers())
+        .function("removeInstance",
+                  optional_override([](rive::ViewModelInstanceListRuntime& self,
+                                       rive::ViewModelInstanceRuntime* instance) {
+                      self.removeInstance(instance);
+                  }),
+                  allow_raw_pointers())
+        .function("removeInstanceAt",
+                  optional_override([](rive::ViewModelInstanceListRuntime& self, int index) {
+                      self.removeInstanceAt(index);
+                  }),
+                  allow_raw_pointers());
 #ifdef DEBUG
     function("doLeakCheck", &__lsan_do_recoverable_leak_check);
 #endif
