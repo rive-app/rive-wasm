@@ -5,10 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.1](https://github.com/rive-app/rive-wasm/compare/2.27.0...2.27.1)
+## [2.27.2](https://github.com/rive-app/rive-wasm/compare/2.27.1...2.27.2)
 
 ### Commits
 
+- fix(webgl): Work around a crash on Chrome 136 (#9623) 82c66ee251 [`8ce314f`](https://github.com/rive-app/rive-wasm/commit/8ce314f68f22aada00fd42c52c20853fd91c2303)
+- Remove artboardId & useLinkedArtboard props from List Items (#9605) 99534c2749 [`b9785d1`](https://github.com/rive-app/rive-wasm/commit/b9785d155b8df7c0f00a6919291b91371a67ff80)
+- fix: do not clone converters at resolve time (#9616) ade06e3c79 [`f1756dd`](https://github.com/rive-app/rive-wasm/commit/f1756ddf78a63d7c78585d7fc9fdf69037a8facd)
+- fix(renderer): Gracefully handle null image textures (#9600) 7dd9f91b4a [`7c62ea4`](https://github.com/rive-app/rive-wasm/commit/7c62ea43a3e53c658497d11504e9bf3a24495fef)
+- editor: DataEnum in library (#9603) 3df92e66a4 [`486fa54`](https://github.com/rive-app/rive-wasm/commit/486fa5434144645bd2144f3da3dd3672e62dc3f0)
+- Component list refactor pt1 (#9595) 126c53a0f5 [`b06b5f8`](https://github.com/rive-app/rive-wasm/commit/b06b5f87b8786ea86fb0419d048f6b1e70a1da2e)
+- fix(scripts)Fixes down stream dirs (#9601) 343f00ae33 [`767acf4`](https://github.com/rive-app/rive-wasm/commit/767acf4d6ef2e2ee67a98a8b1b057d33d57b1043)
+- feature: support bindable position units (#9598) 0cadb00a87 [`43eb547`](https://github.com/rive-app/rive-wasm/commit/43eb547f32a21ddf1565b58c16c0c46552af8cc0)
+- test(unreal) added tests and build scripts for unreal static build anylysis (#9553) 7a9da23d19 [`beae429`](https://github.com/rive-app/rive-wasm/commit/beae4299f7e2910988e2cfa6ceb393e9e2374586)
+- Fix clamped scroll drag accumulation (#9596) a596ba0966 [`6f7d8fc`](https://github.com/rive-app/rive-wasm/commit/6f7d8fcc9a0942c89aea6cdf99c89e3dded76e37)
+- fix(rive-runtime)moved scripts to be in downstream (#9593) e9fce7bba1 [`95d345f`](https://github.com/rive-app/rive-wasm/commit/95d345f87c77f93b078257adea522406ae2d4486)
+- Component list js runtime ca744236fb [`d1c3464`](https://github.com/rive-app/rive-wasm/commit/d1c3464721160ca8915522c178760ae0b1795605)
+- feat: Move the alpha portion of MSAA blend modes to the blend unit (#9576) 4f9625183f [`c64de9c`](https://github.com/rive-app/rive-wasm/commit/c64de9ca979614d30ce9a6d9d0c9acc8c183462f)
+- refactor(build scripts) updated setup_windows_dev.bat to act like the ps1 variant (#9577) 7051d2685f [`2cd4de0`](https://github.com/rive-app/rive-wasm/commit/2cd4de06d0a6f09dab0c1a5f4da5b66befc66f9b)
+- fix: downstream rive-cpp tests (#9575) 32041efdc7 [`cb02b5c`](https://github.com/rive-app/rive-wasm/commit/cb02b5c2d8a40798e4c25d8c6782c9281e859dee)
+- fix: do not draw fully transparent shape paints (#9573) 6082e56f65 [`dd03bc1`](https://github.com/rive-app/rive-wasm/commit/dd03bc1d78ff6ca751eab2d82bc9cf078081e18b)
+- feat: RawTextInput in rive_native (#9564) 5adbd3311d [`bb9c438`](https://github.com/rive-app/rive-wasm/commit/bb9c4380751b6b5f96a551b2e932e7d7e5bba9f0)
+- Expose Transforms for DataBinding (#9538) cc09ee1983 [`8c9677d`](https://github.com/rive-app/rive-wasm/commit/8c9677d80e54a88dd66f0464f9f1188fad3faa4c)
+- Add Layout scale type to System Enums (#9560) 4ba64bae05 [`697eaf3`](https://github.com/rive-app/rive-wasm/commit/697eaf3aa763f2f94ca9f817c4b1490ea2763aa0)
+- feature(Dx12 backend) (#9520) b4a317b254 [`1231d98`](https://github.com/rive-app/rive-wasm/commit/1231d98573174e78bbb6808a3947d95c075d1a73)
+- fix: pass correct data context to state machine (#9545) 68262f2f3f [`5a3425c`](https://github.com/rive-app/rive-wasm/commit/5a3425cfad1b99f4b8a5207a3ec6557c49eaa08a)
+- RawTextInput (#9540) 85e8a5681f [`84d3167`](https://github.com/rive-app/rive-wasm/commit/84d3167b39f826b8b74f8d712ab43f41d730a0a0)
+- feat(vulkan_unity): adding vulkan support to unity (#9544) 38d5ae8571 [`84fa77c`](https://github.com/rive-app/rive-wasm/commit/84fa77c00a238b17a715e0d07924ce11099fa042)
+- feat(vulkan): Support all render target formats (#9527) 1014fd7fa4 [`e1779f3`](https://github.com/rive-app/rive-wasm/commit/e1779f3ad71b266e15dfca3daf9838b54f596b3e)
+- Fix layout alignment space between (#9526) 59b55d281f [`93055ff`](https://github.com/rive-app/rive-wasm/commit/93055ff9bcb1e476db233b2eb5fac454cb738516)
+
+## [2.27.1](https://github.com/rive-app/rive-wasm/compare/2.27.0...2.27.1) - 2025-04-23
+
+### Commits
+
+- chore: tag 2.27.1 [`d79cbd0`](https://github.com/rive-app/rive-wasm/commit/d79cbd01637175feb363dd53344618d9c70c5eb1)
 - fix(vulkan): Fix input attachmens on AMD (#9513) e5dc0b989c [`5f68f1d`](https://github.com/rive-app/rive-wasm/commit/5f68f1d3aaf6b551e978f208991f7290c02e835d)
 - refactor(vulkan): Move shaders to a different cpp file [`4767fca`](https://github.com/rive-app/rive-wasm/commit/4767fcafba82732865b941677d723c3260f78654)
 - feat(vulkan): Implement coalesced resolve [`2b0ca72`](https://github.com/rive-app/rive-wasm/commit/2b0ca727db47576c0194e12b9dd4903d4a1e66ae)
