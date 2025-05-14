@@ -5,10 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.2](https://github.com/rive-app/rive-wasm/compare/2.27.1...2.27.2)
+## [2.27.3](https://github.com/rive-app/rive-wasm/compare/2.27.2...2.27.3)
+
+### Fixed
+
+- fix(gl): Fix uninitialized pixel local storage (#9638) fac712cc41 [`#279`](https://github.com/rive-app/rive-react-native/issues/279)
 
 ### Commits
 
+- refactor(TestHarness) Test harness stacktrace's (#9642) c0844f01b5 [`f1d94b2`](https://github.com/rive-app/rive-wasm/commit/f1d94b2fe77f13df4ef59ce8c5873511d515d159)
+- library: view model support (#9630) 16c30e956a [`5c9c9f6`](https://github.com/rive-app/rive-wasm/commit/5c9c9f683c18cfbe177666c49ab08a98421a6bec)
+- add support for symbol index for formula and operation converters (#9655) fbbd128426 [`5a184b1`](https://github.com/rive-app/rive-wasm/commit/5a184b1ba164c2a420902fbdf77f301a33254fb1)
+- feat: Editor text input (#9644) 4aefd8c646 [`8daf604`](https://github.com/rive-app/rive-wasm/commit/8daf6046e76e49677a353f6df7483f95cd59f2df)
+- feat: Support js arch in build_rive.sh (#9617) 9763df3872 [`686480d`](https://github.com/rive-app/rive-wasm/commit/686480d650c6dd0f66a96b20d20120b85afdbb4c)
+- refactor(webgpu): Delete write_texture and write_buffer helpers (#9640) 527fb53e7f [`270f78b`](https://github.com/rive-app/rive-wasm/commit/270f78b899247c5b1ea404bdac1022a42e8e06dd)
+- Number to List Converter (#9622) 3a43815502 [`75c0d4e`](https://github.com/rive-app/rive-wasm/commit/75c0d4eccb919d48292cd18fbfc7269fe8a0059b)
+- refactor(tvos): fallback to libwebp if cg fails (#9534) d3b61cf628 [`8b474b1`](https://github.com/rive-app/rive-wasm/commit/8b474b1ff0eb5f802a043c6477fac3207735305c)
+- chore: wrap layout nodes for editor (#9641) 6af68fed8b [`af1c78a`](https://github.com/rive-app/rive-wasm/commit/af1c78a81d9f79b93083ade1f150b532a0a3d527)
+- feature: add list index symbol for view model lists (#9643) 2b1a85fa6f [`bbcd027`](https://github.com/rive-app/rive-wasm/commit/bbcd0277fde1842924e29b56b85ec9bd68f0c2ca)
+- Fix Artboard List crash when layout siblings come before it (#9633) 18c9402bc3 [`2bddcc6`](https://github.com/rive-app/rive-wasm/commit/2bddcc69a56842ecec32ef3be06ceab610968a52)
+- feat: First draft of a CommandQueue (#9620) 18dc7c390b [`c60ce41`](https://github.com/rive-app/rive-wasm/commit/c60ce41fb8bf73c28e20d95fd996e7b9bacd688b)
+
+## [2.27.2](https://github.com/rive-app/rive-wasm/compare/2.27.1...2.27.2) - 2025-05-08
+
+### Commits
+
+- chore: tag 2.27.2 [`9a72a3e`](https://github.com/rive-app/rive-wasm/commit/9a72a3e907cdae8ecc0f74f740ccf911e9881da9)
 - fix(webgl): Work around a crash on Chrome 136 (#9623) 82c66ee251 [`8ce314f`](https://github.com/rive-app/rive-wasm/commit/8ce314f68f22aada00fd42c52c20853fd91c2303)
 - Remove artboardId & useLinkedArtboard props from List Items (#9605) 99534c2749 [`b9785d1`](https://github.com/rive-app/rive-wasm/commit/b9785d155b8df7c0f00a6919291b91371a67ff80)
 - fix: do not clone converters at resolve time (#9616) ade06e3c79 [`f1756dd`](https://github.com/rive-app/rive-wasm/commit/f1756ddf78a63d7c78585d7fc9fdf69037a8facd)
