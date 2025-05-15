@@ -108,6 +108,13 @@ do
         })
     end
 
+    filter({ 'options:with_rive_audio=system or options:with_rive_audio=external' })
+    do
+        links({
+            'miniaudio',
+        })
+    end
+
     filter({ 'options:with_rive_layout' })
     do
         defines({ 'YOGA_EXPORT=' })
