@@ -1,7 +1,17 @@
 import * as rc from "./rive_advanced.mjs";
 import packageData from "package.json";
 import { Animation } from "./animation";
-import { registerTouchInteractions, sanitizeUrl, BLANK_URL } from "./utils";
+import {
+  registerTouchInteractions,
+  sanitizeUrl,
+  BLANK_URL,
+  ImageWrapper,
+  AudioWrapper,
+  FontWrapper,
+  finalizationRegistry,
+  CustomFileAssetLoaderWrapper,
+  AssetLoadCallbackWrapper,
+} from "./utils";
 
 class RiveError extends Error {
   public isHandledError = true;
@@ -12,20 +22,17 @@ class RiveError extends Error {
 // and see if we want to expose both types from rive.ts and rive_advanced.mjs in
 // the future
 export type {
-  FileAsset,
-  AudioAsset,
-  FontAsset,
-  ImageAsset,
-} from "./rive_advanced.mjs";
+  FileAssetWrapper as FileAsset,
+  ImageAssetWrapper as ImageAsset,
+  AudioAssetWrapper as AudioAsset,
+  FontAssetWrapper as FontAsset,
+  AssetLoadCallbackWrapper as AssetLoadCallback,
+} from "./utils";
 
 /**
  * Generic type for a parameterless void callback
  */
 export type VoidCallback = () => void;
-export type AssetLoadCallback = (
-  asset: rc.FileAsset,
-  bytes: Uint8Array,
-) => Boolean;
 
 interface SetupRiveListenersOptions {
   isTouchScrollEnabled?: boolean;
@@ -1316,7 +1323,7 @@ export interface RiveParameters {
   onLoop?: EventCallback;
   onStateChange?: EventCallback;
   onAdvance?: EventCallback;
-  assetLoader?: AssetLoadCallback;
+  assetLoader?: AssetLoadCallbackWrapper;
   /**
    * @deprecated Use `onLoad()` instead
    */
@@ -1373,7 +1380,7 @@ export interface RiveResetParameters {
 export interface RiveFileParameters {
   src?: string;
   buffer?: ArrayBuffer;
-  assetLoader?: AssetLoadCallback;
+  assetLoader?: AssetLoadCallbackWrapper;
   enableRiveAssetCDN?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
@@ -1401,7 +1408,7 @@ export class RiveFile {
   private file: rc.File;
 
   // AssetLoadCallback: allows customizing asset loading for images and fonts.
-  private assetLoader: AssetLoadCallback;
+  private assetLoader: AssetLoadCallbackWrapper;
 
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN: boolean = true;
@@ -1438,9 +1445,11 @@ export class RiveFile {
     }
     let loader;
     if (this.assetLoader) {
-      loader = new this.runtime.CustomFileAssetLoader({
-        loadContents: this.assetLoader,
-      });
+      const loaderWrapper = new CustomFileAssetLoaderWrapper(
+        this.runtime,
+        this.assetLoader,
+      );
+      loader = loaderWrapper.assetLoader;
     }
     // Load the Rive file
     this.file = await this.runtime.load(
@@ -1591,7 +1600,7 @@ export class Rive {
   private animator: Animator;
 
   // AssetLoadCallback: allows customizing asset loading for images and fonts.
-  private assetLoader: AssetLoadCallback;
+  private assetLoader: AssetLoadCallbackWrapper;
 
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
@@ -3209,6 +3218,7 @@ enum PropertyType {
   Trigger = "trigger",
   Enum = "enum",
   List = "list",
+  Image = "image",
 }
 
 export class ViewModelInstance {
@@ -3446,6 +3456,15 @@ export class ViewModelInstance {
           );
         }
         break;
+      case PropertyType.Image:
+        instance = this._runtimeInstance?.image(pathSegments[index]) ?? null;
+        if (instance !== null) {
+          return new ViewModelInstanceAssetImage(
+            instance as rc.ViewModelInstanceAssetImage,
+            this,
+          );
+        }
+        break;
     }
     return null;
   }
@@ -3556,6 +3575,19 @@ export class ViewModelInstance {
       PropertyType.List,
     );
     return viewmodelInstanceValue as ViewModelInstanceList | null;
+  }
+
+  /**
+   * method to access a view model property instance belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the image property
+   */
+  public image(path: string): ViewModelInstanceAssetImage | null {
+    const viewmodelInstanceValue = this.propertyFromPath(
+      path,
+      PropertyType.Image,
+    );
+    return viewmodelInstanceValue as ViewModelInstanceAssetImage | null;
   }
 
   /**
@@ -3937,6 +3969,24 @@ export class ViewModelInstanceColor extends ViewModelInstanceValue {
   }
 }
 
+export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
+  constructor(
+    instance: rc.ViewModelInstanceAssetImage,
+    root: ViewModelInstance,
+  ) {
+    super(instance, root);
+  }
+
+  public set value(image: ImageWrapper) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value =
+      image.nativeImage;
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback();
+  }
+}
+
 /**
  * Contents of a state machine input
  */
@@ -4015,12 +4065,16 @@ export const Testing = {
  * Be sure to call `.unref()` on the audio once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeAudio = (bytes: Uint8Array): Promise<rc.Audio> => {
-  return new Promise<rc.Audio>((resolve) =>
+export const decodeAudio = async (bytes: Uint8Array): Promise<rc.Audio> => {
+  const decodedPromise = new Promise<rc.Audio>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeAudio(bytes, resolve);
     }),
   );
+  const audio: rc.Audio = await decodedPromise;
+  const audioWrapper = new AudioWrapper(audio);
+  finalizationRegistry.register(audioWrapper, audio);
+  return audioWrapper;
 };
 
 /**
@@ -4029,12 +4083,16 @@ export const decodeAudio = (bytes: Uint8Array): Promise<rc.Audio> => {
  * Be sure to call `.unref()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
-  return new Promise<rc.Image>((resolve) =>
+export const decodeImage = async (bytes: Uint8Array): Promise<ImageWrapper> => {
+  const decodedPromise = new Promise<rc.Image>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeImage(bytes, resolve);
     }),
   );
+  const image: rc.Image = await decodedPromise;
+  const imageWrapper = new ImageWrapper(image);
+  finalizationRegistry.register(imageWrapper, image);
+  return imageWrapper;
 };
 
 /**
@@ -4043,12 +4101,16 @@ export const decodeImage = (bytes: Uint8Array): Promise<rc.Image> => {
  * Be sure to call `.unref()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeFont = (bytes: Uint8Array): Promise<rc.Font> => {
-  return new Promise<rc.Font>((resolve) =>
+export const decodeFont = async (bytes: Uint8Array): Promise<rc.Font> => {
+  const decodedPromise = new Promise<rc.Font>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeFont(bytes, resolve);
     }),
   );
+  const font: rc.Font = await decodedPromise;
+  const fontWrapper = new FontWrapper(font);
+  finalizationRegistry.register(fontWrapper, font);
+  return fontWrapper;
 };
 
 // #endregion

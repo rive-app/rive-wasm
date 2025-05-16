@@ -917,6 +917,9 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   removeInstanceAt(index: number): void;
   instanceAt(index: number): ViewModelInstance;
 }
+export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
+  set value(image: Image);
+}
 
 export declare class ViewModelInstance {
   get propertyCount(): number;
@@ -928,6 +931,7 @@ export declare class ViewModelInstance {
   trigger(path: string): ViewModelInstanceTrigger;
   list(path: string): ViewModelInstanceList;
   viewModel(path: string): ViewModelInstance;
+  image(path: string): ViewModelInstanceAssetImage;
   replaceViewModel(path: string, value: ViewModelInstance): boolean;
   incrementReferenceCount(): void;
   decrementReferenceCount(): void;
