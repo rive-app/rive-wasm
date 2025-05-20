@@ -1809,7 +1809,11 @@ export class Rive {
           autoplay,
           autoBind,
         )
-          .then(() => this.setupRiveListeners())
+          .then((hasInitialized: boolean) => {
+            if (hasInitialized) {
+              return this.setupRiveListeners();
+            }
+          })
           .catch((e) => {
             console.error(e);
           });
@@ -1894,14 +1898,15 @@ export class Rive {
       this._artboardHeight || this.artboard.height;
   }
 
-  // Initializes runtime with Rive data and preps for playing
+  // Initializes runtime with Rive data and preps for playing. 
+  // Returns true for successful initialization.
   private async initData(
     artboardName: string,
     animationNames: string[],
     stateMachineNames: string[],
     autoplay: boolean,
     autoBind: boolean,
-  ): Promise<void> {
+  ): Promise<boolean> {
     try {
       if (this.riveFile == null) {
         this.riveFile = new RiveFile({
@@ -1914,7 +1919,7 @@ export class Rive {
       }
       // Check for riveFile in case it has been cleaned up while initializing;
       if (!this.riveFile) {
-        throw new RiveError(Rive.cleanupErrorMessage);
+        return false;
       }
       this.file = this.riveFile.getInstance();
       // Initialize and draw frame
@@ -1946,7 +1951,7 @@ export class Rive {
 
       this.drawFrame();
 
-      return Promise.resolve();
+      return true;
     } catch (error) {
       const msg = resolveErrorMessage(error);
       console.warn(msg);
