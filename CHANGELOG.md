@@ -5,7 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.3](https://github.com/rive-app/rive-wasm/compare/2.27.2...2.27.3)
+## [2.27.4](https://github.com/rive-app/rive-wasm/compare/2.27.3...2.27.4)
+
+### Commits
+
+- fix: cpp modulo to match dart (#9757) 6c03dca01d [`4cefc37`](https://github.com/rive-app/rive-wasm/commit/4cefc37274fa55149ccabf5e2c0163d5275b2135)
+- fix: skia loses the fill type after a rewind (#9741) 8f5a30ac7c [`bfd6635`](https://github.com/rive-app/rive-wasm/commit/bfd6635d9ce9dc40901266743b27c7f74a8ac085)
+- fix: Make bad driver detection more specific for clip planes (#9714) 3ab91e096d [`7fea40f`](https://github.com/rive-app/rive-wasm/commit/7fea40f35b46df8b49618efa26948fe723377170)
+- fix(gl): Fix a memory leak in TextureGLImpl (#9663) 9e3db1f98f [`95ea161`](https://github.com/rive-app/rive-wasm/commit/95ea161087ef927d8edc9eb28cd9fc4f41687d07)
+- fix: Memory issues in TrivialObjectStream (#9731) 5661461ca8 [`bcfb992`](https://github.com/rive-app/rive-wasm/commit/bcfb992746fb59d3c4705503cd89043faf41d593)
+- do not throw when the file was cleaned up during initialization (#9737) 4092a064f2 [`2e4934c`](https://github.com/rive-app/rive-wasm/commit/2e4934cb491c6a544fa0446f4a2e87b6dd8a8012)
+- fix: Find a workaround to compiler bug on Pixel 3 (#9729) 5ed9258760 [`291b3bd`](https://github.com/rive-app/rive-wasm/commit/291b3bd52be601d96c568299b99fa05b8b7172fb)
+- fix: ensure data bind refs and unrefs its source when binding and unb… (#9738) 0d0f9cd7d9 [`700f26d`](https://github.com/rive-app/rive-wasm/commit/700f26d19a668f03eec9a920545ef3f0418ec081)
+- fix: scrollIndex on Lists (#9732) d46676d8d1 [`fe19e67`](https://github.com/rive-app/rive-wasm/commit/fe19e67ab8f055a60456c8372fe93e5a3a9f4102)
+- feat: List Artboard Reuse (#9691) 74188ce8cc [`d30c26e`](https://github.com/rive-app/rive-wasm/commit/d30c26e80bc5711f1be20d2a73c6afc02d96cdb7)
+- refactor(CommandQueue) moved drawloop to be driven from commandQueue rather than from the server (#9692) 203b35111d [`5410754`](https://github.com/rive-app/rive-wasm/commit/54107542ac125fa9a5f075dce8e8b6194d1db721)
+- fix(unreal):missing decoders (#9637) b46446c172 [`67949c8`](https://github.com/rive-app/rive-wasm/commit/67949c81b6cfd1dd61f7e99b584ce4991454fa0b)
+- fix: get rid of unused build.sh (#9710) 6be784f0dc [`8f62b43`](https://github.com/rive-app/rive-wasm/commit/8f62b43cf03360606201431e38fedadf72249d6e)
+- test: Add a threshold parameter to check_golds.sh (#9670) 4c2a6633c1 [`c1ac529`](https://github.com/rive-app/rive-wasm/commit/c1ac5298559f1054f52cadd4c41d32d766c669db)
+- update riv to reflect the new core ids (#9711) e2e4f1e226 [`0cf4a65`](https://github.com/rive-app/rive-wasm/commit/0cf4a65aa52bead027ae6e445fb685f965405fd9)
+- Nnnn data bind assets bkp 2 (#9705) e6782a6bfb [`c96c12e`](https://github.com/rive-app/rive-wasm/commit/c96c12e2b4203cdd84ee851dc0c21c32ebdb1119)
+- library: remove references to LibraryStateMachineInput (#9701) 5f34d5e684 [`c9f344e`](https://github.com/rive-app/rive-wasm/commit/c9f344e932123a57d94a5ead92b907447c2aa762)
+- fix: ViewModelInstanceListItem memory leak (#9699) e399210e17 [`6330f78`](https://github.com/rive-app/rive-wasm/commit/6330f787b1c28138b3cecdb469be3a7fa689b30a)
+- fix unit test make (#9698) 2e0c905455 [`9c481d8`](https://github.com/rive-app/rive-wasm/commit/9c481d8258b9b65fa2784b847633896790be27a0)
+- library: make sure host artboards always get exported first (#9686) 7c7035d035 [`a40f2f4`](https://github.com/rive-app/rive-wasm/commit/a40f2f409e4be546b8682f6c7aa457f76a775e2d)
+- chore: fix clang-17 compiler (#9666) 8a1f3286b9 [`66492bf`](https://github.com/rive-app/rive-wasm/commit/66492bfbd0577ff171cddb6deb2b93e3cc9e79bc)
+
+## [2.27.3](https://github.com/rive-app/rive-wasm/compare/2.27.2...2.27.3) - 2025-05-14
 
 ### Fixed
 
@@ -13,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.27.3 [`131fe37`](https://github.com/rive-app/rive-wasm/commit/131fe3770cead1d7b286ac81e0315615cfa11b6e)
 - refactor(TestHarness) Test harness stacktrace's (#9642) c0844f01b5 [`f1d94b2`](https://github.com/rive-app/rive-wasm/commit/f1d94b2fe77f13df4ef59ce8c5873511d515d159)
 - library: view model support (#9630) 16c30e956a [`5c9c9f6`](https://github.com/rive-app/rive-wasm/commit/5c9c9f683c18cfbe177666c49ab08a98421a6bec)
 - add support for symbol index for formula and operation converters (#9655) fbbd128426 [`5a184b1`](https://github.com/rive-app/rive-wasm/commit/5a184b1ba164c2a420902fbdf77f301a33254fb1)
