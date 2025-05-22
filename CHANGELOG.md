@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.4](https://github.com/rive-app/rive-wasm/compare/2.27.3...2.27.4)
+## [2.27.5](https://github.com/rive-app/rive-wasm/compare/2.27.4...2.27.5)
 
 ### Commits
 
+- fix: js module (#9768) c346c8ffe1 [`48010ee`](https://github.com/rive-app/rive-wasm/commit/48010ee78a2189d0f29d9bdbfd56784a063c0b29)
+
+## [2.27.4](https://github.com/rive-app/rive-wasm/compare/2.27.3...2.27.4) - 2025-05-22
+
+### Commits
+
+- chore: tag 2.27.4 [`f134b8b`](https://github.com/rive-app/rive-wasm/commit/f134b8bdf4aa0b0be683584812f66dc33969c595)
 - fix: cpp modulo to match dart (#9757) 6c03dca01d [`4cefc37`](https://github.com/rive-app/rive-wasm/commit/4cefc37274fa55149ccabf5e2c0163d5275b2135)
 - fix: skia loses the fill type after a rewind (#9741) 8f5a30ac7c [`bfd6635`](https://github.com/rive-app/rive-wasm/commit/bfd6635d9ce9dc40901266743b27c7f74a8ac085)
 - fix: Make bad driver detection more specific for clip planes (#9714) 3ab91e096d [`7fea40f`](https://github.com/rive-app/rive-wasm/commit/7fea40f35b46df8b49618efa26948fe723377170)
