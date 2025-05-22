@@ -1471,25 +1471,37 @@ export class RiveFile {
         data: this,
       });
     } else {
-      this.eventManager.fire({
-        type: EventType.LoadError,
-        data: null,
-      });
-      throw new Error(RiveFile.fileLoadErrorMessage);
+      this.fireLoadError(RiveFile.fileLoadErrorMessage);
     }
   }
 
   public async init() {
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer) {
-      throw new Error(RiveFile.missingErrorMessage);
-    }
-    this.runtime = await RuntimeLoader.awaitInstance();
-
-    if (this.destroyed) {
+      this.fireLoadError(RiveFile.missingErrorMessage);
       return;
     }
-    await this.initData();
+
+    try {
+      this.runtime = await RuntimeLoader.awaitInstance();
+
+      if (this.destroyed) {
+        return;
+      }
+
+      await this.initData();
+    } catch (error) {
+      this.fireLoadError(error instanceof Error ? error.message : RiveFile.fileLoadErrorMessage);
+    }
+  }
+
+  private fireLoadError(message: string): void {
+    this.eventManager.fire({
+      type: EventType.LoadError,
+      data: message,
+    });
+
+    throw new Error(message);
   }
 
   /**
