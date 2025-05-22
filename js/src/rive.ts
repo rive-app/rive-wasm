@@ -10,8 +10,12 @@ import {
   FontWrapper,
   finalizationRegistry,
   CustomFileAssetLoaderWrapper,
-  AssetLoadCallbackWrapper,
 } from "./utils";
+
+export type AssetLoadCallback = (
+  asset: rc.FileAsset,
+  bytes: Uint8Array,
+) => Boolean;
 
 class RiveError extends Error {
   public isHandledError = true;
@@ -22,12 +26,11 @@ class RiveError extends Error {
 // and see if we want to expose both types from rive.ts and rive_advanced.mjs in
 // the future
 export type {
-  FileAssetWrapper as FileAsset,
-  ImageAssetWrapper as ImageAsset,
-  AudioAssetWrapper as AudioAsset,
-  FontAssetWrapper as FontAsset,
-  AssetLoadCallbackWrapper as AssetLoadCallback,
-} from "./utils";
+  FileAsset,
+  AudioAsset,
+  FontAsset,
+  ImageAsset,
+} from "./rive_advanced.mjs";
 
 /**
  * Generic type for a parameterless void callback
@@ -1323,7 +1326,7 @@ export interface RiveParameters {
   onLoop?: EventCallback;
   onStateChange?: EventCallback;
   onAdvance?: EventCallback;
-  assetLoader?: AssetLoadCallbackWrapper;
+  assetLoader?: AssetLoadCallback;
   /**
    * @deprecated Use `onLoad()` instead
    */
@@ -1380,7 +1383,7 @@ export interface RiveResetParameters {
 export interface RiveFileParameters {
   src?: string;
   buffer?: ArrayBuffer;
-  assetLoader?: AssetLoadCallbackWrapper;
+  assetLoader?: AssetLoadCallback;
   enableRiveAssetCDN?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
@@ -1408,7 +1411,7 @@ export class RiveFile {
   private file: rc.File;
 
   // AssetLoadCallback: allows customizing asset loading for images and fonts.
-  private assetLoader: AssetLoadCallbackWrapper;
+  private assetLoader: AssetLoadCallback;
 
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN: boolean = true;
@@ -1600,7 +1603,7 @@ export class Rive {
   private animator: Animator;
 
   // AssetLoadCallback: allows customizing asset loading for images and fonts.
-  private assetLoader: AssetLoadCallbackWrapper;
+  private assetLoader: AssetLoadCallback;
 
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
@@ -1898,7 +1901,7 @@ export class Rive {
       this._artboardHeight || this.artboard.height;
   }
 
-  // Initializes runtime with Rive data and preps for playing. 
+  // Initializes runtime with Rive data and preps for playing.
   // Returns true for successful initialization.
   private async initData(
     artboardName: string,
@@ -3982,10 +3985,11 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
     super(instance, root);
   }
 
-  public set value(image: ImageWrapper) {
-    (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value =
-      image.nativeImage;
+  public set value(image: rc.Image) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
+      image.nativeImage);
   }
+
 
   public internalHandleCallback(callback: Function) {
     callback();
@@ -4070,7 +4074,9 @@ export const Testing = {
  * Be sure to call `.unref()` on the audio once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeAudio = async (bytes: Uint8Array): Promise<rc.Audio> => {
+export const decodeAudio = async (
+  bytes: Uint8Array,
+): Promise<rc.Audio> => {
   const decodedPromise = new Promise<rc.Audio>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeAudio(bytes, resolve);
@@ -4088,7 +4094,9 @@ export const decodeAudio = async (bytes: Uint8Array): Promise<rc.Audio> => {
  * Be sure to call `.unref()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeImage = async (bytes: Uint8Array): Promise<ImageWrapper> => {
+export const decodeImage = async (
+  bytes: Uint8Array,
+): Promise<rc.Image> => {
   const decodedPromise = new Promise<rc.Image>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeImage(bytes, resolve);
@@ -4106,7 +4114,9 @@ export const decodeImage = async (bytes: Uint8Array): Promise<ImageWrapper> => {
  * Be sure to call `.unref()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeFont = async (bytes: Uint8Array): Promise<rc.Font> => {
+export const decodeFont = async (
+  bytes: Uint8Array,
+): Promise<rc.Font> => {
   const decodedPromise = new Promise<rc.Font>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeFont(bytes, resolve);

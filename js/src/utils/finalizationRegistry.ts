@@ -12,7 +12,7 @@ class ImageWrapper extends Finalizable {
     this._nativeImage = image;
   }
 
-  public get nativeImage(): rc.Image {
+  public get nativeImage(): rc.ImageInternal {
     return this._nativeImage;
   }
 
@@ -31,7 +31,7 @@ class AudioWrapper extends Finalizable {
     this._nativeAudio = audio;
   }
 
-  public get nativeAudio(): rc.Image {
+  public get nativeAudio(): rc.AudioInternal {
     return this._nativeAudio;
   }
 
@@ -50,7 +50,7 @@ class FontWrapper extends Finalizable {
     this._nativeFont = font;
   }
 
-  public get nativeFont(): rc.Font {
+  public get nativeFont(): rc.FontInternal {
     return this._nativeFont;
   }
 
@@ -62,7 +62,7 @@ class FontWrapper extends Finalizable {
 }
 
 export type AssetLoadCallbackWrapper = (
-  asset: FileAssetWrapper,
+  asset: rc.FileAssetInternal,
   bytes: Uint8Array,
 ) => Boolean;
 
@@ -98,9 +98,9 @@ class CustomFileAssetLoaderWrapper {
  * an asset associated wtih the Rive File
  */
 class FileAssetWrapper {
-  _nativeFileAsset: rc.FileAsset;
+  _nativeFileAsset: rc.FileAssetInternal;
 
-  constructor(nativeAsset: rc.FileAsset) {
+  constructor(nativeAsset: rc.FileAssetInternal) {
     this._nativeFileAsset = nativeAsset;
   }
 
@@ -146,11 +146,10 @@ class FileAssetWrapper {
  * decoded Image (via the `decodeImage()` API) to set a new Image on the Rive FileAsset
  */
 class ImageAssetWrapper extends FileAssetWrapper {
-  constructor(nativeAsset: rc.FileAsset) {
-    super(nativeAsset);
-  }
   setRenderImage(image: ImageWrapper): void {
-    (this._nativeFileAsset as rc.ImageAsset).setRenderImage(image.nativeImage);
+    (this._nativeFileAsset as rc.ImageAssetInternal).setRenderImage(
+      image.nativeImage,
+    );
   }
 }
 
@@ -159,11 +158,10 @@ class ImageAssetWrapper extends FileAssetWrapper {
  * decoded Audio (via the `decodeAudio()` API) to set a new Audio on the Rive FileAsset
  */
 class AudioAssetWrapper extends FileAssetWrapper {
-  constructor(nativeAsset: rc.FileAsset) {
-    super(nativeAsset);
-  }
   setAudioSource(audio: AudioWrapper): void {
-    (this._nativeFileAsset as rc.AudioAsset).setAudioSource(audio.nativeAudio);
+    (this._nativeFileAsset as rc.AudioAssetInternal).setAudioSource(
+      audio.nativeAudio,
+    );
   }
 }
 
@@ -173,7 +171,7 @@ class AudioAssetWrapper extends FileAssetWrapper {
  */
 class FontAssetWrapper extends FileAssetWrapper {
   setFont(font: FontWrapper): void {
-    (this._nativeFileAsset as rc.FontAsset).setFont(font.nativeFont);
+    (this._nativeFileAsset as rc.FontAssetInternal).setFont(font.nativeFont);
   }
 }
 

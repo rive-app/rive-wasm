@@ -280,8 +280,12 @@ export interface CanvasRenderFactory {
   makeRenderPath(): CanvasRenderPath;
 }
 
+export class AudioInternal {
+  unref(): void;
+}
 export class Audio {
   unref(): void;
+  get nativeAudio(): AudioInternal;
 }
 export interface AudioCallback {
   (audio: Audio): void;
@@ -289,8 +293,12 @@ export interface AudioCallback {
 export interface DecodeAudio {
   (bytes: Uint8Array, callback: AudioCallback): void;
 }
+export class ImageInternal {
+  unref(): void;
+}
 export class Image {
   unref(): void;
+  get nativeImage(): ImageInternal;
 }
 export interface ImageCallback {
   (image: Image): void;
@@ -298,8 +306,12 @@ export interface ImageCallback {
 export interface DecodeImage {
   (bytes: Uint8Array, callback: ImageCallback): void;
 }
+export class FontInternal {
+  unref(): void;
+}
 export class Font {
   unref(): void;
+  get nativeFont(): FontInternal;
 }
 export interface FontCallback {
   (font: Font): void;
@@ -918,7 +930,7 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   instanceAt(index: number): ViewModelInstance;
 }
 export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
-  set value(image: Image);
+  value(image: ImageInternal):void;
 }
 
 export declare class ViewModelInstance {
@@ -1122,6 +1134,27 @@ export declare class FileAsset {
   cdnUuid: string;
 
   decode(bytes: Uint8Array): void;
+  get nativeAsset(): FileAssetInternal;
+}
+
+/**
+ * Rive class representing a FileAsset with relevant metadata fields to describe
+ * an asset associated wtih the Rive File
+ */
+export declare class FileAssetInternal {
+  name: string;
+  fileExtension: string;
+  uniqueFilename: string;
+  isAudio: boolean;
+  isImage: boolean;
+  isFont: boolean;
+  cdnUuid: string;
+
+  decode(bytes: Uint8Array): void;
+}
+
+export declare class AudioAssetInternal extends FileAssetInternal {
+  setAudioSource(audio: AudioInternal): void;
 }
 
 /**
@@ -1132,6 +1165,10 @@ export declare class AudioAsset extends FileAsset {
   setAudioSource(audio: Audio): void;
 }
 
+
+export declare class ImageAssetInternal extends FileAssetInternal {
+  setRenderImage(image: ImageInternal): void;
+}
 /**
  * Rive class extending the FileAsset that exposes a `setRenderImage()` API with a
  * decoded Image (via the `decodeImage()` API) to set a new Image on the Rive FileAsset
@@ -1140,6 +1177,9 @@ export declare class ImageAsset extends FileAsset {
   setRenderImage(image: Image): void;
 }
 
+export declare class FontAssetInternal extends FileAssetInternal {
+  setFont(font: FontInternal): void;
+}
 /**
  * Rive class extending the FileAsset that exposes a `setFont()` API with a
  * decoded Font (via the `decodeFont()` API) to set a new Font on the Rive FileAsset
