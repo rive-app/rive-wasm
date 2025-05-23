@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.27.5](https://github.com/rive-app/rive-wasm/compare/2.27.4...2.27.5)
+## [2.28.0](https://github.com/rive-app/rive-wasm/compare/2.27.5...2.28.0)
 
 ### Commits
 
+- feature(CommandQeue)  Message Queue (#9704) 5b253d0b0b [`80b94a4`](https://github.com/rive-app/rive-wasm/commit/80b94a4b3d4ba92e5409bd7fbdbe056323c548fd)
+- fix(wasm): catch RiveFile initialization errors in callback (#9685) a78784d5e6 [`dd97ec4`](https://github.com/rive-app/rive-wasm/commit/dd97ec45c7e6a47fc85c17983fcde125cd0908db)
+
+## [2.27.5](https://github.com/rive-app/rive-wasm/compare/2.27.4...2.27.5) - 2025-05-22
+
+### Commits
+
+- chore: tag 2.27.5 [`3f88d64`](https://github.com/rive-app/rive-wasm/commit/3f88d64a44265d308adfabb55cb2b03f0d1ebcac)
 - fix: js module (#9768) c346c8ffe1 [`48010ee`](https://github.com/rive-app/rive-wasm/commit/48010ee78a2189d0f29d9bdbfd56784a063c0b29)
 
 ## [2.27.4](https://github.com/rive-app/rive-wasm/compare/2.27.3...2.27.4) - 2025-05-22
