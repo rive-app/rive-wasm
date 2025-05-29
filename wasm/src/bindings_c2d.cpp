@@ -107,12 +107,16 @@ public:
 
     void clipPath(rive::RenderPath* path) override { call<void>("_clipPath", path); }
 
-    void drawImage(const rive::RenderImage* image, rive::BlendMode value, float opacity) override
+    void drawImage(const rive::RenderImage* image,
+                   const rive::ImageSampler options,
+                   rive::BlendMode value,
+                   float opacity) override
     {
-        call<void>("_drawRiveImage", image, value, opacity);
+        call<void>("_drawRiveImage", image, options, value, opacity);
     }
 
     void drawImageMesh(const rive::RenderImage* image,
+                       const rive::ImageSampler options,
                        rive::rcp<rive::RenderBuffer> vertices_f32,
                        rive::rcp<rive::RenderBuffer> uvCoords_f32,
                        rive::rcp<rive::RenderBuffer> indices_u16,
@@ -145,7 +149,18 @@ public:
         call<void>("_getMatrix", mJS);
         auto [l, t, r, b] = bbox(m, vtx->f32s(), f32Count);
 
-        call<void>("_drawImageMesh", image, value, opacity, vtxJS, uvJS, indicesJS, l, t, r, b);
+        call<void>("_drawImageMesh",
+                   image,
+                   options,
+                   value,
+                   opacity,
+                   vtxJS,
+                   uvJS,
+                   indicesJS,
+                   l,
+                   t,
+                   r,
+                   b);
     }
 };
 

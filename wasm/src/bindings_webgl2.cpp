@@ -344,18 +344,22 @@ public:
 
     void restoreClipRect() { restore(); }
 
-    void drawImage(const RenderImage* renderImage, BlendMode blendMode, float opacity) override
+    void drawImage(const RenderImage* renderImage,
+                   const ImageSampler imageSampler,
+                   BlendMode blendMode,
+                   float opacity) override
     {
         LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
         renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
         if (renderImage != nullptr)
         {
             // The renderImage is done decoding.
-            RiveRenderer::drawImage(renderImage, blendMode, opacity);
+            RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity);
         }
     }
 
     void drawImageMesh(const RenderImage* renderImage,
+                       const ImageSampler imageSampler,
                        rcp<RenderBuffer> vertices_f32,
                        rcp<RenderBuffer> uvCoords_f32,
                        rcp<RenderBuffer> indices_u16,
@@ -373,6 +377,7 @@ public:
             LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
             LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
             RiveRenderer::drawImageMesh(renderImage,
+                                        imageSampler,
                                         refPLSBuffer(vertexBuffer),
                                         refPLSBuffer(uvBuffer),
                                         refPLSBuffer(indexBuffer),
