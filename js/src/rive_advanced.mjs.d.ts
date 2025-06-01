@@ -928,6 +928,7 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   removeInstance(vmi: ViewModelInstance): void;
   removeInstanceAt(index: number): void;
   instanceAt(index: number): ViewModelInstance;
+  swap(a: number, b: number): ViewModelInstance;
 }
 export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
   value(image: ImageInternal):void;

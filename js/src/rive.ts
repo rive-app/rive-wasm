@@ -3281,9 +3281,14 @@ export class ViewModelInstance {
   }
 
   public addParent(parent: ViewModelInstance) {
-    this._parents.push(parent);
-    if (this._propertiesWithCallbacks.length > 0 || this._children.length > 0) {
-      parent.addToViewModelCallbacks(this);
+    if (!this._parents.includes(parent)) {
+      this._parents.push(parent);
+      if (
+        this._propertiesWithCallbacks.length > 0 ||
+        this._children.length > 0
+      ) {
+        parent.addToViewModelCallbacks(this);
+      }
     }
   }
 
@@ -3905,6 +3910,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
       (this._viewModelInstanceValue as rc.ViewModelInstanceList).addInstance(
         instance.runtimeInstance!,
       );
+      instance.addParent(this._parentViewModel);
     }
   }
 
@@ -3913,6 +3919,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
       (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstance(
         instance.runtimeInstance!,
       );
+      instance.removeParent(this._parentViewModel);
     }
   }
 
@@ -3927,10 +3934,17 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
       this._viewModelInstanceValue as rc.ViewModelInstanceList
     ).instanceAt(index);
     if (runtimeInstance != null) {
-      const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
+      const viewModelInstance = new ViewModelInstance(
+        runtimeInstance,
+        this._parentViewModel,
+      );
       return viewModelInstance;
     }
     return null;
+  }
+
+  public swap(a: number, b: number) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceList).swap(a, b);
   }
 
   public internalHandleCallback(callback: Function) {

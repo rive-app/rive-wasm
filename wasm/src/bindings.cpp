@@ -1206,7 +1206,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::ViewModelInstanceListRuntime& self, int index) {
                       self.removeInstanceAt(index);
                   }),
-                  allow_raw_pointers());
+                  allow_raw_pointers())
+        .function(
+            "swap",
+            optional_override([](rive::ViewModelInstanceListRuntime& self, uint32_t a, uint32_t b) {
+                self.swap(a, b);
+            }),
+            allow_raw_pointers());
     class_<rive::ViewModelInstanceAssetImageRuntime, base<rive::ViewModelInstanceValueRuntime>>(
         "ViewModelInstanceAssetImage")
         .function(
