@@ -492,6 +492,16 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .value("color", rive::BlendMode::color)
         .value("luminosity", rive::BlendMode::luminosity);
 
+    enum_<rive::ImageWrap>("ImageWrap")
+        .value("clamp", rive::ImageWrap::clamp)
+        .value("repeat", rive::ImageWrap::repeat)
+        .value("mirror", rive::ImageWrap::mirror);
+    enum_<rive::ImageFilter>("ImageFilter")
+        .value("trilinear", rive::ImageFilter::trilinear)
+        .value("nearest", rive::ImageFilter::nearest);
+
+    class_<rive::ImageSampler>("ImageSampler");
+
     class_<rive::rcp<rive::RenderShader>>("RenderShader");
 
     class_<rive::RenderPaint>("RenderPaint")

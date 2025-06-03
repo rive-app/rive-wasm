@@ -755,7 +755,7 @@ Module["onRuntimeInitialized"] = function () {
         paint["draw"].bind(paint, this._ctx, path._path2D, fillRule)
       );
     },
-    "_drawRiveImage": function (image, blend, opacity) {
+    "_drawRiveImage": function (image, options, blend, opacity) {
       var img = image._image;
       if (!img) {
         return;
@@ -778,6 +778,7 @@ Module["onRuntimeInitialized"] = function () {
     },
     "_drawImageMesh": function (
       image,
+      options,
       blend,
       opacity,
       vtx,
