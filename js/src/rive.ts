@@ -4011,9 +4011,9 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
     super(instance, root);
   }
 
-  public set value(image: rc.Image) {
+  public set value(image: rc.Image | null) {
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
-      image.nativeImage);
+      image?.nativeImage ?? null);
   }
 
 

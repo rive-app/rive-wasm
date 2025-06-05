@@ -931,7 +931,7 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   swap(a: number, b: number): ViewModelInstance;
 }
 export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
-  value(image: ImageInternal):void;
+  value(image: ImageInternal | null):void;
 }
 
 export declare class ViewModelInstance {
