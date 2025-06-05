@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.28.0](https://github.com/rive-app/rive-wasm/compare/2.27.5...2.28.0)
+## [2.29.0](https://github.com/rive-app/rive-wasm/compare/2.28.0...2.29.0)
 
 ### Commits
 
+- fix: add missing symbol property when creating view model instance (#9827) 3277968b6d [`d3ee58f`](https://github.com/rive-app/rive-wasm/commit/d3ee58f5ef8025ecc7c92b4712bf9b5177b27ded)
+- fix: extend unbinding to data bind dependencies (#9817) 0e1fce36c3 [`85ca8db`](https://github.com/rive-app/rive-wasm/commit/85ca8dbb6cc0f58772e2fd2f8c2b448abcd2cf67)
+- Nnnn enable data bind images ff early access (#9808) f91f517f32 [`2fdad08`](https://github.com/rive-app/rive-wasm/commit/2fdad0861dee1ebd74272245970fb6ebbb2850fa)
+- add tests (#9807) b21cda7564 [`b7f1715`](https://github.com/rive-app/rive-wasm/commit/b7f1715b6887b550d80c281c582d742907df4b5e)
+
+## [2.28.0](https://github.com/rive-app/rive-wasm/compare/2.27.5...2.28.0) - 2025-05-23
+
+### Commits
+
+- chore: tag 2.28.0 [`908eb74`](https://github.com/rive-app/rive-wasm/commit/908eb74c7163654b442e985e772869ead7dc115f)
 - feature(CommandQeue)  Message Queue (#9704) 5b253d0b0b [`80b94a4`](https://github.com/rive-app/rive-wasm/commit/80b94a4b3d4ba92e5409bd7fbdbe056323c548fd)
 - fix(wasm): catch RiveFile initialization errors in callback (#9685) a78784d5e6 [`dd97ec4`](https://github.com/rive-app/rive-wasm/commit/dd97ec45c7e6a47fc85c17983fcde125cd0908db)
 
