@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.29.1](https://github.com/rive-app/rive-wasm/compare/2.29.0...2.29.1)
+## [2.29.2](https://github.com/rive-app/rive-wasm/compare/2.29.1...2.29.2)
 
 ### Commits
 
+- fix: crash when text is in a solo (#9915) 747c3ea77a [`e34c22c`](https://github.com/rive-app/rive-wasm/commit/e34c22c485bf6e53046251838c32359c5f5c1c2c)
+
+## [2.29.1](https://github.com/rive-app/rive-wasm/compare/2.29.0...2.29.1) - 2025-06-05
+
+### Commits
+
+- chore: tag 2.29.1 [`1055105`](https://github.com/rive-app/rive-wasm/commit/10551056c52a479a21c7469186539ee5a70ec56e)
 - fix: check for empty id when exporting data binds (#9912) 7293b15461 [`a808292`](https://github.com/rive-app/rive-wasm/commit/a808292a6348a8146b8b313585c2259832f2a93e)
 - fix: apply fix to patch release failure [`7da438a`](https://github.com/rive-app/rive-wasm/commit/7da438a1ad26a03b32698a6c8b3869d95fe49a64)
 - fix crash on unset listener change (#9907) 8edd84d2a3 [`c20a31f`](https://github.com/rive-app/rive-wasm/commit/c20a31feab8318fcc7cae578dbbda26980250bf2)
