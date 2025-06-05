@@ -5,7 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.29.0](https://github.com/rive-app/rive-wasm/compare/2.28.0...2.29.0)
+## [2.29.1](https://github.com/rive-app/rive-wasm/compare/2.29.0...2.29.1)
+
+### Commits
+
+- fix: check for empty id when exporting data binds (#9912) 7293b15461 [`a808292`](https://github.com/rive-app/rive-wasm/commit/a808292a6348a8146b8b313585c2259832f2a93e)
+- fix: apply fix to patch release failure [`7da438a`](https://github.com/rive-app/rive-wasm/commit/7da438a1ad26a03b32698a6c8b3869d95fe49a64)
+- fix crash on unset listener change (#9907) 8edd84d2a3 [`c20a31f`](https://github.com/rive-app/rive-wasm/commit/c20a31feab8318fcc7cae578dbbda26980250bf2)
+- fix: isTargetOpaque override (#9901) 7c8352ad63 [`35027ae`](https://github.com/rive-app/rive-wasm/commit/35027aeaa490b8499de605ca9a542eaa51624754)
+- library: allow passing view model instances of a nested library to a library artboard (#9878) 052a4984ef [`c48ee66`](https://github.com/rive-app/rive-wasm/commit/c48ee669ec4837e49413070870cc02666e5e4f5e)
+- fix: Scroll index not considering gap (#9889) aca08e662c [`f6e4db1`](https://github.com/rive-app/rive-wasm/commit/f6e4db1ef2fe7e9c6bbdb008b27088a56bb4387c)
+- data bind fixes 16 ffe3a20c95 [`5bd2085`](https://github.com/rive-app/rive-wasm/commit/5bd20851ce447105013305f150f6783e583bb70b)
+- feat(Command Queue): Pointer Events (#9881) ab11082212 [`1953ce3`](https://github.com/rive-app/rive-wasm/commit/1953ce39bcbeb1ef6f5871f341180e57a8ee8237)
+- refactor(CommandQueue) removed erase in `processMessage` to avoid double erase (#9887) e296e14c35 [`104a0d4`](https://github.com/rive-app/rive-wasm/commit/104a0d4888d18601336015f6f3941b333384c09f)
+- fix(editor): add additional index checks for Lists (#9870) 89ffb92b57 [`365d063`](https://github.com/rive-app/rive-wasm/commit/365d063620478354e799dab3895eee31ab326423)
+- refactor(vk): Add a vkutil::Texture2D class (#9862) 5779effa92 [`d19c4e3`](https://github.com/rive-app/rive-wasm/commit/d19c4e352e7d0f17bf03d1946119617fe27f72bd)
+- runtime list updates (#9855) f660dea549 [`f2ee1e2`](https://github.com/rive-app/rive-wasm/commit/f2ee1e2c4408a221ac7c03457f65c2e795799145)
+- removed generation of reqeust ids (#9859) b8bfaaf5e7 [`6d3f233`](https://github.com/rive-app/rive-wasm/commit/6d3f2335fc5b19ac4ea00fdc40877299905f7842)
+- added advance state machine and settle callback (#9857) 58ece530ef [`8c8772d`](https://github.com/rive-app/rive-wasm/commit/8c8772d222813fb5d5b01cb939516363557ac3e6)
+- Add gate for modifying dirty layouts set (#9856) 465d37f48e [`687e5aa`](https://github.com/rive-app/rive-wasm/commit/687e5aa7a3f91586872a47de9e580d0f26040db0)
+- fix(renderer): Gracefully handle compilation failures (#9755) c09b771645 [`c528615`](https://github.com/rive-app/rive-wasm/commit/c528615ec47b1511ed31c19a2bab5b176af20dc7)
+- fix(CommandQueue)  (#9845) 6582d5bf02 [`a8f9bd9`](https://github.com/rive-app/rive-wasm/commit/a8f9bd90561e2010317ed7fa233d709bc9a8e93d)
+- feat(CommandQueue)File asset loader (#9799) 77172ea62b [`3138998`](https://github.com/rive-app/rive-wasm/commit/3138998afab4fd717092ffd1482dc4fc0058bb5d)
+- Revert "bad driver detection for clip planes (#9714)" (#9775) c62bdb256e [`3ca5905`](https://github.com/rive-app/rive-wasm/commit/3ca5905215918376b32f3717274e36490bd30199)
+- feat(Image sampler filters) Adds Image filter options for rendering images (#9309) 930facea3f [`2378fb2`](https://github.com/rive-app/rive-wasm/commit/2378fb25324a51ac7bb6acbd09e5d5783889adeb)
+- chore: add data binding set of tests (#9821) 6a3aa2cbfd [`101ed9f`](https://github.com/rive-app/rive-wasm/commit/101ed9f3e05756e8a3e6ed05faaa40e53acb9a77)
+- feat(apple): add mac catalyst support (#9759) e6b052eed9 [`4291c2a`](https://github.com/rive-app/rive-wasm/commit/4291c2a733b1744c7f28db0aede158bd703f7ee7)
+
+## [2.29.0](https://github.com/rive-app/rive-wasm/compare/2.28.0...2.29.0) - 2025-06-05
 
 ### Commits
 
