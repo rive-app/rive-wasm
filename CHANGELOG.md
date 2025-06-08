@@ -5,10 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.29.2](https://github.com/rive-app/rive-wasm/compare/2.29.1...2.29.2)
+## [2.29.3](https://github.com/rive-app/rive-wasm/compare/2.29.2...2.29.3)
 
 ### Commits
 
+- Nnnn data binding images and lists updates (#9932) 8363df8fb6 [`d075575`](https://github.com/rive-app/rive-wasm/commit/d075575711ffa0f49cbef1190c60540d4861f14b)
+- feat(CommandQueue) Get / Set Basic Properties (#9929) 6d8f034217 [`c284c05`](https://github.com/rive-app/rive-wasm/commit/c284c0566baf6b3740ff89773af8a7bb61c6782d)
+- fix: crash with active title (#9928) 5a1a0b5637 [`539e3d5`](https://github.com/rive-app/rive-wasm/commit/539e3d5b5e82bd10e8e0662e65c2b8a5c312f977)
+- Fix: tess renderer & nuke old viewer (#9927) c2ec689eb6 [`68aee35`](https://github.com/rive-app/rive-wasm/commit/68aee357e3fc3bffa5fba0c7617b1af1e6c32a84)
+- feat(CommandQueue)Server side Cursor Math (#9916) 8bf9682caa [`ca45c1a`](https://github.com/rive-app/rive-wasm/commit/ca45c1a9e0c0156df5846c48117885b0a5579ddf)
+- feat(CommandQueue)  View Models and View Model Instances (#9908) f4960cff48 [`1019732`](https://github.com/rive-app/rive-wasm/commit/1019732a7c0f82eb2014d1764c4722a050b67044)
+- fix: static analysis fixes (#9918) c71be9b1a2 [`1414901`](https://github.com/rive-app/rive-wasm/commit/1414901978de3a67caf0bc1e9a77ba2943140cb3)
+- Nnnn data bind images updates (#9911) 3aa5b93199 [`64a1783`](https://github.com/rive-app/rive-wasm/commit/64a178381d71fe52b86499729b78d73adf02639c)
+- fix(webgpu): Don't allocate unnecessary textures (#9909) dde1897bb7 [`e38beb3`](https://github.com/rive-app/rive-wasm/commit/e38beb39a2f0c10f7d59efbc89d907b300945386)
+
+## [2.29.2](https://github.com/rive-app/rive-wasm/compare/2.29.1...2.29.2) - 2025-06-05
+
+### Commits
+
+- chore: tag 2.29.2 [`d633bdd`](https://github.com/rive-app/rive-wasm/commit/d633bdd7b78d2115f076a11a1a84964aafd26dad)
 - fix: crash when text is in a solo (#9915) 747c3ea77a [`e34c22c`](https://github.com/rive-app/rive-wasm/commit/e34c22c485bf6e53046251838c32359c5f5c1c2c)
 
 ## [2.29.1](https://github.com/rive-app/rive-wasm/compare/2.29.0...2.29.1) - 2025-06-05
