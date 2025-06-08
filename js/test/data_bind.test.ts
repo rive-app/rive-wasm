@@ -247,7 +247,7 @@ test("Loads an invalid view model instance by name.", (done) => {
   });
 });
 
-test.only("Loads an invalid view model instance by index.", (done) => {
+test("Loads an invalid view model instance by index.", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
@@ -268,3 +268,44 @@ test.only("Loads an invalid view model instance by index.", (done) => {
     },
   });
 });
+
+
+test("Adds an instance to a list in the right position", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/list_add_instance_at_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    onLoad: () => {
+      const rootViewModel = r.viewModelInstance;
+      const childViewModel = r.viewModelByName("child");
+      expect(childViewModel).not.toBe(null);
+      const list = rootViewModel!.list("lis");
+      expect(list).not.toBe(null);
+      let count = 0;
+      while (count++ < 3) {
+        const viewModelInstance = childViewModel?.instance();
+        expect(viewModelInstance).not.toBe(null);
+        viewModelInstance!.string("str")!.value = "fixed";
+        list?.addInstance(viewModelInstance!);
+      }
+      expect(list?.length).toBe(3);
+      const positionedInstance = childViewModel?.instance();
+      positionedInstance!.string("str")!.value = "moved";
+      list?.addInstanceAt(positionedInstance!, 1);
+      expect(list?.length).toBe(4);
+
+      const readInstance = list!.instanceAt(1);
+      expect(readInstance?.string("str").value).toBe("moved");
+
+      const invalidPositionedInstance = childViewModel?.instance();
+      const result = list?.addInstanceAt(invalidPositionedInstance!, 10);
+      expect(result).toBe(false);
+      expect(list?.length).toBe(4);
+
+      done();
+    },
+  });
+});
+

@@ -925,6 +925,7 @@ export declare class ViewModelInstanceEnum extends ViewModelInstanceValue {
 export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   get size(): number;
   addInstance(vmi: ViewModelInstance): void;
+  addInstanceAt(vmi: ViewModelInstance, index: number): boolean;
   removeInstance(vmi: ViewModelInstance): void;
   removeInstanceAt(index: number): void;
   instanceAt(index: number): ViewModelInstance;

@@ -1491,7 +1491,9 @@ export class RiveFile {
 
       await this.initData();
     } catch (error) {
-      this.fireLoadError(error instanceof Error ? error.message : RiveFile.fileLoadErrorMessage);
+      this.fireLoadError(
+        error instanceof Error ? error.message : RiveFile.fileLoadErrorMessage,
+      );
     }
   }
 
@@ -3914,6 +3916,20 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
     }
   }
 
+  public addInstanceAt(instance: ViewModelInstance, index: number): boolean {
+    if (instance.runtimeInstance != null) {
+      if (
+        (
+          this._viewModelInstanceValue as rc.ViewModelInstanceList
+        ).addInstanceAt(instance.runtimeInstance!, index)
+      ) {
+        instance.addParent(this._parentViewModel);
+        return true;
+      }
+    }
+    return false;
+  }
+
   public removeInstance(instance: ViewModelInstance) {
     if (instance.runtimeInstance != null) {
       (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstance(
@@ -4013,9 +4029,9 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
 
   public set value(image: rc.Image | null) {
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
-      image?.nativeImage ?? null);
+      image?.nativeImage ?? null,
+    );
   }
-
 
   public internalHandleCallback(callback: Function) {
     callback();
@@ -4100,9 +4116,7 @@ export const Testing = {
  * Be sure to call `.unref()` on the audio once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeAudio = async (
-  bytes: Uint8Array,
-): Promise<rc.Audio> => {
+export const decodeAudio = async (bytes: Uint8Array): Promise<rc.Audio> => {
   const decodedPromise = new Promise<rc.Audio>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeAudio(bytes, resolve);
@@ -4120,9 +4134,7 @@ export const decodeAudio = async (
  * Be sure to call `.unref()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeImage = async (
-  bytes: Uint8Array,
-): Promise<rc.Image> => {
+export const decodeImage = async (bytes: Uint8Array): Promise<rc.Image> => {
   const decodedPromise = new Promise<rc.Image>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeImage(bytes, resolve);
@@ -4140,9 +4152,7 @@ export const decodeImage = async (
  * Be sure to call `.unref()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeFont = async (
-  bytes: Uint8Array,
-): Promise<rc.Font> => {
+export const decodeFont = async (bytes: Uint8Array): Promise<rc.Font> => {
   const decodedPromise = new Promise<rc.Font>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
       rive.decodeFont(bytes, resolve);

@@ -1190,6 +1190,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       [](rive::ViewModelInstanceListRuntime& self,
                          rive::ViewModelInstanceRuntime* instance) { self.addInstance(instance); }),
                   allow_raw_pointers())
+        .function("addInstanceAt",
+                  optional_override(
+                      [](rive::ViewModelInstanceListRuntime& self,
+                         rive::ViewModelInstanceRuntime* instance,
+                         int index) -> bool { return self.addInstanceAt(instance, index); }),
+                  allow_raw_pointers())
         .function("instanceAt",
                   optional_override([](rive::ViewModelInstanceListRuntime& self,
                                        int index) -> rive::ViewModelInstanceRuntime* {
