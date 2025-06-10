@@ -5,10 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.29.3](https://github.com/rive-app/rive-wasm/compare/2.29.2...2.29.3)
+## [2.30.0](https://github.com/rive-app/rive-wasm/compare/2.29.4...2.30.0)
 
 ### Commits
 
+- chore: test that we can increment the number [`a6a716d`](https://github.com/rive-app/rive-wasm/commit/a6a716db9ea4989188900de8bb968f6fb295d9c8)
+- chore: updated fix, its master not main, and we only need to increment once... [`48ca4b8`](https://github.com/rive-app/rive-wasm/commit/48ca4b8b5f1623a6a2c8372f4d106df26ad524a3)
+- chore: add a test for github permissions [`e210689`](https://github.com/rive-app/rive-wasm/commit/e210689edadf216512e79353ba55829b8acf304f)
+- update keys (#9949) 88befa489b [`9641fc4`](https://github.com/rive-app/rive-wasm/commit/9641fc44c241bbacf10428ced5e965487b95992d)
+
+## [2.29.4](https://github.com/rive-app/rive-wasm/compare/2.29.3...2.29.4) - 2025-06-10
+
+### Commits
+
+- Fix feathering assertion from padding double cusps (#9940) d5140c06b9 [`927811c`](https://github.com/rive-app/rive-wasm/commit/927811c63273cded9f723bb9bdddf2fc6b1ff27c)
+- add list to length converter (#9930) 3d3767270c [`aa5a1c4`](https://github.com/rive-app/rive-wasm/commit/aa5a1c4b88fed1c5f86558a1a12d946148474544)
+- test: Update fuzzer to support real GPU backends (#9931) 6734d748c8 [`658b600`](https://github.com/rive-app/rive-wasm/commit/658b600d9c8ba46fa4dbed385c6c3a479e874217)
+- pass unordered map by reference (#9945) c793892950 [`caff316`](https://github.com/rive-app/rive-wasm/commit/caff316c3565060fad72669207b4a777ac7309dd)
+
+## [2.29.3](https://github.com/rive-app/rive-wasm/compare/2.29.2...2.29.3) - 2025-06-08
+
+### Commits
+
+- chore: tag 2.29.3 [`3aaed6c`](https://github.com/rive-app/rive-wasm/commit/3aaed6cf04bb42fcf7fc582354150c159de39e1f)
 - Nnnn data binding images and lists updates (#9932) 8363df8fb6 [`d075575`](https://github.com/rive-app/rive-wasm/commit/d075575711ffa0f49cbef1190c60540d4861f14b)
 - feat(CommandQueue) Get / Set Basic Properties (#9929) 6d8f034217 [`c284c05`](https://github.com/rive-app/rive-wasm/commit/c284c0566baf6b3740ff89773af8a7bb61c6782d)
 - fix: crash with active title (#9928) 5a1a0b5637 [`539e3d5`](https://github.com/rive-app/rive-wasm/commit/539e3d5b5e82bd10e8e0662e65c2b8a5c312f977)
