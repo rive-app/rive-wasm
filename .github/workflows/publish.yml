@@ -14,10 +14,11 @@ jobs:
   publish_job:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: true
+          token: ${{ secrets.PAT_GITHUB }}
       - name: Checkout Rive Renderer Repo
         uses: actions/checkout@v3
         with:
@@ -59,6 +60,7 @@ jobs:
         run: npm run release:major
         working-directory: ./js
         env:
+          # if this works we should kill these tokens as they are not doing anything...
           GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
