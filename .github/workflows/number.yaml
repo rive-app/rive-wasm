@@ -1,0 +1,30 @@
+name: bump stuff
+
+on:
+  workflow_dispatch:
+    branches: [main]
+
+jobs:
+  bump-numbers:
+    name: Number needs to be way higher
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT_GITHUB }}
+      - name: Make sure the number going up is credited appropriately
+        shell: bash
+        run: |
+          git config --local user.email 'hello@rive.app'
+          git config --local user.name ${{ github.actor }}
+      - name: increment the number
+        shell: bash 
+        run: ./increment.sh 
+      - name: record my action
+        shell: bash 
+        run: | 
+          ./increment.sh 
+          git add number 
+          git commit -m "chore: test that we can increment the number"
+          git push
