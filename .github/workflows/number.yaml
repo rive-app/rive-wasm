@@ -2,7 +2,7 @@ name: bump stuff
 
 on:
   workflow_dispatch:
-    branches: [main]
+    branches: [master]
 
 jobs:
   bump-numbers:
@@ -24,7 +24,6 @@ jobs:
       - name: record my action
         shell: bash 
         run: | 
-          ./increment.sh 
           git add number 
           git commit -m "chore: test that we can increment the number"
           git push
