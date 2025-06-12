@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 # Sets up the build structure expected by webpack and packs
