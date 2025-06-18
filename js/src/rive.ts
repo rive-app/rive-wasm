@@ -1556,6 +1556,12 @@ export class RiveFile {
       return this.file;
     }
   }
+
+  public destroyIfUnused() {
+    if (this.referenceCount <= 0) {
+      this.cleanup();
+    }
+  }
 }
 
 export class Rive {
@@ -1926,17 +1932,20 @@ export class Rive {
   ): Promise<boolean> {
     try {
       if (this.riveFile == null) {
-        this.riveFile = new RiveFile({
+        const riveFile = new RiveFile({
           src: this.src,
           buffer: this.buffer,
           enableRiveAssetCDN: this.enableRiveAssetCDN,
           assetLoader: this.assetLoader,
         });
-        await this.riveFile.init();
-      }
-      // Check for riveFile in case it has been cleaned up while initializing;
-      if (!this.riveFile) {
-        return false;
+        this.riveFile = riveFile;
+        await riveFile.init();
+        if (this.destroyed) {
+          // In the very unlikely scenario where the rive file created by this Rive is shared by
+          // another rive file, we only want to destroy it if this file is the only owner.
+          riveFile.destroyIfUnused();
+          return false;
+        }
       }
       this.file = this.riveFile.getInstance();
       // Initialize and draw frame

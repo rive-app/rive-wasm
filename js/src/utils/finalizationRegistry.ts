@@ -183,17 +183,18 @@ declare const FinalizationRegistry: {
   unregister<T>(object: T): void;
 };
 
-class FakeFinalizationRegistry extends FinalizationRegistry {
-  constructor(fn: Function) {
-    super(fn);
-  }
+class FakeFinalizationRegistry {
+  constructor(_: Function) {}
   register(object: Finalizable) {
     object.selfUnref = true;
   }
 
   unregister<T>(_: T) {}
 }
-const MyFinalizationRegistry = FinalizationRegistry || FakeFinalizationRegistry;
+const MyFinalizationRegistry =
+  typeof FinalizationRegistry !== "undefined"
+    ? FinalizationRegistry
+    : FakeFinalizationRegistry;
 
 const finalizationRegistry = new MyFinalizationRegistry((ob: any) => {
   ob.unref();
