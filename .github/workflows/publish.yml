@@ -61,15 +61,18 @@ jobs:
         working-directory: ./js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
       - if: ${{inputs.major == false && inputs.minor == true}}
         name: Minor release - Bump version number, update changelog, push and tag
         run: npm run release:minor
         working-directory: ./js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
       - if: ${{inputs.major == false && inputs.minor == false}}
         name: Patch release - Bump version number, update changelog, push and tag
         run: npm run release:patch
         working-directory: ./js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
