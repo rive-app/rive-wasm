@@ -5,13 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.30.0](https://github.com/rive-app/rive-wasm/compare/2.29.4...2.30.0)
+## [2.30.1](https://github.com/rive-app/rive-wasm/compare/2.30.0...2.30.1)
 
 ### Commits
 
+- fix: bump version back [`0665895`](https://github.com/rive-app/rive-wasm/commit/06658957683c41234ceaa3fb05d187c7ae7ca581)
+- docs: Remove Skia from the runtime readme (#10043) 092566581a [`6e614ef`](https://github.com/rive-app/rive-wasm/commit/6e614ef7a6974bb94d9bb44270adf2b2e57cfebe)
+- fix: add token to our release workflow (#10054) c5de1aa5d8 [`f59da73`](https://github.com/rive-app/rive-wasm/commit/f59da7395ae88191ac2c1d6a68b36271651aa28a)
+- featt(CommandQueue): Added internal file asset loader (#10040) d13f8c2bf6 [`5f2faac`](https://github.com/rive-app/rive-wasm/commit/5f2faacba0c13eec09c670aa38ee07bbd339da32)
+- chore: update list related classes to use RCP (#10032) 23c446feb4 [`c48c91c`](https://github.com/rive-app/rive-wasm/commit/c48c91cef915ef471bc458c3c5d0fc14f959abd4)
+- featue: add artboard data bind support (#9996) be0b691d9b [`9bf6cc3`](https://github.com/rive-app/rive-wasm/commit/9bf6cc3298d125bdb211519ac7ff62e23bb730a8)
+- fix: a few leftover dependencies (#10036) 32c5a2eebb [`0cedfc8`](https://github.com/rive-app/rive-wasm/commit/0cedfc8a268d7317a515239eb2afdbff146e816a)
+- feat(CommandQueue): Added error messages for each type of error that could happen (#10020) 9af17212ca [`dca957e`](https://github.com/rive-app/rive-wasm/commit/dca957e7723e404d579415596f001c9cd0e6a639)
+- Nnnn js module fixes (#10021) 803e7d1134 [`573ca88`](https://github.com/rive-app/rive-wasm/commit/573ca880f4eb7639d118780e7380cf0ee64038e8)
+- feature(CommandQueue): View Model Properties finished (#9993) 1d144e0d61 [`f8f696e`](https://github.com/rive-app/rive-wasm/commit/f8f696ec8969abe19e1413f4703ef75c2355c32b)
+- feat: add hash to rcp&lt;T&gt; (#10018) 22e314a8df [`bd86d8c`](https://github.com/rive-app/rive-wasm/commit/bd86d8ccebb57700ea2c218c6d8d2ba2c187335f)
+- Nnnn separate clear and unbind (#9888) f22462bd78 [`9bcf52f`](https://github.com/rive-app/rive-wasm/commit/9bcf52f63587238c2f83ebfc8c841ca59a51d60f)
+- second batch of fixes (#10014) 3c09bb1e7f [`09d96e8`](https://github.com/rive-app/rive-wasm/commit/09d96e8f53a04b0901d595181552a8db8e7bbd1b)
+- rcp file assets (#10016) ecdf58f54b [`c1b0c92`](https://github.com/rive-app/rive-wasm/commit/c1b0c924e73259327bb62637981e590c9f49e126)
+- feature: add support for comparing with self (#9984) f0da7e9f27 [`98402bb`](https://github.com/rive-app/rive-wasm/commit/98402bb79a8056344217cc376d4b7d8fee6484cd)
+- fix: rectangles to contour heap use after free (#10005) 67811c029d [`cbdbaf4`](https://github.com/rive-app/rive-wasm/commit/cbdbaf48f16d5d630e6fd992b31d15e35c218964)
+- fix memory issues with data binding (#10002) ca0963da48 [`68ff9ac`](https://github.com/rive-app/rive-wasm/commit/68ff9ac38f9ae0af6576658aeaf34cc42dea2feb)
+- fix: recursively duplicate instances when creating view models from a… (#9995) 8cf21b7fee [`07903c0`](https://github.com/rive-app/rive-wasm/commit/07903c07bd0df2d79b12bce9e5acbd656de4c35f)
+- Initialize pointer to nullptr (#9989) e35082ebdc [`7d59261`](https://github.com/rive-app/rive-wasm/commit/7d59261ac38816da185ae62a6e2656bf0dd3c152)
+- Fix scroll continued acceleration (#9994) 7e9d2b610f [`6202ede`](https://github.com/rive-app/rive-wasm/commit/6202ede9973c377aa1d441b4e4807c9b544b2270)
+- chore(webgpu): Replace JS bindings with Wagyu (#9986) c05ef4daaa [`776899a`](https://github.com/rive-app/rive-wasm/commit/776899a59c0c37b3b8f217af730ab8d60d4b731e)
+- add color custom property (#9181) de384615b2 [`ea496e0`](https://github.com/rive-app/rive-wasm/commit/ea496e08c4666a69ee7d49a48633ef3f7ac01cf0)
+- fix: Fix WebGPU sampler bindings (#9976) 6e3a82253a [`9078531`](https://github.com/rive-app/rive-wasm/commit/9078531c286886a0f0e61b78228a975a444dc36b)
+- chore: remove line (#9979) 528d3b1cb8 [`ae42f65`](https://github.com/rive-app/rive-wasm/commit/ae42f65eb29ee23b62ecaa28484cfa22bd6e2c0c)
+- fix: version number match [`d1d3c59`](https://github.com/rive-app/rive-wasm/commit/d1d3c59dbdd012604a3610fd62dca7fb318d07e4)
+- fix: update how we use release-it to push updates back to our repros (#9967) 5e3cb6d3ce [`cecb374`](https://github.com/rive-app/rive-wasm/commit/cecb3744653142141cd2d193cf9228cc3c1f530c)
+- chore: refactor databind update cycle (#9863) 891f65794c [`4fc722a`](https://github.com/rive-app/rive-wasm/commit/4fc722a994bb718d823fac3ac40de8139626d8c5)
+- fix: use a specific token to checkout our repo (#9962) 2557c848cd [`efa4fb8`](https://github.com/rive-app/rive-wasm/commit/efa4fb8ee32a63612f132747bc38da2c7caf7c90)
+- chore: fix versions [`5d032f2`](https://github.com/rive-app/rive-wasm/commit/5d032f22a997a83bebe2df3e8aeacc224a349535)
 - chore: test that we can increment the number [`a6a716d`](https://github.com/rive-app/rive-wasm/commit/a6a716db9ea4989188900de8bb968f6fb295d9c8)
 - chore: updated fix, its master not main, and we only need to increment once... [`48ca4b8`](https://github.com/rive-app/rive-wasm/commit/48ca4b8b5f1623a6a2c8372f4d106df26ad524a3)
 - chore: add a test for github permissions [`e210689`](https://github.com/rive-app/rive-wasm/commit/e210689edadf216512e79353ba55829b8acf304f)
+
+## [2.30.0](https://github.com/rive-app/rive-wasm/compare/2.29.4...2.30.0) - 2025-06-10
+
+### Commits
+
 - update keys (#9949) 88befa489b [`9641fc4`](https://github.com/rive-app/rive-wasm/commit/9641fc44c241bbacf10428ced5e965487b95992d)
 
 ## [2.29.4](https://github.com/rive-app/rive-wasm/compare/2.29.3...2.29.4) - 2025-06-10
