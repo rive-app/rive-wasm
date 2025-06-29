@@ -53,6 +53,7 @@
 #include "rive/viewmodel/runtime/viewmodel_instance_trigger_runtime.hpp"
 #include "rive/viewmodel/runtime/viewmodel_instance_list_runtime.hpp"
 #include "rive/viewmodel/runtime/viewmodel_instance_asset_image_runtime.hpp"
+#include "rive/viewmodel/runtime/viewmodel_instance_artboard_runtime.hpp"
 #include "rive/viewmodel/viewmodel_instance_string.hpp"
 
 #include "js_alignment.hpp"
@@ -1089,6 +1090,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                           return self.propertyImage(path);
                       }),
                   allow_raw_pointers())
+        .function("artboard",
+                  optional_override(
+                      [](const rive::ViewModelInstanceRuntime& self,
+                         const std::string& path) -> rive::ViewModelInstanceArtboardRuntime* {
+                          return self.propertyArtboard(path);
+                      }),
+                  allow_raw_pointers())
         .function("replaceViewModel",
                   optional_override([](const rive::ViewModelInstanceRuntime& self,
                                        const std::string& path,
@@ -1226,6 +1234,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             optional_override([](rive::ViewModelInstanceAssetImageRuntime& self,
                                  rive::RenderImage* renderImage) { self.value(renderImage); }),
             allow_raw_pointers());
+    class_<rive::ViewModelInstanceArtboardRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceArtboard")
+        .function("value",
+                  optional_override([](rive::ViewModelInstanceArtboardRuntime& self,
+                                       rive::Artboard* artboard) { self.value(artboard); }),
+                  allow_raw_pointers());
 #ifdef DEBUG
     function("doLeakCheck", &__lsan_do_recoverable_leak_check);
 #endif

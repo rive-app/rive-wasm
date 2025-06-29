@@ -378,6 +378,13 @@ export enum RiveEventType {
   OpenUrl = 131,
 }
 
+class Artboard {
+  public nativeArtboard: rc.Artboard;
+  constructor(artboard: rc.Artboard) {
+    this.nativeArtboard = artboard;
+  }
+}
+
 class StateMachine {
   /**
    * Caches the inputs from the runtime
@@ -1561,6 +1568,14 @@ export class RiveFile {
     if (this.referenceCount <= 0) {
       this.cleanup();
     }
+  }
+
+  public getArtboard(name: string): Artboard | null {
+    const nativeArtboard = this.file.artboardByName(name);
+    if (nativeArtboard != null) {
+      return new Artboard(nativeArtboard);
+    }
+    return null;
   }
 }
 
@@ -3167,6 +3182,10 @@ export class Rive {
     }
     return null;
   }
+
+  public getArtboard(name: string): Artboard | null {
+    return this.riveFile?.getArtboard(name) ?? null;
+  }
 }
 
 export class ViewModel {
@@ -3250,6 +3269,7 @@ enum PropertyType {
   Enum = "enum",
   List = "list",
   Image = "image",
+  Artboard = "artboard",
 }
 
 export class ViewModelInstance {
@@ -3501,6 +3521,15 @@ export class ViewModelInstance {
           );
         }
         break;
+      case PropertyType.Artboard:
+        instance = this._runtimeInstance?.artboard(pathSegments[index]) ?? null;
+        if (instance !== null) {
+          return new ViewModelInstanceArtboard(
+            instance as rc.ViewModelInstanceArtboard,
+            this,
+          );
+        }
+        break;
     }
     return null;
   }
@@ -3624,6 +3653,19 @@ export class ViewModelInstance {
       PropertyType.Image,
     );
     return viewmodelInstanceValue as ViewModelInstanceAssetImage | null;
+  }
+
+  /**
+   * method to access an artboard property instance belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the image property
+   */
+  public artboard(path: string): ViewModelInstanceArtboard | null {
+    const viewmodelInstanceValue = this.propertyFromPath(
+      path,
+      PropertyType.Artboard,
+    );
+    return viewmodelInstanceValue as ViewModelInstanceArtboard | null;
   }
 
   /**
@@ -4039,6 +4081,22 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
   public set value(image: rc.Image | null) {
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
       image?.nativeImage ?? null,
+    );
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback();
+  }
+}
+
+export class ViewModelInstanceArtboard extends ViewModelInstanceValue {
+  constructor(instance: rc.ViewModelInstanceArtboard, root: ViewModelInstance) {
+    super(instance, root);
+  }
+
+  public set value(artboard: Artboard | null) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceArtboard).value(
+      artboard.nativeArtboard,
     );
   }
 
