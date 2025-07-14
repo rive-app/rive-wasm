@@ -5,10 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.30.1](https://github.com/rive-app/rive-wasm/compare/2.30.0...2.30.1)
+## [2.30.2](https://github.com/rive-app/rive-wasm/compare/2.30.1...2.30.2)
 
 ### Commits
 
+- Fix bug with Artboard ScaleType in Lists (#10159) 8251f1b259 [`57d8236`](https://github.com/rive-app/rive-wasm/commit/57d823620f632458becae16b44345254fb55ff6a)
+- List fixes 2 (#10153) 8749deb70a [`bc78e33`](https://github.com/rive-app/rive-wasm/commit/bc78e3384e875f714470734959c98acc08c26c84)
+- fix: only shape text with modifiers if the shapes are not empty (#10147) 95bf14f49b [`749ae0e`](https://github.com/rive-app/rive-wasm/commit/749ae0eecd578b99bcb9a8f92413439061a77d72)
+- fix: include missing header for randomization (#10126) 099266fec8 [`0983bf2`](https://github.com/rive-app/rive-wasm/commit/0983bf2e4135994520c1a1043b69b4b0100a0573)
+- fix: change keys to rcp to avoid memory issues (#10146) 11042e5b4c [`6d2808e`](https://github.com/rive-app/rive-wasm/commit/6d2808e2502725c960aa8627d4315764b66802b2)
+- List virtualization fixes (#10143) bf3b33a30a [`05bc84b`](https://github.com/rive-app/rive-wasm/commit/05bc84bfa2624d709bbc3a25d8b09dc66e27be74)
+- Nnnn data biinding artboard fixes (#10139) e54d2ba962 [`6abc231`](https://github.com/rive-app/rive-wasm/commit/6abc2311c9b4a3c7fb183df9d75448225059e9fe)
+- feature: scripting require (#10133) 496fa2b490 [`3eecbce`](https://github.com/rive-app/rive-wasm/commit/3eecbce29a83344e159c174959da06bc746f0af2)
+- List Virtualization & Scroll Carousel (#9965) d973e8c253 [`5ac5456`](https://github.com/rive-app/rive-wasm/commit/5ac5456f089829a76959d8f364581440a0a9e32b)
+- feat(apple): add support for data binding list properties (#9936) d2997eeef4 [`e742c5d`](https://github.com/rive-app/rive-wasm/commit/e742c5d727fc7cd0fda06cae0c0f04a59b732022)
+- feat: nested artboards -&gt; components (#10082) 7379bdd49f [`0a78249`](https://github.com/rive-app/rive-wasm/commit/0a7824961e8e9f20d8a8bf9f47dc2caa583989e4)
+- feature: scripting in editor (#10086) 7be3a0fe02 [`4c70d40`](https://github.com/rive-app/rive-wasm/commit/4c70d404a2e66f22da673edae27e424be0962f5d)
+- feat(webgpu): Finish input attachments for "subpassLoad" mode (#10115) f838e94a95 [`0c12104`](https://github.com/rive-app/rive-wasm/commit/0c121043e449e1fcf822d3dc78f8186010af0c7c)
+- fix: release nested artboard animation resources when clearing (#10116) e3a68dff11 [`dcc65cb`](https://github.com/rive-app/rive-wasm/commit/dcc65cb1a8b29cc532a1050db8f26dd89aece3e3)
+- chore(webgpu): Update Wagyu names (#10114) cc9f175c5e [`2e914ae`](https://github.com/rive-app/rive-wasm/commit/2e914ae005fbe4d2f1d27115ca91d1f3612b347e)
+- Disable timestamp with scroll physics (#10111) d8197feca5 [`b47f0d1`](https://github.com/rive-app/rive-wasm/commit/b47f0d16102b27abeb175b349db8957ed2d6d617)
+- feature: add image based conditions (#10108) 247b3b00e8 [`42782ef`](https://github.com/rive-app/rive-wasm/commit/42782ef7b6fa2d624641b4c557c470fb7d7d4b17)
+- reafactor(CommandQueue): added dependency map between files-&gt;artboards-&gt;statemachines (#10106) 1d45c6418d [`985d986`](https://github.com/rive-app/rive-wasm/commit/985d98636dadecb715da63d5826b3e77029439da)
+- feat(CommandQueue): Several needed features (#10097) cf63e43d70 [`10a334b`](https://github.com/rive-app/rive-wasm/commit/10a334bdb0832d5c6714b76aae5795c5b1c24fc4)
+- runtime: get rid of the HitTextRun destructor (#10092) fc5abebaec [`658c465`](https://github.com/rive-app/rive-wasm/commit/658c4657b81387ec932d8325e9f659fe09b70ba6)
+- fix: get text fallback to use clustered unicode points too (#10078) 4d5037b42d [`e7fe7f7`](https://github.com/rive-app/rive-wasm/commit/e7fe7f7c7cbee540fff918f7bf1cd0db810dac5a)
+- test: Render android/vulkan goldens to the device display (#10074) f6623687a8 [`a28508a`](https://github.com/rive-app/rive-wasm/commit/a28508a2cfeb877d286753423eb6e6b48b317211)
+- chore(ci): Turn on ASAN for some golden tests (#10019) 4a81463748 [`2708532`](https://github.com/rive-app/rive-wasm/commit/27085321eb099cffb0b01d641fbeaae21cadaf7f)
+- chore: Simplify testing configs (#10072) b1793e755e [`79c8844`](https://github.com/rive-app/rive-wasm/commit/79c8844a072a5506138f0fba41febb4ca330e7e6)
+- Nnnn data bind artboards 4 (#10038) 32f0d6d0a0 [`77633a2`](https://github.com/rive-app/rive-wasm/commit/77633a2d2f5228052834e4759e0aa2ee9b7721be)
+- feat(gl): Use KHR_blend_equation_advanced (#10067) 308480cf12 [`44abace`](https://github.com/rive-app/rive-wasm/commit/44abacec48f6c6f88086c98791eb12b4db3b471c)
+- fix(gl): Make the clip-plane ban on ANGLE drivers more comprehensive (#10066) d3e42c99b7 [`f490d2a`](https://github.com/rive-app/rive-wasm/commit/f490d2ae8f74742d1b48b2e4cf4b7b2fa8b8fd27)
+- test: More comprehensive testing for offscreen gms (#10055) 05d64b548f [`f775de8`](https://github.com/rive-app/rive-wasm/commit/f775de8eb1a8aedf4e9d7991320aa219e4728781)
+- fix: rive_native plugin isolation (#10062) ded9340fad [`cd4dd56`](https://github.com/rive-app/rive-wasm/commit/cd4dd56ff4a2d6d451a25e7e8da89453fe8138d5)
+- fix: use reverse iterator (#10057) 4fd30da275 [`93dc58a`](https://github.com/rive-app/rive-wasm/commit/93dc58aa6b4078c703bcc09a98951aae7ae8efc4)
+
+## [2.30.1](https://github.com/rive-app/rive-wasm/compare/2.30.0...2.30.1) - 2025-06-25
+
+### Commits
+
+- chore: tag 2.30.1 [`1eb3710`](https://github.com/rive-app/rive-wasm/commit/1eb37107d8aa00ff4b53c5cc55565a3908232a40)
 - fix: bump version back [`0665895`](https://github.com/rive-app/rive-wasm/commit/06658957683c41234ceaa3fb05d187c7ae7ca581)
 - docs: Remove Skia from the runtime readme (#10043) 092566581a [`6e614ef`](https://github.com/rive-app/rive-wasm/commit/6e614ef7a6974bb94d9bb44270adf2b2e57cfebe)
 - fix: add token to our release workflow (#10054) c5de1aa5d8 [`f59da73`](https://github.com/rive-app/rive-wasm/commit/f59da7395ae88191ac2c1d6a68b36271651aa28a)
