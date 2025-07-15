@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.30.2](https://github.com/rive-app/rive-wasm/compare/2.30.1...2.30.2)
+## [2.30.3](https://github.com/rive-app/rive-wasm/compare/2.30.2...2.30.3)
 
 ### Commits
 
+- List virtualization hit testing 3 (#10157) 8b7aa84704 [`d89424c`](https://github.com/rive-app/rive-wasm/commit/d89424c65af695f063b8e8332b3b96b7ad9785af)
+
+## [2.30.2](https://github.com/rive-app/rive-wasm/compare/2.30.1...2.30.2) - 2025-07-14
+
+### Commits
+
+- chore: tag 2.30.2 [`747e7bc`](https://github.com/rive-app/rive-wasm/commit/747e7bc6f8b9eaf61ac54d4e9f3012abb24f2a77)
 - Fix bug with Artboard ScaleType in Lists (#10159) 8251f1b259 [`57d8236`](https://github.com/rive-app/rive-wasm/commit/57d823620f632458becae16b44345254fb55ff6a)
 - List fixes 2 (#10153) 8749deb70a [`bc78e33`](https://github.com/rive-app/rive-wasm/commit/bc78e3384e875f714470734959c98acc08c26c84)
 - fix: only shape text with modifiers if the shapes are not empty (#10147) 95bf14f49b [`749ae0e`](https://github.com/rive-app/rive-wasm/commit/749ae0eecd578b99bcb9a8f92413439061a77d72)
