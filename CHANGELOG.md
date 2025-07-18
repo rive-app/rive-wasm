@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.30.3](https://github.com/rive-app/rive-wasm/compare/2.30.2...2.30.3)
+## [2.30.4](https://github.com/rive-app/rive-wasm/compare/2.30.3...2.30.4)
 
 ### Commits
 
+- chore: add extra info when state machine exceeds max iterations (#10201) 34883935ac [`015baab`](https://github.com/rive-app/rive-wasm/commit/015baab3b03100c2620f9fd013ecf255152de065)
+- refactor(CommandQueue): Added more enum data (#10191) 1c9db764ea [`40b14bf`](https://github.com/rive-app/rive-wasm/commit/40b14bf61ec1e49ee8aa8303c9a87695bb9cb88b)
+- fix:add missing break (#10192) 7b42c61c86 [`dcc1c84`](https://github.com/rive-app/rive-wasm/commit/dcc1c84ed895d7af3f0b190fb0cae4bff99da785)
+- fix: recursively check whether an artboard is its ancestor before usi… (#10184) 53fb2577bc [`444941a`](https://github.com/rive-app/rive-wasm/commit/444941a103d806abde3957e5e0ce5c34ef384ff1)
+- fix(wagyu): proper init of Wagyu Render Pass Inputs (#10175) ff8fc66bc4 [`d78eac8`](https://github.com/rive-app/rive-wasm/commit/d78eac898a5a7a6c311696df024d59f933822144)
+- chore: update thumbnailer for new rive building set-up 9fd4961e9b [`7225d51`](https://github.com/rive-app/rive-wasm/commit/7225d5115c3216c6d2653f09bb8abfc52524ec08)
+
+## [2.30.3](https://github.com/rive-app/rive-wasm/compare/2.30.2...2.30.3) - 2025-07-15
+
+### Commits
+
+- chore: tag 2.30.3 [`f2c21dd`](https://github.com/rive-app/rive-wasm/commit/f2c21dd5f98c990c709e88a657ca83aea04120e4)
 - List virtualization hit testing 3 (#10157) 8b7aa84704 [`d89424c`](https://github.com/rive-app/rive-wasm/commit/d89424c65af695f063b8e8332b3b96b7ad9785af)
 
 ## [2.30.2](https://github.com/rive-app/rive-wasm/compare/2.30.1...2.30.2) - 2025-07-14
