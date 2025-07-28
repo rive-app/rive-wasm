@@ -4096,7 +4096,7 @@ export class ViewModelInstanceArtboard extends ViewModelInstanceValue {
 
   public set value(artboard: Artboard | null) {
     (this._viewModelInstanceValue as rc.ViewModelInstanceArtboard).value(
-      artboard.nativeArtboard,
+      artboard?.nativeArtboard ?? null,
     );
   }
 
