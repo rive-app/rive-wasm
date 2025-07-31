@@ -80,7 +80,7 @@ do
     includedirs({
         RIVE_RUNTIME_DIR .. '/include',
     })
-    flags({ 'FatalCompileWarnings' })
+    fatalwarnings { "All" }
 
     links({
         'rive',
