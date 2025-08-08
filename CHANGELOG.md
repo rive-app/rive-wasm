@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.31.0](https://github.com/rive-app/rive-wasm/compare/2.30.4...2.31.0)
+## [2.31.1](https://github.com/rive-app/rive-wasm/compare/2.31.0...2.31.1)
 
 ### Commits
 
+- fix: Work around a bug in the Mali T720 compiler (#10340) 59aa55b5d0 [`c2a2267`](https://github.com/rive-app/rive-wasm/commit/c2a226707d58ab1bf833a8f20f3c50a6e11bd362)
+- fix: treat artboard as layout for hit testing inheritance (#10341) 583274d7b9 [`bff5932`](https://github.com/rive-app/rive-wasm/commit/bff5932b11f5f409e71bf54b9632929d04cb669f)
+
+## [2.31.0](https://github.com/rive-app/rive-wasm/compare/2.30.4...2.31.0) - 2025-08-08
+
+### Commits
+
+- chore: tag 2.31.0 [`2f4ba8e`](https://github.com/rive-app/rive-wasm/commit/2f4ba8e4aad35193176f7f7ac4ac435b9e7e0f49)
 - feature: add support for firing triggers on state transitions (#10329) cc34f96631 [`1ee1eb8`](https://github.com/rive-app/rive-wasm/commit/1ee1eb8ae6cd7cec9e9ea85d14335d958eedd759)
 - add support to data bind solos by index and name (#10337) 64f828c9a2 [`6f5e959`](https://github.com/rive-app/rive-wasm/commit/6f5e9596bca5b2eb1a53aae04d584159eb474cae)
 - Support for Triggers in Custom property groups (#10322) 9af6af0361 [`e44eb12`](https://github.com/rive-app/rive-wasm/commit/e44eb12722816ea0861aed5736def0aee7939cd5)
