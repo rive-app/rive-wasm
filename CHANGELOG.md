@@ -5,10 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.30.4](https://github.com/rive-app/rive-wasm/compare/2.30.3...2.30.4)
+## [2.31.0](https://github.com/rive-app/rive-wasm/compare/2.30.4...2.31.0)
 
 ### Commits
 
+- feature: add support for firing triggers on state transitions (#10329) cc34f96631 [`1ee1eb8`](https://github.com/rive-app/rive-wasm/commit/1ee1eb8ae6cd7cec9e9ea85d14335d958eedd759)
+- add support to data bind solos by index and name (#10337) 64f828c9a2 [`6f5e959`](https://github.com/rive-app/rive-wasm/commit/6f5e9596bca5b2eb1a53aae04d584159eb474cae)
+- Support for Triggers in Custom property groups (#10322) 9af6af0361 [`e44eb12`](https://github.com/rive-app/rive-wasm/commit/e44eb12722816ea0861aed5736def0aee7939cd5)
+- Update unit test build/run scripts to use build_rive.sh (#10320) 4bd8c63b93 [`3962b48`](https://github.com/rive-app/rive-wasm/commit/3962b48fbd139f639a98e41a66aebd125e0eaa37)
+- fix nested events conflicting with parent events (#10326) 51f1f66e31 [`bb0a932`](https://github.com/rive-app/rive-wasm/commit/bb0a932a19f37a37819b4c54c42df2c0a583e6f4)
+- add support for view model trigger based listeners (#10323) e7ef71b568 [`775b187`](https://github.com/rive-app/rive-wasm/commit/775b187a358e1e046f8d3ca27105a292230f88b7)
+- add advanced phase to render loop (#10318) af18705be2 [`5df6de7`](https://github.com/rive-app/rive-wasm/commit/5df6de78ac88d6dc3fff6eda2a1e9b155a9417ae)
+- support setting bindable artboard from data bind (#10317) 559f237078 [`fe0379f`](https://github.com/rive-app/rive-wasm/commit/fe0379f42ca2545691438243497079e02826e245)
+- Prevent pointer events when interacting with scroll view (#10251) 40592c7963 [`0268122`](https://github.com/rive-app/rive-wasm/commit/0268122d9d4066125f39c800841380fc4204525e)
+- fix: WebGPU housekeeping (#10313) 210c1fd176 [`0f3747f`](https://github.com/rive-app/rive-wasm/commit/0f3747f445aa5ba278e518636dfb18e896b07369)
+- chore: Update rive_native to use build_rive.sh (#10290) 5d511c6c4c [`d7547aa`](https://github.com/rive-app/rive-wasm/commit/d7547aa64709519aeb63cbcac8b81cf382c4a3c7)
+- feature: ViewModel scripted definitions (#10301) 5678d967c7 [`de831b2`](https://github.com/rive-app/rive-wasm/commit/de831b2d1abd1f09efcf00e76384f4d08903adaf)
+- chore: Update audio_preview_generator to use build_rive.sh (#10285) fba1987016 [`102eb6a`](https://github.com/rive-app/rive-wasm/commit/102eb6a7ca105271a38869c96c62d15687bbf988)
+- build: Fix premake5 build on macOS Sequoia (#10263) b4298b861b [`7c0dd47`](https://github.com/rive-app/rive-wasm/commit/7c0dd474dca88f8724a827ef1e73a79f1438de19)
+- fix(apple): copy symbolic traits when using core text fallback (#10260) f9b4941afd [`04892be`](https://github.com/rive-app/rive-wasm/commit/04892be893b7b44375b1c96ddd8f85ab9bf4bca6)
+- feature: script inputs (#10267) 3d15aeda55 [`831a9a6`](https://github.com/rive-app/rive-wasm/commit/831a9a687b97ab0b27c73ca05e8fca0d9221df69)
+- build: Clone dependencies with git instead of downloading a zip (#10271) a2e64c0505 [`ebfafe5`](https://github.com/rive-app/rive-wasm/commit/ebfafe54a50bfe7195ef980a1b294bad0224f65d)
+- Fix silver test (#10272) 45e1b18c68 [`38338d8`](https://github.com/rive-app/rive-wasm/commit/38338d8ca7b7b650b9fffe98b942490de04d752c)
+- feat: add support for computed root transform values (#10257) 375455bd73 [`2d92a14`](https://github.com/rive-app/rive-wasm/commit/2d92a14468d9cc1343df05c83ab78084ba75fae3)
+- library: support databinding images, list, list index, and artboards (#10252) fc868b380b [`9bd6483`](https://github.com/rive-app/rive-wasm/commit/9bd6483abc98c9ce61bf874f78dceca4e9e310eb)
+- add support to clear data bound artboard by setting the value to null (#10254) a5a679a966 [`8394f46`](https://github.com/rive-app/rive-wasm/commit/8394f4649be7d0912e37b96971a80fe313a5fa77)
+- feat: add support for artboard style overrides in lists (#10212) ca58369fb6 [`3c690c1`](https://github.com/rive-app/rive-wasm/commit/3c690c12dea324a18f174c67ab3cc00799d0d894)
+- chore: refactor scripting api (#10218) 85aa06d5db [`a7a0579`](https://github.com/rive-app/rive-wasm/commit/a7a05791d4143aefd0ebd9521cdf553913159c33)
+- feat(CommandQueue): Several small additions (#10215) c508ec1d15 [`5fc509c`](https://github.com/rive-app/rive-wasm/commit/5fc509c7bf875c90881f029173c4824b8ce9f53f)
+- feature: add support for using event objects as targets for listeners (#10204) ac9841b38d [`9a7f58d`](https://github.com/rive-app/rive-wasm/commit/9a7f58da2cfcbd8f234b137902ab14615b44ee47)
+
+## [2.30.4](https://github.com/rive-app/rive-wasm/compare/2.30.3...2.30.4) - 2025-07-18
+
+### Commits
+
+- chore: tag 2.30.4 [`fec652b`](https://github.com/rive-app/rive-wasm/commit/fec652bfb680eb5eeef824cc1c6257a1b155b216)
 - chore: add extra info when state machine exceeds max iterations (#10201) 34883935ac [`015baab`](https://github.com/rive-app/rive-wasm/commit/015baab3b03100c2620f9fd013ecf255152de065)
 - refactor(CommandQueue): Added more enum data (#10191) 1c9db764ea [`40b14bf`](https://github.com/rive-app/rive-wasm/commit/40b14bf61ec1e49ee8aa8303c9a87695bb9cb88b)
 - fix:add missing break (#10192) 7b42c61c86 [`dcc1c84`](https://github.com/rive-app/rive-wasm/commit/dcc1c84ed895d7af3f0b190fb0cae4bff99da785)

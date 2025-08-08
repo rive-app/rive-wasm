@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/webgl2",
-  "version": "2.30.4",
+  "version": "2.31.0",
   "description": "Rive's webgl2 based web api.",
   "main": "rive.js",
   "homepage": "https://rive.app",
