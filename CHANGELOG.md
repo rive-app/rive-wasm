@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.31.1](https://github.com/rive-app/rive-wasm/compare/2.31.0...2.31.1)
+## [2.31.2](https://github.com/rive-app/rive-wasm/compare/2.31.1...2.31.2)
 
 ### Commits
 
+- Nnnnn add datatypes to viewmodel instances (#10357) 3b0e14f50f [`80683fb`](https://github.com/rive-app/rive-wasm/commit/80683fbb470e85a84d0e62b3e048d6a74e87e947)
+- Fix race condition in Metal background shader compiler (#10355) 92de3f0a1a [`6906025`](https://github.com/rive-app/rive-wasm/commit/69060253488b2a7e315ff4ba872cde08a936b2ee)
+- feat(RiveRenderer): Gamma Space Conversion (#10361) a61202f1c4 [`8070cbb`](https://github.com/rive-app/rive-wasm/commit/8070cbb9b223e16281e24034e909d400edfba64c)
+- Guard against percent margins on top level artboards (#10356) aef45767df [`fc5a609`](https://github.com/rive-app/rive-wasm/commit/fc5a60958e05a7b1df28c351a359ba8f744dbf25)
+- Feature: scripted data inputs (#10339) 8693175cee [`ec6737d`](https://github.com/rive-app/rive-wasm/commit/ec6737de693b51d5130acccc90a2f121587a92ce)
+- make more constraint values bindable (#10351) 9674376769 [`7bda289`](https://github.com/rive-app/rive-wasm/commit/7bda289290791f5d5c607a536b76fb6c05d4eb17)
+- feature: add support for custom enum properties (#10345) 21b8ce84f4 [`c130e7d`](https://github.com/rive-app/rive-wasm/commit/c130e7da5b1e6110cbb08946eacbdc7cb6937a57)
+
+## [2.31.1](https://github.com/rive-app/rive-wasm/compare/2.31.0...2.31.1) - 2025-08-08
+
+### Commits
+
+- chore: tag 2.31.1 [`e023696`](https://github.com/rive-app/rive-wasm/commit/e0236961cbe05d533cc462cab855422ff9680efc)
 - fix: Work around a bug in the Mali T720 compiler (#10340) 59aa55b5d0 [`c2a2267`](https://github.com/rive-app/rive-wasm/commit/c2a226707d58ab1bf833a8f20f3c50a6e11bd362)
 - fix: treat artboard as layout for hit testing inheritance (#10341) 583274d7b9 [`bff5932`](https://github.com/rive-app/rive-wasm/commit/bff5932b11f5f409e71bf54b9632929d04cb669f)
 
