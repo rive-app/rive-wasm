@@ -659,9 +659,7 @@ SI auto map(std::index_sequence<I...>, Fn&& fn, const Args&... args)
         // So, stifle CFI in this function.
         __attribute__((no_sanitize("cfi")))
 #endif
-    {
-        return fn(args[i]...);
-    };
+    { return fn(args[i]...); };
 
     return {lane(I)...};
 }
