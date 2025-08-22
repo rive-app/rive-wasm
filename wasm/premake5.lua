@@ -209,6 +209,7 @@ do
     do
         -- For generating the compilation database.
         includedirs({ RIVE_PLS_DIR .. '/glad' })
+        externalincludedirs({RIVE_PLS_DIR .. 'glad/include'})
     end
 
     filter({})
