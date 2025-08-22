@@ -12,4 +12,7 @@ export {
   finalizationRegistry,
   CustomFileAssetLoaderWrapper,
   AssetLoadCallbackWrapper,
+  FileFinalizer,
+  FinalizableTarget,
+  createFinalization,
 } from "./finalizationRegistry";

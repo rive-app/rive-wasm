@@ -375,7 +375,7 @@ export declare class File {
    */
   enums(): DataEnum[];
 
-  delete(): void;
+  unref(): void;
 }
 
 /**

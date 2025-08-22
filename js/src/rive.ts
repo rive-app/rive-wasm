@@ -10,6 +10,8 @@ import {
   FontWrapper,
   finalizationRegistry,
   CustomFileAssetLoaderWrapper,
+  FileFinalizer,
+  FinalizableTarget,
 } from "./utils";
 
 export type AssetLoadCallback = (
@@ -1396,7 +1398,7 @@ export interface RiveFileParameters {
   onLoadError?: EventCallback;
 }
 
-export class RiveFile {
+export class RiveFile implements FinalizableTarget {
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
     "Rive source file or data buffer required";
@@ -1430,6 +1432,8 @@ export class RiveFile {
 
   private destroyed: boolean = false;
 
+  public selfUnref: boolean = false;
+
   constructor(params: RiveFileParameters) {
     this.src = params.src;
     this.buffer = params.buffer;
@@ -1444,6 +1448,13 @@ export class RiveFile {
     this.eventManager = new EventManager();
     if (params.onLoad) this.on(EventType.Load, params.onLoad);
     if (params.onLoadError) this.on(EventType.LoadError, params.onLoadError);
+  }
+
+  private releaseFile() {
+    if (this.selfUnref) {
+      this.file?.unref();
+    }
+    this.file = null;
   }
 
   private async initData() {
@@ -1467,9 +1478,11 @@ export class RiveFile {
       loader,
       this.enableRiveAssetCDN,
     );
+    const fileFinalizer = new FileFinalizer(this.file);
+    finalizationRegistry.register(this, fileFinalizer);
+
     if (this.destroyed) {
-      this.file?.delete();
-      this.file = null;
+      this.releaseFile();
       return;
     }
     if (this.file !== null) {
@@ -1541,8 +1554,7 @@ export class RiveFile {
     this.referenceCount -= 1;
     if (this.referenceCount <= 0) {
       this.removeAllRiveEventListeners();
-      this.file?.delete();
-      this.file = null;
+      this.releaseFile();
       this.destroyed = true;
     }
   }

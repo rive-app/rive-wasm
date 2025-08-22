@@ -1,10 +1,44 @@
 import * as rc from "../rive_advanced.mjs";
 
-class Finalizable {
-  selfUnref: boolean = false;
+interface Finalizable {
+  unref: () => void;
 }
 
-class ImageWrapper extends Finalizable {
+export interface FinalizableTarget {
+  selfUnref: boolean;
+}
+
+class FileFinalizer implements Finalizable {
+  private _file: rc.File;
+  public selfUnref: boolean = false;
+  constructor(file: rc.File) {
+    this._file = file;
+  }
+
+  public unref() {
+    if (this._file) {
+      this._file.unref();
+    }
+  }
+}
+
+class ObjectFinalizer<T extends Finalizable> {
+  private _finalizableObject: T;
+  constructor(finalizableObject: T) {
+    this._finalizableObject = finalizableObject;
+  }
+
+  public unref() {
+    this._finalizableObject.unref();
+  }
+}
+
+class AssetWrapper implements FinalizableTarget {
+  public selfUnref: boolean = false;
+  public unref() {}
+}
+
+class ImageWrapper extends AssetWrapper {
   private _nativeImage: rc.Image;
 
   constructor(image: rc.Image) {
@@ -23,7 +57,7 @@ class ImageWrapper extends Finalizable {
   }
 }
 
-class AudioWrapper extends Finalizable {
+class AudioWrapper extends AssetWrapper {
   private _nativeAudio: rc.Audio;
 
   constructor(audio: rc.Audio) {
@@ -42,7 +76,7 @@ class AudioWrapper extends Finalizable {
   }
 }
 
-class FontWrapper extends Finalizable {
+class FontWrapper extends AssetWrapper {
   private _nativeFont: rc.Font;
 
   constructor(font: rc.Font) {
@@ -178,14 +212,17 @@ class FontAssetWrapper extends FileAssetWrapper {
 declare const FinalizationRegistry: {
   new (fn: Function): typeof FinalizationRegistry;
 
-  register<T extends Finalizable>(object: T, description: any): void;
+  register<T extends FinalizableTarget>(
+    object: T,
+    description: Finalizable,
+  ): void;
 
   unregister<T>(object: T): void;
 };
 
 class FakeFinalizationRegistry {
   constructor(_: Function) {}
-  register(object: Finalizable) {
+  register(object: FinalizableTarget) {
     object.selfUnref = true;
   }
 
@@ -196,12 +233,21 @@ const MyFinalizationRegistry =
     ? FinalizationRegistry
     : FakeFinalizationRegistry;
 
-const finalizationRegistry = new MyFinalizationRegistry((ob: any) => {
-  ob.unref();
+const finalizationRegistry = new MyFinalizationRegistry((ob: Finalizable) => {
+  ob?.unref();
 });
+
+const createFinalization = <T extends Finalizable>(
+  target: FinalizableTarget,
+  finalizable: T,
+) => {
+  const finalizer = new ObjectFinalizer<T>(finalizable);
+  finalizationRegistry.register(target, finalizer);
+};
 
 export {
   finalizationRegistry,
+  createFinalization,
   Finalizable,
   ImageWrapper,
   AudioWrapper,
@@ -211,4 +257,5 @@ export {
   FontAssetWrapper,
   CustomFileAssetLoaderWrapper,
   FileAssetWrapper,
+  FileFinalizer,
 };

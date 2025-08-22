@@ -520,6 +520,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       }
                       return jsProperties;
                   }),
+                  allow_raw_pointers())
+        .function("unref",
+                  optional_override([](const rive::File& self) -> void { self.unref(); }),
                   allow_raw_pointers());
     class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
     class_<AudioWrapper>("AudioWrapper").function("unref", &AudioWrapper::unref);
