@@ -2040,12 +2040,6 @@ export class Rive {
     this.artboard = rootArtboard;
     rootArtboard.volume = this._volume * audioManager.systemVolume;
 
-    // Check that the artboard has at least 1 animation
-    if (this.artboard.animationCount() < 1) {
-      const msg = "Artboard has no animations";
-      this.eventManager.fire({ type: EventType.LoadError, data: msg });
-      throw msg;
-    }
 
     // Initialize the animator
     this.animator = new Animator(
