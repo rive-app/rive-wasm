@@ -686,9 +686,6 @@ class Animator {
             this.artboard,
           );
           this.stateMachines.push(newStateMachine);
-          if (!playing) {
-            newStateMachine.advanceAndApply(0);
-          }
         } else {
           console.warn(`State Machine with name ${animatables[i]} not found.`);
           // In order to maintain compatibility with current behavior, if a state machine is not found
@@ -706,6 +703,17 @@ class Animator {
    */
   public play(animatables: string | string[]): string[] {
     return this.add(animatables, true);
+  }
+
+  /**
+   * Advance state machines if they are paused after initialization
+   */
+  public advanceIfPaused(): void {
+    this.stateMachines.forEach((sm)=>{
+      if(!sm.playing) {
+        sm.advanceAndApply(0);
+      }
+    })
   }
 
   /**
@@ -1996,6 +2004,10 @@ export class Rive {
         type: EventType.Load,
         data: this.src ?? "buffer",
       });
+
+      // Only initialize paused state machines after the load event has been fired 
+      // to allow users to initialize inputs and view models before the first advance
+      this.animator.advanceIfPaused();
 
       // Flag ready for playback commands and clear the task queue; this order
       // is important or it may infinitely recurse
