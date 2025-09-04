@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.31.3](https://github.com/rive-app/rive-wasm/compare/2.31.2...2.31.3)
+## [2.31.4](https://github.com/rive-app/rive-wasm/compare/2.31.3...2.31.4)
 
 ### Commits
 
+- fix(web): put FinalizableTarget type definition in types file (#10502) 839944f8f4 [`b8942e8`](https://github.com/rive-app/rive-wasm/commit/b8942e8bc9bc5982d1f956c1c1553204d3498440)
+
+## [2.31.3](https://github.com/rive-app/rive-wasm/compare/2.31.2...2.31.3) - 2025-09-04
+
+### Commits
+
+- chore: tag 2.31.3 [`2b98fcd`](https://github.com/rive-app/rive-wasm/commit/2b98fcdbc5858e04fd0b0bbd000422730ea8cb95)
 - feature: console entry can be clicked to open script file (#10484) b555c57747 [`2ba9fc0`](https://github.com/rive-app/rive-wasm/commit/2ba9fc0420914db420ad204443863a6ef017f59c)
 - fix: advance paused state machine after load event has fired (#10493) 55417abff8 [`88d5af6`](https://github.com/rive-app/rive-wasm/commit/88d5af6087aa842367880ec441fbbec22e9f862b)
 - feat: Add fallback AtlasTypes that don't need float color buffers (#10475) 5e6f683b9e [`8548498`](https://github.com/rive-app/rive-wasm/commit/8548498e78f567848e249f982e85e4738996cef3)
