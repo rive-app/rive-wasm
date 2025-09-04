@@ -266,6 +266,18 @@ emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
             case rive::DataType::viewModel:
                 val = "viewModel";
                 break;
+            case rive::DataType::integer:
+                val = "integer";
+                break;
+            case rive::DataType::symbolListIndex:
+                val = "listIndex";
+                break;
+            case rive::DataType::assetImage:
+                val = "image";
+                break;
+            case rive::DataType::artboard:
+                val = "artboard";
+                break;
             default:
                 break;
         }
