@@ -932,10 +932,10 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
   swap(a: number, b: number): ViewModelInstance;
 }
 export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
-  value(image: ImageInternal | null):void;
+  value(image: ImageInternal | null): void;
 }
 export declare class ViewModelInstanceArtboard extends ViewModelInstanceValue {
-  value(artboard: Artboard):void;
+  value(artboard: Artboard): void;
 }
 
 export declare class ViewModelInstance {
@@ -1171,7 +1171,6 @@ export declare class AudioAsset extends FileAsset {
   setAudioSource(audio: Audio): void;
 }
 
-
 export declare class ImageAssetInternal extends FileAssetInternal {
   setRenderImage(image: ImageInternal): void;
 }
@@ -1199,4 +1198,8 @@ export declare class FileAssetLoader {}
 export declare class CustomFileAssetLoader extends FileAssetLoader {
   constructor({ loadContents }: { loadContents: Function });
   loadContents(asset: FileAsset, bytes: any): boolean;
+}
+
+export interface FinalizableTarget {
+  selfUnref: boolean;
 }

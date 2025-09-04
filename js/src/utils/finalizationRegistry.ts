@@ -4,10 +4,6 @@ interface Finalizable {
   unref: () => void;
 }
 
-export interface FinalizableTarget {
-  selfUnref: boolean;
-}
-
 class FileFinalizer implements Finalizable {
   private _file: rc.File;
   public selfUnref: boolean = false;
@@ -33,7 +29,7 @@ class ObjectFinalizer<T extends Finalizable> {
   }
 }
 
-class AssetWrapper implements FinalizableTarget {
+class AssetWrapper implements rc.FinalizableTarget {
   public selfUnref: boolean = false;
   public unref() {}
 }
@@ -212,7 +208,7 @@ class FontAssetWrapper extends FileAssetWrapper {
 declare const FinalizationRegistry: {
   new (fn: Function): typeof FinalizationRegistry;
 
-  register<T extends FinalizableTarget>(
+  register<T extends rc.FinalizableTarget>(
     object: T,
     description: Finalizable,
   ): void;
@@ -222,7 +218,7 @@ declare const FinalizationRegistry: {
 
 class FakeFinalizationRegistry {
   constructor(_: Function) {}
-  register(object: FinalizableTarget) {
+  register(object: rc.FinalizableTarget) {
     object.selfUnref = true;
   }
 
@@ -238,7 +234,7 @@ const finalizationRegistry = new MyFinalizationRegistry((ob: Finalizable) => {
 });
 
 const createFinalization = <T extends Finalizable>(
-  target: FinalizableTarget,
+  target: rc.FinalizableTarget,
   finalizable: T,
 ) => {
   const finalizer = new ObjectFinalizer<T>(finalizable);

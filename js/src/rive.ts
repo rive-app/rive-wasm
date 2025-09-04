@@ -11,9 +11,7 @@ import {
   finalizationRegistry,
   CustomFileAssetLoaderWrapper,
   FileFinalizer,
-  FinalizableTarget,
 } from "./utils";
-
 export type AssetLoadCallback = (
   asset: rc.FileAsset,
   bytes: Uint8Array,
@@ -709,11 +707,11 @@ class Animator {
    * Advance state machines if they are paused after initialization
    */
   public advanceIfPaused(): void {
-    this.stateMachines.forEach((sm)=>{
-      if(!sm.playing) {
+    this.stateMachines.forEach((sm) => {
+      if (!sm.playing) {
         sm.advanceAndApply(0);
       }
-    })
+    });
   }
 
   /**
@@ -1406,7 +1404,7 @@ export interface RiveFileParameters {
   onLoadError?: EventCallback;
 }
 
-export class RiveFile implements FinalizableTarget {
+export class RiveFile implements rc.FinalizableTarget {
   // Error message for missing source or buffer
   private static readonly missingErrorMessage: string =
     "Rive source file or data buffer required";
@@ -2005,7 +2003,7 @@ export class Rive {
         data: this.src ?? "buffer",
       });
 
-      // Only initialize paused state machines after the load event has been fired 
+      // Only initialize paused state machines after the load event has been fired
       // to allow users to initialize inputs and view models before the first advance
       this.animator.advanceIfPaused();
 
@@ -2051,7 +2049,6 @@ export class Rive {
 
     this.artboard = rootArtboard;
     rootArtboard.volume = this._volume * audioManager.systemVolume;
-
 
     // Initialize the animator
     this.animator = new Animator(

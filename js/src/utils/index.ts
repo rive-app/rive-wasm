@@ -13,6 +13,5 @@ export {
   CustomFileAssetLoaderWrapper,
   AssetLoadCallbackWrapper,
   FileFinalizer,
-  FinalizableTarget,
   createFinalization,
 } from "./finalizationRegistry";
