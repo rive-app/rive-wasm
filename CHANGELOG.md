@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.31.4](https://github.com/rive-app/rive-wasm/compare/2.31.3...2.31.4)
+## [2.31.5](https://github.com/rive-app/rive-wasm/compare/2.31.4...2.31.5)
 
 ### Commits
 
+- fix: Tag RIVE in NSLogs (#10510) ce87aac5e0 [`7a0a171`](https://github.com/rive-app/rive-wasm/commit/7a0a171c2182910e6d5fa9bebeea989c01c378f2)
+- fix: revert skipping collapsed data bound properties (#10507) fba405c288 [`1c676be`](https://github.com/rive-app/rive-wasm/commit/1c676be5de377ab515289bfb636a3ab4b38b7566)
+- fix: add missing data types (#10509) 303dbf32a9 [`528c142`](https://github.com/rive-app/rive-wasm/commit/528c142195d35002e9586547fdad20e7623a7724)
+- fix(ios): Don't call abort when the unexpected happens. (#10472) 1adc508ecd [`52c2654`](https://github.com/rive-app/rive-wasm/commit/52c26541d5042f197176fad65a33f5975d07fa52)
+
+## [2.31.4](https://github.com/rive-app/rive-wasm/compare/2.31.3...2.31.4) - 2025-09-04
+
+### Commits
+
+- chore: tag 2.31.4 [`cd01e80`](https://github.com/rive-app/rive-wasm/commit/cd01e80e6a35ab5f099ab80455c56aaa87abdd90)
 - fix(web): put FinalizableTarget type definition in types file (#10502) 839944f8f4 [`b8942e8`](https://github.com/rive-app/rive-wasm/commit/b8942e8bc9bc5982d1f956c1c1553204d3498440)
 
 ## [2.31.3](https://github.com/rive-app/rive-wasm/compare/2.31.2...2.31.3) - 2025-09-04
