@@ -535,6 +535,16 @@ export declare class Artboard {
    */
   textByPath(name: string, path: string): TextValueRun;
   /**
+   * Returns the number of TextValueRun objects in the artboard
+   * @returns number of TextValueRun objects in the artboard
+   */
+  textValueRunCount(): number;
+  /**
+   * Returns a reference for a TextValueRun object to get/set a text value for
+   * @param index - Index of the Text Run to grab a reference to
+   */
+  textValueRunByIndex(index: number): TextValueRun;
+  /**
    * Getter and setter for the artboard width
    */
   get width(): number;

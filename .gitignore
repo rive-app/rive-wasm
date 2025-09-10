@@ -4,6 +4,9 @@
 #VSCode stuff
 .vscode
 
+#Idea stuff
+.idea
+
 # Node stuff
 node_modules
 
