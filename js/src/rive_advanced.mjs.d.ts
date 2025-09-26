@@ -834,6 +834,13 @@ export declare class StateMachineInstance {
    * @param y - Y coordinate
    */
   pointerUp(x: number, y: number): void;
+  /**
+   * Notifies the state machine that the pointer has exited the detectable area of the canvas surface
+   *
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   */
+  pointerExit(x: number, y: number): void;
 
   /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance

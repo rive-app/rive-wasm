@@ -9,6 +9,7 @@ export interface TouchInteractionsParams {
   fit: rc.Fit;
   alignment: rc.Alignment;
   isTouchScrollEnabled?: boolean;
+  dispatchPointerExit?: boolean;
   layoutScaleFactor?: number;
 }
 
@@ -70,6 +71,7 @@ export const registerTouchInteractions = ({
   fit,
   alignment,
   isTouchScrollEnabled = false,
+  dispatchPointerExit = true,
   layoutScaleFactor = 1.0,
 }: TouchInteractionsParams) => {
   if (
@@ -170,13 +172,14 @@ export const registerTouchInteractions = ({
        * to ensure that we report the mouse has truly exited the hitarea.
        * https://github.com/rive-app/rive-cpp/blob/master/src/animation/state_machine_instance.cpp#L336
        *
-       * We add/subtract 10000 to account for when the graphic goes beyond the canvas bound
-       * due to for example, a fit: 'cover'. Not perfect, but helps reliably (for now) ensure
-       * we report going out of bounds when the mouse is out of the canvas
        */
       case "mouseout":
         for (const stateMachine of stateMachines) {
-          stateMachine.pointerMove(transformedX, transformedY);
+          if (dispatchPointerExit) {
+            stateMachine.pointerExit(transformedX, transformedY);
+          } else {
+            stateMachine.pointerMove(transformedX, transformedY);
+          }
         }
         break;
 

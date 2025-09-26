@@ -869,6 +869,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self, double x, double y) {
                       self.pointerUp(rive::Vec2D((float)x, (float)y));
                   }))
+        .function("pointerExit",
+                  optional_override([](rive::StateMachineInstance& self, double x, double y) {
+                      self.pointerExit(rive::Vec2D((float)x, (float)y));
+                  }))
         .function("reportedEventCount", &rive::StateMachineInstance::reportedEventCount)
         .function("reportedEventAt",
                   optional_override(

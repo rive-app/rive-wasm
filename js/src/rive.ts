@@ -1333,6 +1333,10 @@ export interface RiveParameters {
    * Rive will look for a default view model and view model instance to bind to the artboard
    */
   autoBind?: boolean;
+  /**
+   * For Rive Listeners, dispatch a pointer exit when the pointer exits the canvas.
+   */
+  dispatchPointerExit?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1669,6 +1673,8 @@ export class Rive {
   private shouldDisableRiveListeners = false;
 
   private automaticallyHandleEvents = false;
+  
+  private dispatchPointerExit = true;
 
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN = true;
@@ -1719,6 +1725,7 @@ export class Rive {
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
     this.automaticallyHandleEvents = !!params.automaticallyHandleEvents;
+    this.dispatchPointerExit = !!params.dispatchPointerExit;
     this.enableRiveAssetCDN =
       params.enableRiveAssetCDN === undefined
         ? true
@@ -1896,6 +1903,7 @@ export class Rive {
         .filter((sm) => sm.playing && this.runtime.hasListeners(sm.instance))
         .map((sm) => sm.instance);
       let touchScrollEnabledOption = this.isTouchScrollEnabled;
+      let dispatchPointerExit = this.dispatchPointerExit;
       if (
         riveListenerOptions &&
         "isTouchScrollEnabled" in riveListenerOptions
@@ -1911,6 +1919,7 @@ export class Rive {
         fit: this._layout.runtimeFit(this.runtime),
         alignment: this._layout.runtimeAlignment(this.runtime),
         isTouchScrollEnabled: touchScrollEnabledOption,
+        dispatchPointerExit: dispatchPointerExit,
         layoutScaleFactor: this._layout.layoutScaleFactor,
       });
     }

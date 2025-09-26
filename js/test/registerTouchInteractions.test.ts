@@ -44,8 +44,9 @@ let mockStateMachines: rc.StateMachineInstance[];
 
 let cleanupRiveListenersFunction: (() => void) | null;
 
-const createCanvasAndRiveListeners = ({isTouchScrollEnabled}: {
+const createCanvasAndRiveListeners = ({isTouchScrollEnabled, dispatchPointerExit}: {
   isTouchScrollEnabled?: boolean
+  dispatchPointerExit?: boolean
 } = {}) => {
   canvas = document.createElement("canvas") as HTMLCanvasElement;
   canvas.width = 500;
@@ -58,6 +59,7 @@ const createCanvasAndRiveListeners = ({isTouchScrollEnabled}: {
       pointerDown: jest.fn(),
       pointerMove: jest.fn(),
       pointerUp: jest.fn(),
+      pointerExit: jest.fn(),
     } as unknown as rc.StateMachineInstance,
   ];
 
@@ -70,6 +72,7 @@ const createCanvasAndRiveListeners = ({isTouchScrollEnabled}: {
     fit: mockFit as rc.Fit,
     alignment: mockAlignment as rc.Alignment,
     isTouchScrollEnabled,
+    dispatchPointerExit
   });
 };
 
@@ -125,6 +128,8 @@ test("touchend event can invoke pointerUp", (): void => {
 });
 
 test("mouseout event can invoke pointerMove with out of bounds coordinates", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({dispatchPointerExit: false});
   canvas.dispatchEvent(
     new MouseEvent("mouseout", {
       clientX: -1,
@@ -134,6 +139,7 @@ test("mouseout event can invoke pointerMove with out of bounds coordinates", ():
 
   expect(mockStateMachines[0].pointerDown).not.toBeCalled();
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(-1, 1);
+  expect(mockStateMachines[0].pointerExit).not.toBeCalled();
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
 
@@ -150,4 +156,21 @@ test("dont prevent default on TouchEvent behavior if isTouchScrollEnabled is tru
   );
 
   expect(mockTouchEvent.preventDefault).not.toHaveBeenCalled();
+});
+
+
+test("mouseout event can invoke pointerExit with out of bounds coordinates when dispatchPointerExit is set to true", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({dispatchPointerExit: true});
+  canvas.dispatchEvent(
+    new MouseEvent("mouseout", {
+      clientX: -1,
+      clientY: 1,
+    })
+  );
+
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+  expect(mockStateMachines[0].pointerMove).not.toBeCalled();
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(-1, 1);
+  expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
