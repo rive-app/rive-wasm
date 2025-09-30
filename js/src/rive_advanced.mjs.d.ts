@@ -376,6 +376,29 @@ export declare class File {
   enums(): DataEnum[];
 
   unref(): void;
+
+  /**
+   * Returns a reference to a bindable artboard from this file by name
+   * @returns BindableArtboard
+   */
+  bindableArtboardByName(name: string): BindableArtboard;
+
+  /**
+   * Returns a reference to the default bindable artboard
+   * @returns BindableArtboard
+   */
+  bindableArtboardDefault(): BindableArtboard;
+
+  /**
+   * Returns a reference to a bindable artboard. FOR INTERNAL USE ONLY
+   * @param artboard - Name of the Artboard to create an instance for
+   * @returns BindableArtboard
+   */
+  internalBindableArtboardFromArtboard(artboard: Artboard): BindableArtboard;
+  /**
+   * Returns a new Artboard instance for the Artboard at the given index in the Rive file
+   * @param index - Index of the Artboard in the file to create an Artboard instance for
+   */
 }
 
 /**
@@ -553,6 +576,10 @@ export declare class Artboard {
    * @param instance - Renderer context to draw with
    */
   bindViewModelInstance(instance: ViewModelInstance): void;
+}
+
+export declare class BindableArtboard {
+  unref(): void;
 }
 
 export declare class Bone extends TransformComponent {
@@ -942,7 +969,7 @@ export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue 
   value(image: ImageInternal | null): void;
 }
 export declare class ViewModelInstanceArtboard extends ViewModelInstanceValue {
-  value(artboard: Artboard): void;
+  value(artboard: BindableArtboard | Artboard): void;
 }
 
 export declare class ViewModelInstance {
@@ -961,6 +988,7 @@ export declare class ViewModelInstance {
   incrementReferenceCount(): void;
   decrementReferenceCount(): void;
   delete(): void;
+  unref(): void;
   getProperties(): ViewModelProperty[];
 }
 

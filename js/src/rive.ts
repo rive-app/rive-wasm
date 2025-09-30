@@ -11,6 +11,7 @@ import {
   finalizationRegistry,
   CustomFileAssetLoaderWrapper,
   FileFinalizer,
+  createFinalization,
 } from "./utils";
 export type AssetLoadCallback = (
   asset: rc.FileAsset,
@@ -378,10 +379,34 @@ export enum RiveEventType {
   OpenUrl = 131,
 }
 
-class Artboard {
+class BaseArtboard {
+  public isBindableArtboard: boolean = false;
+  constructor(_isBindableArtboard: boolean) {
+    this.isBindableArtboard = _isBindableArtboard;
+  }
+}
+
+class Artboard extends BaseArtboard {
   public nativeArtboard: rc.Artboard;
-  constructor(artboard: rc.Artboard) {
+  public file: RiveFile;
+  constructor(artboard: rc.Artboard, _file: RiveFile) {
+    super(false);
     this.nativeArtboard = artboard;
+    this.file = _file;
+  }
+}
+
+class BindableArtboard extends BaseArtboard implements rc.FinalizableTarget {
+  public selfUnref: boolean = false;
+  public nativeArtboard: rc.BindableArtboard;
+  constructor(artboard: rc.BindableArtboard) {
+    super(true);
+    this.nativeArtboard = artboard;
+  }
+  destroy() {
+    if (this.selfUnref) {
+      this.nativeArtboard.unref();
+    }
   }
 }
 
@@ -1444,6 +1469,8 @@ export class RiveFile implements rc.FinalizableTarget {
 
   public selfUnref: boolean = false;
 
+  private bindableArtboards: BindableArtboard[] = [];
+
   constructor(params: RiveFileParameters) {
     this.src = params.src;
     this.buffer = params.buffer;
@@ -1465,6 +1492,12 @@ export class RiveFile implements rc.FinalizableTarget {
       this.file?.unref();
     }
     this.file = null;
+  }
+
+  private releaseBindableArtboards() {
+    this.bindableArtboards.forEach((bindableArtboard) =>
+      bindableArtboard.destroy(),
+    );
   }
 
   private async initData() {
@@ -1565,6 +1598,7 @@ export class RiveFile implements rc.FinalizableTarget {
     if (this.referenceCount <= 0) {
       this.removeAllRiveEventListeners();
       this.releaseFile();
+      this.releaseBindableArtboards();
       this.destroyed = true;
     }
   }
@@ -1592,12 +1626,47 @@ export class RiveFile implements rc.FinalizableTarget {
     }
   }
 
+  private createBindableArtboard(
+    nativeBindableArtboard: rc.BindableArtboard,
+  ): BindableArtboard | null {
+    if (nativeBindableArtboard != null) {
+      const bindableArtboard = new BindableArtboard(nativeBindableArtboard);
+      createFinalization(bindableArtboard, bindableArtboard.nativeArtboard);
+      this.bindableArtboards.push(bindableArtboard);
+      return bindableArtboard;
+    }
+    return null;
+  }
+
+  /**
+   * @deprecated This function is deprecated. For better stability and memory management 
+   * use `getBindableArtboard()` instead.
+   * @param {string} name - The name of the artboard.
+   * @returns {Artboard} The artboard to bind to.
+   */
   public getArtboard(name: string): Artboard | null {
     const nativeArtboard = this.file.artboardByName(name);
     if (nativeArtboard != null) {
-      return new Artboard(nativeArtboard);
+      return new Artboard(nativeArtboard, this);
     }
-    return null;
+  }
+
+  public getBindableArtboard(name: string): BindableArtboard | null {
+    const nativeArtboard = this.file.bindableArtboardByName(name);
+    return this.createBindableArtboard(nativeArtboard);
+  }
+
+  public getDefaultBindableArtboard(): BindableArtboard | null {
+    const nativeArtboard = this.file.bindableArtboardDefault();
+    return this.createBindableArtboard(nativeArtboard);
+  }
+
+  public internalBindableArtboardFromArtboard(
+    artboard: rc.Artboard,
+  ): BindableArtboard | null {
+    const nativeBindableArtboard =
+      this.file.internalBindableArtboardFromArtboard(artboard);
+    return this.createBindableArtboard(nativeBindableArtboard);
   }
 }
 
@@ -2094,6 +2163,10 @@ export class Rive {
           const viewModelInstance = new ViewModelInstance(
             runtimeInstance,
             null,
+          );
+          createFinalization(
+            viewModelInstance,
+            viewModelInstance.runtimeInstance,
           );
           this.bindViewModelInstance(viewModelInstance);
         }
@@ -3207,8 +3280,22 @@ export class Rive {
     return null;
   }
 
+  /**
+   * @deprecated This function is deprecated. For better stability and memory management 
+   * use `getBindableArtboard()` instead.
+   * @param {string} name - The name of the artboard.
+   * @returns {Artboard} The artboard to bind to.
+   */
   public getArtboard(name: string): Artboard | null {
     return this.riveFile?.getArtboard(name) ?? null;
+  }
+
+  public getBindableArtboard(name: string): BindableArtboard | null {
+    return this.riveFile?.getBindableArtboard(name) ?? null;
+  }
+
+  public getDefaultBindableArtboard(): BindableArtboard | null {
+    return this.riveFile?.getDefaultBindableArtboard() ?? null;
   }
 }
 
@@ -3230,7 +3317,9 @@ export class ViewModel {
   public instanceByIndex(index: number): ViewModelInstance | null {
     const instance = this._viewModel.instanceByIndex(index);
     if (instance !== null) {
-      return new ViewModelInstance(instance, null);
+      const viewModelInstance = new ViewModelInstance(instance, null);
+      createFinalization(viewModelInstance, instance);
+      return viewModelInstance;
     }
     return null;
   }
@@ -3238,7 +3327,9 @@ export class ViewModel {
   public instanceByName(name: string): ViewModelInstance | null {
     const instance = this._viewModel.instanceByName(name);
     if (instance !== null) {
-      return new ViewModelInstance(instance, null);
+      const viewModelInstance = new ViewModelInstance(instance, null);
+      createFinalization(viewModelInstance, instance);
+      return viewModelInstance;
     }
     return null;
   }
@@ -3246,7 +3337,9 @@ export class ViewModel {
   public defaultInstance(): ViewModelInstance | null {
     const runtimeInstance = this._viewModel.defaultInstance();
     if (runtimeInstance !== null) {
-      return new ViewModelInstance(runtimeInstance, null);
+      const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
+      createFinalization(viewModelInstance, runtimeInstance);
+      return viewModelInstance;
     }
     return null;
   }
@@ -3254,7 +3347,9 @@ export class ViewModel {
   public instance(): ViewModelInstance | null {
     const runtimeInstance = this._viewModel.instance();
     if (runtimeInstance !== null) {
-      return new ViewModelInstance(runtimeInstance, null);
+      const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
+      createFinalization(viewModelInstance, runtimeInstance);
+      return viewModelInstance;
     }
     return null;
   }
@@ -3309,6 +3404,8 @@ export class ViewModelInstance {
 
   private _referenceCount = 0;
 
+  public selfUnref: boolean = false;
+
   constructor(
     runtimeInstance: rc.ViewModelInstance,
     parent: ViewModelInstance | null,
@@ -3320,6 +3417,10 @@ export class ViewModelInstance {
   }
 
   public get runtimeInstance(): rc.ViewModelInstance | null {
+    return this._runtimeInstance;
+  }
+
+  public get nativeInstance(): rc.ViewModelInstance | null {
     return this._runtimeInstance;
   }
 
@@ -3568,6 +3669,7 @@ export class ViewModelInstance {
         viewModelRuntimeInstance!,
         this,
       );
+      createFinalization(viewModelInstance, viewModelRuntimeInstance);
       viewModelInstance.internalIncrementReferenceCount();
       this._viewModelInstances.set(name, viewModelInstance);
       return viewModelInstance;
@@ -3795,6 +3897,9 @@ export class ViewModelInstance {
   public cleanup() {
     this._referenceCount--;
     if (this._referenceCount <= 0) {
+      if (this.selfUnref) {
+        this._runtimeInstance?.unref();
+      }
       this._runtimeInstance = null;
       this.clearCallbacks();
       this._propertiesWithCallbacks = [];
@@ -4029,6 +4134,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
         runtimeInstance,
         this._parentViewModel,
       );
+      createFinalization(viewModelInstance, runtimeInstance);
       return viewModelInstance;
     }
     return null;
@@ -4118,9 +4224,19 @@ export class ViewModelInstanceArtboard extends ViewModelInstanceValue {
     super(instance, root);
   }
 
-  public set value(artboard: Artboard | null) {
+  public set value(artboard: BaseArtboard | null) {
+    let bindableArtboard: BindableArtboard;
+    if (artboard.isBindableArtboard) {
+      bindableArtboard = artboard as BindableArtboard;
+    } else {
+      bindableArtboard = (
+        artboard as Artboard
+      ).file.internalBindableArtboardFromArtboard(
+        (artboard as Artboard).nativeArtboard,
+      );
+    }
     (this._viewModelInstanceValue as rc.ViewModelInstanceArtboard).value(
-      artboard?.nativeArtboard ?? null,
+      bindableArtboard?.nativeArtboard ?? null,
     );
   }
 

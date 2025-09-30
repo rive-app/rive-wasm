@@ -12,6 +12,7 @@
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
 #include "rive/artboard.hpp"
+#include "rive/bindable_artboard.hpp"
 #include "rive/assets/audio_asset.hpp"
 #include "rive/assets/file_asset.hpp"
 #include "rive/assets/image_asset.hpp"
@@ -345,7 +346,9 @@ rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoad
     memoryView.call<void>("set", byteArray);
 
     // QUESTION (max) we ignore the result currently, we could use it and throw exceptions with it.
-    return rive::File::import(rv, jsFactory(), nullptr, fileAssetLoader).release();
+    auto file = rive::File::import(rv, jsFactory(), nullptr, fileAssetLoader);
+    // Need to manually ref the file to keep alive until the JS runtime cleans it up.
+    return file.release();
 }
 
 // utility function to get File Asset object from pointer
@@ -494,6 +497,41 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](const rive::File& self,
                                        const std::string& name) -> rive::ArtboardInstance* {
                       return self.artboardNamed(name).release();
+                  }),
+                  allow_raw_pointers())
+        .function("bindableArtboardByName",
+                  optional_override([](const rive::File& self,
+                                       const std::string& name) -> rive::BindableArtboard* {
+                      auto bindableArtboard = self.bindableArtboardNamed(name);
+                      if (bindableArtboard != nullptr)
+                      {
+                          bindableArtboard->ref();
+                          return bindableArtboard.get();
+                      }
+                      return nullptr;
+                  }),
+                  allow_raw_pointers())
+        .function("bindableArtboardDefault",
+                  optional_override([](const rive::File& self) -> rive::BindableArtboard* {
+                      auto bindableArtboard = self.bindableArtboardDefault();
+                      if (bindableArtboard != nullptr)
+                      {
+                          bindableArtboard->ref();
+                          return bindableArtboard.get();
+                      }
+                      return nullptr;
+                  }),
+                  allow_raw_pointers())
+        .function("internalBindableArtboardFromArtboard",
+                  optional_override([](const rive::File& self,
+                                       rive::Artboard* artboard) -> rive::BindableArtboard* {
+                      auto bindableArtboard = self.internalBindableArtboardFromArtboard(artboard);
+                      if (bindableArtboard != nullptr)
+                      {
+                          bindableArtboard->ref();
+                          return bindableArtboard.get();
+                      }
+                      return nullptr;
                   }),
                   allow_raw_pointers())
         .function(
@@ -1008,13 +1046,17 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("instanceByIndex",
                   optional_override([](const rive::ViewModelRuntime& self,
                                        size_t index) -> rive::ViewModelInstanceRuntime* {
-                      return self.createInstanceFromIndex(index);
+                      auto instance = self.createInstanceFromIndex(index);
+                      instance->ref();
+                      return instance.get();
                   }),
                   allow_raw_pointers())
         .function("instanceByName",
                   optional_override([](const rive::ViewModelRuntime& self,
                                        std::string name) -> rive::ViewModelInstanceRuntime* {
-                      return self.createInstanceFromName(name);
+                      auto instance = self.createInstanceFromName(name);
+                      instance->ref();
+                      return instance.get();
                   }),
                   allow_raw_pointers())
         .function("getProperties",
@@ -1037,13 +1079,17 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("defaultInstance",
                   optional_override(
                       [](const rive::ViewModelRuntime& self) -> rive::ViewModelInstanceRuntime* {
-                          return self.createDefaultInstance();
+                          auto instance = self.createDefaultInstance();
+                          instance->ref();
+                          return instance.get();
                       }),
                   allow_raw_pointers())
         .function("instance",
                   optional_override(
                       [](const rive::ViewModelRuntime& self) -> rive::ViewModelInstanceRuntime* {
-                          return self.createInstance();
+                          auto instance = self.createInstance();
+                          instance->ref();
+                          return instance.get();
                       }),
                   allow_raw_pointers());
     class_<rive::ViewModelInstanceRuntime>("ViewModelInstance")
@@ -1099,7 +1145,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("viewModel",
                   optional_override([](const rive::ViewModelInstanceRuntime& self,
                                        const std::string& path) -> rive::ViewModelInstanceRuntime* {
-                      return self.propertyViewModel(path);
+                      auto instance = self.propertyViewModel(path);
+                      if (instance != nullptr)
+                      {
+                          instance->ref();
+                          return instance.get();
+                      }
+                      return nullptr;
                   }),
                   allow_raw_pointers())
         .function("image",
@@ -1135,6 +1187,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       auto properties = self.properties();
                       return buildProperties(properties);
                   }),
+                  allow_raw_pointers())
+        .function("unref",
+                  optional_override([](rive::ViewModelInstanceRuntime& self) { self.unref(); }),
                   allow_raw_pointers());
     class_<rive::ViewModelInstanceValueRuntime>("ViewModelInstanceValue")
         .property(
@@ -1226,7 +1281,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("instanceAt",
                   optional_override([](rive::ViewModelInstanceListRuntime& self,
                                        int index) -> rive::ViewModelInstanceRuntime* {
-                      return self.instanceAt(index);
+                      auto instance = self.instanceAt(index);
+                      if (instance != nullptr)
+                      {
+                          instance->ref();
+                          return instance.get();
+                      }
+                      return nullptr;
                   }),
                   allow_raw_pointers())
         .function("removeInstance",
@@ -1257,7 +1318,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         "ViewModelInstanceArtboard")
         .function("value",
                   optional_override([](rive::ViewModelInstanceArtboardRuntime& self,
-                                       rive::Artboard* artboard) { self.value(artboard); }),
+                                       rive::BindableArtboard* bindableArtboard) {
+                      self.value(rive::ref_rcp(bindableArtboard));
+                  }),
+                  allow_raw_pointers());
+    class_<rive::BindableArtboard>("BindableArtboard")
+        .function("unref",
+                  optional_override([](rive::BindableArtboard& self) { self.unref(); }),
                   allow_raw_pointers());
 #ifdef DEBUG
     function("doLeakCheck", &__lsan_do_recoverable_leak_check);

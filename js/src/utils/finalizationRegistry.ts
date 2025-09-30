@@ -29,6 +29,7 @@ class ObjectFinalizer<T extends Finalizable> {
   }
 }
 
+
 class AssetWrapper implements rc.FinalizableTarget {
   public selfUnref: boolean = false;
   public unref() {}
