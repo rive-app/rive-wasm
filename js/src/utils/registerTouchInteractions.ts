@@ -16,6 +16,9 @@ export interface TouchInteractionsParams {
 interface ClientCoordinates {
   clientX: number;
   clientY: number;
+  identifier: number;
+  transformedX?: number | undefined;
+  transformedY?: number | undefined;
 }
 
 /**
@@ -28,34 +31,49 @@ interface ClientCoordinates {
 const getClientCoordinates = (
   event: MouseEvent | TouchEvent,
   isTouchScrollEnabled: boolean,
-): ClientCoordinates => {
+): ClientCoordinates[] => {
+  const coordinates: ClientCoordinates[] = [];
   if (
     ["touchstart", "touchmove"].indexOf(event.type) > -1 &&
-    (event as TouchEvent).touches?.length
+    (event as TouchEvent).changedTouches?.length
   ) {
     // This flag, if false, prevents touch events on the canvas default behavior
     // which may prevent scrolling if a drag motion on the canvas is performed
     if (!isTouchScrollEnabled) {
       event.preventDefault();
     }
-    return {
-      clientX: (event as TouchEvent).touches[0].clientX,
-      clientY: (event as TouchEvent).touches[0].clientY,
-    };
+    let cnt = 0;
+    while (cnt < (event as TouchEvent).changedTouches.length) {
+      const touch = (event as TouchEvent).changedTouches[cnt];
+      coordinates.push({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        identifier: touch.identifier,
+      });
+      cnt++;
+    }
   } else if (
     event.type === "touchend" &&
     (event as TouchEvent).changedTouches?.length
   ) {
-    return {
-      clientX: (event as TouchEvent).changedTouches[0].clientX,
-      clientY: (event as TouchEvent).changedTouches[0].clientY,
-    };
+    let cnt = 0;
+    while (cnt < (event as TouchEvent).changedTouches.length) {
+      const touch = (event as TouchEvent).changedTouches[cnt];
+      coordinates.push({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        identifier: touch.identifier,
+      });
+      cnt++;
+    }
   } else {
-    return {
+    coordinates.push({
       clientX: (event as MouseEvent).clientX,
       clientY: (event as MouseEvent).clientY,
-    };
+      identifier: 0,
+    });
   }
+  return coordinates;
 };
 
 /**
@@ -100,7 +118,6 @@ export const registerTouchInteractions = ({
    **/
   let _prevEventType: string | null = null;
   let _syntheticEventsActive = false;
-
   const processEventCallback = (event: MouseEvent | TouchEvent) => {
     // Exit early out of all synthetic mouse events
     // https://stackoverflow.com/questions/9656990/how-to-prevent-simulated-mouse-events-in-mobile-browsers
@@ -127,15 +144,7 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
-    const { clientX, clientY } = getClientCoordinates(
-      event,
-      isTouchScrollEnabled,
-    );
-    if (!clientX && !clientY) {
-      return;
-    }
-    const canvasX = clientX - boundingRect.left;
-    const canvasY = clientY - boundingRect.top;
+    const coordinateSets = getClientCoordinates(event, isTouchScrollEnabled);
     const forwardMatrix = rive.computeAlignment(
       fit,
       alignment,
@@ -150,17 +159,29 @@ export const registerTouchInteractions = ({
     );
     const invertedMatrix = new rive.Mat2D();
     forwardMatrix.invert(invertedMatrix);
-    const canvasCoordinatesVector = new rive.Vec2D(canvasX, canvasY);
-    const transformedVector = rive.mapXY(
-      invertedMatrix,
-      canvasCoordinatesVector,
-    );
-    const transformedX = transformedVector.x();
-    const transformedY = transformedVector.y();
 
-    transformedVector.delete();
+    coordinateSets.forEach((coordinateSet) => {
+      const clientX = coordinateSet.clientX;
+      const clientY = coordinateSet.clientY;
+      if (!clientX && !clientY) {
+        return;
+      }
+      const canvasX = clientX - boundingRect.left;
+      const canvasY = clientY - boundingRect.top;
+      const canvasCoordinatesVector = new rive.Vec2D(canvasX, canvasY);
+      const transformedVector = rive.mapXY(
+        invertedMatrix,
+        canvasCoordinatesVector,
+      );
+      const transformedX = transformedVector.x();
+      const transformedY = transformedVector.y();
+      coordinateSet.transformedX = transformedX;
+      coordinateSet.transformedY = transformedY;
+      transformedVector.delete();
+      canvasCoordinatesVector.delete();
+    });
+
     invertedMatrix.delete();
-    canvasCoordinatesVector.delete();
     forwardMatrix.delete();
 
     switch (event.type) {
@@ -176,9 +197,21 @@ export const registerTouchInteractions = ({
       case "mouseout":
         for (const stateMachine of stateMachines) {
           if (dispatchPointerExit) {
-            stateMachine.pointerExit(transformedX, transformedY);
+            coordinateSets.forEach((coordinateSet) => {
+              stateMachine.pointerExit(
+                coordinateSet.transformedX,
+                coordinateSet.transformedY,
+                coordinateSet.identifier,
+              );
+            });
           } else {
-            stateMachine.pointerMove(transformedX, transformedY);
+            coordinateSets.forEach((coordinateSet) => {
+              stateMachine.pointerMove(
+                coordinateSet.transformedX,
+                coordinateSet.transformedY,
+                coordinateSet.identifier,
+              );
+            });
           }
         }
         break;
@@ -188,7 +221,13 @@ export const registerTouchInteractions = ({
       case "mouseover":
       case "mousemove": {
         for (const stateMachine of stateMachines) {
-          stateMachine.pointerMove(transformedX, transformedY);
+          coordinateSets.forEach((coordinateSet) => {
+            stateMachine.pointerMove(
+              coordinateSet.transformedX,
+              coordinateSet.transformedY,
+              coordinateSet.identifier,
+            );
+          });
         }
         break;
       }
@@ -196,7 +235,13 @@ export const registerTouchInteractions = ({
       case "touchstart":
       case "mousedown": {
         for (const stateMachine of stateMachines) {
-          stateMachine.pointerDown(transformedX, transformedY);
+          coordinateSets.forEach((coordinateSet) => {
+            stateMachine.pointerDown(
+              coordinateSet.transformedX,
+              coordinateSet.transformedY,
+              coordinateSet.identifier,
+            );
+          });
         }
         break;
       }
@@ -204,7 +249,13 @@ export const registerTouchInteractions = ({
       case "touchend":
       case "mouseup": {
         for (const stateMachine of stateMachines) {
-          stateMachine.pointerUp(transformedX, transformedY);
+          coordinateSets.forEach((coordinateSet) => {
+            stateMachine.pointerUp(
+              coordinateSet.transformedX,
+              coordinateSet.transformedY,
+              coordinateSet.identifier,
+            );
+          });
         }
         break;
       }

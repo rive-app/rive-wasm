@@ -60,9 +60,9 @@ test("Statemachines have pointer events", (done) => {
     const sm = ab.stateMachineByIndex(0);
     const smi = new runtime.StateMachineInstance(sm, ab);
 
-    smi.pointerDown(0, 0);
-    smi.pointerMove(0, 0);
-    smi.pointerUp(0, 0);
+    smi.pointerDown(0, 0, 0);
+    smi.pointerMove(0, 0, 0);
+    smi.pointerUp(0, 0, 0);
 
     smi.delete();
     ab.delete();

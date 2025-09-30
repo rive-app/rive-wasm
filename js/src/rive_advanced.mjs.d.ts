@@ -843,7 +843,7 @@ export declare class StateMachineInstance {
    * @param x - X coordinate
    * @param y - Y coordinate
    */
-  pointerDown(x: number, y: number): void;
+  pointerDown(x: number, y: number, id: number): void;
   /**
    * Notifies the state machine that the pointer has moved to the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
@@ -852,7 +852,7 @@ export declare class StateMachineInstance {
    * @param x - X coordinate
    * @param y - Y coordinate
    */
-  pointerMove(x: number, y: number): void;
+  pointerMove(x: number, y: number, id: number): void;
   /**
    * Notifies the state machine that the pointer has released at the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
@@ -860,14 +860,14 @@ export declare class StateMachineInstance {
    * @param x - X coordinate
    * @param y - Y coordinate
    */
-  pointerUp(x: number, y: number): void;
+  pointerUp(x: number, y: number, id: number): void;
   /**
    * Notifies the state machine that the pointer has exited the detectable area of the canvas surface
    *
    * @param x - X coordinate
    * @param y - Y coordinate
    */
-  pointerExit(x: number, y: number): void;
+  pointerExit(x: number, y: number, id: number): void;
 
   /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance
