@@ -903,7 +903,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function(
             "pointerMove",
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {
-                self.pointerMove(rive::Vec2D((float)x, (float)y), id);
+                self.pointerMove(rive::Vec2D((float)x, (float)y), 0, id);
             }))
         .function(
             "pointerUp",

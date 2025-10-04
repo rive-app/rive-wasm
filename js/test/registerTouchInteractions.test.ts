@@ -54,9 +54,11 @@ let cleanupRiveListenersFunction: (() => void) | null;
 const createCanvasAndRiveListeners = ({
   isTouchScrollEnabled,
   dispatchPointerExit,
+  enableMultiTouch,
 }: {
   isTouchScrollEnabled?: boolean;
   dispatchPointerExit?: boolean;
+  enableMultiTouch?: boolean;
 } = {}) => {
   canvas = document.createElement("canvas") as HTMLCanvasElement;
   canvas.width = 500;
@@ -83,6 +85,7 @@ const createCanvasAndRiveListeners = ({
     alignment: mockAlignment as rc.Alignment,
     isTouchScrollEnabled,
     dispatchPointerExit,
+    enableMultiTouch,
   });
 };
 
@@ -183,6 +186,8 @@ test("mouseout event can invoke pointerExit with out of bounds coordinates when 
 });
 
 test("touchstart event can invoke pointerDown with multiple touch events", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({ enableMultiTouch: true });
   canvas.dispatchEvent(
     new TouchEvent("touchstart", {
       touches: [mockTouchPoint, mockTouchPoint2],
@@ -196,7 +201,9 @@ test("touchstart event can invoke pointerDown with multiple touch events", (): v
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
 
-test("touchstart event can invoke pointerMove with multiple touch events", (): void => {
+test("touchmove event can invoke pointerMove with multiple touch events", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({ enableMultiTouch: true });
   canvas.dispatchEvent(
     new TouchEvent("touchmove", {
       touches: [mockTouchPoint, mockTouchPoint2],
@@ -210,7 +217,29 @@ test("touchstart event can invoke pointerMove with multiple touch events", (): v
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
 
-test("touchstart event can invoke pointerUp with multiple touch events", (): void => {
+test("touchend event can invoke pointerUp with multiple touch events", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({ enableMultiTouch: true });
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [mockTouchPoint, mockTouchPoint2],
+      changedTouches: [mockTouchPoint, mockTouchPoint2],
+    }),
+  );
+
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(2);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(2);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerMove).not.toBeCalled();
+});
+
+test("touchend event with multiple touch events with multi touch disabled only triggers one", (): void => {
+  cleanupRiveListenersFunction && cleanupRiveListenersFunction();
+  createCanvasAndRiveListeners({ dispatchPointerExit: false });
   canvas.dispatchEvent(
     new TouchEvent("touchend", {
       touches: [mockTouchPoint, mockTouchPoint2],
@@ -220,6 +249,7 @@ test("touchstart event can invoke pointerUp with multiple touch events", (): voi
 
   expect(mockStateMachines[0].pointerDown).not.toBeCalled();
   expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
-  expect(mockStateMachines[0].pointerUp).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).not.toBeCalled();
 });

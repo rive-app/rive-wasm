@@ -1362,6 +1362,10 @@ export interface RiveParameters {
    * For Rive Listeners, dispatch a pointer exit when the pointer exits the canvas.
    */
   dispatchPointerExit?: boolean;
+  /**
+   * Enables multi touch support
+   */
+  enableMultiTouch?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1639,7 +1643,7 @@ export class RiveFile implements rc.FinalizableTarget {
   }
 
   /**
-   * @deprecated This function is deprecated. For better stability and memory management 
+   * @deprecated This function is deprecated. For better stability and memory management
    * use `getBindableArtboard()` instead.
    * @param {string} name - The name of the artboard.
    * @returns {Artboard} The artboard to bind to.
@@ -1742,8 +1746,11 @@ export class Rive {
   private shouldDisableRiveListeners = false;
 
   private automaticallyHandleEvents = false;
-  
+
   private dispatchPointerExit = true;
+
+  // Allow all pointers to be passed to the runtime
+  private enableMultiTouch = false;
 
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN = true;
@@ -1794,7 +1801,11 @@ export class Rive {
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
     this.automaticallyHandleEvents = !!params.automaticallyHandleEvents;
-    this.dispatchPointerExit = !!params.dispatchPointerExit;
+    this.dispatchPointerExit =
+      params.dispatchPointerExit === false
+        ? params.dispatchPointerExit
+        : this.dispatchPointerExit;
+    this.enableMultiTouch = !!params.enableMultiTouch;
     this.enableRiveAssetCDN =
       params.enableRiveAssetCDN === undefined
         ? true
@@ -1973,6 +1984,7 @@ export class Rive {
         .map((sm) => sm.instance);
       let touchScrollEnabledOption = this.isTouchScrollEnabled;
       let dispatchPointerExit = this.dispatchPointerExit;
+      let enableMultiTouch = this.enableMultiTouch;
       if (
         riveListenerOptions &&
         "isTouchScrollEnabled" in riveListenerOptions
@@ -1989,6 +2001,7 @@ export class Rive {
         alignment: this._layout.runtimeAlignment(this.runtime),
         isTouchScrollEnabled: touchScrollEnabledOption,
         dispatchPointerExit: dispatchPointerExit,
+        enableMultiTouch: enableMultiTouch,
         layoutScaleFactor: this._layout.layoutScaleFactor,
       });
     }
@@ -3281,7 +3294,7 @@ export class Rive {
   }
 
   /**
-   * @deprecated This function is deprecated. For better stability and memory management 
+   * @deprecated This function is deprecated. For better stability and memory management
    * use `getBindableArtboard()` instead.
    * @param {string} name - The name of the artboard.
    * @returns {Artboard} The artboard to bind to.

@@ -10,6 +10,7 @@ export interface TouchInteractionsParams {
   alignment: rc.Alignment;
   isTouchScrollEnabled?: boolean;
   dispatchPointerExit?: boolean;
+  enableMultiTouch?: boolean;
   layoutScaleFactor?: number;
 }
 
@@ -31,6 +32,7 @@ interface ClientCoordinates {
 const getClientCoordinates = (
   event: MouseEvent | TouchEvent,
   isTouchScrollEnabled: boolean,
+  enableMultiTouch: boolean,
 ): ClientCoordinates[] => {
   const coordinates: ClientCoordinates[] = [];
   if (
@@ -43,7 +45,10 @@ const getClientCoordinates = (
       event.preventDefault();
     }
     let cnt = 0;
-    while (cnt < (event as TouchEvent).changedTouches.length) {
+    let totalTouches = enableMultiTouch
+      ? (event as TouchEvent).changedTouches.length
+      : 1;
+    while (cnt < totalTouches) {
       const touch = (event as TouchEvent).changedTouches[cnt];
       coordinates.push({
         clientX: touch.clientX,
@@ -57,7 +62,10 @@ const getClientCoordinates = (
     (event as TouchEvent).changedTouches?.length
   ) {
     let cnt = 0;
-    while (cnt < (event as TouchEvent).changedTouches.length) {
+    let totalTouches = enableMultiTouch
+      ? (event as TouchEvent).changedTouches.length
+      : 1;
+    while (cnt < totalTouches) {
       const touch = (event as TouchEvent).changedTouches[cnt];
       coordinates.push({
         clientX: touch.clientX,
@@ -90,6 +98,7 @@ export const registerTouchInteractions = ({
   alignment,
   isTouchScrollEnabled = false,
   dispatchPointerExit = true,
+  enableMultiTouch = false,
   layoutScaleFactor = 1.0,
 }: TouchInteractionsParams) => {
   if (
@@ -144,7 +153,11 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
-    const coordinateSets = getClientCoordinates(event, isTouchScrollEnabled);
+    const coordinateSets = getClientCoordinates(
+      event,
+      isTouchScrollEnabled,
+      enableMultiTouch,
+    );
     const forwardMatrix = rive.computeAlignment(
       fit,
       alignment,
@@ -246,7 +259,23 @@ export const registerTouchInteractions = ({
         break;
       }
       // Pointer click released on the canvas
-      case "touchend":
+      case "touchend": {
+        for (const stateMachine of stateMachines) {
+          coordinateSets.forEach((coordinateSet) => {
+            stateMachine.pointerUp(
+              coordinateSet.transformedX,
+              coordinateSet.transformedY,
+              coordinateSet.identifier,
+            );
+            stateMachine.pointerExit(
+              coordinateSet.transformedX,
+              coordinateSet.transformedY,
+              coordinateSet.identifier,
+            );
+          });
+        }
+        break;
+      }
       case "mouseup": {
         for (const stateMachine of stateMachines) {
           coordinateSets.forEach((coordinateSet) => {
