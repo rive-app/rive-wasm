@@ -497,7 +497,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .value("repeat", rive::ImageWrap::repeat)
         .value("mirror", rive::ImageWrap::mirror);
     enum_<rive::ImageFilter>("ImageFilter")
-        .value("trilinear", rive::ImageFilter::trilinear)
+        .value("bilinear", rive::ImageFilter::bilinear)
         .value("nearest", rive::ImageFilter::nearest);
 
     class_<rive::ImageSampler>("ImageSampler");
