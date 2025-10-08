@@ -19,10 +19,6 @@ jobs:
           token: ${{ secrets.PAT_GITHUB }}
           path: ./wasm/submodules/rive-renderer
           ref: main
-      - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v11
-        with:
-          version: 3.1.43
       - name: Configure venv
         run: |
           python3 -m venv .venv

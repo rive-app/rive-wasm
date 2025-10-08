@@ -39,8 +39,8 @@ if ! command -v em++ &>/dev/null; then
         pushd bin
         git clone https://github.com/emscripten-core/emsdk.git
         pushd emsdk
-        ./emsdk install latest
-        ./emsdk activate latest
+        ./emsdk install 3.1.61
+        ./emsdk activate 3.1.61
         popd
         popd
     fi

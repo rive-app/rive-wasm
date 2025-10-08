@@ -26,7 +26,6 @@ do
         '-s FORCE_FILESYSTEM=0',
         '-s MODULARIZE=1',
         '-s NO_EXIT_RUNTIME=1',
-        '-s STRICT=1',
         '-s DISABLE_EXCEPTION_CATCHING=1',
         '-s WASM=1',
         -- "-s EXPORT_ES6=1",
@@ -80,7 +79,7 @@ do
     includedirs({
         RIVE_RUNTIME_DIR .. '/include',
     })
-    fatalwarnings { "All" }
+    fatalwarnings({ 'All' })
 
     links({
         'rive',
@@ -209,7 +208,7 @@ do
     do
         -- For generating the compilation database.
         includedirs({ RIVE_PLS_DIR .. '/glad' })
-        externalincludedirs({RIVE_PLS_DIR .. 'glad/include'})
+        externalincludedirs({ RIVE_PLS_DIR .. 'glad/include' })
     end
 
     filter({})

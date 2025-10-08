@@ -27,10 +27,6 @@ jobs:
           token: ${{ secrets.PAT_GITHUB }}
           path: ./wasm/submodules/rive-renderer
           ref: main
-      - name: Setup emsdk
-        uses: mymindstorm/setup-emsdk@v11
-        with:
-          version: 3.1.43
       - name: Setup Git config
         run: |
           git config --local user.email 'hello@rive.app'
