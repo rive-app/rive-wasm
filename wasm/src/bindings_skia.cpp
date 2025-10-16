@@ -61,10 +61,10 @@ private:
 
 public:
     WebGLSkiaRenderer(sk_sp<GrDirectContext> context, int width, int height) :
+        rive::SkiaRenderer(nullptr),
         m_glContext(emscripten_webgl_get_current_context()),
         m_Context(context),
-        m_Surface(makeSurface(context, width, height)),
-        rive::SkiaRenderer(nullptr)
+        m_Surface(makeSurface(context, width, height))
     {
         m_Canvas = m_Surface->getCanvas();
     }

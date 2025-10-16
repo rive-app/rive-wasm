@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+source ./get_emcc.sh
+
 # get premake
 if ! command -v premake5 &>/dev/null; then
     if [[ ! -f "bin/premake5" ]]; then
@@ -17,9 +19,9 @@ if ! command -v premake5 &>/dev/null; then
         pushd bin
         echo Downloading Premake5
         if [ "$MACHINE" = 'mac' ]; then
-            PREMAKE_URL=https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-macosx.tar.gz
+            PREMAKE_URL=https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-macosx.tar.gz
         else
-            PREMAKE_URL=https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
+            PREMAKE_URL=https://github.com/premake/premake-core/releases/download/v5.0.0-beta7/premake-5.0.0-beta7-linux.tar.gz
         fi
         curl $PREMAKE_URL -L -o premake.tar.gz
         # Export premake5 into bin
@@ -33,21 +35,21 @@ else
     export PREMAKE=premake5
 fi
 
-if ! command -v em++ &>/dev/null; then
-    if [[ ! -f "bin/emsdk/emsdk_env.sh" ]]; then
-        mkdir -p bin
-        pushd bin
-        git clone https://github.com/emscripten-core/emsdk.git
-        pushd emsdk
-        ./emsdk install 3.1.61
-        ./emsdk activate 3.1.61
-        popd
-        popd
-    fi
-    source ./bin/emsdk/emsdk_env.sh
-else
-    echo using your custom installed emsdk
-fi
+# if ! command -v em++ &>/dev/null; then
+#     if [[ ! -f "bin/emsdk/emsdk_env.sh" ]]; then
+#         mkdir -p bin
+#         pushd bin
+#         git clone https://github.com/emscripten-core/emsdk.git
+#         pushd emsdk
+#         ./emsdk install 3.1.61
+#         ./emsdk activate 3.1.61
+#         popd
+#         popd
+#     fi
+#     source ./bin/emsdk/emsdk_env.sh
+# else
+#     echo using your custom installed emsdk
+# fi
 
 OPTIONS=1
 PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR "
