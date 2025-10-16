@@ -35,18 +35,6 @@ jobs:
         with:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
-      - name: Configure venv
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          echo PATH=$PATH >> $GITHUB_ENV
-      - name: Install premake
-        run: |
-          wget -q https://github.com/premake/premake-core/releases/download/v5.0.0-beta2/premake-5.0.0-beta2-linux.tar.gz
-          tar -xf premake-5.0.0-beta2-linux.tar.gz
-          sudo chmod a+x premake5
-          sudo mv premake5 /usr/local/bin
-          pip3 install ply
       - name: Install modules
         run: cd js && npm install
       - name: Setup Ninja
