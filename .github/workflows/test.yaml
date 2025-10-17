@@ -1,0 +1,39 @@
+name: Publish to NPM TEST
+on:
+  pull_request:
+    branches: [master]
+jobs:
+  publish_job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+          token: ${{ secrets.PAT_GITHUB }}
+      - name: Checkout Rive Renderer Repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          repository: rive-app/rive-renderer
+          token: ${{ secrets.PAT_GITHUB }}
+          path: ./wasm/submodules/rive-renderer
+          ref: main
+      - name: Setup Git config
+        run: |
+          git config --local user.email 'hello@rive.app'
+          git config --local user.name ${{ github.actor }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install modules
+        run: cd js && npm install
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Minor release test
+        run: npm run build:all
+        working-directory: ./js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
