@@ -33,6 +33,9 @@ jobs:
         run: cd js && npm install
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install Emscripten SDK
+        run: ./get_emcc.sh
+        working-directory: ./wasm
       - name: Minor release test
         run: npm run release:minor
         working-directory: ./js
