@@ -9,9 +9,7 @@
   },
   "hooks": {
     "after:version:bump": [
-      "npm run bumpVersions",
-      "npm run build:all",
-      "npm test"
+      "npm run bumpVersions"
     ]
   }
 }

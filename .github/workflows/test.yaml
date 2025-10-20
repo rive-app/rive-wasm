@@ -42,3 +42,15 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+      - name: Build
+        run: ./build.sh
+        working-directory: ./js
+      - name: Run tests
+        run: npm test
+        working-directory: ./js
+      - name: Publish
+        run: echo actionally publish!
+        working-directory: ./js
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
