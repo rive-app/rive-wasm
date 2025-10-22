@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "npx webpack watch",
-    "release": "release-it",
+    "release": "release-it --verbose",
     "changelog": "auto-changelog -p --output ../CHANGELOG.md --commit-limit false --template keepachangelog --sort-commits date-desc --starting-version 1.1.1 --hide-credit",
     "release:patch": "npm run release -- --ci",
     "release:minor": "npm run release -- minor --ci",

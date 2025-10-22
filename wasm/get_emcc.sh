@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+echo "Setting up Emscripten SDK [build triggered]..."
+
 if [[ ! -f "bin/emsdk/emsdk_env.sh" ]]; then
     echo "Setting up Emscripten SDK..."
     mkdir -p bin
