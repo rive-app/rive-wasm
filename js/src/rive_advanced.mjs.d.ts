@@ -1,5 +1,6 @@
 interface RiveOptions {
   locateFile(file: string): string;
+  wasmBinary?: ArrayBuffer;
 }
 
 declare function Rive(options?: RiveOptions): Promise<RiveCanvas>;
