@@ -5,10 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.32.1](https://github.com/rive-app/rive-wasm/compare/2.32.0...2.32.1)
+## [2.32.2](https://github.com/rive-app/rive-wasm/compare/2.32.1...2.32.2)
 
 ### Commits
 
+- chore: updating to luau_701 (#11142) d4dfc63c3a [`0216783`](https://github.com/rive-app/rive-wasm/commit/02167830f9b238ee589473b1f24746c76ff7ca0e)
+- fix(vk): Implement manual MSAA resolves (#11120) 756dc2db91 [`f489006`](https://github.com/rive-app/rive-wasm/commit/f4890062fc262be6406dc0ba51737d03df7abe45)
+- feature: add path effects for fills (#11136) 376052977b [`607ad33`](https://github.com/rive-app/rive-wasm/commit/607ad332c8c19988806459d7f4b7ea4b7597e883)
+- fix(vk): Only rely on implicit PowerVR raster ordering on Vulkan 1.3 (#11132) 4cdb5779cd [`bee6210`](https://github.com/rive-app/rive-wasm/commit/bee621065ee10af28f99ef727dc5109aea2bf726)
+- Update path_fiddle.cpp (#11123) 19be344a5a [`318da1b`](https://github.com/rive-app/rive-wasm/commit/318da1ba0e416afdcee145642145ae7c90f066e0)
+- fix(Vulkan) Vulkan synchronization fixes (#11091) 810e208837 [`ea071b9`](https://github.com/rive-app/rive-wasm/commit/ea071b9d400abdf0c037b60bd6579a3c2c905139)
+- Nnnnn add support for path effect part 3 (#11107) c27b081319 [`5fa1ed2`](https://github.com/rive-app/rive-wasm/commit/5fa1ed21b412b02474dae5997330f17d7294e3b3)
+- fix: rename Node to NodeData (#11110) c46192f1fe [`e4afc96`](https://github.com/rive-app/rive-wasm/commit/e4afc965ae090763de1827686017d26deb125c8d)
+- add support for path effect (#11095) ab13b4d1a2 [`4cbca95`](https://github.com/rive-app/rive-wasm/commit/4cbca9583f092f6ab28ad167abd72fbcdd55e6ff)
+- chore: rename vec2d to vector in scripts (#11097) 4ad14fbe73 [`096b7cf`](https://github.com/rive-app/rive-wasm/commit/096b7cf2dc3840daf641cbbcc1ad52186e485704)
+- chore: Runtime Scripting fixes & tests (#11094) 539bd8c48c [`8539d1f`](https://github.com/rive-app/rive-wasm/commit/8539d1fb6232ac9a58fd75a38d79cb43b4cf4cda)
+- feature: autocomplete requires! (#11090) 6bd796b5f0 [`8a2cdee`](https://github.com/rive-app/rive-wasm/commit/8a2cdeeb4a3b225415f1e9a9d61130d0df39168b)
+- fix(vk): Never read the resolve attachment (#11081) 2430b66647 [`1016fdd`](https://github.com/rive-app/rive-wasm/commit/1016fdd5887c4d5df4755e100a914602a483760d)
+- chore(scripting): rename scripting (#11084) 85b425bf93 [`e89d476`](https://github.com/rive-app/rive-wasm/commit/e89d476a89f483563482c871b6b8c3307885813b)
+- Peon Worker Script Signing (#11063) 8748f53562 [`0bb0734`](https://github.com/rive-app/rive-wasm/commit/0bb07344489f9cfb97f897f299a8630a156baf32)
+- feature: Script signing (#11016) 9295f20b82 [`db69323`](https://github.com/rive-app/rive-wasm/commit/db693234282a5346badb80986f966e870de62d94)
+- fix(vk): Use rasterOrdering mode on Imagination GPUs (#11072) 69b2a3c643 [`5d1521b`](https://github.com/rive-app/rive-wasm/commit/5d1521bc60671eb1e8634f77f538748f3fcd1092)
+- fix(editor): Prevent runtime script advance when state machine not playing (#11062) 81f6b8ffa7 [`b1ad5b0`](https://github.com/rive-app/rive-wasm/commit/b1ad5b0a80c32ac56270935593859fca4c9857e3)
+- chore: rev to latest luau release 700 (rive_0_23) (#11060) 2ac436db1b [`70068cc`](https://github.com/rive-app/rive-wasm/commit/70068cc74804313ab3a6508c9c971a8cfe4cc8d2)
+- chore: ScriptedDataConverter in runtime (#11053) 05e1b4ab9f [`a44a453`](https://github.com/rive-app/rive-wasm/commit/a44a453686223ae0c7fc35150e5776a8cadf2430)
+- feature: add ScriptedContext (#11052) 1d2c69015a [`1d588fd`](https://github.com/rive-app/rive-wasm/commit/1d588fd495860a497f8c98d2d29cd18f1fc52540)
+- chore: cache advancing components and support any core object as adva… (#11039) a9e670e153 [`4e0ddcb`](https://github.com/rive-app/rive-wasm/commit/4e0ddcb457a7dd411269d81e2faac43e16bb3422)
+- chore: Scripted PointerEvents at runtime (#11046) 7507e62b37 [`ad3af7e`](https://github.com/rive-app/rive-wasm/commit/ad3af7e20f24e7d9fe30a83fcca2f83b2f8e8049)
+- feature: add contour measure to scripted path! (#11049) b63286db94 [`90a0968`](https://github.com/rive-app/rive-wasm/commit/90a096839a6134e4fc9d4a5347760d56b879e29d)
+- fix: only delete invalid objects when an artboard is destroyed (#11048) c85665930c [`150bc16`](https://github.com/rive-app/rive-wasm/commit/150bc1648919cafebc01925b008a2813ec227f9e)
+- chore: Perform Script's method validation only once (#11037) c783bb438c [`5ba8411`](https://github.com/rive-app/rive-wasm/commit/5ba8411998f526a525ed14762c5d32ed065420ee)
+- fix: advance current state by 0 when there is no previous state (#10994) f1fb606c21 [`cc6401c`](https://github.com/rive-app/rive-wasm/commit/cc6401ce16f30f1719d89051459bc0254c13a696)
+- Scripted Layouts C++ Runtime (#10907) 6f471b7939 [`f4f4ed2`](https://github.com/rive-app/rive-wasm/commit/f4f4ed233e5ff0cdcaec51d312c2fa2115b69bd8)
+- fix(webgpu): Various fixups (#11023) 4ecb920d73 [`ae9090b`](https://github.com/rive-app/rive-wasm/commit/ae9090b300f42191484a9807b35e42412de5a526)
+- chore: Implement ScriptedObjectImporter to import ScriptInputs (#11002) 08647852bf [`d119603`](https://github.com/rive-app/rive-wasm/commit/d11960310df209c1bea4d290581e800ab8f4fc81)
+- fix(dx12) intel and Intel arc support (#11022) 21cbb65eef [`219be9e`](https://github.com/rive-app/rive-wasm/commit/219be9ef589602c4a2583487baaa12cfdd4884d1)
+- chore: rev to luau 0.699 (#11019) 1bb021d018 [`bb98d84`](https://github.com/rive-app/rive-wasm/commit/bb98d84f5eea9cbb492df3e77ac8ace88bf9cf02)
+
+## [2.32.1](https://github.com/rive-app/rive-wasm/compare/2.32.0...2.32.1) - 2025-11-11
+
+### Commits
+
+- chore: tag 2.32.1 [`82e4d9f`](https://github.com/rive-app/rive-wasm/commit/82e4d9f59984ff0257434c7a1d7f3273fbdada51)
 - Fix Vulkan bootstrapping API version reporting (#11001) f5191dd154 [`97b8496`](https://github.com/rive-app/rive-wasm/commit/97b8496f83f366de1a6c87dea01ac108825097a0)
 - Update our signal handler to break into the Windows debugger if it's attached (#11015) d9b3ed9801 [`d76061a`](https://github.com/rive-app/rive-wasm/commit/d76061a781691a03324ad15b152027343dcd556d)
 - fix(wasm): Remove ASAN from the default WASM debug build (#10995) 0743b80014 [`c235db3`](https://github.com/rive-app/rive-wasm/commit/c235db35a691fd9d8d3880df96f165fd27368271)
