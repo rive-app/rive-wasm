@@ -2195,7 +2195,7 @@ export class Rive {
         this.runtime?.resolveAnimationFrame();
       }
     } else {
-      this.startRendering();
+      this.scheduleRendering();
     }
   }
 
@@ -2344,7 +2344,7 @@ export class Rive {
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
     if (this.animator.isPlaying) {
       // Request a new rendering frame
-      this.startRendering();
+      this.scheduleRendering();
     } else if (this.animator.isPaused) {
       // Reset the end time so on playback it starts at the correct frame
       this.lastRenderTime = 0;
@@ -3065,6 +3065,10 @@ export class Rive {
    * renderer is already active, then this will have zero effect.
    */
   public startRendering() {
+    this.drawFrame();
+  }
+
+  private scheduleRendering() {
     if (this.loaded && this.artboard && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
         this.frameRequestId = this.runtime.requestAnimationFrame(
