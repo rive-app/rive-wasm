@@ -576,6 +576,8 @@ export declare class Artboard {
    * @param instance - Renderer context to draw with
    */
   bindViewModelInstance(instance: ViewModelInstance): void;
+
+  didChange(): boolean;
 }
 
 export declare class BindableArtboard {

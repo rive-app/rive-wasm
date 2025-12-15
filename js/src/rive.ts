@@ -80,6 +80,12 @@ export enum Alignment {
   BottomRight = "bottomRight",
 }
 
+// Drawing optimization options
+export enum DrawOptimizationOptions {
+  AlwaysDraw = "alwaysDraw",
+  DrawOnChanged = "drawOnChanged",
+}
+
 // Interface for the Layout static method contructor
 export interface LayoutParameters {
   fit?: Fit;
@@ -1366,6 +1372,10 @@ export interface RiveParameters {
    * Enables multi touch support
    */
   enableMultiTouch?: boolean;
+  /**
+   * Enum with drawing options for optimizations
+   */
+  drawingOptions?: DrawOptimizationOptions;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1779,6 +1789,9 @@ export class Rive {
   private _viewModelInstance: ViewModelInstance | null = null;
   private _dataEnums: DataEnum[] | null = null;
 
+  private drawOptimization: DrawOptimizationOptions =
+    DrawOptimizationOptions.DrawOnChanged;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1806,6 +1819,7 @@ export class Rive {
         ? params.dispatchPointerExit
         : this.dispatchPointerExit;
     this.enableMultiTouch = !!params.enableMultiTouch;
+    this.drawOptimization = params.drawingOptions ?? this.drawOptimization;
     this.enableRiveAssetCDN =
       params.enableRiveAssetCDN === undefined
         ? true
@@ -2304,20 +2318,24 @@ export class Rive {
     }
 
     const { renderer } = this;
-    // Canvas must be wiped to prevent artifacts
-    renderer.clear();
-    renderer.save();
-
-    // Update the renderer alignment if necessary
-    this.alignRenderer();
-
     // Do not draw on 0 canvas size
     if (!this._hasZeroSize) {
-      this.artboard.draw(renderer);
-    }
+      // If there was no dirt on this frame, do not clear and draw
+      if (
+        this.drawOptimization == DrawOptimizationOptions.AlwaysDraw ||
+        this.artboard.didChange()
+      ) {
+        // Canvas must be wiped to prevent artifacts
+        renderer.clear();
+        renderer.save();
 
-    renderer.restore();
-    renderer.flush();
+        // Update the renderer alignment if necessary
+        this.alignRenderer();
+        this.artboard.draw(renderer);
+        renderer.restore();
+        renderer.flush();
+      }
+    }
 
     // Check for any animations that looped
     this.animator.handleLooping();

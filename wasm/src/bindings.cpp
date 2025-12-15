@@ -609,6 +609,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
                   }),
                   allow_raw_pointers())
+        .function("didChange",
+                  optional_override([](rive::ArtboardInstance& self) { return self.didChange(); }),
+                  allow_raw_pointers())
         .function("transformComponent",
                   optional_override([](rive::ArtboardInstance& self, const std::string& name) {
                       return self.find<rive::TransformComponent>(name);
