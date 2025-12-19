@@ -5,10 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.33.0](https://github.com/rive-app/rive-wasm/compare/2.32.2...2.33.0)
+## [2.33.1](https://github.com/rive-app/rive-wasm/compare/2.33.0...2.33.1)
 
 ### Commits
 
+- Library Scripts export fix (#11294) 978d565911 [`7ba7d0d`](https://github.com/rive-app/rive-wasm/commit/7ba7d0d0ee042864ec0d69a08daf59095a7d175d)
+- fix: initialize did change as true (#11323) 9f2de92c4c [`4ae005e`](https://github.com/rive-app/rive-wasm/commit/4ae005eaf56a0bfbf3a61582b66ebedac94e01ce)
+- feature: allow listeners to listen to any type of view model change (#11313) 4b7a5a8032 [`d2dfd60`](https://github.com/rive-app/rive-wasm/commit/d2dfd60c9718e5ad150883ae56b24f2689803a15)
+- fix(vulkan): Fix "player" (#11314) 08c2e47d44 [`aead96d`](https://github.com/rive-app/rive-wasm/commit/aead96d7817a01c5450e254ef227be21a0f36a34)
+- fix(unity): webgl harfbuzz conflict in unity 6.3 (#11309) 5e2ecca169 [`c65fef0`](https://github.com/rive-app/rive-wasm/commit/c65fef02e343758a59424962c5a5e7f33494d7bd)
+- feature: support name based binding paths (#11007) a55da7f31f [`e0416d0`](https://github.com/rive-app/rive-wasm/commit/e0416d031f3132f91e2707b75b67b83a82e4a02c)
+- Update public key for verifying script signatures (#11301) db3368437f [`fab41c5`](https://github.com/rive-app/rive-wasm/commit/fab41c5333942d30382b76155891e3439ed86e0a)
+- feat(vk): Avoid a copy for rasterOrdering non-input-attachment passes (#11298) e4ef1ece98 [`ba7ce04`](https://github.com/rive-app/rive-wasm/commit/ba7ce04d334e1d0cfdd5c994cbf1e2d69623e6c1)
+- feature: bytecode header format (#11293) 68f1096d75 [`c8158b2`](https://github.com/rive-app/rive-wasm/commit/c8158b2cb549ac40838e919a95084fce02d1816b)
+
+## [2.33.0](https://github.com/rive-app/rive-wasm/compare/2.32.2...2.33.0) - 2025-12-17
+
+### Commits
+
+- chore: tag 2.33.0 [`745e603`](https://github.com/rive-app/rive-wasm/commit/745e6035d9d8fb42a15d14ceb3ef11c1040ed004)
 - chore(wasm): update npm publish workflow with OIDC support (#11296) 47f11d90fb [`909c06a`](https://github.com/rive-app/rive-wasm/commit/909c06a41dd372f108c3aaa3616c0fbe7ee4749b)
 - fix(vk): Make the color ramp pass interruptible (#11270) ba953a142b [`887112d`](https://github.com/rive-app/rive-wasm/commit/887112d271ec175ec06039abc3ff4aef1d445c2a)
 - Refactor Script registration (#11280) bc6f965d1f [`97f6766`](https://github.com/rive-app/rive-wasm/commit/97f6766d848750bb067242826a8cb6b61173a2e0)
