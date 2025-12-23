@@ -606,7 +606,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   allow_raw_pointers())
         .function("draw",
                   optional_override([](rive::ArtboardInstance& self, rive::Renderer* renderer) {
-                      return self.draw(renderer, rive::Artboard::DrawOption::kNormal);
+                      return self.draw(renderer);
                   }),
                   allow_raw_pointers())
         .function("didChange",
