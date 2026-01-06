@@ -123,6 +123,17 @@ do
         })
     end
 
+    filter({ 'options:with_rive_scripting' })
+    do
+        includedirs({
+            luau .. '/VM/include',
+            luau .. '/Common/include',
+        })
+        links({
+            'luau_vm',
+        })
+    end
+
     filter({ 'options:renderer=c2d' })
     do
         defines({ 'RIVE_CANVAS_2D_RENDERER' })
