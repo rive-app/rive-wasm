@@ -5,10 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.33.1](https://github.com/rive-app/rive-wasm/compare/2.33.0...2.33.1)
+## [2.33.2](https://github.com/rive-app/rive-wasm/compare/2.33.1...2.33.2)
 
 ### Commits
 
+- fix(scripting): some crashed related to paths (#11378) c05b97d6d5 [`c9be803`](https://github.com/rive-app/rive-wasm/commit/c9be803f05b765daa6b8d8261b87aa5c7046c4c7)
+- chore: Enable with_rive_scripting flag for wasm (#11329) 8e395d6bb0 [`5b20c48`](https://github.com/rive-app/rive-wasm/commit/5b20c488c8c9ac9a5039aebe591c94602735829b)
+- chore: complete groups path effects work (#11373) 8f9dae9f36 [`e16bc56`](https://github.com/rive-app/rive-wasm/commit/e16bc563785eecf3fab02a7d147f7a13162ffb76)
+- feature: add group effects support (#11359) df0db41a9c [`3ca4d8a`](https://github.com/rive-app/rive-wasm/commit/3ca4d8a01325174c44f05379754186641fa73f8b)
+- Nnnnn relative data bind all paths (#11346) 41d316c675 [`da3bf2c`](https://github.com/rive-app/rive-wasm/commit/da3bf2c70f7c8f1bae921be00c4a38b735a8d7cf)
+- fix: lua error on in-flight path mutation (#11350) 56f08da6b1 [`6872214`](https://github.com/rive-app/rive-wasm/commit/6872214f1b087a04bf23e02644289773649bca1e)
+- feature: add support for relative view model data bind paths for nested artboards (#11344) 923b32059d [`90ab6a7`](https://github.com/rive-app/rive-wasm/commit/90ab6a7cb33d2635efdefabd5e6ab80e8677f0da)
+- fix: cast int as double when solo is bound to a number (#11332) 699b891b79 [`fd86801`](https://github.com/rive-app/rive-wasm/commit/fd86801b6da034abdb68615795e5a62f73fd8ee2)
+
+## [2.33.1](https://github.com/rive-app/rive-wasm/compare/2.33.0...2.33.1) - 2025-12-19
+
+### Commits
+
+- chore: tag 2.33.1 [`cbb99a0`](https://github.com/rive-app/rive-wasm/commit/cbb99a0a901e70718bf9f229e31a15a6ced2bc88)
 - Library Scripts export fix (#11294) 978d565911 [`7ba7d0d`](https://github.com/rive-app/rive-wasm/commit/7ba7d0d0ee042864ec0d69a08daf59095a7d175d)
 - fix: initialize did change as true (#11323) 9f2de92c4c [`4ae005e`](https://github.com/rive-app/rive-wasm/commit/4ae005eaf56a0bfbf3a61582b66ebedac94e01ce)
 - feature: allow listeners to listen to any type of view model change (#11313) 4b7a5a8032 [`d2dfd60`](https://github.com/rive-app/rive-wasm/commit/d2dfd60c9718e5ad150883ae56b24f2689803a15)
