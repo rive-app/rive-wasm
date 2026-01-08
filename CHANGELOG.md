@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.33.2](https://github.com/rive-app/rive-wasm/compare/2.33.1...2.33.2)
+## [2.33.3](https://github.com/rive-app/rive-wasm/compare/2.33.2...2.33.3)
 
 ### Commits
 
+- fix: trigger change on solid color change (#11399) b5a73917b1 [`f646cd0`](https://github.com/rive-app/rive-wasm/commit/f646cd07cea6bf184a6348bfa4047cbcc16c4937)
+- chore: advance scripting only if it is still active (#11394) 0488666fb0 [`cacc1bb`](https://github.com/rive-app/rive-wasm/commit/cacc1bbac64efe713c1e83b841e490f6b7503f21)
+- chore: Move clockwiseAtomic shaders to the new system (#11388) 85c5519c6e [`70a383d`](https://github.com/rive-app/rive-wasm/commit/70a383d5d0f9a4f7b2d9e3586a19d351a319fcae)
+- test: Add a 'paintType' option to player (#11371) 209e1b6d96 [`baac902`](https://github.com/rive-app/rive-wasm/commit/baac902c47eb4b75ec4b762367268ea76a4054aa)
+- fix(runtime): ScriptedArtboard origin fix (#11395) 88f2054b8a [`1f38327`](https://github.com/rive-app/rive-wasm/commit/1f38327683a654e7503e2c00f6266d8ecf7e9114)
+- fix(runtime): additional null checks on audio play (#11281) a4e9d50469 [`04fc85f`](https://github.com/rive-app/rive-wasm/commit/04fc85feca6d5e5beaf54e4e1cec6ba7d1491fa4)
+
+## [2.33.2](https://github.com/rive-app/rive-wasm/compare/2.33.1...2.33.2) - 2026-01-06
+
+### Commits
+
+- chore: tag 2.33.2 [`66cf983`](https://github.com/rive-app/rive-wasm/commit/66cf9831c31f17db0ab34f19bf777d8f60c74aac)
 - fix(scripting): some crashed related to paths (#11378) c05b97d6d5 [`c9be803`](https://github.com/rive-app/rive-wasm/commit/c9be803f05b765daa6b8d8261b87aa5c7046c4c7)
 - chore: Enable with_rive_scripting flag for wasm (#11329) 8e395d6bb0 [`5b20c48`](https://github.com/rive-app/rive-wasm/commit/5b20c488c8c9ac9a5039aebe591c94602735829b)
 - chore: complete groups path effects work (#11373) 8f9dae9f36 [`e16bc56`](https://github.com/rive-app/rive-wasm/commit/e16bc563785eecf3fab02a7d147f7a13162ffb76)
