@@ -1780,6 +1780,9 @@ export class Rive {
   // Whether the canvas element's size is 0
   private _hasZeroSize = false;
 
+  // Whether a draw operation needs to be forced
+  private _needsRedraw = false;
+
   // Audio event listener
   private _audioEventListener: EventListener | null = null;
 
@@ -2323,7 +2326,7 @@ export class Rive {
       // If there was no dirt on this frame, do not clear and draw
       if (
         this.drawOptimization == DrawOptimizationOptions.AlwaysDraw ||
-        this.artboard.didChange()
+        this.artboard.didChange() || this._needsRedraw
       ) {
         // Canvas must be wiped to prevent artifacts
         renderer.clear();
@@ -2334,6 +2337,7 @@ export class Rive {
         this.artboard.draw(renderer);
         renderer.restore();
         renderer.flush();
+        this._needsRedraw = false;
       }
     }
 
@@ -2683,6 +2687,7 @@ export class Rive {
       this.devicePixelRatioUsed = dpr;
       this.canvas.width = dpr * width;
       this.canvas.height = dpr * height;
+      this._needsRedraw = true;
       this.resizeToCanvas();
       this.drawFrame();
 
