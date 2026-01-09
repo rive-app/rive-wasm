@@ -1328,6 +1328,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                                        rive::BindableArtboard* bindableArtboard) {
                       self.value(rive::ref_rcp(bindableArtboard));
                   }),
+                  allow_raw_pointers())
+        .function("viewModelInstance",
+                  optional_override([](rive::ViewModelInstanceArtboardRuntime& self,
+                                       rive::ViewModelInstanceRuntime* viewModelInstanceRuntime) {
+                      self.viewModelInstance(viewModelInstanceRuntime->instance());
+                  }),
                   allow_raw_pointers());
     class_<rive::BindableArtboard>("BindableArtboard")
         .function("unref",

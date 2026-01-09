@@ -972,6 +972,7 @@ export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue 
 }
 export declare class ViewModelInstanceArtboard extends ViewModelInstanceValue {
   value(artboard: BindableArtboard | Artboard): void;
+  viewModelInstance(viewModelInstance: ViewModelInstance): void;
 }
 
 export declare class ViewModelInstance {

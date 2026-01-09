@@ -405,13 +405,18 @@ class Artboard extends BaseArtboard {
 class BindableArtboard extends BaseArtboard implements rc.FinalizableTarget {
   public selfUnref: boolean = false;
   public nativeArtboard: rc.BindableArtboard;
+  public nativeViewModel: rc.ViewModelInstance | null;
   constructor(artboard: rc.BindableArtboard) {
     super(true);
     this.nativeArtboard = artboard;
   }
+  public set viewModel(value: ViewModelInstance) {
+    this.nativeViewModel = value.nativeInstance;
+  }
   destroy() {
     if (this.selfUnref) {
       this.nativeArtboard.unref();
+      this.nativeViewModel?.unref();
     }
   }
 }
@@ -1681,6 +1686,14 @@ export class RiveFile implements rc.FinalizableTarget {
     const nativeBindableArtboard =
       this.file.internalBindableArtboardFromArtboard(artboard);
     return this.createBindableArtboard(nativeBindableArtboard);
+  }
+
+  public viewModelByName(name: string): ViewModel | null {
+    const viewModel = this.file.viewModelByName(name);
+    if (viewModel !== null) {
+      return new ViewModel(viewModel);
+    }
+    return null;
   }
 }
 
@@ -3293,11 +3306,7 @@ export class Rive {
   }
 
   public viewModelByName(name: string): ViewModel | null {
-    const viewModel = this.file.viewModelByName(name);
-    if (viewModel !== null) {
-      return new ViewModel(viewModel);
-    }
-    return null;
+    return this.riveFile?.viewModelByName(name);
   }
 
   public enums(): DataEnum[] {
@@ -4278,6 +4287,11 @@ export class ViewModelInstanceArtboard extends ViewModelInstanceValue {
     (this._viewModelInstanceValue as rc.ViewModelInstanceArtboard).value(
       bindableArtboard?.nativeArtboard ?? null,
     );
+    if (bindableArtboard?.nativeViewModel) {
+      (
+        this._viewModelInstanceValue as rc.ViewModelInstanceArtboard
+      ).viewModelInstance(bindableArtboard?.nativeViewModel ?? null);
+    }
   }
 
   public internalHandleCallback(callback: Function) {
