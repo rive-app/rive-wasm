@@ -518,6 +518,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
         .function("save", &Renderer::save)
         .function("restore", &Renderer::restore)
         .function("transform", &Renderer::transform, allow_raw_pointers())
+        .function("modulateOpacity", &Renderer::modulateOpacity)
         .function("drawPath", &Renderer::drawPath, allow_raw_pointers())
         .function("clipPath", &Renderer::clipPath, allow_raw_pointers())
         .function("align",

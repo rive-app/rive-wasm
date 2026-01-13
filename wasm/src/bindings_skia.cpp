@@ -175,6 +175,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_Skia)
         .function("save", &rive::Renderer::save)
         .function("restore", &rive::Renderer::restore)
         .function("transform", &rive::Renderer::transform, allow_raw_pointers())
+        .function("modulateOpacity", &rive::Renderer::modulateOpacity)
         .function("drawPath", &rive::Renderer::drawPath, allow_raw_pointers())
         .function("clipPath", &rive::Renderer::clipPath, allow_raw_pointers())
         .function("align",

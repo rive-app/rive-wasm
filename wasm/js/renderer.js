@@ -612,13 +612,18 @@ Module["onRuntimeInitialized"] = function () {
     // path object can mutate before flush(). To work around this, we capture the fill rule at
     // draw time. It's a little awkward having a fill rule here even though we might be a
     // stroke, so we probably want to rework this.
-    "draw": function (ctx, path2D, fillRule) {
+    "draw": function (ctx, path2D, fillRule, modulatedOpacity) {
       let _style = this._style;
       let _value = this._value;
       let _gradient = this._gradient;
       let _blend = this._blend;
 
+      // Save context state we're about to modify
+      const prevBlend = ctx["globalCompositeOperation"];
+      const prevAlpha = ctx["globalAlpha"];
+
       ctx["globalCompositeOperation"] = _blend;
+      ctx["globalAlpha"] = modulatedOpacity;
 
       if (_gradient != null) {
         const sx = _gradient.sx;
@@ -658,6 +663,10 @@ Module["onRuntimeInitialized"] = function () {
           ctx["fill"](path2D, fillRule);
           break;
       }
+
+      // Restore context state
+      ctx["globalCompositeOperation"] = prevBlend;
+      ctx["globalAlpha"] = prevAlpha;
     },
   });
 
@@ -707,6 +716,8 @@ Module["onRuntimeInitialized"] = function () {
       // Keep a local shadow of the matrix stack, since actual calls to the canvas2d context
       // are deferred, but we reed this matrix data at record time.
       this._matrixStack = [1, 0, 0, 1, 0, 0];
+      // Opacity stack for modulateOpacity support
+      this._opacityStack = [1.0];
       this._ctx = canvas["getContext"]("2d");
       this._canvas = canvas;
       this._drawList = [];
@@ -714,6 +725,7 @@ Module["onRuntimeInitialized"] = function () {
     "save": function () {
       const i = this._matrixStack.length - 6;
       this._matrixStack.push(...this._matrixStack.slice(i));
+      this._opacityStack.push(this._opacityStack[this._opacityStack.length - 1]);
       this._drawList.push(this._ctx["save"].bind(this._ctx));
     },
     "restore": function () {
@@ -722,6 +734,7 @@ Module["onRuntimeInitialized"] = function () {
         throw "restore() called without matching save().";
       }
       this._matrixStack.splice(i); // Pop off the top 6 floats from the matrix stack.
+      this._opacityStack.pop();
       this._drawList.push(this._ctx["restore"].bind(this._ctx));
     },
     "transform": function (xx, xy, yx, yy, tx, ty) {
@@ -749,10 +762,14 @@ Module["onRuntimeInitialized"] = function () {
       const cos = Math.cos(angle);
       this.transform(cos, sin, -sin, cos, 0, 0);
     },
+    "modulateOpacity": function (opacity) {
+      this._opacityStack[this._opacityStack.length - 1] *= opacity;
+    },
     "_drawPath": function (path, paint) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
+      const modulatedOpacity = Math.max(0, this._opacityStack[this._opacityStack.length - 1]);
       this._drawList.push(
-        paint["draw"].bind(paint, this._ctx, path._path2D, fillRule)
+        paint["draw"].bind(paint, this._ctx, path._path2D, fillRule, modulatedOpacity)
       );
     },
     "_drawRiveImage": function (image, options, blend, opacity) {
@@ -762,9 +779,10 @@ Module["onRuntimeInitialized"] = function () {
       }
       var ctx = this._ctx;
       const canvasBlend = _canvasBlend(blend);
+      const finalOpacity = Math.max(0, opacity * this._opacityStack[this._opacityStack.length - 1]);
       this._drawList.push(function () {
         ctx["globalCompositeOperation"] = canvasBlend;
-        ctx["globalAlpha"] = opacity;
+        ctx["globalAlpha"] = finalOpacity;
         ctx["drawImage"](img, 0, 0);
         ctx["globalAlpha"] = 1;
       });
@@ -869,11 +887,12 @@ Module["onRuntimeInitialized"] = function () {
 
       const ctx = this._ctx;
       const canvasBlend = _canvasBlend(blend);
+      const finalOpacity = Math.max(0, opacity * this._opacityStack[this._opacityStack.length - 1]);
       this._drawList.push(function () {
         ctx["save"]();
         ctx["resetTransform"]();
         ctx["globalCompositeOperation"] = canvasBlend;
-        ctx["globalAlpha"] = opacity;
+        ctx["globalAlpha"] = finalOpacity;
         const offscreenCanvas = offscreenWebGL.canvas();
         if (offscreenCanvas) {
           ctx["drawImage"](

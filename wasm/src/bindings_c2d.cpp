@@ -91,6 +91,8 @@ public:
                    transform.ty());
     }
 
+    void modulateOpacity(float opacity) override { call<void>("modulateOpacity", opacity); }
+
     void align(rive::Fit fit,
                JsAlignment alignment,
                const rive::AABB& foo,
@@ -438,6 +440,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("save", &RendererWrapper::save, pure_virtual(), allow_raw_pointers())
         .function("restore", &RendererWrapper::restore, pure_virtual(), allow_raw_pointers())
         .function("transform", &RendererWrapper::transform, pure_virtual(), allow_raw_pointers())
+        .function("modulateOpacity",
+                  &RendererWrapper::modulateOpacity,
+                  pure_virtual(),
+                  allow_raw_pointers())
         .function("drawPath", &RendererWrapper::drawPath, pure_virtual(), allow_raw_pointers())
         .function("clipPath", &RendererWrapper::clipPath, pure_virtual(), allow_raw_pointers())
         .function("align", &RendererWrapper::align, pure_virtual(), allow_raw_pointers())
