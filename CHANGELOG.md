@@ -5,10 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.33.3](https://github.com/rive-app/rive-wasm/compare/2.33.2...2.33.3)
+## [2.34.0](https://github.com/rive-app/rive-wasm/compare/2.33.3...2.34.0)
 
 ### Commits
 
+- Fix ScriptedDrawable save/restore (#11451) e7142dcfed [`dce5351`](https://github.com/rive-app/rive-wasm/commit/dce535104be3d02b5c5b7ea0edb0a6590d8660b9)
+- No double deref luau (#11448) 62fcec60de [`d23890b`](https://github.com/rive-app/rive-wasm/commit/d23890b978acdf2700c5cf3e590004f1c5639352)
+- Add opacity support to ScriptedDrawables (#11446) 9b416a02f6 [`fee6824`](https://github.com/rive-app/rive-wasm/commit/fee68246186a1b896df56744126bbb222dc36e52)
+- fix(scripting): search first parent transform component to build scri… (#11443) 99ca3a30cc [`44212d9`](https://github.com/rive-app/rive-wasm/commit/44212d9e7097488b76d9dd9be844c06aeb6b18a4)
+- feature(scripting): add support for accessing view models and enum pr… (#11437) 620000211e [`341f45b`](https://github.com/rive-app/rive-wasm/commit/341f45bb2c0935bc99fa077ab17b7f097b9efde7)
+- Nnnnn provide path node data (#11428) 67006966a5 [`27735c6`](https://github.com/rive-app/rive-wasm/commit/27735c6346e8e7e67f89e49cc26c57f58a348106)
+- Scripting namespaces (#11429) f810efd11a [`f958426`](https://github.com/rive-app/rive-wasm/commit/f9584262348875aba19724e16ed5f644df1007ce)
+- feature: add support for data binding scripted artboard inputs (#11423) 48d14f1521 [`ce7020e`](https://github.com/rive-app/rive-wasm/commit/ce7020edaf6f2c2620cacf8bad4dcf46d00c8d4b)
+- feature: configure scripting timeout & improve Data warnings (#11425) 8328e97639 [`b3ae1e5`](https://github.com/rive-app/rive-wasm/commit/b3ae1e506f3a3c3ef1f99a91146ea04660329321)
+- feature(scripting): instance linear animations (#11386) 722a1ae998 [`54d6424`](https://github.com/rive-app/rive-wasm/commit/54d6424e5b6c925a1fc76fa653afce98f8e5344b)
+- feat(scripting): build dummy luau vm if disabled (#11422) 393e19b4fa [`f215708`](https://github.com/rive-app/rive-wasm/commit/f21570848edaa5a77992014c5668949908aaac5f)
+- fix: Scroll with snapping max scroll target (#11419) ce274af56c [`fc6ec4c`](https://github.com/rive-app/rive-wasm/commit/fc6ec4c03eff1c0b495940eaa397914522172061)
+- Nnnnn different fixes (#11415) 4b0ea7e631 [`119f95d`](https://github.com/rive-app/rive-wasm/commit/119f95de9aa325b92f65d2ee641f59c7acc7d34b)
+- feat(scripting): forward declare luastate (#11418) a08d538dbf [`5a12457`](https://github.com/rive-app/rive-wasm/commit/5a1245702beeaaabae4df57f63455dec55b7cc3c)
+- feature: pass view model instance to bindable artboard (#10815) 3734dc3ab9 [`a657839`](https://github.com/rive-app/rive-wasm/commit/a657839d1f9ec74da30504651bfc1b8870507673)
+- Nnnnn fix memory lua issues (#11412) ba94f03ad0 [`cf03285`](https://github.com/rive-app/rive-wasm/commit/cf0328569c82a93a462f80fe30c1f72001acfcd5)
+- fix: force a redraw when the canvas is resized (#11407) ad85a2bbf0 [`0469021`](https://github.com/rive-app/rive-wasm/commit/04690210696a808a600c2c92f6895cfc52d2d2cd)
+
+## [2.33.3](https://github.com/rive-app/rive-wasm/compare/2.33.2...2.33.3) - 2026-01-08
+
+### Commits
+
+- chore: tag 2.33.3 [`739aeb8`](https://github.com/rive-app/rive-wasm/commit/739aeb86bdc109974fafd4c158b980ceec0b140a)
 - fix: trigger change on solid color change (#11399) b5a73917b1 [`f646cd0`](https://github.com/rive-app/rive-wasm/commit/f646cd07cea6bf184a6348bfa4047cbcc16c4937)
 - chore: advance scripting only if it is still active (#11394) 0488666fb0 [`cacc1bb`](https://github.com/rive-app/rive-wasm/commit/cacc1bbac64efe713c1e83b841e490f6b7503f21)
 - chore: Move clockwiseAtomic shaders to the new system (#11388) 85c5519c6e [`70a383d`](https://github.com/rive-app/rive-wasm/commit/70a383d5d0f9a4f7b2d9e3586a19d351a319fcae)
