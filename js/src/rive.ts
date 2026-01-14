@@ -1796,6 +1796,11 @@ export class Rive {
   // Whether a draw operation needs to be forced
   private _needsRedraw = false;
 
+  // Canvas width and height. Values are lazily updated so they might
+  // not be in sync with current canvas size.
+  private _currentCanvasWidth = 0;
+  private _currentCanvasHeight = 0;
+
   // Audio event listener
   private _audioEventListener: EventListener | null = null;
 
@@ -1823,6 +1828,8 @@ export class Rive {
         this.onCanvasResize,
       );
     }
+    this._currentCanvasWidth = this.canvas.width;
+    this._currentCanvasHeight = this.canvas.height;
     this.src = params.src;
     this.buffer = params.buffer;
     this.riveFile = params.riveFile;
@@ -2229,6 +2236,21 @@ export class Rive {
     }
   }
 
+  private _canvasSizeChanged(): boolean {
+    let changed = false;
+    if (this.canvas) {
+      if (this.canvas.width !== this._currentCanvasWidth) {
+        this._currentCanvasWidth = this.canvas.width;
+        changed = true;
+      }
+      if (this.canvas.height !== this._currentCanvasHeight) {
+        this._currentCanvasHeight = this.canvas.height;
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   // Tracks the last timestamp at which the animation was rendered. Used only in
   // draw().
   private lastRenderTime: number;
@@ -2339,7 +2361,9 @@ export class Rive {
       // If there was no dirt on this frame, do not clear and draw
       if (
         this.drawOptimization == DrawOptimizationOptions.AlwaysDraw ||
-        this.artboard.didChange() || this._needsRedraw
+        this.artboard.didChange() ||
+        this._needsRedraw ||
+        this._canvasSizeChanged()
       ) {
         // Canvas must be wiped to prevent artifacts
         renderer.clear();
@@ -3007,7 +3031,7 @@ export class Rive {
    * @returns true if no animations are playing or paused
    */
   public get isStopped(): boolean {
-    return this.animator.isStopped;
+    return this.animator?.isStopped ?? true;
   }
 
   /**
