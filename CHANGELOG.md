@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.34.0](https://github.com/rive-app/rive-wasm/compare/2.33.3...2.34.0)
+## [2.34.1](https://github.com/rive-app/rive-wasm/compare/2.34.0...2.34.1)
 
 ### Commits
 
+- fix: dispatch a frame draw when canvas width or height changes (#11459) da69332bb9 [`281533b`](https://github.com/rive-app/rive-wasm/commit/281533b65e3be1af852e53b55599e4bbd3c98fdc)
+- feat(Android): Scripting support (#11438) 9112280455 [`4621d7a`](https://github.com/rive-app/rive-wasm/commit/4621d7a0288b5ac1339d8a92497cf5e482edee01)
+
+## [2.34.0](https://github.com/rive-app/rive-wasm/compare/2.33.3...2.34.0) - 2026-01-13
+
+### Commits
+
+- chore: tag 2.34.0 [`04aaf7a`](https://github.com/rive-app/rive-wasm/commit/04aaf7ac670dc02e19e4a67aba7dc77f70d9baf8)
 - Fix ScriptedDrawable save/restore (#11451) e7142dcfed [`dce5351`](https://github.com/rive-app/rive-wasm/commit/dce535104be3d02b5c5b7ea0edb0a6590d8660b9)
 - No double deref luau (#11448) 62fcec60de [`d23890b`](https://github.com/rive-app/rive-wasm/commit/d23890b978acdf2700c5cf3e590004f1c5639352)
 - Add opacity support to ScriptedDrawables (#11446) 9b416a02f6 [`fee6824`](https://github.com/rive-app/rive-wasm/commit/fee68246186a1b896df56744126bbb222dc36e52)
