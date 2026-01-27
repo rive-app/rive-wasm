@@ -5,10 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.34.1](https://github.com/rive-app/rive-wasm/compare/2.34.0...2.34.1)
+## [2.34.2](https://github.com/rive-app/rive-wasm/compare/2.34.1...2.34.2)
 
 ### Commits
 
+- Prevent layout animation on Artboards just added to ArtboardHosts (#11548) f16f751405 [`fbba869`](https://github.com/rive-app/rive-wasm/commit/fbba869f2f0c7b098c600714ceae8e263516807a)
+- fix: crash on script dispose (#11542) e86db167ed [`cc21ba4`](https://github.com/rive-app/rive-wasm/commit/cc21ba47c435284599ba3d6585dc5e156e39cbc2)
+- feature: expose root viewmodel to scripting via context (#11539) 0eadaaea47 [`1929167`](https://github.com/rive-app/rive-wasm/commit/192916729c870db27d1742feeb676fdc0e5a0e9c)
+- fix(apple): use core text suggested fallback font if necessary (#11530) 147fe75b6b [`452d70c`](https://github.com/rive-app/rive-wasm/commit/452d70cf68c1e243c5f8b07af974701d5707f9ab)
+- feature: add support for mapping view models to artboards in lists (#11524) 41002bf174 [`bfb27e6`](https://github.com/rive-app/rive-wasm/commit/bfb27e60ecdf54fef03d0c847f38738c750dc187)
+- fix(UAT): script asset key id (#11525) e59db089ed [`8c89967`](https://github.com/rive-app/rive-wasm/commit/8c8996731e12ebbbfd6caa5ea5a09c335134420b)
+- feature: add support for creating text runs from view model lists (#11519) 904f37cdf3 [`c1f9b8d`](https://github.com/rive-app/rive-wasm/commit/c1f9b8d78b75db4c801a4a3b8b8d71d6e0585520)
+- Add copy/paste support for ScriptAssets (#11522) f2df4669c8 [`57197ab`](https://github.com/rive-app/rive-wasm/commit/57197abd24ad9efdffa4191042361cc45edfa7a1)
+- Nnnnn add scripted inputs (#11494) a8418441ca [`cbfb94e`](https://github.com/rive-app/rive-wasm/commit/cbfb94eb07e03add9e55a1d712d9f9ffb0f80557)
+- feature: add scripted transition condition protocol (#11479) 853b2a08b5 [`8997566`](https://github.com/rive-app/rive-wasm/commit/8997566d12a77b6c76667dfa6234ea57e6d43155)
+- chore: process listeners in specified order (#11487) 3253c0beae [`16799e1`](https://github.com/rive-app/rive-wasm/commit/16799e1a759aac2e1219e8539be61f087740cfac)
+- Add microprofile support (#11403) c83919a247 [`1940ce3`](https://github.com/rive-app/rive-wasm/commit/1940ce3083119820f81ed756f380e692ac0b7b2d)
+- fix(gl): Get running on Adreno 308 (#11467) 28e95e51e7 [`0fb873c`](https://github.com/rive-app/rive-wasm/commit/0fb873c1e2092ac8f00f54391662bed3204c30cb)
+- chore: Pass Lua VM from editor when decoding runtime File (#11458) f57124001d [`55228b5`](https://github.com/rive-app/rive-wasm/commit/55228b52214335e905c6a4f7f7e60bf03027a098)
+- feature: scripted listener actions (#11468) f3a89390cb [`8f32cf5`](https://github.com/rive-app/rive-wasm/commit/8f32cf5c33f583b0733ca7d6aed81aa85a387bf3)
+
+## [2.34.1](https://github.com/rive-app/rive-wasm/compare/2.34.0...2.34.1) - 2026-01-15
+
+### Commits
+
+- chore: tag 2.34.1 [`4700697`](https://github.com/rive-app/rive-wasm/commit/470069761f1a3fa6046aa596747ee6958c5a20fc)
 - fix: dispatch a frame draw when canvas width or height changes (#11459) da69332bb9 [`281533b`](https://github.com/rive-app/rive-wasm/commit/281533b65e3be1af852e53b55599e4bbd3c98fdc)
 - feat(Android): Scripting support (#11438) 9112280455 [`4621d7a`](https://github.com/rive-app/rive-wasm/commit/4621d7a0288b5ac1339d8a92497cf5e482edee01)
 
