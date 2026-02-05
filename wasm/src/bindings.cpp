@@ -573,7 +573,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   allow_raw_pointers())
         .function("unref",
                   optional_override([](const rive::File& self) -> void { self.unref(); }),
-                  allow_raw_pointers());
+                  allow_raw_pointers())
+        .property("hasAudio", optional_override([](const rive::File& self) -> bool {
+                      return self.hasAudio();
+                  }));
     class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
     class_<AudioWrapper>("AudioWrapper").function("unref", &AudioWrapper::unref);
     class_<rive::Artboard>("ArtboardBase");

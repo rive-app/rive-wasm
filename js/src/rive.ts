@@ -2061,7 +2061,10 @@ export class Rive {
   private initializeAudio() {
     // Initialize audio if needed
     if (audioManager.status == SystemAudioStatus.UNAVAILABLE) {
-      if (this.artboard?.hasAudio && this._audioEventListener === null) {
+      if (
+        this.file.hasAudio ||
+        (this.artboard?.hasAudio && this._audioEventListener === null)
+      ) {
         this._audioEventListener = {
           type: EventType.AudioStatusChange,
           callback: () => this.onSystemAudioChanged(),

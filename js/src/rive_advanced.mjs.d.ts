@@ -395,10 +395,11 @@ export declare class File {
    * @returns BindableArtboard
    */
   internalBindableArtboardFromArtboard(artboard: Artboard): BindableArtboard;
+
   /**
-   * Returns a new Artboard instance for the Artboard at the given index in the Rive file
-   * @param index - Index of the Artboard in the file to create an Artboard instance for
+   * If the file has an audio asset, returns true
    */
+  get hasAudio(): boolean;
 }
 
 /**
