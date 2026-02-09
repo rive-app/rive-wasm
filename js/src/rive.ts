@@ -228,6 +228,8 @@ export class RuntimeLoader {
   // if embedded wasm is used then this is never used.
   private static wasmURL = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
 
+  private static wasmBinary: ArrayBuffer;
+
   // Class is never instantiated
   private constructor() {}
 
@@ -236,6 +238,7 @@ export class RuntimeLoader {
     rc.default({
       // Loads Wasm bundle
       locateFile: () => RuntimeLoader.wasmURL,
+      wasmBinary: RuntimeLoader.wasmBinary
     })
       .then((rive: rc.RiveCanvas) => {
         RuntimeLoader.runtime = rive;
@@ -320,6 +323,15 @@ export class RuntimeLoader {
   // Gets the current wasm url
   public static getWasmUrl(): string {
     return RuntimeLoader.wasmURL;
+  }
+  // Manually sets the wasm binary
+  public static setWasmBinary(ab: ArrayBuffer): void {
+    RuntimeLoader.wasmBinary = ab;
+  }
+
+  // Gets the current wasm url
+  public static getWasmBinary(): ArrayBuffer {
+    return RuntimeLoader.wasmBinary;
   }
 }
 
