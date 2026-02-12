@@ -5,10 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.34.2](https://github.com/rive-app/rive-wasm/compare/2.34.1...2.34.2)
+## [2.35.0](https://github.com/rive-app/rive-wasm/compare/2.34.2...2.35.0)
 
 ### Commits
 
+- fix: Check for bindableProperty nullptr in TransitionViewModelCondition (#11653) aa788cab46 [`31702a3`](https://github.com/rive-app/rive-wasm/commit/31702a3853554179379109d9e9aa5f017aec5ad1)
+- Microprofile on Mac (#11650) c0ee8aa205 [`f8cb9ba`](https://github.com/rive-app/rive-wasm/commit/f8cb9ba634dc9a34cc12bd70b8d1b2fdf26cee4e)
+- feature: mirror! (#11640) c7217d5b3c [`dd94900`](https://github.com/rive-app/rive-wasm/commit/dd9490051687a7b236de380716edbb94fd7e76f7)
+- fix: dispose ScriptedContext when ScriptedObject is disposed (#11616) a153b953bf [`14b091d`](https://github.com/rive-app/rive-wasm/commit/14b091d5086ea13cf8fd1cf141a8cef269394bb1)
+- feature: expose audio engine absolute time for synced playback (#11619) 3109712183 [`25da9df`](https://github.com/rive-app/rive-wasm/commit/25da9dfe30b74b2a418c44fc7c39024c263362da)
+- Add dither functions (#11282) 599f58a196 [`de763e8`](https://github.com/rive-app/rive-wasm/commit/de763e85d6677d15d9fe0009695c30fd3aa4c845)
+- feat(vk): Add a "virtual tile" feature (#11589) d4355212e2 [`c405b78`](https://github.com/rive-app/rive-wasm/commit/c405b78899a769b7068f367fe7f4b9c92d673241)
+- Changed namespace of RectanizerSkyline (#11617) 68d898e3de [`6ba93a7`](https://github.com/rive-app/rive-wasm/commit/6ba93a714baa5b5205ca41ae57f117723a0a50a4)
+- fix(Unreal): UE platform updates (#11621) 9df72a3757 [`eeb7e0c`](https://github.com/rive-app/rive-wasm/commit/eeb7e0cfc7ce1fb44308115b586e14a0c05b4fef)
+- feature(unreal): New Platform support (#11604) 7182effde6 [`eff251f`](https://github.com/rive-app/rive-wasm/commit/eff251f0f82e9c219f202658c103f6650b444da5)
+- fix: use after free of lua_State (#11618) fb6d35a8d3 [`e1040b5`](https://github.com/rive-app/rive-wasm/commit/e1040b5a2a7f7ff7b77775613d639eebde26863d)
+- Fix script compilation speed (#11592) c286304f4d [`da247dd`](https://github.com/rive-app/rive-wasm/commit/da247dd5e2efabdb638221a372a8e398c77d7b42)
+- feature: fast function calls for Vector (#11602) 953dd2021b [`f611025`](https://github.com/rive-app/rive-wasm/commit/f61102545cfc1e94c00f512fa6a711aac0447b52)
+- feature: add audio support on scripts (#11582) 3e2bbcf7f0 [`dc5d8e5`](https://github.com/rive-app/rive-wasm/commit/dc5d8e518dc351946bee4ce795e6a6f4a0a1a7e2)
+- fix: remove metatable creation (#11598) bd80286805 [`57b7fdc`](https://github.com/rive-app/rive-wasm/commit/57b7fdce187e9b0b6a49696864a8d39428e362d6)
+- feature: add support to provide view model instance to artboard and p… (#11590) 924040d3e2 [`afcd6d2`](https://github.com/rive-app/rive-wasm/commit/afcd6d219f00feb73a02c16d83c7dd79080055ac)
+- feature: add support for deterministicMode for tests (#11562) 0bd4a639ab [`220de62`](https://github.com/rive-app/rive-wasm/commit/220de62b316833fe3b32f1208c82eef4b5cfda50)
+- feature: add support for asPath and asPaint script methods (#11580) 6ce4ab9eb1 [`bd5f625`](https://github.com/rive-app/rive-wasm/commit/bd5f62507f5f7ea1522e7bac725f1e790380dce0)
+- chore(Vulkan): Vulkan "core" is now Vulkan 1.1 (#11581) 9b93015635 [`2d3cdc2`](https://github.com/rive-app/rive-wasm/commit/2d3cdc2cf2a1205d9f21f2cf07852c2c8da83603)
+- feature(editor): Importing a library script imports its dependencies (#11385) 11572bfdab [`3b0a5ad`](https://github.com/rive-app/rive-wasm/commit/3b0a5ade6b41000bba77d3ca57aa9ad1869dcb13)
+- fix: missing blob_asset.json files (#11574) 0e3db43471 [`9271d3d`](https://github.com/rive-app/rive-wasm/commit/9271d3dd67bada685f172e5ad0120b9dcd13d133)
+- fix: hit tests on leaves of collapsed layouts should not succeed (#11568) e680a845a5 [`c09e460`](https://github.com/rive-app/rive-wasm/commit/c09e4609082a61544f000787f063f412f4aa78c6)
+- fix: luau stack on layouts (#11565) 55743a6610 [`bb0f837`](https://github.com/rive-app/rive-wasm/commit/bb0f8372b444e40f6fa49061223dd0b2d073234d)
+- feature: expose data context via scripting (#11560) 02996b61bb [`b324a4b`](https://github.com/rive-app/rive-wasm/commit/b324a4b23f7aff284c12459768cc562d6cada06d)
+- refactor(Renderer): Better Offscreen render support (#11521) b840c40aa1 [`e82c80b`](https://github.com/rive-app/rive-wasm/commit/e82c80b5aac56fa22d5d02c012ef5b097041217f)
+- chore(Vulkan): Make the Vulkan bootstrapping code error handling more recoverable (#11536) 482babcfce [`c5354d7`](https://github.com/rive-app/rive-wasm/commit/c5354d7148e7691b745a5545b30b62a5e7f590d8)
+- fix(fiddle_context): fix memory leak when window resized (#11557) 82290a8976 [`0def0e7`](https://github.com/rive-app/rive-wasm/commit/0def0e7031c948b2919f6a097bf70454fbebc66b)
+- fix(editor): Fix crashes when resizing hierarchy panel and generating share link (#11556) 84435c6038 [`b91fcdb`](https://github.com/rive-app/rive-wasm/commit/b91fcdb0c20cfd81503d94ca0768cb962d606cdb)
+- fix: Only apply layout interpolation on new frame (#11555) 4c6e0011da [`f4424ee`](https://github.com/rive-app/rive-wasm/commit/f4424ee51cf35cef4e3f71dfdf8e74637725ebf9)
+- feature: blob asset! (#11554) fdaec2ec5d [`e29c3a8`](https://github.com/rive-app/rive-wasm/commit/e29c3a8b071e7d96c67fbdfd43b80c33dc2e1aed)
+- feature: ScriptedRenderImage! (#11473) 12f56c871a [`4ed8c52`](https://github.com/rive-app/rive-wasm/commit/4ed8c52de2871c10600597e3392d00ec7007adc6)
+- feature: bump to luau 706 (#11544) 0edc7b14a8 [`e854c88`](https://github.com/rive-app/rive-wasm/commit/e854c88be7e948d8b94163a9de9a93b690249d16)
+
+## [2.34.2](https://github.com/rive-app/rive-wasm/compare/2.34.1...2.34.2) - 2026-01-27
+
+### Commits
+
+- chore: tag 2.34.2 [`952fe86`](https://github.com/rive-app/rive-wasm/commit/952fe8654268470954e0c8de31270cf443ae3276)
 - Prevent layout animation on Artboards just added to ArtboardHosts (#11548) f16f751405 [`fbba869`](https://github.com/rive-app/rive-wasm/commit/fbba869f2f0c7b098c600714ceae8e263516807a)
 - fix: crash on script dispose (#11542) e86db167ed [`cc21ba4`](https://github.com/rive-app/rive-wasm/commit/cc21ba47c435284599ba3d6585dc5e156e39cbc2)
 - feature: expose root viewmodel to scripting via context (#11539) 0eadaaea47 [`1929167`](https://github.com/rive-app/rive-wasm/commit/192916729c870db27d1742feeb676fdc0e5a0e9c)
