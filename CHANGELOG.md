@@ -5,10 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.35.0](https://github.com/rive-app/rive-wasm/compare/2.34.2...2.35.0)
+## [2.35.1](https://github.com/rive-app/rive-wasm/compare/2.35.0...2.35.1)
 
 ### Commits
 
+- Simplify Renderer Sort Key Generation (#11782) dd441653df [`8b2f44a`](https://github.com/rive-app/rive-wasm/commit/8b2f44a209eb03b399fcc9436febeb8415effe96)
+- fix: reinit scripted objects owned by the state machine (#11783) 72f38fef07 [`01f5683`](https://github.com/rive-app/rive-wasm/commit/01f5683bf0b6c60e88fdd0bde3f3fc55d8e909ee)
+- chore: make viewmodel references safer (#11781) 0961388866 [`3fb2c61`](https://github.com/rive-app/rive-wasm/commit/3fb2c6159f44f2c8b39fa3db0679393ac30a0cc3)
+- fix(unit tests): Update a test case to have a correctly-formatted category (#11778) 4edb867bde [`3ddbb43`](https://github.com/rive-app/rive-wasm/commit/3ddbb43200e01fd3f77e3ac6d563636c5d00eaf5)
+- Intersection board in renderer now allows overlap (#11724) 352adc26ac [`8e3b153`](https://github.com/rive-app/rive-wasm/commit/8e3b153b8ffe67fc207c62cd208b3f3446156ca3)
+- feat(vkcwa): Move borrowed coverage to a dedicated subpass (#11761) 57feaeef08 [`42d050d`](https://github.com/rive-app/rive-wasm/commit/42d050dca97d376bb549ae2d1e003f59505e1dd0)
+- fix: allow artboard conditions without data context (#11776) e9c66affc8 [`36d5a0f`](https://github.com/rive-app/rive-wasm/commit/36d5a0fe7aca2a37a0dd103c4d97f2ff3bf5f2ae)
+- fix(editor): stop audio when playback is stopped (#11771) d8ff1c2d88 [`ce343b3`](https://github.com/rive-app/rive-wasm/commit/ce343b3571c2c1fce64dab1d0a4762af58249b00)
+- Armor the use of mapped gpu buffers (#11738) c4874f9ca2 [`7b40026`](https://github.com/rive-app/rive-wasm/commit/7b40026edcad612a4602e4d4e0c333ea30b61eec)
+- Create TesselationDataFormat.txt (#11767) 2d76643c5e [`2049dd0`](https://github.com/rive-app/rive-wasm/commit/2049dd03107d86d712d3a4dd2e56b9b95a5f6de6)
+- feature: expand view model instance support in scripting (#11744) a1966ba517 [`f4bbcd4`](https://github.com/rive-app/rive-wasm/commit/f4bbcd48dfd44374335deccabc9c742c39af0022)
+- ArtboardComponentList optimizations (#11757) a3ef3daa73 [`d8bf172`](https://github.com/rive-app/rive-wasm/commit/d8bf1724dfd3b6a48462ac1cc7fb00b770ea6c27)
+- fix: only disable microprofile’s webserver for rive_native (#11729) fba8d3eb5a [`bea1ae8`](https://github.com/rive-app/rive-wasm/commit/bea1ae8675133182bec14efc01bee854d780f207)
+- chore: do not advance data binds without source (#11727) 44b4d20401 [`a53abc7`](https://github.com/rive-app/rive-wasm/commit/a53abc7ec4089b8dd3a86648f33874806b04d527)
+- refactor(rive_native): flutter runtime build without rive_tools (#11712) 0170b92c8c [`b8a6947`](https://github.com/rive-app/rive-wasm/commit/b8a6947ad364cb924336b59b885cdb8f48fbb574)
+- feat(vk): Implement clipRect and dither for clockwiseAtomic (#11709) 78c811b5dc [`1fbbaf6`](https://github.com/rive-app/rive-wasm/commit/1fbbaf62dda3c4c846b4d76cf4b5f933412541a8)
+- Stateful Components (#11706) 37f69c268c [`75bf84b`](https://github.com/rive-app/rive-wasm/commit/75bf84bbf5f336b4ca028ea82a62b9cca9a57eeb)
+- fix(vk): Always use premultiplied alpha (#11674) 92387c12da [`d542478`](https://github.com/rive-app/rive-wasm/commit/d542478a57ef70449b73f5cfeb6dd0a461489d1e)
+- Improve Library Script dependency import (#11681) 7a527f1881 [`e1f0958`](https://github.com/rive-app/rive-wasm/commit/e1f0958a24c95ea715fa63b7a21f0ef96c047732)
+- Nnnnn update flamegraph UI 2 (#11695) 29c76e799a [`32dd2af`](https://github.com/rive-app/rive-wasm/commit/32dd2afea341761dc22777208b6ff007f5effcb1)
+- fix(unreal): Fixed Mac RHI (#11694) 8e1ff5eb60 [`599f74d`](https://github.com/rive-app/rive-wasm/commit/599f74d3f4390f0d091c41579c0d2c7eee42c275)
+- chore(editor): get viewmodel instances from cpp on demand (#11680) d04d8106fb [`c06140b`](https://github.com/rive-app/rive-wasm/commit/c06140bfbdc7583dcef40b3400ac6aaa4a906b23)
+- Optimized feather (#11625) 72f05121ea [`ecc386b`](https://github.com/rive-app/rive-wasm/commit/ecc386b03cb12075334df5a4f452d4881ca030bf)
+- Fix Lua stack imbalance when registering module (#11683) a03a19071f [`5c04149`](https://github.com/rive-app/rive-wasm/commit/5c04149b483d9d02becf3a931f67deb9d3e46cbe)
+- Make better dithertypes image (#11664) 3fb7ee93b6 [`b03ad91`](https://github.com/rive-app/rive-wasm/commit/b03ad91c35b35ec7a399bd731357c012e28fd9fd)
+- feat(renderer): Implement dither for clockwise mode (#11660) 1de6e822b1 [`68c4a65`](https://github.com/rive-app/rive-wasm/commit/68c4a65839818143c7e46551a0e878fe4ca50287)
+- feature: Mirror Performance Profiling & Editor Performance View (#11667) 9ff17d62ca [`dd2ec6f`](https://github.com/rive-app/rive-wasm/commit/dd2ec6f394029ee605dc482031d4254f2e018f76)
+- feat(vk): Add an option to disable fixed function clockwise mode (#11666) 838cad2bf2 [`824615a`](https://github.com/rive-app/rive-wasm/commit/824615ada707025b4210755e95ab9de7bf4f6709)
+- fix(shaders): fix for angle gm (#11670) f4c16df15d [`bf176b0`](https://github.com/rive-app/rive-wasm/commit/bf176b0f18077af16fbe450a10a0161103c7904b)
+- Convert Atlas texture to be Float16 from Float32 (#11637) ce781fdcc0 [`b7226ef`](https://github.com/rive-app/rive-wasm/commit/b7226ef78e843b7274a87817f1c9c110a55ac762)
+- fix(renderer): Interleave positive and negative feather atlas triangles (#11654) 37764336db [`6396b39`](https://github.com/rive-app/rive-wasm/commit/6396b3906f118f2b408c89b4012f0a13efd3de4d)
+
+## [2.35.0](https://github.com/rive-app/rive-wasm/compare/2.34.2...2.35.0) - 2026-02-12
+
+### Commits
+
+- chore: tag 2.35.0 [`2724030`](https://github.com/rive-app/rive-wasm/commit/272403008065a00cebdb3c2eb429aa8a5e3aac36)
 - fix: Check for bindableProperty nullptr in TransitionViewModelCondition (#11653) aa788cab46 [`31702a3`](https://github.com/rive-app/rive-wasm/commit/31702a3853554179379109d9e9aa5f017aec5ad1)
 - Microprofile on Mac (#11650) c0ee8aa205 [`f8cb9ba`](https://github.com/rive-app/rive-wasm/commit/f8cb9ba634dc9a34cc12bd70b8d1b2fdf26cee4e)
 - feature: mirror! (#11640) c7217d5b3c [`dd94900`](https://github.com/rive-app/rive-wasm/commit/dd9490051687a7b236de380716edbb94fd7e76f7)
