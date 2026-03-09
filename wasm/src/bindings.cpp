@@ -29,6 +29,8 @@
 #include "rive/event.hpp"
 #include "rive/file_asset_loader.hpp"
 #include "rive/file.hpp"
+#include "rive/input/focus_manager.hpp"
+#include "rive/input/focus_node.hpp"
 #include "rive/layout.hpp"
 #include "rive/math/mat2d.hpp"
 #include "rive/nested_artboard.hpp"
@@ -407,8 +409,36 @@ AudioWrapper* decodeAudio(emscripten::val byteArray)
     return audio;
 }
 
+// FocusNode free functions for Dart WASM interop
+std::string focusNodeGetName(uintptr_t ptr)
+{
+    return reinterpret_cast<rive::FocusNode*>(ptr)->name();
+}
+
+void focusNodeSetName(uintptr_t ptr, const std::string& name)
+{
+    reinterpret_cast<rive::FocusNode*>(ptr)->name(name);
+}
+
+// FocusNode world bounds - stored directly on the FocusNode
+void focusNodeSetWorldBounds(uintptr_t ptr, float minX, float minY, float maxX, float maxY)
+{
+    auto* node = reinterpret_cast<rive::FocusNode*>(ptr);
+    node->worldBounds(rive::AABB(minX, minY, maxX, maxY));
+}
+
+void focusNodeClearWorldBounds(uintptr_t ptr)
+{
+    auto* node = reinterpret_cast<rive::FocusNode*>(ptr);
+    node->clearWorldBounds();
+}
+
 EMSCRIPTEN_BINDINGS(RiveWASM)
 {
+    function("focusNodeGetName", &focusNodeGetName);
+    function("focusNodeSetName", &focusNodeSetName);
+    function("focusNodeSetWorldBounds", &focusNodeSetWorldBounds);
+    function("focusNodeClearWorldBounds", &focusNodeClearWorldBounds);
     function("ptrToFileAsset", &ptrToFileAsset, allow_raw_pointers());
     function("ptrToAudioAsset", &ptrToAudioAsset, allow_raw_pointers());
     function("ptrToImageAsset", &ptrToImageAsset, allow_raw_pointers());
@@ -729,7 +759,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   }))
         .property("volume",
                   select_overload<float() const>(&rive::Artboard::volume),
-                  select_overload<void(float)>(&rive::Artboard::volume));
+                  select_overload<void(float)>(&rive::Artboard::volume))
+        .function("buildFocusTreeWithParent",
+                  optional_override([](rive::ArtboardInstance& self, rive::FocusNode* parentNode) {
+                      self.buildFocusTree(parentNode ? rive::ref_rcp(parentNode) : nullptr);
+                  }),
+                  allow_raw_pointers());
+
+    class_<rive::FocusNode>("FocusNode")
+        .function("canFocus", select_overload<bool() const>(&rive::FocusNode::canFocus))
+        .function("canTraverse", select_overload<bool() const>(&rive::FocusNode::canTraverse))
+        .function("tabIndex", select_overload<int() const>(&rive::FocusNode::tabIndex))
+        .property("name",
+                  select_overload<const std::string&() const>(&rive::FocusNode::name),
+                  select_overload<void(const std::string&)>(&rive::FocusNode::name));
 
     class_<rive::TransformComponent>("TransformComponent")
         .property("scaleX",
@@ -961,7 +1004,33 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                                        rive::ViewModelInstanceRuntime* runtimeInstance) {
                       self.bindViewModelInstance(runtimeInstance->instance());
                   }),
+                  allow_raw_pointers())
+        .function("focusManager",
+                  optional_override([](rive::StateMachineInstance& self) -> rive::FocusManager* {
+                      return self.focusManager();
+                  }),
                   allow_raw_pointers());
+
+    class_<rive::FocusManager>("FocusManager")
+        .function("focusNext", &rive::FocusManager::focusNext)
+        .function("focusPrevious", &rive::FocusManager::focusPrevious)
+        .function("focusLeft", &rive::FocusManager::focusLeft)
+        .function("focusRight", &rive::FocusManager::focusRight)
+        .function("focusUp", &rive::FocusManager::focusUp)
+        .function("focusDown", &rive::FocusManager::focusDown)
+        .function("primaryFocusBounds", optional_override([](rive::FocusManager& self) -> val {
+                      rive::AABB bounds;
+                      if (!self.primaryFocusBounds(bounds))
+                      {
+                          return val::null();
+                      }
+                      val result = val::object();
+                      result.set("minX", bounds.minX);
+                      result.set("minY", bounds.minY);
+                      result.set("maxX", bounds.maxX);
+                      result.set("maxY", bounds.maxY);
+                      return result;
+                  }));
 
     class_<rive::SMIInput>("SMIInput")
         .property("type", &rive::SMIInput::inputCoreType)
