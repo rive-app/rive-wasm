@@ -5,10 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.35.1](https://github.com/rive-app/rive-wasm/compare/2.35.0...2.35.1)
+## [2.35.2](https://github.com/rive-app/rive-wasm/compare/2.35.1...2.35.2)
 
 ### Commits
 
+- fix(gl): Enable linear filtering on the atlas texture (#11818) 3312a8f159 [`e8ccf0f`](https://github.com/rive-app/rive-wasm/commit/e8ccf0f6b634490f5faccef772f94a034f04091b)
+- fix: restore indexing order of view model symbols (#11817) f7c0374b8f [`05c2f29`](https://github.com/rive-app/rive-wasm/commit/05c2f29d0ebabe317f0a7ebecfceb7aa485dbac1)
+
+## [2.35.1](https://github.com/rive-app/rive-wasm/compare/2.35.0...2.35.1) - 2026-03-05
+
+### Commits
+
+- chore: tag 2.35.1 [`62990c1`](https://github.com/rive-app/rive-wasm/commit/62990c1dc33da80e711ef12814e6d985b22fe56c)
 - Simplify Renderer Sort Key Generation (#11782) dd441653df [`8b2f44a`](https://github.com/rive-app/rive-wasm/commit/8b2f44a209eb03b399fcc9436febeb8415effe96)
 - fix: reinit scripted objects owned by the state machine (#11783) 72f38fef07 [`01f5683`](https://github.com/rive-app/rive-wasm/commit/01f5683bf0b6c60e88fdd0bde3f3fc55d8e909ee)
 - chore: make viewmodel references safer (#11781) 0961388866 [`3fb2c61`](https://github.com/rive-app/rive-wasm/commit/3fb2c6159f44f2c8b39fa3db0679393ac30a0cc3)
