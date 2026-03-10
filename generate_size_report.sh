@@ -7,7 +7,7 @@ pushd js
 
 ./build.sh
 
-command -v psql >/dev/null || brew install postgresql
+command -v psql >/dev/null || (brew install postgresql && brew link postgresql)
 command -v brotli >/dev/null || brew install brotli
 
 report_size() {
