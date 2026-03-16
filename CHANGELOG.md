@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.35.2](https://github.com/rive-app/rive-wasm/compare/2.35.1...2.35.2)
+## [2.35.3](https://github.com/rive-app/rive-wasm/compare/2.35.2...2.35.3)
 
 ### Commits
 
+- feature: add support for multiple inputs on listeners (#11862) 501b7f488c [`4cd4607`](https://github.com/rive-app/rive-wasm/commit/4cd4607f079503933f43040222470d81e33948dc)
+- feature: emojis! (#11857) 89305a5fed [`93f2356`](https://github.com/rive-app/rive-wasm/commit/93f23564dcb913cef883175a792082fb177391cd)
+- fix(runtime): Don't early out when processing KeyedObjects with missing objects (#11856) 3eb4211852 [`d25b756`](https://github.com/rive-app/rive-wasm/commit/d25b7563feacd3c9f7c70c257516ca8223421bf0)
+- Component Input/Output Properties (#11854) 3034940065 [`50d11aa`](https://github.com/rive-app/rive-wasm/commit/50d11aaa23b92e6f5a7eeda3fa8274f713ab440f)
+- fix(apple): support language hints, create font from tables (#11807) 30fcb84a44 [`e1266c4`](https://github.com/rive-app/rive-wasm/commit/e1266c4b5cbc370095afc74426289bec5c9b59c2)
+- feat(renderer): Enable reordering on clockwise mode (#11843) b5b724b93a [`ecdee3a`](https://github.com/rive-app/rive-wasm/commit/ecdee3a2d703d372abdc5e9c409c1c2d139715c9)
+- Stateful Component Properties (#11800) b09cb6b29e [`52b8003`](https://github.com/rive-app/rive-wasm/commit/52b8003100c241118818514a5aae50d99997ea66)
+- feature: add support for replacing view model property values (#11826) c8242bfa23 [`f8101f8`](https://github.com/rive-app/rive-wasm/commit/f8101f82b6a6210b01202be9c498519873909f0c)
+- fix: missing psql install (#11838) 96919e93b7 [`34f2043`](https://github.com/rive-app/rive-wasm/commit/34f2043487beca75d3d539da4c2073405a01d8b7)
+- chore: bump to luau 0.711 (#11837) e74f1cb12e [`a9a5690`](https://github.com/rive-app/rive-wasm/commit/a9a56903d439ea5512f5fb9ead86a865d0cb7493)
+- feature: RenderCanvas, a GPU texture usable as both render target and render image (#11836) 2b8d8a0b03 [`d1d57fc`](https://github.com/rive-app/rive-wasm/commit/d1d57fc317aaf5c0a4497cd6834d0015464ca391)
+- Focus nodes (#11814) 017a4f41e3 [`c73c0e9`](https://github.com/rive-app/rive-wasm/commit/c73c0e9da3efa39715b63e05278fea0340af90cb)
+
+## [2.35.2](https://github.com/rive-app/rive-wasm/compare/2.35.1...2.35.2) - 2026-03-09
+
+### Commits
+
+- chore: tag 2.35.2 [`1156d6b`](https://github.com/rive-app/rive-wasm/commit/1156d6b6ed8b1a59cb044b551d015c20c84eb85d)
 - fix(gl): Enable linear filtering on the atlas texture (#11818) 3312a8f159 [`e8ccf0f`](https://github.com/rive-app/rive-wasm/commit/e8ccf0f6b634490f5faccef772f94a034f04091b)
 - fix: restore indexing order of view model symbols (#11817) f7c0374b8f [`05c2f29`](https://github.com/rive-app/rive-wasm/commit/05c2f29d0ebabe317f0a7ebecfceb7aa485dbac1)
 
