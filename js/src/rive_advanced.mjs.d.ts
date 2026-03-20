@@ -1024,15 +1024,19 @@ export declare class SMITrigger {}
 ///////////
 
 export enum DataType {
-  none,
-  string,
-  number,
-  boolean,
-  color,
-  list,
-  enumType,
-  trigger,
-  viewModel,
+  none = 'none',
+  string = 'string',
+  number = 'number',
+  boolean = 'boolean',
+  color = 'color',
+  list = 'list',
+  enumType = 'enumType',
+  trigger = 'trigger',
+  viewModel = 'viewModel',
+  integer = 'integer',
+  listIndex = 'listIndex',
+  image = 'image',
+  artboard = 'artboard',
 }
 
 export enum Fit {

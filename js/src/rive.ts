@@ -3375,6 +3375,22 @@ export class Rive {
   }
 }
 
+export enum DataType {
+  none = 'none',
+  string = 'string',
+  number = 'number',
+  boolean = 'boolean',
+  color = 'color',
+  list = 'list',
+  enumType = 'enumType',
+  trigger = 'trigger',
+  viewModel = 'viewModel',
+  integer = 'integer',
+  listIndex = 'listIndex',
+  image = 'image',
+  artboard = 'artboard',
+}
+
 export class ViewModel {
   private _viewModel: rc.ViewModel;
 
@@ -3420,7 +3436,7 @@ export class ViewModel {
     return null;
   }
 
-  public instance(): ViewModelInstance | null {
+  public instance(): ViewModelInstance {
     const runtimeInstance = this._viewModel.instance();
     if (runtimeInstance !== null) {
       const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
