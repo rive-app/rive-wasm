@@ -5,10 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.35.3](https://github.com/rive-app/rive-wasm/compare/2.35.2...2.35.3)
+## [2.35.4](https://github.com/rive-app/rive-wasm/compare/2.35.3...2.35.4)
 
 ### Commits
 
+- fix: Fixes occasional mesh crash on each draw with different technique to grab uv, vtx, indices from WASM heap (#11911) 6033a9a49b [`5c70f18`](https://github.com/rive-app/rive-wasm/commit/5c70f18651a6c32a4b3dc94a70bb00356c6825c9)
+- Add support for setting ViewModel value using Listeners and comparing ViewModels in Transition Conditions (#11917) 46a089fc12 [`bee1d1a`](https://github.com/rive-app/rive-wasm/commit/bee1d1a692f06e434ea4ef8d5197e622ca332a21)
+- chore: skip focus nodes that are collapsed or fully transparent (#11916) 57139fa664 [`51b0c5b`](https://github.com/rive-app/rive-wasm/commit/51b0c5b0803ed8b6ab48345b5727f6e42897c5e9)
+- fix: type enum issue with vm property DataType. re-expose the enum for runtime use (#11915) c07d10f899 [`a82466e`](https://github.com/rive-app/rive-wasm/commit/a82466e98ef8eb41817d43ff46453554a049268c)
+- Nnnnn library export fixes (#11884) 68176685ac [`89e956e`](https://github.com/rive-app/rive-wasm/commit/89e956edc1ab67ba62058fa281de8094fe7ccf4e)
+- feat(vkcwa): Implement advanced blend (#11858) 37c39e85d4 [`327710e`](https://github.com/rive-app/rive-wasm/commit/327710e3b942f52f84e2ffa3a8bced82f972cf94)
+- Bind ViewModelInstanceList with Stateful Components (#11878) e4abf64f44 [`3b38385`](https://github.com/rive-app/rive-wasm/commit/3b38385d35efbf49349f01448d62c5e47f8e8857)
+- fix: correct emoji image buffer size and dual-presentation fallback (#11876) 7640c5a47a [`f8e57de`](https://github.com/rive-app/rive-wasm/commit/f8e57de6078fd42c72eb1c7f34afa7be4a8c54eb)
+- feature: add support for removing all elements from a view model list (#11872) 354acb8533 [`0a1c9a6`](https://github.com/rive-app/rive-wasm/commit/0a1c9a69217043ac0066ffd4fa41165c8cbad174)
+
+## [2.35.3](https://github.com/rive-app/rive-wasm/compare/2.35.2...2.35.3) - 2026-03-16
+
+### Commits
+
+- chore: tag 2.35.3 [`51315fd`](https://github.com/rive-app/rive-wasm/commit/51315fd8f8f35100276258ac7e757dfd331b1a66)
 - feature: add support for multiple inputs on listeners (#11862) 501b7f488c [`4cd4607`](https://github.com/rive-app/rive-wasm/commit/4cd4607f079503933f43040222470d81e33948dc)
 - feature: emojis! (#11857) 89305a5fed [`93f2356`](https://github.com/rive-app/rive-wasm/commit/93f23564dcb913cef883175a792082fb177391cd)
 - fix(runtime): Don't early out when processing KeyedObjects with missing objects (#11856) 3eb4211852 [`d25b756`](https://github.com/rive-app/rive-wasm/commit/d25b7563feacd3c9f7c70c257516ca8223421bf0)
