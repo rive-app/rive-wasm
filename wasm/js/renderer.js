@@ -799,14 +799,28 @@ Module["onRuntimeInitialized"] = function () {
       options,
       blend,
       opacity,
-      vtx,
-      uv,
-      indices,
+      vtxByteOffset, vtxCount,
+      uvByteOffset, uvCount,
+      indicesByteOffset, indicesCount,
       meshMinX,
       meshMinY,
       meshMaxX,
       meshMaxY
     ) {
+      // Grab the vtx, uv, and indices from WASM heap with given byte offset for those data points
+      // and slice them into JS-heap array copies. We don't use any typed_memory_view here because
+      // the view could be potentially detached by WASM memory growth.
+      // Catching here is a safeguard to skip rendering the mesh for one frame rather than crashing
+      let vtxCopy, uvCopy, indicesCopy;
+      try {
+        vtxCopy     = Module["HEAPF32"].slice(vtxByteOffset >> 2, (vtxByteOffset >> 2) + vtxCount);
+        uvCopy      = Module["HEAPF32"].slice(uvByteOffset  >> 2, (uvByteOffset  >> 2) + uvCount);
+        indicesCopy = Module["HEAPU16"].slice(indicesByteOffset >> 1, (indicesByteOffset >> 1) + indicesCount);
+      } catch (e) {
+        console.error("[Rive] _drawImageMesh: failed to read mesh data from WASM heap. Mesh skipped for this frame.");
+        return;
+      }
+
       const canvasWidth = this._ctx["canvas"]["width"];
       const canvasHeight = this._ctx["canvas"]["height"];
       const meshWidth = meshMaxX - meshMinX;
@@ -873,17 +887,17 @@ Module["onRuntimeInitialized"] = function () {
         heightInAtlas: heightInAtlas,
         scaleX: scaleX,
         scaleY: scaleY,
-        vtx: new Float32Array(vtx),
-        uv: new Float32Array(uv),
-        indices: new Uint16Array(indices),
+        vtx: vtxCopy,
+        uv: uvCopy,
+        indices: indicesCopy,
         needsScissor: needsScissor,
         // Create a sortKey with more expensive state in higher order bits.
         // This will produce an ordering that minimizes the cost of GL
         // state changes.
         sortKey: (image._uniqueID << 1) | (needsScissor ? 1 : 0),
       });
-      _atlasNumTotalVertexFloats += vtx.length;
-      _atlasNumTotalIndices += indices.length;
+      _atlasNumTotalVertexFloats += vtxCount;
+      _atlasNumTotalIndices += indicesCount;
 
       const ctx = this._ctx;
       const canvasBlend = _canvasBlend(blend);

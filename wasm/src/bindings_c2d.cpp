@@ -141,9 +141,9 @@ public:
             return;
         }
 
-        emscripten::val uvJS{emscripten::typed_memory_view(f32Count, uv->f32s())};
-        emscripten::val vtxJS{emscripten::typed_memory_view(f32Count, vtx->f32s())};
-        emscripten::val indicesJS{emscripten::typed_memory_view(indexCount, indices->u16s())};
+        intptr_t uvByteOffset = reinterpret_cast<intptr_t>(uv->f32s());
+        intptr_t vtxByteOffset = reinterpret_cast<intptr_t>(vtx->f32s());
+        intptr_t indicesByteOffset = reinterpret_cast<intptr_t>(indices->u16s());
 
         // Compute the mesh's bounding box.
         float m[6];
@@ -156,9 +156,12 @@ public:
                    options,
                    value,
                    opacity,
-                   vtxJS,
-                   uvJS,
-                   indicesJS,
+                   vtxByteOffset,
+                   static_cast<int>(f32Count),
+                   uvByteOffset,
+                   static_cast<int>(f32Count),
+                   indicesByteOffset,
+                   static_cast<int>(indexCount),
                    l,
                    t,
                    r,
