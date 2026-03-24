@@ -93,7 +93,6 @@ project('rive_wasm')
 do
     kind('ConsoleApp')
     language('C++')
-    cppdialect('C++17')
     includedirs({
         RIVE_RUNTIME_DIR .. '/include',
     })
