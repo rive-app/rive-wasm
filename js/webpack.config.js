@@ -417,12 +417,33 @@ const webgl2 = {
   },
 };
 
-module.exports = [
-  canvasSingle,
-  canvasLiteSingle,
-  canvas,
-  canvasLite,
-  webglSingle,
-  webgl,
-  webgl2,
-];
+// Maps target names (passed via --env targets=... or npm run build:targets) to webpack configs.
+// Available targets: canvas, canvas-lite, canvas-single, canvas-lite-single,
+//   webgl, webgl-single, webgl2
+const TARGET_CONFIGS = {
+  "canvas": canvas,
+  "canvas-lite": canvasLite,
+  "canvas-single": canvasSingle,
+  "canvas-lite-single": canvasLiteSingle,
+  "webgl": webgl,
+  "webgl-single": webglSingle,
+  "webgl2": webgl2,
+};
+
+module.exports = (env = {}) => {
+  const targetList = env.targets
+    ? env.targets.split(",").map((t) => t.trim())
+    : null;
+
+  return targetList
+    ? targetList.map((t) => TARGET_CONFIGS[t]).filter(Boolean)
+    : [
+        canvasSingle,
+        canvasLiteSingle,
+        canvas,
+        canvasLite,
+        webglSingle,
+        webgl,
+        webgl2,
+      ];
+};

@@ -1,5 +1,10 @@
 dofile('rive_build_config.lua')
 
+newoption({
+    trigger = 'profiling-funcs',
+    description = 'Build with --profiling-funcs for named WASM symbols in DevTools (uses -O2 instead of -Oz)',
+})
+
 -- Filter these options out when generate the compilation database.
 filter('system:emscripten')
 do
@@ -52,6 +57,19 @@ do
         '-s ASSERTIONS=1',
         '-s ABORTING_MALLOC=0',
         '-s DEMANGLE_SUPPORT=1',
+    })
+end
+
+filter('options:profiling-funcs')
+do
+    optimize('On')
+    defines({ 'NDEBUG' })
+    -- Explicit -O2 overrides the -Oz added by rive_build_config.lua's release wasm-arch block,
+    -- since it appears later in the accumulated flags (last opt flag wins in Clang).
+    buildoptions({ '-O2' })
+    linkoptions({
+        '-s ASSERTIONS=0',
+        '--profiling-funcs',
     })
 end
 

@@ -107,6 +107,8 @@ elif [ "$OPTION" = "clean" ]; then
     exit 0
 elif [ "$OPTION" = "tools" ]; then
     $PREMAKE gmake2 $PREMAKE_FLAGS && CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES make -C $OUT_DIR -j$NCPU
+elif [ "$OPTION" = "profiling" ]; then
+    $PREMAKE gmake2 $PREMAKE_FLAGS --config=release --profiling-funcs && make -C $OUT_DIR -j$NCPU
 elif [ "$OPTION" = "release" ]; then
     $PREMAKE gmake2 $PREMAKE_FLAGS --config=release gmake2 && make -C $OUT_DIR -j$NCPU
 else

@@ -231,13 +231,24 @@ export class RuntimeLoader {
   // Class is never instantiated
   private constructor() {}
 
+  /**
+   * When true, performance.mark / performance.measure entries are emitted for
+   * WASM initialization.
+   */
+  public static enablePerfMarks: boolean = false;
+
   // Loads the runtime
   private static loadRuntime(): void {
+    if (RuntimeLoader.enablePerfMarks) performance.mark('rive:wasm-init:start');
     rc.default({
       // Loads Wasm bundle
       locateFile: () => RuntimeLoader.wasmURL,
     })
       .then((rive: rc.RiveCanvas) => {
+        if (RuntimeLoader.enablePerfMarks) {
+          performance.mark('rive:wasm-init:end');
+          performance.measure('rive:wasm-init', 'rive:wasm-init:start', 'rive:wasm-init:end');
+        }
         RuntimeLoader.runtime = rive;
         // Fire all the callbacks
         while (RuntimeLoader.callBackQueue.length > 0) {
@@ -1381,6 +1392,13 @@ export interface RiveParameters {
    * Enum with drawing options for optimizations
    */
   drawingOptions?: DrawOptimizationOptions;
+  /**
+   * Emit performance.mark / performance.measure entries for load lifecycle
+   * events and the first 3 render frames. Useful for profiling Rive's
+   * contribution to load and render time in browser devtools.
+   * False by default.
+   */
+  enablePerfMarks?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   onPlay?: EventCallback;
@@ -1450,6 +1468,11 @@ export interface RiveFileParameters {
   enableRiveAssetCDN?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
+  /**
+   * Emit performance.mark / performance.measure entries for load lifecycle
+   * events. False by default.
+   */
+  enablePerfMarks?: boolean;
 }
 
 export class RiveFile implements rc.FinalizableTarget {
@@ -1479,6 +1502,9 @@ export class RiveFile implements rc.FinalizableTarget {
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN: boolean = true;
 
+  // When true, emits performance.mark/measure entries during RiveFile load.
+  private enablePerfMarks: boolean = false;
+
   // Holds event listeners
   private eventManager: EventManager;
 
@@ -1499,6 +1525,8 @@ export class RiveFile implements rc.FinalizableTarget {
       typeof params.enableRiveAssetCDN == "boolean"
         ? params.enableRiveAssetCDN
         : true;
+    this.enablePerfMarks = !!params.enablePerfMarks;
+    if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1520,7 +1548,7 @@ export class RiveFile implements rc.FinalizableTarget {
   }
 
   private async initData() {
-    if (this.src) {
+    if (this.src && !this.buffer) {
       this.buffer = await loadRiveFile(this.src);
     }
     if (this.destroyed) {
@@ -1535,11 +1563,16 @@ export class RiveFile implements rc.FinalizableTarget {
       loader = loaderWrapper.assetLoader;
     }
     // Load the Rive file
+    if (this.enablePerfMarks) performance.mark('rive:file-load:start');
     this.file = await this.runtime.load(
       new Uint8Array(this.buffer),
       loader,
       this.enableRiveAssetCDN,
     );
+    if (this.enablePerfMarks) {
+      performance.mark('rive:file-load:end');
+      performance.measure('rive:file-load', 'rive:file-load:start', 'rive:file-load:end');
+    }
     const fileFinalizer = new FileFinalizer(this.file);
     finalizationRegistry.register(this, fileFinalizer);
 
@@ -1557,6 +1590,32 @@ export class RiveFile implements rc.FinalizableTarget {
     }
   }
 
+  private async loadRiveFileBytes(): Promise<ArrayBuffer> {
+    if (this.enablePerfMarks) performance.mark('rive:fetch-riv:start');
+    const bufferPromise: Promise<ArrayBuffer> = this.src
+      ? loadRiveFile(this.src)
+      : Promise.resolve(this.buffer);
+    if (this.enablePerfMarks && this.src) {
+      bufferPromise.then(() => {
+        performance.mark('rive:fetch-riv:end');
+        performance.measure('rive:fetch-riv', 'rive:fetch-riv:start', 'rive:fetch-riv:end');
+      })
+    }
+    return bufferPromise;
+  }
+
+  private async loadRuntime(): Promise<rc.RiveCanvas> {
+    if (this.enablePerfMarks) performance.mark('rive:await-wasm:start');
+    const runtimePromise = RuntimeLoader.awaitInstance();
+    if (this.enablePerfMarks) {
+      runtimePromise.then(() => {
+        performance.mark('rive:await-wasm:end');
+        performance.measure('rive:await-wasm', 'rive:await-wasm:start', 'rive:await-wasm:end');
+      })
+    }
+    return runtimePromise;
+  }
+
   public async init() {
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer) {
@@ -1565,13 +1624,23 @@ export class RiveFile implements rc.FinalizableTarget {
     }
 
     try {
-      this.runtime = await RuntimeLoader.awaitInstance();
+      // Kick off the .riv file fetch and WASM module init simultaneously —
+      // they have no dependency on each other so both can be in-flight at once.
+     const [bufferResolved, runtimeResolved] = await Promise.all([this.loadRiveFileBytes(), this.loadRuntime()]);
 
       if (this.destroyed) {
         return;
       }
+      // .riv file buffer and WASM runtime instance
+      this.buffer = bufferResolved;
+      this.runtime = runtimeResolved;
 
+      if (this.enablePerfMarks) performance.mark('rive:init-data:start');
       await this.initData();
+      if (this.enablePerfMarks) {
+        performance.mark('rive:init-data:end');
+        performance.measure('rive:init-data', 'rive:init-data:start', 'rive:init-data:end');
+      }
     } catch (error) {
       this.fireLoadError(
         error instanceof Error ? error.message : RiveFile.fileLoadErrorMessage,
@@ -1813,6 +1882,9 @@ export class Rive {
   private drawOptimization: DrawOptimizationOptions =
     DrawOptimizationOptions.DrawOnChanged;
 
+  // When true, emits performance.mark/measure entries for load and render.
+  private enablePerfMarks: boolean = false;
+
   // Durations to generate a frame for the last second. Used for performance profiling.
   public durations: number[] = [];
   public frameTimes: number[] = [];
@@ -1847,6 +1919,8 @@ export class Rive {
       params.enableRiveAssetCDN === undefined
         ? true
         : params.enableRiveAssetCDN;
+    this.enablePerfMarks = !!params.enablePerfMarks;
+    if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1970,10 +2044,15 @@ export class Rive {
         this.deleteRiveRenderer();
 
         // Get the canvas where you want to render the animation and create a renderer
+        if (this.enablePerfMarks) performance.mark('rive:make-renderer:start');
         this.renderer = this.runtime.makeRenderer(
           this.canvas,
           useOffscreenRenderer,
         );
+        if (this.enablePerfMarks) {
+          performance.mark('rive:make-renderer:end');
+          performance.measure('rive:make-renderer', 'rive:make-renderer:start', 'rive:make-renderer:end');
+        }
 
         // Initial size adjustment based on devicePixelRatio if no width/height are
         // specified explicitly
@@ -2101,6 +2180,7 @@ export class Rive {
           buffer: this.buffer,
           enableRiveAssetCDN: this.enableRiveAssetCDN,
           assetLoader: this.assetLoader,
+          enablePerfMarks: this.enablePerfMarks,
         });
         this.riveFile = riveFile;
         await riveFile.init();
@@ -2314,6 +2394,10 @@ export class Rive {
     const activeStateMachines = this.animator.stateMachines.filter(
       (a) => a.playing,
     );
+    // Instrument the first 3 frames so the Performance timeline shows precise
+    // per-call latency for advance, draw, and flush without polluting the trace.
+    const _perfFrame =
+      this.enablePerfMarks && this.frameCount < 3 ? this.frameCount : -1;
     for (const stateMachine of activeStateMachines) {
       // Check for events before the current frame's state machine advance
       const numEventsReported = stateMachine.reportedEventCount();
@@ -2348,7 +2432,12 @@ export class Rive {
           }
         }
       }
+      if (_perfFrame >= 0) performance.mark(`rive:sm-advance:start:f${_perfFrame}`);
       stateMachine.advanceAndApply(elapsedTime);
+      if (_perfFrame >= 0) {
+        performance.mark(`rive:sm-advance:end:f${_perfFrame}`);
+        performance.measure(`rive:sm-advance:f${_perfFrame}`, `rive:sm-advance:start:f${_perfFrame}`, `rive:sm-advance:end:f${_perfFrame}`);
+      }
       // stateMachine.instance.apply(this.artboard);
     }
 
@@ -2373,10 +2462,29 @@ export class Rive {
         renderer.save();
 
         // Update the renderer alignment if necessary
+        if (_perfFrame >= 0) performance.mark(`rive:align-renderer:start:f${_perfFrame}`);
         this.alignRenderer();
+        if (_perfFrame >= 0) {
+          performance.mark(`rive:align-renderer:end:f${_perfFrame}`);
+          performance.measure(`rive:align-renderer:f${_perfFrame}`, `rive:align-renderer:start:f${_perfFrame}`, `rive:align-renderer:end:f${_perfFrame}`);
+        }
+
+        if (_perfFrame >= 0) performance.mark(`rive:artboard-draw:start:f${_perfFrame}`);
         this.artboard.draw(renderer);
+        if (_perfFrame >= 0) {
+          performance.mark(`rive:artboard-draw:end:f${_perfFrame}`);
+          performance.measure(`rive:artboard-draw:f${_perfFrame}`, `rive:artboard-draw:start:f${_perfFrame}`, `rive:artboard-draw:end:f${_perfFrame}`);
+        }
+
         renderer.restore();
+
+        if (_perfFrame >= 0) performance.mark(`rive:renderer-flush:start:f${_perfFrame}`);
         renderer.flush();
+        if (_perfFrame >= 0) {
+          performance.mark(`rive:renderer-flush:end:f${_perfFrame}`);
+          performance.measure(`rive:renderer-flush:f${_perfFrame}`, `rive:renderer-flush:start:f${_perfFrame}`, `rive:renderer-flush:end:f${_perfFrame}`);
+        }
+
         this._needsRedraw = false;
       }
     }
