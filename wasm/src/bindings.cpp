@@ -1254,6 +1254,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       return self.replaceViewModel(path, value);
                   }),
                   allow_raw_pointers())
+        .function("getViewModelName",
+                  optional_override([](rive::ViewModelInstanceRuntime& self) -> std::string {
+                      return self.viewModelName();
+                  }),
+                  allow_raw_pointers())
         .function("incrementReferenceCount",
                   optional_override([](const rive::ViewModelInstanceRuntime& self) { self.ref(); }),
                   allow_raw_pointers())

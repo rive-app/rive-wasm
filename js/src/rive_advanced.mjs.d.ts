@@ -994,6 +994,7 @@ export declare class ViewModelInstance {
   delete(): void;
   unref(): void;
   getProperties(): ViewModelProperty[];
+  getViewModelName(): string;
 }
 
 export declare class ViewModel {

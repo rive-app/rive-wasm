@@ -16,6 +16,22 @@ afterEach(() => {
   console.error = originalErrorLog;
 });
 
+test("gets the view model name from an instance", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    onLoad: () => {
+      const viewModelInstance = r.viewModelInstance;
+      expect(viewModelInstance).not.toBe(null);
+      expect(viewModelInstance?.viewModelName).toBe("vm1");
+      done();
+    },
+  });
+});
+
 test("Autobinds correctly to the right view model instance", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({

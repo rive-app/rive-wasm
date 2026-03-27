@@ -4090,6 +4090,13 @@ export class ViewModelInstance {
     );
   }
 
+  /**
+   * Get the name of the ViewModel definition this instance was created from.
+   */
+  public get viewModelName(): string {
+    return this._runtimeInstance?.getViewModelName() ?? "";
+  }
+
   public internalIncrementReferenceCount() {
     this._referenceCount++;
   }
