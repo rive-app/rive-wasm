@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.35.4](https://github.com/rive-app/rive-wasm/compare/2.35.3...2.35.4)
+## [2.36.0](https://github.com/rive-app/rive-wasm/compare/2.35.4...2.36.0)
 
 ### Commits
 
+- feat: expose view model name from view model instance as a property on viewmodel_runtime_instance (#11944) 85c89c739c [`824640c`](https://github.com/rive-app/rive-wasm/commit/824640c58fbaf8d99f1c77a15d35386aa71db730)
+- fix(editor/runtime): Honor path effect shape for inner vector feathering (#11971) 263c8a422d [`73ceb3a`](https://github.com/rive-app/rive-wasm/commit/73ceb3a83e77bd48af0b2df02c6428710673a15e)
+- Disable broken tests for now. (#11959) 31ff9f971a [`209a406`](https://github.com/rive-app/rive-wasm/commit/209a4069da3fed982b24bda4abc793d8dfc40d86)
+- Nnnnn state machine key input listeners part 3 (#11952) a77fcaadfe [`9d1fbd5`](https://github.com/rive-app/rive-wasm/commit/9d1fbd5eca050647aebe66ae507a10f83c42c2e6)
+- chore: Use structured Github Issue forms across runtimes (#11828) 50b70f682a [`0929c2d`](https://github.com/rive-app/rive-wasm/commit/0929c2d56c63d84f4be7ca58b3fe38ff56abbb4d)
+- fix(runtime): Databind State machine transition duration (#11947) 98ac9c07a3 [`5b4cc06`](https://github.com/rive-app/rive-wasm/commit/5b4cc064fe33a625169727fc5de60a4d90ce6424)
+- fix(runtime): Add nullptr check for ConditionComparison during transition (#11955) fc1c3488ec [`8cfc88d`](https://github.com/rive-app/rive-wasm/commit/8cfc88d849968a5e7784a09dd005464ff98a8357)
+- fix build: looks like a `rivestd` got left behind by a merge (#11953) 5069323843 [`31b98f0`](https://github.com/rive-app/rive-wasm/commit/31b98f04242fc28c387297fdb4ced7ca1bfefbea)
+- fix(unity): add symbol renames to prevent HarfBuzz collisions with Unity (#11951) c17d930238 [`80d0c38`](https://github.com/rive-app/rive-wasm/commit/80d0c38f95c56ecec6f9089f7364198011d177fd)
+- Nnnnn state machine key input listeners part 2 (#11936) 8a82cf2e25 [`b6d599f`](https://github.com/rive-app/rive-wasm/commit/b6d599f49ce0279ab9e7b23bb9ebc39540dc1616)
+- chore: Bump core runtime to C++17 (#11946) 235eba5b6b [`5890692`](https://github.com/rive-app/rive-wasm/commit/5890692aab891212e41d02fdc1df7f234242df08)
+- feat: optimize wasm and js build script and add some features to profile Rive (#11921) da1ef24f0f [`8956c9c`](https://github.com/rive-app/rive-wasm/commit/8956c9cc4f270954f717cb9d2b7cecd76bd4aee1)
+- fix(runtime): store relinked view model instance on nested artboard (#11931) 76c7232fa1 [`5e2a4c4`](https://github.com/rive-app/rive-wasm/commit/5e2a4c4d8ac95f62ee5c379bde0ca622e0d6a6fd)
+- feature: add support for sending keyboard inputs to focused elements (#11924) 19486d13d0 [`13d4d29`](https://github.com/rive-app/rive-wasm/commit/13d4d2965e9afe416c1472ffcc44c177ad16c62e)
+
+## [2.35.4](https://github.com/rive-app/rive-wasm/compare/2.35.3...2.35.4) - 2026-03-23
+
+### Commits
+
+- chore: tag 2.35.4 [`b38a584`](https://github.com/rive-app/rive-wasm/commit/b38a58405f76735bdf0856cb32ccc70efb091e2b)
 - fix: Fixes occasional mesh crash on each draw with different technique to grab uv, vtx, indices from WASM heap (#11911) 6033a9a49b [`5c70f18`](https://github.com/rive-app/rive-wasm/commit/5c70f18651a6c32a4b3dc94a70bb00356c6825c9)
 - Add support for setting ViewModel value using Listeners and comparing ViewModels in Transition Conditions (#11917) 46a089fc12 [`bee1d1a`](https://github.com/rive-app/rive-wasm/commit/bee1d1a692f06e434ea4ef8d5197e622ca332a21)
 - chore: skip focus nodes that are collapsed or fully transparent (#11916) 57139fa664 [`51b0c5b`](https://github.com/rive-app/rive-wasm/commit/51b0c5b0803ed8b6ab48345b5727f6e42897c5e9)
