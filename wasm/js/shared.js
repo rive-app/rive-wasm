@@ -15,6 +15,22 @@ Module["onRuntimeInitialized"] = function () {
     onComplete(font);
   };
 
+  let setFallbackFontCb = Module["setFallbackFontCb"];
+  if (typeof setFallbackFontCb === "function") {
+    Module["setFallbackFontCallback"] = function (callback) {
+      setFallbackFontCb(callback);
+    };
+  } else {
+    Module["setFallbackFontCallback"] = function (callback) {
+      // Text support (WITH_RIVE_TEXT) is not enabled in this build,
+      // so there is no underlying fallback font callback to register.
+      // This is a no-op to avoid runtime errors in non-text builds.
+      console.warn(
+        "Module.setFallbackFontCallback called, but text support is not enabled in this build."
+      );
+    };
+  }
+
   const FileAssetLoader = Module.FileAssetLoader;
 
   Module["ptrToAsset"] = (assetAddress) => {

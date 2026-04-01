@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rive Canvas – Fallback Fonts</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        background: #1a1a1a;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .canvas-wrapper[hidden] {
+        display: none !important;
+      }
+      .canvas-wrapper {
+        flex-shrink: 0;
+      }
+      #rive-canvas {
+        width: 500px;
+        height: 500px;
+        display: block;
+        border-radius: 8px;
+        background: #252525;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .controls button {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #e0e0e0;
+        background: #333;
+        border: 1px solid #444;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .controls button:hover {
+        background: #404040;
+        border-color: #555;
+      }
+      .controls button:active {
+        background: #2a2a2a;
+      }
+      .controls button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <button type="button" id="add-thai-font">Add Thai font</button>
+      <button type="button" id="add-arabic-font">Add Arabic font</button>
+      <button type="button" id="add-both-fonts">Add both fallback fonts</button>
+    </div>
+    <div class="canvas-wrapper" id="canvas-wrapper" hidden>
+      <canvas id="rive-canvas" width="500" height="500"></canvas>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -15,3 +15,4 @@ export {
   FileFinalizer,
   createFinalization,
 } from "./finalizationRegistry";
+export { RiveFont } from "./riveFont";

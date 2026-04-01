@@ -118,6 +118,7 @@ do
 
     filter({ 'options:with_rive_text' })
     do
+        defines({ 'WITH_RIVE_TEXT' })
         links({
             'rive_harfbuzz',
             'rive_sheenbidi',

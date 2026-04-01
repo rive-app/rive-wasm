@@ -32,6 +32,8 @@ export interface RiveCanvas {
   decodeAudio: DecodeAudio;
   decodeImage: DecodeImage;
   decodeFont: DecodeFont;
+  // Returns a pointer value to the FontWrapper
+  setFallbackFontCallback: (callback: (missingGlyph: number, fallbackFontIndex: number, weight: number) => number | null) => void;
 
   /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
@@ -308,9 +310,11 @@ export interface DecodeImage {
 }
 export class FontInternal {
   unref(): void;
+  ptr(): number;
 }
 export class Font {
   unref(): void;
+  ptr(): number;
   get nativeFont(): FontInternal;
 }
 export interface FontCallback {

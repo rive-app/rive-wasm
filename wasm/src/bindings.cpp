@@ -39,6 +39,8 @@
 #include "rive/renderer.hpp"
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
+#include "rive/text/font_hb.hpp"
+#include "rive/text/utf.hpp"
 #include "rive/text/text_style.hpp"
 #include "rive/text/text_value_run.hpp"
 #include "rive/text/text.hpp"
@@ -370,6 +372,7 @@ public:
     rive::rcp<rive::Font> font() { return m_font; }
 };
 
+// Standalone method to create a Rive Font from byte array
 FontWrapper* decodeFont(emscripten::val byteArray)
 {
     std::vector<unsigned char> vector;
@@ -379,10 +382,61 @@ FontWrapper* decodeFont(emscripten::val byteArray)
 
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
+    // Calls into the shared.js layer to decode the font with this vector
     auto font = new FontWrapper(jsFactory()->decodeFont(vector));
 
     return font;
 }
+
+#ifdef WITH_RIVE_TEXT
+// Holds JS callback set by setFallbackFontCb
+static emscripten::val jsFallbackFontCbRef = emscripten::val::null();
+
+static rive::rcp<rive::Font> fallbackProc(const rive::Unichar missing,
+                                          const uint32_t fallbackIndex,
+                                          const rive::Font* font)
+{
+    if (jsFallbackFontCbRef.isNull() || jsFallbackFontCbRef.isUndefined())
+    {
+        return nullptr;
+    }
+
+    // Extract weight from the requesting font
+    const HBFont* hbFont = static_cast<const HBFont*>(font);
+    float weight = hbFont->getWeight();
+
+    // Synchronously call JS: (missing, fallbackIndex, weight) -> FontWrapper* | null
+    emscripten::val result = jsFallbackFontCbRef(missing, fallbackIndex, weight);
+    if (result.isNull() || result.isUndefined())
+    {
+        return nullptr;
+    }
+
+    intptr_t ptr = result.as<intptr_t>();
+    if (ptr == 0)
+    {
+        return nullptr;
+    }
+
+    FontWrapper* wrapper = reinterpret_cast<FontWrapper*>(ptr);
+    return wrapper->font();
+}
+
+// This is exposed to JS to allow client to pass in callback to handle fallback font selection
+void setFallbackFontCb(emscripten::val cb)
+{
+    if (!cb.isNull() && !cb.isUndefined())
+    {
+        jsFallbackFontCbRef = cb;
+        rive::Font::gFallbackProc = fallbackProc;
+    }
+    else
+    {
+        jsFallbackFontCbRef = emscripten::val::null();
+        rive::Font::gFallbackProc = nullptr;
+    }
+}
+#endif // WITH_RIVE_TEXT
 
 class AudioWrapper
 {
@@ -445,6 +499,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
     function("ptrToFontAsset", &ptrToFontAsset, allow_raw_pointers());
     function("decodeAudio", &decodeAudio, allow_raw_pointers());
     function("decodeFont", &decodeFont, allow_raw_pointers());
+#ifdef WITH_RIVE_TEXT
+    function("setFallbackFontCb", &setFallbackFontCb, allow_raw_pointers());
+#endif
     function("load", &load, allow_raw_pointers());
     function("jsFactory", &jsFactory, allow_raw_pointers());
     function("computeAlignment", &computeAlignment);
@@ -607,7 +664,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .property("hasAudio", optional_override([](const rive::File& self) -> bool {
                       return self.hasAudio();
                   }));
-    class_<FontWrapper>("FontWrapper").function("unref", &FontWrapper::unref);
+    class_<FontWrapper>("FontWrapper")
+        .function("unref", &FontWrapper::unref)
+        .function("ptr", optional_override([](FontWrapper& self) -> intptr_t {
+                      return reinterpret_cast<intptr_t>(&self);
+                  }));
     class_<AudioWrapper>("AudioWrapper").function("unref", &AudioWrapper::unref);
     class_<rive::Artboard>("ArtboardBase");
     class_<rive::ArtboardInstance, base<rive::Artboard>>("Artboard")
