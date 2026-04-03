@@ -5,10 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.36.0](https://github.com/rive-app/rive-wasm/compare/2.35.4...2.36.0)
+## [2.37.0](https://github.com/rive-app/rive-wasm/compare/2.36.0...2.37.0)
 
 ### Commits
 
+- chore: add duration to audio API (#12040) a3c233b32a [`0cb3674`](https://github.com/rive-app/rive-wasm/commit/0cb367476723933ab4821625568a608ea1645e4f)
+- feat(vulkan): Add ability to pre-build draw pipelines (#11945) 15be2c7178 [`d988ab7`](https://github.com/rive-app/rive-wasm/commit/d988ab73372306485c53ff66ce05535508730885)
+- Bind stateful component VM instances with provided instances (#11999) 46c241d197 [`0f712bf`](https://github.com/rive-app/rive-wasm/commit/0f712bfc0da5683395ac898a078be49c09a97b44)
+- feature: provide text and keyboard inputs to drawable scripts (#12002) b76bd385af [`75b195a`](https://github.com/rive-app/rive-wasm/commit/75b195a4c446acccb78a098da67d0e1a0264c05d)
+- test(gl): Reset atlas type back to r16f after changing it for testing (#12000) a5ba42dab9 [`fbb040f`](https://github.com/rive-app/rive-wasm/commit/fbb040f3cdd812992460079180de1431d465aa91)
+- Stateful component fixes (#11982) a10b1aecc6 [`08f4c10`](https://github.com/rive-app/rive-wasm/commit/08f4c10abad4caa813ee111a276ed4595151857f)
+- Nnnnn state machine key input listeners part 4 (#11979) cf9c8526a5 [`1cb858e`](https://github.com/rive-app/rive-wasm/commit/1cb858e8d12b6a2a3fd28680af91fa167de85bf9)
+- fix(renderer) gamma correction fix (#11949) 5513f3f042 [`46e69fe`](https://github.com/rive-app/rive-wasm/commit/46e69fe01aae5f114bccf171ec526e517a9d4d72)
+
+## [2.36.0](https://github.com/rive-app/rive-wasm/compare/2.35.4...2.36.0) - 2026-03-27
+
+### Commits
+
+- chore: tag 2.36.0 [`d376e7d`](https://github.com/rive-app/rive-wasm/commit/d376e7dbcef2a7672c78a77c00b7cda4c2d5b263)
 - feat: expose view model name from view model instance as a property on viewmodel_runtime_instance (#11944) 85c89c739c [`824640c`](https://github.com/rive-app/rive-wasm/commit/824640c58fbaf8d99f1c77a15d35386aa71db730)
 - fix(editor/runtime): Honor path effect shape for inner vector feathering (#11971) 263c8a422d [`73ceb3a`](https://github.com/rive-app/rive-wasm/commit/73ceb3a83e77bd48af0b2df02c6428710673a15e)
 - Disable broken tests for now. (#11959) 31ff9f971a [`209a406`](https://github.com/rive-app/rive-wasm/commit/209a4069da3fed982b24bda4abc793d8dfc40d86)
