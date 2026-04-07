@@ -25,7 +25,9 @@
     "rive.js",
     "rive.js.map",
     "rive.d.ts",
-    "rive_advanced.mjs.d.ts"
+    "rive_advanced.mjs.d.ts",
+    "runtimeLoader.d.ts",
+    "utils"
   ],
   "typings": "rive.d.ts",
   "dependencies": {},
