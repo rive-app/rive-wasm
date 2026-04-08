@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@rive-app/canvas": "file:../../../npm/canvas_single",
-    "@rive-app/webgl": "file:../../../npm/webgl_single",
+    "@rive-app/webgl2": "file:../../../npm/webgl2_single",
     "regenerator-runtime": "^0.14.1"
   }
 }

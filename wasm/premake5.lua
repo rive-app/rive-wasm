@@ -110,7 +110,6 @@ do
         '--pre-js ' .. path.getabsolute('./js/shared.js'),
     })
 
-    filter({ 'not options:renderer=skia' })
     do
         includedirs({ './src/skia_imports' })
         files({ './src/skia_imports/**.cpp' })
@@ -174,39 +173,6 @@ do
         })
     end
 
-    filter({ 'options:renderer=skia', 'options:wasm_single' })
-    do
-        linkoptions({ '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl_advanced_single.mjs' })
-    end
-
-    filter({ 'options:renderer=skia', 'options:not wasm_single' })
-    do
-        linkoptions({ '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl_advanced.mjs' })
-    end
-
-    filter('options:renderer=skia')
-    do
-        defines({ 'RIVE_SKIA_RENDERER' })
-        buildoptions({ '-DSK_GL', '-DSK_SUPPORT_GPU=1' })
-        includedirs({
-            RIVE_RUNTIME_DIR .. '/skia/renderer/include',
-            RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized',
-            RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized/include/core',
-            RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized/include/effects',
-            RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized/include/gpu',
-            RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized/include/config',
-        })
-        files({ RIVE_RUNTIME_DIR .. '/skia/renderer/src/**.cpp' })
-        libdirs({ RIVE_RUNTIME_DIR .. '/skia/dependencies/skia_rive_optimized/out/wasm/' })
-        links({ 'skia', 'GL' })
-        linkoptions({
-            '-s USE_WEBGL2=1',
-            '-s MIN_WEBGL_VERSION=1',
-            '-s MAX_WEBGL_VERSION=2',
-            '--pre-js ' .. path.getabsolute('./js/skia_renderer.js'),
-        })
-    end
-
     filter({ 'options:renderer=webgl2' })
     do
         defines({ 'RIVE_WEBGL2_RENDERER' })
@@ -248,7 +214,6 @@ newoption({
     description = 'Which renderer to use.',
     allowed = {
         { 'c2d' },
-        { 'skia' },
         { 'webgl2' },
     },
     default = 'c2d',

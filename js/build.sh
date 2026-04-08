@@ -12,7 +12,7 @@ set -e
 #               Skips all fallback WASM builds and only compiles + bundles the
 #               specified targets. Faster iteration when testing a single package.
 #               Available targets: canvas, canvas-lite, canvas-single,
-#                 canvas-lite-single, webgl, webgl-single, webgl2, webgl2-single
+#                 canvas-lite-single, webgl2, webgl2-single
 #               Usage: ./build.sh -r canvas,webgl2
 
 WASM_FLAGS=""

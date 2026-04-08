@@ -10,7 +10,7 @@ There are a lot of facets that this runtime exports, so make sure you read up be
 
 This runtime is driven by a lower-level [rive-runtime](https://github.com/rive-app/rive-runtime) runtime that defines an abstract renderer. There are two main variants of this runtime, separated into different NPM packages at build and publish time:
 - [Canvas](https://www.npmjs.com/package/@rive-app/canvas)
-- [WebGL](https://www.npmjs.com/package/@rive-app/webgl)
+- [WebGL2](https://www.npmjs.com/package/@rive-app/webgl2)
 
 The methods and structs defined in rive-runtime that provide the base of this rive-wasm runtime are compiled and bound to JS classes and functions via [Web Assembly](https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts)(WASM) through a tool called [Emscripten](https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html). You'll notice this in the `wasm/src/` folder.
 
@@ -85,16 +85,15 @@ In this project, it references the local version of `@rive-app/canvas-single` wh
 
 If you want to work on the underlying JS classes and methods exposed through the compiled WASM, `cd` into the `wasm/` folder at the top level.
 
-To check out the Emscripten bindings from cpp to JS, look at the `wasm/src/bindings.cpp` file (`bindings_c2d` for canvas-specific bindings, `bindings_skia` for WebGL specific bindings, and `bindings_webgl2.cpp` for WebGL2 specific bindings needed for the Rive Renderer).
+To check out the Emscripten bindings from cpp to JS, look at the `wasm/src/bindings.cpp` file (`bindings_c2d` for canvas-specific bindings and `bindings_webgl2.cpp` for WebGL2 specific bindings needed for the Rive Renderer).
 
-The files in `wasm/js` (specifically `renderer.js`, `skia_renderer.js`, and `webgl2_renderer.js`) use the [Canvas2D](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D) and [WebGL](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderers respectfully to expose and implement bindings for drawing to the canvas.
+The files in `wasm/js` (specifically `renderer.js` and `webgl2_renderer.js`) use the [Canvas2D](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D) and [WebGL2](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) renderers respectively to expose and implement bindings for drawing to the canvas.
 
 If you're looking to alter or add bindings as a result of a change or new feature in rive-runtime, you'll work with these files (most likely starting with the `bindings.cpp` first). When making changes, you will have to re-build WASM to test them out in an app (`js/build.sh` script). When changing or adding low-level API functionality for the high-level API, ensure that the `js/src/rive_advanced.mjs.d.ts` types file is updated accordingly. This ensures types are up-to-date with any changes.
 
 The `build.sh` script makes all the WASM submodules for different packages; this can be a long process. If you're iterating on bindings or even cpp runtime submodule files, you can make it faster by doing the following things:
 - In `wasm/build_all_wasm.sh`:
-  - Comment out the line where it makes Skia (if you already ran this script and built it)
-  - Comment out the lines where it calls `./build_wasm.sh release` on the packages you're not testing against (i.e only want to iterate on Canvas2D instead of WebGL)
+  - Comment out the lines where it calls `./build_wasm.sh release` on the packages you're not testing against (i.e only want to iterate on Canvas2D instead of WebGL2)
 
 #### Running the example application
 

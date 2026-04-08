@@ -17,7 +17,7 @@ import {
 export type AssetLoadCallback = (
   asset: rc.FileAsset,
   bytes: Uint8Array,
-) => Boolean;
+) => boolean;
 
 class RiveError extends Error {
   public isHandledError = true;
@@ -1298,7 +1298,7 @@ export interface RiveParameters {
    */
   onloaderror?: EventCallback;
   /**
-   * @deprecated Use `onPoad()` instead
+   * @deprecated Use `onPlay()` instead
    */
   onplay?: EventCallback;
   /**

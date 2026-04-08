@@ -57,6 +57,17 @@ const canvas = {
                 "npm/canvas/rive_advanced.mjs.d.ts"
               ),
             },
+            {
+              source: "build/src/runtimeLoader.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "npm/canvas/runtimeLoader.d.ts"
+              ),
+            },
+            {
+              source: "build/src/utils",
+              destination: path.resolve(__dirname, "npm/canvas/utils"),
+            },
           ],
         },
       },
@@ -99,6 +110,17 @@ const canvasLite = {
                 __dirname,
                 "npm/canvas_lite/rive_advanced.mjs.d.ts"
               ),
+            },
+            {
+              source: "build/src/runtimeLoader.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "npm/canvas_lite/runtimeLoader.d.ts"
+              ),
+            },
+            {
+              source: "build/src/utils",
+              destination: path.resolve(__dirname, "npm/canvas_lite/utils"),
             },
           ],
         },
@@ -163,6 +185,17 @@ const canvasSingle = {
                 "npm/canvas_single/rive_advanced.mjs.d.ts"
               ),
             },
+            {
+              source: "build/src/runtimeLoader.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "npm/canvas_single/runtimeLoader.d.ts"
+              ),
+            },
+            {
+              source: "build/src/utils",
+              destination: path.resolve(__dirname, "npm/canvas_single/utils"),
+            },
           ],
         },
       },
@@ -214,6 +247,20 @@ const canvasLiteSingle = {
               ),
             },
             {
+              source: "build/src/runtimeLoader.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "build/npm/canvas_lite_single/runtimeLoader.d.ts"
+              ),
+            },
+            {
+              source: "build/src/utils",
+              destination: path.resolve(
+                __dirname,
+                "build/npm/canvas_lite_single/utils"
+              ),
+            },
+            {
               source: "npm/canvas_single/package.json",
               destination: path.resolve(
                 __dirname,
@@ -225,134 +272,6 @@ const canvasLiteSingle = {
       },
     }),
   ],
-};
-
-// Uses webgl_advanced with an externally loaded wasm file.
-const webgl = {
-  entry: "./src/rive.ts",
-  target: "web",
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: "ts-loader",
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    extensions: [".ts", ".js"],
-    fallback: {
-      "fs": false,
-      "path": false,
-    },
-    alias: {
-      "./rive_advanced.mjs": path.resolve(
-        __dirname,
-        "npm/webgl_advanced/webgl_advanced.mjs"
-      ),
-      "package.json": path.resolve(__dirname, "npm/webgl/package.json"),
-    },
-  },
-  output: {
-    path: path.resolve(__dirname, "npm/webgl"),
-    filename: "rive.js",
-    libraryTarget: "umd",
-    library: "rive",
-    globalObject: "this",
-  },
-  devtool: "source-map",
-  mode: "none",
-  plugins: [
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(__dirname, "npm/webgl/rive.d.ts"),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/webgl/rive_advanced.mjs.d.ts"
-              ),
-            },
-          ],
-        },
-      },
-    }),
-  ],
-  watchOptions: {
-    ignored: ["**/node_modules", "**/npm"],
-  },
-};
-
-// Uses webgl_advanced with a bundled wasm file for simplicity/no external wasm
-// loading.
-const webglSingle = {
-  entry: "./src/rive.ts",
-  target: "web",
-  module: {
-    rules: [
-      {
-        test: /\.ts$/,
-        use: "ts-loader",
-        exclude: /node_modules/,
-      },
-    ],
-  },
-  resolve: {
-    extensions: [".ts", ".js"],
-    fallback: {
-      "fs": false,
-      "path": false,
-    },
-    alias: {
-      "./rive_advanced.mjs": path.resolve(
-        __dirname,
-        "npm/webgl_advanced_single/webgl_advanced_single.mjs"
-      ),
-      "package.json": path.resolve(__dirname, "npm/webgl_single/package.json"),
-    },
-  },
-  output: {
-    path: path.resolve(__dirname, "npm/webgl_single"),
-    filename: "rive.js",
-    libraryTarget: "umd",
-    library: "rive",
-    globalObject: "this",
-  },
-  devtool: "source-map",
-  mode: "none",
-  plugins: [
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/webgl_single/rive.d.ts"
-              ),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/webgl_single/rive_advanced.mjs.d.ts"
-              ),
-            },
-          ],
-        },
-      },
-    }),
-  ],
-  watchOptions: {
-    ignored: ["**/node_modules", "**/npm"],
-  },
 };
 
 // Uses webgl2_advanced with an externally loaded wasm file.
@@ -407,6 +326,17 @@ const webgl2 = {
                 "npm/webgl2/rive_advanced.mjs.d.ts"
               ),
             },
+            {
+              source: "build/src/runtimeLoader.d.ts",
+              destination: path.resolve(
+                __dirname,
+                "npm/webgl2/runtimeLoader.d.ts"
+              ),
+            },
+            {
+              source: "build/src/utils",
+              destination: path.resolve(__dirname, "npm/webgl2/utils"),
+            },
           ],
         },
       },
@@ -418,15 +348,12 @@ const webgl2 = {
 };
 
 // Maps target names (passed via --env targets=... or npm run build:targets) to webpack configs.
-// Available targets: canvas, canvas-lite, canvas-single, canvas-lite-single,
-//   webgl, webgl-single, webgl2
+// Available targets: canvas, canvas-lite, canvas-single, canvas-lite-single, webgl2
 const TARGET_CONFIGS = {
   "canvas": canvas,
   "canvas-lite": canvasLite,
   "canvas-single": canvasSingle,
   "canvas-lite-single": canvasLiteSingle,
-  "webgl": webgl,
-  "webgl-single": webglSingle,
   "webgl2": webgl2,
 };
 
@@ -442,8 +369,6 @@ module.exports = (env = {}) => {
         canvasLiteSingle,
         canvas,
         canvasLite,
-        webglSingle,
-        webgl,
         webgl2,
       ];
 };
