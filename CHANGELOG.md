@@ -5,10 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.0](https://github.com/rive-app/rive-wasm/compare/2.36.0...2.37.0)
+## [2.37.1](https://github.com/rive-app/rive-wasm/compare/2.37.0...2.37.1)
 
 ### Commits
 
+- chore(unit_tests): Get inline shaders compiling in MSVC (#12100) d3d433b8b3 [`f6a20c7`](https://github.com/rive-app/rive-wasm/commit/f6a20c7a5cbdd00257cd147ab5be73f87c2388ac)
+- docs: update JS readme (#12088) 3f39f0349a [`34f012c`](https://github.com/rive-app/rive-wasm/commit/34f012c8ec92854eb71f6ff99d1931eea5a64203)
+- fix: add bash-native VS dev environment setup for Windows (#12094) d302b78b45 [`3bdc154`](https://github.com/rive-app/rive-wasm/commit/3bdc154667fb9aa8b2d591657e06447c0724989a)
+- fix(editor): Store ScriptedContext on ScriptedObject for disposal (#12070) cb54233310 [`0f24983`](https://github.com/rive-app/rive-wasm/commit/0f24983c51380e3af5b8a7a7ee1e6cb64578e01d)
+- fix(runtime): when an interpolation duration is set to zero, reset th… (#12086) 3afc336770 [`9d2b8ad`](https://github.com/rive-app/rive-wasm/commit/9d2b8adac64793c363ad5296f07413ff17c86b41)
+- fix: add new types to be released in high-level runtimes too for package.jsons [`daf94c2`](https://github.com/rive-app/rive-wasm/commit/daf94c2d113b8cb119eff81a312122275deea5fd)
+- fix: remove the old webgl package variants [`bb11211`](https://github.com/rive-app/rive-wasm/commit/bb112114b9e0df2e67c08b6b99eb971a21d56476)
+- feat: Image Fit & Alignment when parented by Layout (#12057) ca2ce7d096 [`cc8ecee`](https://github.com/rive-app/rive-wasm/commit/cc8ecee15e09a48d6910bb97196a32c1794757bd)
+- chore(runtime): Enum bitset refactor and new enum util functions (#12038) 19c486654a [`3ed9240`](https://github.com/rive-app/rive-wasm/commit/3ed924099368e592b1f78fc6ccd4a069c5451cdd)
+- chore(glsl): Rename PLS_*_ATOMIC to PLS_*_UAV (#12056) 2390433e6b [`7db0a6b`](https://github.com/rive-app/rive-wasm/commit/7db0a6b42de4d4ae55198047d7d6ae7c43e36d2b)
+- chore(runtime): Remove duplicate degreesFromRadians function (#12054) 44a307ef2e [`2d4266b`](https://github.com/rive-app/rive-wasm/commit/2d4266b37750a8e51242f34c921c58930639c9ea)
+- fix(runtime): memory leak with listeners on scripted view model prope… (#12047) 3201f83d97 [`bcbb7c5`](https://github.com/rive-app/rive-wasm/commit/bcbb7c5c388d67acfceee1783f3a245af1c86393)
+
+## [2.37.0](https://github.com/rive-app/rive-wasm/compare/2.36.0...2.37.0) - 2026-04-03
+
+### Commits
+
+- chore: tag 2.37.0 [`20f3572`](https://github.com/rive-app/rive-wasm/commit/20f3572332a8bafdfb7fc4f7d424c59c6d68b27a)
 - chore: add duration to audio API (#12040) a3c233b32a [`0cb3674`](https://github.com/rive-app/rive-wasm/commit/0cb367476723933ab4821625568a608ea1645e4f)
 - feat(vulkan): Add ability to pre-build draw pipelines (#11945) 15be2c7178 [`d988ab7`](https://github.com/rive-app/rive-wasm/commit/d988ab73372306485c53ff66ce05535508730885)
 - Bind stateful component VM instances with provided instances (#11999) 46c241d197 [`0f712bf`](https://github.com/rive-app/rive-wasm/commit/0f712bfc0da5683395ac898a078be49c09a97b44)
