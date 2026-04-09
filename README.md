@@ -37,13 +37,11 @@ Follow along with the link below for a quick start in getting Rive JS integrated
 
 For more information, see the Runtime sections of the Rive help documentation:
 
-- [Animation Playback](https://rive.app/docs/runtimes/animation-playback)
 - [Layout](https://rive.app/docs/runtimes/layout)
 - [State Machines](https://rive.app/docs/runtimes/state-machines)
 - [Data Binding](https://rive.app/docs/runtimes/data-binding)
-- [Rive Text](https://rive.app/docs/runtimes/text)
 - [Rive Events](https://rive.app/docs/runtimes/rive-events)
-- [Loading Assets](https://rive.app/docs/runtimes/loading-assets)
+- [Loading Assets](https://rive.app/docs/runtimes/web/loading-assets)
 
 ## Supported browsers
 
@@ -51,21 +49,7 @@ Rive can be used in all major browsers. We're constantly working to improve perf
 
 ## Examples
 
-Check out some of the `examples/` projects in this codebase, as well as some of the CodeSandboxes below to see examples of using `rive-wasm`:
-
-### High-level API usage
-
-- [Simple displaying animation](https://codesandbox.io/s/rive-plain-js-sandbox-1ddrc?file=/src/index.js)
-- [Rive with Listeners](https://codesandbox.io/s/rivewithlisteners-242drk)
-- [Rive with State Machines](https://codesandbox.io/s/rive-web-state-machine-example-v33h3o)
-
-### Low-level API usage
-
-- [Constructing a render loop](https://codesandbox.io/s/rive-canvas-advanced-api-basketball-rgted8)
-  - [Source code](https://github.com/rive-app/rive-wasm/tree/master/wasm/examples/parcel_example)
-- [Centaur game](https://codesandbox.io/s/rive-canvas-advanced-api-centaur-example-exh2os?file=/src/index.ts)
-  - [Source code](https://github.com/rive-app/rive-wasm/tree/master/wasm/examples/centaur_game)
-  - [Rive community post](https://rive.app/community/1202-2351-the-centaur-and-the-apples/) - Inspect and download the accompanying Rive file for this example in the Rive community
+Check out some of the demos using this JS/WASM runtime in the [Rive documentation](https://rive.app/docs/runtimes/demos).
 
 ### Awesome Rive
 
@@ -73,9 +57,9 @@ For even more examples and resources on using Rive at runtime or in other tools,
 
 ## Migration guides
 
-Using `rive-js` or an older version of the runtime and need to learn how to upgrade to the latest version? Check out the migration guides below in our help center that help guide you through major version bumps; breaking changes and all!
+Using an older version of the runtime and need to learn how to upgrade to the latest version? Check out the migration guides below in our help center that help guide you through major version bumps; breaking changes and all!
 
-[Migration guides](https://rive.app/docs/runtimes/web/migrating-from-rive-js)
+[Migration guides](https://rive.app/docs/runtimes/web/migration-guides)
 
 ## Contributing
 
