@@ -19,6 +19,12 @@ export class RuntimeLoader {
   // if embedded wasm is used then this is never used.
   private static wasmURL = `https://unpkg.com/${packageData.name}@${packageData.version}/rive.wasm`;
 
+  // Fallback WASM URL tried when the primary URL fails. Set to null to disable
+  // the fallback entirely. Defaults to pulling from the jsdelivr CDN.
+  private static wasmFallbackURL: string | null = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive_fallback.wasm`;
+
+  private static wasmBinary: ArrayBuffer | null = null;
+
   // Class is never instantiated
   private constructor() {}
 
@@ -30,10 +36,15 @@ export class RuntimeLoader {
 
   // Loads the runtime
   private static loadRuntime(): void {
+    // Capture the URL at call time so the catch closure always refers to the
+    // URL this particular attempt used, even if wasmURL is mutated for a retry.
+    const attemptedUrl = RuntimeLoader.wasmURL;
+    const wasmBinary = RuntimeLoader.wasmBinary;
     if (RuntimeLoader.enablePerfMarks) performance.mark('rive:wasm-init:start');
     rc.default({
       // Loads Wasm bundle
-      locateFile: () => RuntimeLoader.wasmURL,
+      locateFile: () => attemptedUrl,
+      ...(wasmBinary ? { wasmBinary } : {})
     })
       .then((rive: rc.RiveCanvas) => {
         if (RuntimeLoader.enablePerfMarks) {
@@ -61,19 +72,33 @@ export class RuntimeLoader {
         // Log detailed error for debugging
         console.debug("Rive WASM load error details:", errorDetails);
 
-        // In case unpkg fails, or the wasm was not supported, we try to load the fallback module from jsdelivr.
-        // This `rive_fallback.wasm` is compiled to support older architecture.
-        // TODO: (Gordon): preemptively test browser support and load the correct wasm file. Then use jsdelvr only if unpkg fails.
-        const backupJsdelivrUrl = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive_fallback.wasm`;
-        if (RuntimeLoader.wasmURL.toLowerCase() !== backupJsdelivrUrl) {
+        // In case the primary URL fails, or the wasm was not supported, try the
+        // fallback URL (a rive_fallback.wasm compiled for older architectures).
+        // The fallback can be customised or disabled via setWasmFallbackUrl().
+        // TODO: (Gordon): preemptively test browser support and load the correct wasm file. Then use the fallback only if the primary fails.
+        const fallbackUrl = RuntimeLoader.wasmFallbackURL;
+        const alreadyOnFallback =
+          fallbackUrl !== null &&
+          attemptedUrl.toLowerCase() === fallbackUrl.toLowerCase();
+
+        if (fallbackUrl !== null && !alreadyOnFallback) {
           console.warn(
-            `Failed to load WASM from ${RuntimeLoader.wasmURL} (${errorDetails.message}), trying jsdelivr as a backup`,
+            `Failed to load WASM from ${attemptedUrl} (${errorDetails.message}), trying fallback URL: ${fallbackUrl}`,
           );
-          RuntimeLoader.setWasmUrl(backupJsdelivrUrl);
+          // Clear wasmBinary so the retry actually fetches via locateFile
+          // instead of re-using the same (failing) in-memory binary.
+          RuntimeLoader.wasmBinary = null;
+          RuntimeLoader.setWasmUrl(fallbackUrl);
           RuntimeLoader.loadRuntime();
         } else {
+          // When alreadyOnFallback is true, wasmURL has already been overwritten
+          // with the fallback URL, so we can no longer recover the original
+          // primary URL here. The primary URL was logged in the earlier warning.
+          const triedUrls = alreadyOnFallback
+            ? `the configured WASM URL or its fallback (${fallbackUrl})`
+            : attemptedUrl;
           const errorMessage = [
-            `Could not load Rive WASM file from ${RuntimeLoader.wasmURL} or ${backupJsdelivrUrl}.`,
+            `Could not load Rive WASM file from ${triedUrls}.`,
             "Possible reasons:",
             "- Network connection is down",
             "- WebAssembly is not supported in this environment",
@@ -122,5 +147,34 @@ export class RuntimeLoader {
   // Gets the current wasm url
   public static getWasmUrl(): string {
     return RuntimeLoader.wasmURL;
+  }
+
+  /**
+   * Sets the URL used as a fallback when the primary WASM URL fails to load.
+   * Pass `null` to disable the fallback entirely.
+   *
+   * Defaults to pulling from the jsdelivr CDN.
+   */
+  public static setWasmFallbackUrl(url: string | null): void {
+    RuntimeLoader.wasmFallbackURL = url;
+  }
+
+  // Gets the current fallback wasm url (null means fallback is disabled)
+  public static getWasmFallbackUrl(): string | null {
+    return RuntimeLoader.wasmFallbackURL;
+  }
+
+  // Manually sets the wasm binary or clears it with null
+  public static setWasmBinary(value: ArrayBuffer | null): void {
+    if ((value instanceof ArrayBuffer) || value === null) {
+      RuntimeLoader.wasmBinary = value;
+      return;
+    }
+    console.error("setWasmBinary expects an ArrayBuffer or null");
+  }
+
+  // Gets the current wasm build as ArrayBuffer or null
+  public static getWasmBinary(): ArrayBuffer | null {
+    return RuntimeLoader.wasmBinary;
   }
 }

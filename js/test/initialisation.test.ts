@@ -27,7 +27,9 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
 });
 
-afterEach(() => {});
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 
 // #endregion
 
@@ -75,6 +77,156 @@ test("Runtime can be loaded using promises", async () => {
     expect(rive3).toBeDefined;
     expect(rive3).toBe(rive2);
   }, 500);
+});
+
+describe("RuntimeLoader WASM fallback URL behavior", () => {
+  let savedRuntime: rc.RiveCanvas;
+  let savedIsLoading: boolean;
+  let savedCallBackQueue: rive.RuntimeCallback[];
+  let savedWasmURL: string;
+  let savedWasmFallbackURL: string | null;
+  let savedWasmBinary: ArrayBuffer | null;
+  let originalRcDefault: (typeof rc)["default"];
+
+  beforeEach(() => {
+    savedRuntime = (rive.RuntimeLoader as any).runtime;
+    savedIsLoading = (rive.RuntimeLoader as any).isLoading;
+    savedCallBackQueue = (rive.RuntimeLoader as any).callBackQueue;
+    savedWasmURL = rive.RuntimeLoader.getWasmUrl();
+    savedWasmFallbackURL = rive.RuntimeLoader.getWasmFallbackUrl();
+    savedWasmBinary = rive.RuntimeLoader.getWasmBinary();
+    originalRcDefault = rc.default;
+
+    // Reset the singleton to an unloaded state so loadRuntime() fires
+    (rive.RuntimeLoader as any).runtime = undefined;
+    (rive.RuntimeLoader as any).isLoading = false;
+    (rive.RuntimeLoader as any).callBackQueue = [];
+    rive.RuntimeLoader.setWasmUrl("https://primary.example.com/rive.wasm");
+    rive.RuntimeLoader.setWasmFallbackUrl(
+      "https://fallback.example.com/rive_fallback.wasm",
+    );
+    rive.RuntimeLoader.setWasmBinary(null);
+  });
+
+  afterEach(() => {
+    // Restore rc.default before restoring the singleton so any in-flight
+    // promise chains that settle during cleanup use the real loader.
+    (rc as any).default = originalRcDefault;
+
+    (rive.RuntimeLoader as any).runtime = savedRuntime;
+    (rive.RuntimeLoader as any).isLoading = savedIsLoading;
+    (rive.RuntimeLoader as any).callBackQueue = savedCallBackQueue;
+    rive.RuntimeLoader.setWasmUrl(savedWasmURL);
+    rive.RuntimeLoader.setWasmFallbackUrl(savedWasmFallbackURL);
+    rive.RuntimeLoader.setWasmBinary(savedWasmBinary);
+    jest.restoreAllMocks();
+  });
+
+  test("default fallback URL points to the jsdelivr CDN", () => {
+    expect(savedWasmFallbackURL).toMatch(/cdn\.jsdelivr\.net/);
+  });
+
+  test("setWasmFallbackUrl / getWasmFallbackUrl round-trip", () => {
+    rive.RuntimeLoader.setWasmFallbackUrl(
+      "https://my-cdn.com/rive_fallback.wasm",
+    );
+    expect(rive.RuntimeLoader.getWasmFallbackUrl()).toBe(
+      "https://my-cdn.com/rive_fallback.wasm",
+    );
+  });
+
+  test("setWasmFallbackUrl(null) disables the fallback", () => {
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    expect(rive.RuntimeLoader.getWasmFallbackUrl()).toBeNull();
+  });
+
+  test("fallback URL is tried when primary URL fails", async () => {
+    const fallbackUrl = "https://fallback.example.com/rive_fallback.wasm";
+    rive.RuntimeLoader.setWasmFallbackUrl(fallbackUrl);
+
+    const mockRuntime = {} as rc.RiveCanvas;
+    let callCount = 0;
+
+    (rc as any).default = jest.fn((): Promise<rc.RiveCanvas> => {
+      callCount++;
+      return callCount === 1
+        ? Promise.reject(new Error("Primary failed"))
+        : Promise.resolve(mockRuntime);
+    });
+
+    await new Promise<void>((resolve) => {
+      rive.RuntimeLoader.getInstance((runtime) => {
+        expect(runtime).toBe(mockRuntime);
+        resolve();
+      });
+    });
+
+    expect(callCount).toBe(2);
+    expect(rive.RuntimeLoader.getWasmUrl()).toBe(fallbackUrl);
+  });
+
+  test("wasmBinary is cleared when falling back so the fallback URL is actually fetched", async () => {
+    const fallbackUrl = "https://fallback.example.com/rive_fallback.wasm";
+    rive.RuntimeLoader.setWasmFallbackUrl(fallbackUrl);
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+
+    const mockRuntime = {} as rc.RiveCanvas;
+    let callCount = 0;
+
+    (rc as any).default = jest.fn((opts: any): Promise<rc.RiveCanvas> => {
+      callCount++;
+      if (callCount === 1) {
+        // First call should have wasmBinary set
+        expect(opts.wasmBinary).toBeInstanceOf(ArrayBuffer);
+        return Promise.reject(new Error("Primary failed"));
+      }
+      // Second (fallback) call should NOT have wasmBinary
+      expect(opts.wasmBinary).toBeUndefined();
+      return Promise.resolve(mockRuntime);
+    });
+
+    await new Promise<void>((resolve) => {
+      rive.RuntimeLoader.getInstance((runtime) => {
+        expect(runtime).toBe(mockRuntime);
+        resolve();
+      });
+    });
+
+    expect(callCount).toBe(2);
+    expect(rive.RuntimeLoader.getWasmBinary()).toBeNull();
+  });
+
+  test("when fallback is null, no retry occurs", async () => {
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+
+    const rcDefaultMock = jest
+      .fn()
+      .mockRejectedValue(new Error("Load failed"));
+    (rc as any).default = rcDefaultMock;
+
+    rive.RuntimeLoader.getInstance(() => {});
+
+    expect(rcDefaultMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("when both primary and fallback fail, error is logged after two attempts", async () => {
+    const rcDefaultMock = jest
+      .fn()
+      .mockRejectedValue(new Error("Load failed"));
+    (rc as any).default = rcDefaultMock;
+
+    const errorMock = jest.fn();
+    jest.spyOn(console, "error").mockImplementation(errorMock);
+
+    rive.RuntimeLoader.getInstance(() => {});
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(rcDefaultMock).toHaveBeenCalledTimes(2);
+    expect(errorMock).toHaveBeenCalledWith(
+      expect.stringContaining("Could not load Rive WASM file"),
+    );
+  });
 });
 
 // #endregion
