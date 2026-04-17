@@ -5,10 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.1](https://github.com/rive-app/rive-wasm/compare/2.37.0...2.37.1)
+## [2.37.2](https://github.com/rive-app/rive-wasm/compare/2.37.1...2.37.2)
 
 ### Commits
 
+- chore(runtime): Remove tess renderer (#12207) 862f1ff44c [`01452a0`](https://github.com/rive-app/rive-wasm/commit/01452a05ce0e218bfaff7eaf635c4122f8135c55)
+- feature(scripting): add support for remove and removeAt (#12201) 0015c1d29e [`bf05e29`](https://github.com/rive-app/rive-wasm/commit/bf05e294ed704cda9d615884d277e447acba4c1e)
+- fix(editor): track orphan ScriptedProperty on ScriptingContext (WITH_… (#12195) 0475399dc5 [`666c6ae`](https://github.com/rive-app/rive-wasm/commit/666c6aeab958b8bdc075713fcf10aceda6d92b05)
+- fix(webgl): Update to latest PLS api (#12192) c8d7c868ca [`0790445`](https://github.com/rive-app/rive-wasm/commit/07904450bb726399e36342197edbf4e37f4b02df)
+- fix: include BlobAsset in File::read() asset import switches (#12191) a8142e0e4f [`62a9d33`](https://github.com/rive-app/rive-wasm/commit/62a9d335f85032fe0cccf137a954123f126ab16b)
+- fix: create new render path if a path is used multiple times in the s… (#12182) 85a72f0ffd [`8bd63e7`](https://github.com/rive-app/rive-wasm/commit/8bd63e71e5cb614cc802150f410d4c1902c6cf2e)
+- fix(wgpu): honor offscreen render target in testing_window_wgpu (#12174) f129648151 [`525208f`](https://github.com/rive-app/rive-wasm/commit/525208fdbadb6c5db07457902deade29e607e6b9)
+- Handle linebreaks in single/multiline TextInput (#12154) dab97cd7b1 [`74b0c10`](https://github.com/rive-app/rive-wasm/commit/74b0c10f0eb7f843bfe2eab188ea47a0da96a1d4)
+- Feat: Rive Renderer in Recorder (#12113) 7adf1e50c8 [`5969740`](https://github.com/rive-app/rive-wasm/commit/5969740cb552d0fd66cc2808e36945b0d38b83f4)
+- fix(editor): Fix Viewmodel duplicate naming & databind preview toggle stuck after undo (#12132) 223c4c3721 [`6f85294`](https://github.com/rive-app/rive-wasm/commit/6f852944c7fc9201738509e0f22d0fd2e005897c)
+- fix(runtime): advance view models from bindable artboards (#12135) f1f9769606 [`f940a9d`](https://github.com/rive-app/rive-wasm/commit/f940a9da1aa7f2aa334a49e2e5b75b385d67ffb7)
+- fix: look for view model properties by name and type (#12133) 51992ddcda [`c7e6a2b`](https://github.com/rive-app/rive-wasm/commit/c7e6a2b64caa88e42ddc550ee1373a8e12739318)
+- fix(Vulkan): Fix saturation blend mode on some devices (#12111) b6b80d795a [`801945d`](https://github.com/rive-app/rive-wasm/commit/801945dffb1dcbc6c5b5567ad91b9aebdfe4f868)
+- feat: Single/multiline support in TextInput and improved scrolling (#12127) 74f49dd1be [`83596a1`](https://github.com/rive-app/rive-wasm/commit/83596a1dc81d9ac6f582067eb0b1fdabe096a118)
+- Get the downstream rive-runtime Linux tests passing (#12121) 1902f9ddf3 [`deefb22`](https://github.com/rive-app/rive-wasm/commit/deefb22e7377fd536418484ac2dba4b129eaa176)
+- chore(testing_window): Default shader compilation mode changes (#12119) 49e0b94a5f [`4a2509b`](https://github.com/rive-app/rive-wasm/commit/4a2509b6ec7025a6b80432789be82e1ca3f38fb2)
+- refactor(tests): Refactored deploy_tests to use the same file instead of one per console (#12116) 478898e6b4 [`0fb07fe`](https://github.com/rive-app/rive-wasm/commit/0fb07fe3dc635e4fe6c821c92ba77de18d2f8534)
+- feature: add support for component based conditions (#12059) 5483819400 [`d167d80`](https://github.com/rive-app/rive-wasm/commit/d167d80cf92313e36062e8418da56ef931b89ca5)
+
+## [2.37.1](https://github.com/rive-app/rive-wasm/compare/2.37.0...2.37.1) - 2026-04-09
+
+### Commits
+
+- chore: tag 2.37.1 [`fae9cc6`](https://github.com/rive-app/rive-wasm/commit/fae9cc6b42ee8a63a43b496f157dbce271aef5b6)
 - chore(unit_tests): Get inline shaders compiling in MSVC (#12100) d3d433b8b3 [`f6a20c7`](https://github.com/rive-app/rive-wasm/commit/f6a20c7a5cbdd00257cd147ab5be73f87c2388ac)
 - docs: update JS readme (#12088) 3f39f0349a [`34f012c`](https://github.com/rive-app/rive-wasm/commit/34f012c8ec92854eb71f6ff99d1931eea5a64203)
 - fix: add bash-native VS dev environment setup for Windows (#12094) d302b78b45 [`3bdc154`](https://github.com/rive-app/rive-wasm/commit/3bdc154667fb9aa8b2d591657e06447c0724989a)
