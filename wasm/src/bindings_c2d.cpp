@@ -205,7 +205,7 @@ public:
         assert(pts - path.points().data() == path.points().size());
     }
 
-    void addRenderPath(rive::RenderPath* path, const rive::Mat2D& transform) override
+    void addRenderPath(const rive::RenderPath* path, const rive::Mat2D& transform) override
     {
         float xx = transform.xx();
         float xy = transform.xy();
