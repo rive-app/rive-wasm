@@ -23,65 +23,80 @@ interface ClientCoordinates {
 }
 
 /**
+ * Extracts ClientCoordinates from a TouchList, respecting multi-touch vs.
+ * single-touch mode. In single-touch mode, only the touch matching
+ * primaryTouchId is returned (or the first touch when primaryTouchId is null).
+ */
+const getTouchCoordinates = (
+  changedTouches: TouchList,
+  enableMultiTouch: boolean,
+  primaryTouchId: number | null,
+): ClientCoordinates[] => {
+  const coordinates: ClientCoordinates[] = [];
+  if (enableMultiTouch) {
+    for (let i = 0; i < changedTouches.length; i++) {
+      const touch = changedTouches[i];
+      coordinates.push({
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        identifier: touch.identifier,
+      });
+    }
+  } else {
+    // In "single-touch mode", only track the primary finger identified at touchstart.
+    // Search changedTouches for the touch matching the recorded primary touch identifier, or (on initial touchstart)
+    // take the first available touch identifier.
+    let primaryTouch: Touch | null =
+      primaryTouchId !== null
+        ? Array.from(changedTouches).find(
+            (t) => t.identifier === primaryTouchId,
+          ) ?? null
+        : changedTouches[0];
+    if (primaryTouch) {
+      coordinates.push({
+        clientX: primaryTouch.clientX,
+        clientY: primaryTouch.clientY,
+        identifier: primaryTouch.identifier,
+      });
+    }
+  }
+  return coordinates;
+};
+
+/**
  * Returns the clientX and clientY properties from touch or mouse events. Also
  * calls preventDefault() on the event if it is a touchstart or touchmove to prevent
  * scrolling the page on mobile devices
  * @param event - Either a TouchEvent or a MouseEvent
+ * @param isTouchScrollEnabled - Whether touch scrolling is enabled
+ * @param enableMultiTouch - Whether to process multiple simultaneous touches
+ * @param primaryTouchId - When working with single touches, only process the touch
+ *   with this identifier. Pass null to accept any touch (used during touchstart to
+ *   capture the first finger down).
  * @returns - Coordinates of the clientX and clientY properties from the touch/mouse event
  */
 const getClientCoordinates = (
   event: MouseEvent | TouchEvent,
   isTouchScrollEnabled: boolean,
   enableMultiTouch: boolean,
+  primaryTouchId: number | null,
 ): ClientCoordinates[] => {
-  const coordinates: ClientCoordinates[] = [];
-  if (
-    ["touchstart", "touchmove"].indexOf(event.type) > -1 &&
-    (event as TouchEvent).changedTouches?.length
-  ) {
+  const touchEvent = event as TouchEvent;
+  if (touchEvent.changedTouches?.length) {
     // This flag, if false, prevents touch events on the canvas default behavior
     // which may prevent scrolling if a drag motion on the canvas is performed
-    if (!isTouchScrollEnabled) {
+    if (!isTouchScrollEnabled && ["touchstart", "touchmove"].includes(event.type)) {
       event.preventDefault();
     }
-    let cnt = 0;
-    let totalTouches = enableMultiTouch
-      ? (event as TouchEvent).changedTouches.length
-      : 1;
-    while (cnt < totalTouches) {
-      const touch = (event as TouchEvent).changedTouches[cnt];
-      coordinates.push({
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        identifier: touch.identifier,
-      });
-      cnt++;
-    }
-  } else if (
-    event.type === "touchend" &&
-    (event as TouchEvent).changedTouches?.length
-  ) {
-    let cnt = 0;
-    let totalTouches = enableMultiTouch
-      ? (event as TouchEvent).changedTouches.length
-      : 1;
-    while (cnt < totalTouches) {
-      const touch = (event as TouchEvent).changedTouches[cnt];
-      coordinates.push({
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        identifier: touch.identifier,
-      });
-      cnt++;
-    }
-  } else {
-    coordinates.push({
+    return getTouchCoordinates(touchEvent.changedTouches, enableMultiTouch, primaryTouchId);
+  }
+  return [
+    {
       clientX: (event as MouseEvent).clientX,
       clientY: (event as MouseEvent).clientY,
       identifier: 0,
-    });
-  }
-  return coordinates;
+    },
+  ];
 };
 
 /**
@@ -127,6 +142,15 @@ export const registerTouchInteractions = ({
    **/
   let _prevEventType: string | null = null;
   let _syntheticEventsActive = false;
+
+  /**
+   * When enableMultiTouch is false ("single-touch mode"), we track the identifier of the first finger that touched down.
+   * All subsequent touch events are filtered to this identifier so that a second finger
+   * moving cannot displace the tracked pointer position.
+   * Reset to null when the primary finger lifts (or touchcancel is called)
+   */
+  let _primaryTouchId: number | null = null;
+
   const processEventCallback = (event: MouseEvent | TouchEvent) => {
     // Exit early out of all synthetic mouse events
     // https://stackoverflow.com/questions/9656990/how-to-prevent-simulated-mouse-events-in-mobile-browsers
@@ -153,10 +177,20 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
+    // On touchstart in single-touch mode, record the first new finger as the primary
+    // touch if we aren't already tracking one.
+    if (!enableMultiTouch && event.type === "touchstart" && _primaryTouchId === null) {
+      const firstTouch = (event as TouchEvent).changedTouches?.[0];
+      if (firstTouch) {
+        _primaryTouchId = firstTouch.identifier;
+      }
+    }
+
     const coordinateSets = getClientCoordinates(
       event,
       isTouchScrollEnabled,
       enableMultiTouch,
+      enableMultiTouch ? null : _primaryTouchId,
     );
     const forwardMatrix = rive.computeAlignment(
       fit,
@@ -274,6 +308,14 @@ export const registerTouchInteractions = ({
             );
           });
         }
+        // Release the primary touch lock once that finger lifts so the next
+        // touchstart can claim a new primary finger.
+        if (
+          !enableMultiTouch &&
+          coordinateSets.some((c) => c.identifier === _primaryTouchId)
+        ) {
+          _primaryTouchId = null;
+        }
         break;
       }
       case "mouseup": {
@@ -291,6 +333,11 @@ export const registerTouchInteractions = ({
       default:
     }
   };
+
+  const touchCancelCallback = () => {
+    _primaryTouchId = null;
+  };
+
   const callback = processEventCallback.bind(this);
   canvas.addEventListener("mouseover", callback);
   canvas.addEventListener("mouseout", callback);
@@ -304,6 +351,7 @@ export const registerTouchInteractions = ({
     passive: isTouchScrollEnabled,
   });
   canvas.addEventListener("touchend", callback);
+  canvas.addEventListener("touchcancel", touchCancelCallback);
   return () => {
     canvas.removeEventListener("mouseover", callback);
     canvas.removeEventListener("mouseout", callback);
@@ -313,5 +361,6 @@ export const registerTouchInteractions = ({
     canvas.removeEventListener("touchmove", callback);
     canvas.removeEventListener("touchstart", callback);
     canvas.removeEventListener("touchend", callback);
+    canvas.removeEventListener("touchcancel", touchCancelCallback);
   };
 };
