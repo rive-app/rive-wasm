@@ -5,10 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.2](https://github.com/rive-app/rive-wasm/compare/2.37.1...2.37.2)
+## [2.37.3](https://github.com/rive-app/rive-wasm/compare/2.37.2...2.37.3)
 
 ### Commits
 
+- fix: for single-touch mode, track the primary fingers movements only (#12227) 7b89ab2a1c [`2168ba4`](https://github.com/rive-app/rive-wasm/commit/2168ba443ccd66ddd76263964094f959e4ea68cc)
+- fix(runtime): leak in ElasticScrollPhysics helpers (#12226) f6fa7f21cf [`a5c64ae`](https://github.com/rive-app/rive-wasm/commit/a5c64ae3d54d4b290d44e079dee7fc80245642e7)
+- feat: TextInput Tool Improvements (#12221) 5bd28c734a [`595e26b`](https://github.com/rive-app/rive-wasm/commit/595e26bcf757bac13d9f2d8713e9f9259bb8e56b)
+- feat(renderer): Implement clip for clockwiseAtomic (#12120) da326b3fca [`f1cedb7`](https://github.com/rive-app/rive-wasm/commit/f1cedb7bc5b0ac2a7195154e1aa8fb91366c726b)
+- feat(cq): add success callbacks for instantiations (#12213) e5ce0c3387 [`1f3600a`](https://github.com/rive-app/rive-wasm/commit/1f3600ab618e0dcfe42d7d7cd780a68aed64a13d)
+- fix: null-terminate char-array shaders in MSVC mode (#12218) 6d3708536a [`ecce5e0`](https://github.com/rive-app/rive-wasm/commit/ecce5e0df6736ee94efe9eb30efc47837a3f59bc)
+- feature: add support for triggering actions on state transitions and … (#12209) 235ca76b31 [`28b4b35`](https://github.com/rive-app/rive-wasm/commit/28b4b354b2760237b9632504b9ec6d2f42012bc6)
+- fix(Android): Fix linking issues on ARMv7 devices due to TLS relocations (#12175) a921b11eb8 [`ff394fc`](https://github.com/rive-app/rive-wasm/commit/ff394fc13b92978772276d2c2249bddfb191d717)
+
+## [2.37.2](https://github.com/rive-app/rive-wasm/compare/2.37.1...2.37.2) - 2026-04-17
+
+### Commits
+
+- chore: tag 2.37.2 [`68ce5df`](https://github.com/rive-app/rive-wasm/commit/68ce5df3496f3c05fc681fc2db9c959e144a4527)
 - chore(runtime): Remove tess renderer (#12207) 862f1ff44c [`01452a0`](https://github.com/rive-app/rive-wasm/commit/01452a05ce0e218bfaff7eaf635c4122f8135c55)
 - feature(scripting): add support for remove and removeAt (#12201) 0015c1d29e [`bf05e29`](https://github.com/rive-app/rive-wasm/commit/bf05e294ed704cda9d615884d277e447acba4c1e)
 - fix(editor): track orphan ScriptedProperty on ScriptingContext (WITH_… (#12195) 0475399dc5 [`666c6ae`](https://github.com/rive-app/rive-wasm/commit/666c6aeab958b8bdc075713fcf10aceda6d92b05)
