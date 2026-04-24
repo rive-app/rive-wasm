@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.3](https://github.com/rive-app/rive-wasm/compare/2.37.2...2.37.3)
+## [2.37.4](https://github.com/rive-app/rive-wasm/compare/2.37.3...2.37.4)
 
 ### Commits
 
+- chore: Add additional nullptr checks in ArtboardComponentList (#12292) 87fbb1cdff [`5581955`](https://github.com/rive-app/rive-wasm/commit/5581955bf70d8976c60254de1a9c50c128e70582)
+- refactor(semantic): simplify SemanticManager refresh() bounds and ordering (#12282) d5bd1a0bd8 [`23bd88f`](https://github.com/rive-app/rive-wasm/commit/23bd88f3fd1d92a05938ec45ec40f5020ebf7523)
+- Nnnnn focus management fixes (#12290) 12495d656d [`0c2704b`](https://github.com/rive-app/rive-wasm/commit/0c2704be80ec1a01c8aa7859483ca1f977195ce6)
+- feature: add support for data binding solos to enums (#12009) ab78bca1e5 [`0c2de4f`](https://github.com/rive-app/rive-wasm/commit/0c2de4f332896bf0eeabccacc500841ac2402df3)
+- fix: do not default artboard value to 0 to avoid initializing to wron… (#12007) d722a63bb8 [`c88bd38`](https://github.com/rive-app/rive-wasm/commit/c88bd38492a38346f831f23190a8a05d5ae1cb16)
+- feat: accessibility semantics (#11896) 30ace69c91 [`f577ced`](https://github.com/rive-app/rive-wasm/commit/f577ced09699fdca5403245277fae3f21941a1f7)
+- chore: ensure stateful components are bound (#12241) c352234f45 [`c6f4052`](https://github.com/rive-app/rive-wasm/commit/c6f4052672af7a78ae51adacf047607b588d7fad)
+- Texture compression cli tool (#12115) 77f2cf82a4 [`6e0b29f`](https://github.com/rive-app/rive-wasm/commit/6e0b29f9233a90cc28d986ccef6591b8c9cd1681)
+- fix: ListenerAction import and stateful ArtboardHost calls advanced() (#12238) 4ce0cedebd [`f94d6b2`](https://github.com/rive-app/rive-wasm/commit/f94d6b2120936ba4715618a754640eefb0dc5540)
+- feature: add support for draw index on artboard component lists (#12234) d83826e10b [`f8083bd`](https://github.com/rive-app/rive-wasm/commit/f8083bdb3aa2430b69c517c0c8f3fd2e5e5563ea)
+- fix(unity): add missing libpng symbol renames for Unity 6.4+ WebGL builds (#12236) 4744c8972a [`b593e79`](https://github.com/rive-app/rive-wasm/commit/b593e79f74b67b6673e826bd09ebd1e6296707a6)
+
+## [2.37.3](https://github.com/rive-app/rive-wasm/compare/2.37.2...2.37.3) - 2026-04-20
+
+### Commits
+
+- chore: tag 2.37.3 [`f527948`](https://github.com/rive-app/rive-wasm/commit/f5279481b4463e0de110ac1f7076414e1723031b)
 - fix: for single-touch mode, track the primary fingers movements only (#12227) 7b89ab2a1c [`2168ba4`](https://github.com/rive-app/rive-wasm/commit/2168ba443ccd66ddd76263964094f959e4ea68cc)
 - fix(runtime): leak in ElasticScrollPhysics helpers (#12226) f6fa7f21cf [`a5c64ae`](https://github.com/rive-app/rive-wasm/commit/a5c64ae3d54d4b290d44e079dee7fc80245642e7)
 - feat: TextInput Tool Improvements (#12221) 5bd28c734a [`595e26b`](https://github.com/rive-app/rive-wasm/commit/595e26bcf757bac13d9f2d8713e9f9259bb8e56b)
