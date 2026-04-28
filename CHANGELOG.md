@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.4](https://github.com/rive-app/rive-wasm/compare/2.37.3...2.37.4)
+## [2.37.5](https://github.com/rive-app/rive-wasm/compare/2.37.4...2.37.5)
 
 ### Commits
 
+- fix(scripting): clear scripted view model cache when instance changes (#12325) bc28f6b706 [`e04b021`](https://github.com/rive-app/rive-wasm/commit/e04b0216bb5bd02734ade4d8af77dd2e76ea6ef1)
+- chore(renderer): pre-Ore PLS misc fixes (#12324) 53d9569d3e [`8ded17a`](https://github.com/rive-app/rive-wasm/commit/8ded17a8f8184ada997dd7d1fba657d953e7f782)
+- Runtime compressed texture support (#12026) 7009e7fdec [`ed02349`](https://github.com/rive-app/rive-wasm/commit/ed0234969cd0a996fe41e9afbf0aa67880af118a)
+- fix(d3d12): three spec-compliance fixes uncovered by stricter D3D12 validation (#12316) 68e0e5ef0d [`e928c93`](https://github.com/rive-app/rive-wasm/commit/e928c930f404e32e6214e8a79d4041d7cc6723cd)
+- feat(runtime): added clear list command (#12301) fe2c92535c [`314d6a9`](https://github.com/rive-app/rive-wasm/commit/314d6a995f6943e8ccb38b9505866132409f6e09)
+
+## [2.37.4](https://github.com/rive-app/rive-wasm/compare/2.37.3...2.37.4) - 2026-04-24
+
+### Commits
+
+- chore: tag 2.37.4 [`e586055`](https://github.com/rive-app/rive-wasm/commit/e586055527909602aa92d94a6dace1078b7ef7a4)
 - chore: Add additional nullptr checks in ArtboardComponentList (#12292) 87fbb1cdff [`5581955`](https://github.com/rive-app/rive-wasm/commit/5581955bf70d8976c60254de1a9c50c128e70582)
 - refactor(semantic): simplify SemanticManager refresh() bounds and ordering (#12282) d5bd1a0bd8 [`23bd88f`](https://github.com/rive-app/rive-wasm/commit/23bd88f3fd1d92a05938ec45ec40f5020ebf7523)
 - Nnnnn focus management fixes (#12290) 12495d656d [`0c2704b`](https://github.com/rive-app/rive-wasm/commit/0c2704be80ec1a01c8aa7859483ca1f977195ce6)

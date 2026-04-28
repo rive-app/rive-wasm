@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/canvas",
-  "version": "2.37.4",
+  "version": "2.37.5",
   "description": "Rive's canvas based web api.",
   "main": "rive.js",
   "homepage": "https://rive.app",
