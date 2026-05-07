@@ -34,34 +34,19 @@ test("Artboards can be fetched with a long name", (done) => {
   });
 });
 
-test("Rive explodes when given an invalid artboard name", async () => {
-  const warningMock = jest.fn();
-  const errorMock = jest.fn();
-  jest.spyOn(console, "warn").mockImplementation(warningMock);
-  jest.spyOn(console, "error").mockImplementation(errorMock);
+test("onLoadError invoked with artboard name that cannot be found", (done) => {
   const canvas = document.createElement("canvas");
-  await new Promise<void>(
-    (resolve) =>
-      new rive.Rive({
-        canvas: canvas,
-        buffer: stateMachineFileBuffer,
-        artboard: "BadArtboard",
-        onLoad: () => {
-          expect(false).toBeTruthy();
-        },
-        onLoadError: () => {
-          // We should get here
-          resolve();
-        },
-      }),
-  );
-  expect(warningMock).toBeCalledWith(
-    "Invalid artboard name or no default artboard",
-  );
-  // racy should we add "waitFor"
-  await new Promise((r) => setTimeout(r, 50));
-  // called with expect(false).toBeTruthy()
-  expect(errorMock).toBeCalledTimes(1);
+  new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "BadArtboard",
+    onLoad: () => {
+      done(new Error("onLoad should not be called when artboard name cannot be found"));
+    },
+    onLoadError: () => {
+      done();
+    },
+  });
 });
 
 test("Artboard bounds can be retrieved from a loaded Rive file", (done) => {

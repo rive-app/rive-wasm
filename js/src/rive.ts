@@ -555,7 +555,7 @@ class Animator {
    * @param animatables the name(s) of animations to add
    * @param playing whether animations should play on instantiation
    */
-  public initLinearAnimations(animatables: string[], playing: boolean) {
+  public initLinearAnimations(animatables: string[], playing: boolean, isFallingBackFromStateMachines = false) {
     // Play/pause already instanced items, or create new instances
     // This validation is kept to maintain compatibility with current behavior.
     // But given that it this is called during artboard initialization
@@ -579,6 +579,9 @@ class Animator {
           newAnimation.advance(0);
           newAnimation.apply(1.0);
           this.animations.push(newAnimation);
+        } else if (isFallingBackFromStateMachines) { // Throw LoadError if we cannot load the state machine name at all
+          const smInitializationMessage = `State Machine with name ${animatables[i]} not found`;
+          throw new RiveError(smInitializationMessage);
         } else {
           console.error(`Animation with name ${animatables[i]} not found.`);
         }
@@ -613,10 +616,12 @@ class Animator {
           );
           this.stateMachines.push(newStateMachine);
         } else {
-          console.warn(`State Machine with name ${animatables[i]} not found.`);
+          console.warn(`State Machine with name ${animatables[i]} not found. Falling back to find an animation with the same name.`);
+          
+          // TODO: Remove this fallback in next major release as it complicates initialization.
           // In order to maintain compatibility with current behavior, if a state machine is not found
           // we look for an animation with the same name
-          this.initLinearAnimations([animatables[i]], playing);
+          this.initLinearAnimations([animatables[i]], playing, true);
         }
       }
     }
@@ -1430,7 +1435,14 @@ export class RiveFile implements rc.FinalizableTarget {
 
   private async initData() {
     if (this.src && !this.buffer) {
-      this.buffer = await loadRiveFile(this.src);
+      try {
+        this.buffer = await loadRiveFile(this.src);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new RiveError(RiveFile.fileLoadErrorMessage);
+      }
     }
     if (this.destroyed) {
       return;
@@ -1535,7 +1547,7 @@ export class RiveFile implements rc.FinalizableTarget {
       data: message,
     });
 
-    throw new Error(message);
+    throw new RiveError(message);
   }
 
   /**
@@ -1955,11 +1967,13 @@ export class Rive {
             }
           })
           .catch((e) => {
+            // initData already catches RiveErrors for load issues like artboard/state machine initialization
+            // failures, so just console error and catch here so we don't double-fire the LoadError event
             console.error(e);
           });
       })
-      .catch((e) => {
-        console.error(e);
+      .catch((e: Error) => { // Catching errors from loading WASM
+        this.eventManager.fire({ type: EventType.LoadError, data: e.message });
       });
   }
 
@@ -2089,11 +2103,18 @@ export class Rive {
       this.initializeAudio();
 
       // Everything's set up, emit a load event
-      this.loaded = true;
-      this.eventManager.fire({
-        type: EventType.Load,
-        data: this.src ?? "buffer",
-      });
+      try {
+        this.loaded = true;
+        this.eventManager.fire({
+          type: EventType.Load,
+          data: this.src ?? "buffer",
+        });
+      } catch (e) {
+        // If any synchronous errors surface from the user-supplied onLoad callback,
+        // this will console.error the error but will not invoke LoadError (onLoadError).
+        // Notably, this will not interfere with Rive rendering
+        console.error(e);
+      }
 
       // Only initialize paused state machines after the load event has been fired
       // to allow users to initialize inputs and view models before the first advance
@@ -2108,8 +2129,8 @@ export class Rive {
 
       return true;
     } catch (error) {
+      // Invoke LoadError for errors with loading the configured Artboard + State Machine
       const msg = resolveErrorMessage(error);
-      console.warn(msg);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);
     }
@@ -2133,10 +2154,7 @@ export class Rive {
 
     // Check we have a working artboard
     if (!rootArtboard) {
-      const msg = "Invalid artboard name or no default artboard";
-      console.warn(msg);
-      this.eventManager.fire({ type: EventType.LoadError, data: msg });
-      return;
+      throw new RiveError("Invalid artboard name or no default artboard");
     }
 
     this.artboard = rootArtboard;
@@ -4375,6 +4393,9 @@ interface RiveFileContents {
 const loadRiveFile = async (src: string): Promise<ArrayBuffer> => {
   const req = new Request(src);
   const res = await fetch(req);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch the Rive file: HTTP ${res.status}`);
+  }
   const buffer = await res.arrayBuffer();
   return buffer;
 };

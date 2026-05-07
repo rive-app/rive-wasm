@@ -25,6 +25,9 @@ export class RuntimeLoader {
 
   private static wasmBinary: ArrayBuffer | null = null;
 
+  // Error callbacks enqueued from .getInstance()
+  private static errorCallbackQueue: ((error: Error) => void)[] = [];
+
   // Class is never instantiated
   private constructor() {}
 
@@ -33,6 +36,16 @@ export class RuntimeLoader {
    * WASM initialization.
    */
   public static enablePerfMarks: boolean = false;
+
+  // Rejects all pending awaitInstance() promises and resets loading state so
+  // the next call to getInstance() / awaitInstance() can retry with a new URL.
+  private static notifyError(error: Error): void {
+    RuntimeLoader.isLoading = false;
+    while (RuntimeLoader.errorCallbackQueue.length > 0) {
+      RuntimeLoader.errorCallbackQueue.shift()?.(error);
+    }
+    RuntimeLoader.callBackQueue = [];
+  }
 
   // Loads the runtime
   private static loadRuntime(): void {
@@ -52,6 +65,7 @@ export class RuntimeLoader {
           performance.measure('rive:wasm-init', 'rive:wasm-init:start', 'rive:wasm-init:end');
         }
         RuntimeLoader.runtime = rive;
+        RuntimeLoader.errorCallbackQueue = [];
         // Fire all the callbacks
         while (RuntimeLoader.callBackQueue.length > 0) {
           RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
@@ -110,16 +124,17 @@ export class RuntimeLoader {
             "\nTo resolve, you may need to:",
             "1. Check your network connection",
             "2. Set a new WASM source via RuntimeLoader.setWasmUrl()",
-            "3. Call RuntimeLoader.loadRuntime() again",
+            "3. Call RuntimeLoader.awaitInstance() again",
           ].join("\n");
 
           console.error(errorMessage);
+          RuntimeLoader.notifyError(new Error(errorMessage));
         }
       });
   }
 
   // Provides a runtime instance via a callback
-  public static getInstance(callback: RuntimeCallback): void {
+  public static getInstance(callback: RuntimeCallback, onError?: (error: Error) => void): void {
     // If it's not loading, start loading runtime
     if (!RuntimeLoader.isLoading) {
       RuntimeLoader.isLoading = true;
@@ -127,15 +142,18 @@ export class RuntimeLoader {
     }
     if (!RuntimeLoader.runtime) {
       RuntimeLoader.callBackQueue.push(callback);
+      if (onError) {
+        RuntimeLoader.errorCallbackQueue.push(onError);
+      }
     } else {
       callback(RuntimeLoader.runtime);
     }
   }
 
-  // Provides a runtime instance via a promise
+  // Provides a runtime instance via a promise; rejects if WASM fails to load.
   public static awaitInstance(): Promise<rc.RiveCanvas> {
-    return new Promise<rc.RiveCanvas>((resolve) =>
-      RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => resolve(rive)),
+    return new Promise<rc.RiveCanvas>((resolve, reject) =>
+      RuntimeLoader.getInstance(resolve, reject),
     );
   }
 

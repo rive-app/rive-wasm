@@ -83,6 +83,7 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
   let savedRuntime: rc.RiveCanvas;
   let savedIsLoading: boolean;
   let savedCallBackQueue: rive.RuntimeCallback[];
+  let savedErrorCallbackQueue: ((error: Error) => void)[];
   let savedWasmURL: string;
   let savedWasmFallbackURL: string | null;
   let savedWasmBinary: ArrayBuffer | null;
@@ -92,6 +93,7 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
     savedRuntime = (rive.RuntimeLoader as any).runtime;
     savedIsLoading = (rive.RuntimeLoader as any).isLoading;
     savedCallBackQueue = (rive.RuntimeLoader as any).callBackQueue;
+    savedErrorCallbackQueue = (rive.RuntimeLoader as any).errorCallbackQueue;
     savedWasmURL = rive.RuntimeLoader.getWasmUrl();
     savedWasmFallbackURL = rive.RuntimeLoader.getWasmFallbackUrl();
     savedWasmBinary = rive.RuntimeLoader.getWasmBinary();
@@ -101,6 +103,7 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
     (rive.RuntimeLoader as any).runtime = undefined;
     (rive.RuntimeLoader as any).isLoading = false;
     (rive.RuntimeLoader as any).callBackQueue = [];
+    (rive.RuntimeLoader as any).errorCallbackQueue = [];
     rive.RuntimeLoader.setWasmUrl("https://primary.example.com/rive.wasm");
     rive.RuntimeLoader.setWasmFallbackUrl(
       "https://fallback.example.com/rive_fallback.wasm",
@@ -116,6 +119,7 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
     (rive.RuntimeLoader as any).runtime = savedRuntime;
     (rive.RuntimeLoader as any).isLoading = savedIsLoading;
     (rive.RuntimeLoader as any).callBackQueue = savedCallBackQueue;
+    (rive.RuntimeLoader as any).errorCallbackQueue = savedErrorCallbackQueue;
     rive.RuntimeLoader.setWasmUrl(savedWasmURL);
     rive.RuntimeLoader.setWasmFallbackUrl(savedWasmFallbackURL);
     rive.RuntimeLoader.setWasmBinary(savedWasmBinary);
@@ -227,6 +231,51 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
       expect.stringContaining("Could not load Rive WASM file"),
     );
   });
+
+  test("awaitInstance() rejects when both primary and fallback WASM URLs fail", async () => {
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    (rc as any).default = jest.fn().mockRejectedValue(new Error("Load failed"));
+    await expect(rive.RuntimeLoader.awaitInstance()).rejects.toThrow(
+      "Load failed",
+    );
+  });
+
+  test("RuntimeLoader is retryable after WASM load failure", async () => {
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    const mockRuntime = {} as rc.RiveCanvas;
+
+    (rc as any).default = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("Load failed"))
+      .mockResolvedValue(mockRuntime);
+
+    // First attempt fails
+    await expect(rive.RuntimeLoader.awaitInstance()).rejects.toBeInstanceOf(
+      Error,
+    );
+    // isLoading should be reset; set a new URL and retry
+    rive.RuntimeLoader.setWasmUrl("https://retry.example.com/rive.wasm");
+    const runtime = await rive.RuntimeLoader.awaitInstance();
+    expect(runtime).toBe(mockRuntime);
+  });
+
+  test("Rive onLoadError is called when WASM fails to load", (done) => {
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    (rc as any).default = jest.fn().mockRejectedValue(new Error("Load failed"));
+
+    const canvas = document.createElement("canvas");
+    new rive.Rive({
+      canvas,
+      buffer: pingPongRiveFileBuffer,
+      onLoadError: (e) => {
+        expect((e.data as string)).toContain("Load failed");
+        done();
+      },
+      onLoad: () => {
+        throw new Error("onLoad should not be called when WASM fails");
+      },
+    });
+  });
 });
 
 // #endregion
@@ -254,31 +303,19 @@ test("Rive objects initialize correctly", (done) => {
   });
 });
 
-test("Corrupt Rive file cause explosions", async () => {
-  // this test also causes two errors to be logged
-  // but they seem to get logged outside the scope of the file load.
-  const warningMock = jest.fn();
-  const errorMock = jest.fn();
-  jest.spyOn(console, "warn").mockImplementation(warningMock);
-  jest.spyOn(console, "error").mockImplementation(errorMock);
+test("Corrupt riv file invokes onLoadError", (done) => {
   const canvas = document.createElement("canvas");
 
-  await new Promise<void>((resolve) => {
-    new rive.Rive({
-      canvas: canvas,
-      buffer: corruptRiveFileBuffer,
-      onLoadError: () => {
-        resolve();
-      },
-      onLoad: () => {
-        expect(false).toBeTruthy();
-      },
-    });
+  new rive.Rive({
+    canvas: canvas,
+    buffer: corruptRiveFileBuffer,
+    onLoadError: () => {
+      done();
+    },
+    onLoad: () => {
+      expect(false).toBeTruthy();
+    },
   });
-  expect(warningMock).toBeCalledWith("Problem loading file; may be corrupt!");
-  // racy should we add "waitFor"
-  await new Promise((r) => setTimeout(r, 50));
-  expect(errorMock).toBeCalledWith("Problem loading file; may be corrupt!");
 });
 
 // #endregion

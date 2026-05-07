@@ -33,6 +33,7 @@ describe('RiveFile', () => {
         global.fetch = jest.fn().mockImplementation(() =>
             Promise.resolve({
                 arrayBuffer: () => Promise.resolve(pingPongRiveFileBuffer),
+                ok: true,
             })
         );
 
@@ -53,6 +54,37 @@ describe('RiveFile', () => {
 
         expect(onLoadMock).toHaveBeenCalled();
         expect(onLoadErrorMock).not.toHaveBeenCalled();
+    });
+
+    test('RiveFile fires load error event if fetch request to file fails', async () => {
+        const mockSrc = 'http://example.com/file.riv';
+        global.fetch = jest.fn().mockImplementation(() =>
+            Promise.resolve({
+                arrayBuffer: () => Promise.reject(new Error("Fetch failed")),
+                // ok: false,
+            })
+        );
+
+        global.Request = jest.fn().mockImplementation((url) => ({
+            url,
+        })) as any;
+
+        const onLoadMock = jest.fn();
+        const onLoadErrorMock = jest.fn();
+
+        const file = new RiveFile({
+            src: mockSrc,
+            onLoad: onLoadMock,
+            onLoadError: onLoadErrorMock,
+        });
+
+        try {
+            await file.init();
+        } catch (e) {}
+        finally {
+            expect(onLoadMock).not.toHaveBeenCalled();
+            expect(onLoadErrorMock).toHaveBeenCalled();
+        }
     });
 
     test('RiveFile fires load error event for corrupt file', async () => {
