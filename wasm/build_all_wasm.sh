@@ -3,15 +3,19 @@ set -e
 
 # -p          Build with profiling config (--profiling-funcs) instead of release.
 #             Produces named WASM function symbols visible in Chrome DevTools.
+# -i          Incremental build. Skips cleaning the build directory so only
+#             changed C++ files are recompiled.
 # -r <targets> For local dev. Comma-separated list of targets to build.
 #             Skips all fallback WASM builds and only compiles the specified targets.
 #             Available: canvas, canvas-lite, canvas-single, canvas-lite-single,
 #               webgl2, webgl2-single
 WASM_CONFIG=release
 TARGETS=""
-while getopts "pr:" flag; do
+INCREMENTAL=0
+while getopts "pir:" flag; do
     case "${flag}" in
     p) WASM_CONFIG=profiling ;;
+    i) INCREMENTAL=1 ;;
     r) TARGETS="${OPTARG}" ;;
     *) echo "Unknown flag: $flag" ;;
     esac
@@ -53,11 +57,12 @@ mkdir -p ../js/npm/canvas_advanced_single
 mkdir -p ../js/npm/webgl2
 mkdir -p ../js/npm/webgl2_advanced
 
-# Comment this block to use incremental builds.
-echo
-echo "::::: cleaning all projects"
-echo
-rm -fR ./build
+if [ "$INCREMENTAL" -eq 0 ]; then
+    echo
+    echo "::::: cleaning all projects"
+    echo
+    rm -fR ./build
+fi
 
 if [ -z "$TARGETS" ]; then
     echo

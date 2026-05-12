@@ -8,6 +8,10 @@ set -e
 #               Produces human-readable function names in Chrome DevTools Performance tab.
 #               Usage: ./build.sh -p
 #
+#   -i          Incremental WASM build. Skips cleaning the build directory so only
+#               changed C++ files are recompiled. Faster iteration on C++ changes.
+#               Usage: ./build.sh -i
+#
 #   -r <targets> LOCAL DEV ONLY. Comma-separated list of targets to build.
 #               Skips all fallback WASM builds and only compiles + bundles the
 #               specified targets. Faster iteration when testing a single package.
@@ -17,9 +21,10 @@ set -e
 
 WASM_FLAGS=""
 TARGETS=""
-while getopts "pr:" flag; do
+while getopts "pir:" flag; do
     case "${flag}" in
     p) WASM_FLAGS="$WASM_FLAGS -p" ;;
+    i) WASM_FLAGS="$WASM_FLAGS -i" ;;
     r) TARGETS="${OPTARG}" ;;
     *) echo "Unknown flag: $flag" ;;
     esac
