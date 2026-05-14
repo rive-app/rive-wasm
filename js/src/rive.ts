@@ -1938,10 +1938,18 @@ export class Rive {
 
         // Get the canvas where you want to render the animation and create a renderer
         if (this.enablePerfMarks) performance.mark('rive:make-renderer:start');
-        this.renderer = this.runtime.makeRenderer(
-          this.canvas,
-          useOffscreenRenderer,
-        );
+        try {
+          this.renderer = this.runtime.makeRenderer(
+            this.canvas,
+            useOffscreenRenderer,
+          );
+          if (!this.renderer) {
+            throw new Error("Renderer is null, cannot render Rive on the canvas.");
+          }
+        } catch (e) {
+          console.error(e);
+          throw new RiveError("Unable to create the renderer, your environment may not support WebGL. Try the @rive-app/canvas runtime as an alternative.");
+        }
         if (this.enablePerfMarks) {
           performance.mark('rive:make-renderer:end');
           performance.measure('rive:make-renderer', 'rive:make-renderer:start', 'rive:make-renderer:end');

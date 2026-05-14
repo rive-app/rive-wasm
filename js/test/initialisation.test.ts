@@ -649,3 +649,51 @@ test("resizeDrawingSurfaceToCanvas scales canvas with passed in ratio if present
 });
 
 // #endregion
+
+// #region renderer creation errors
+
+describe("makeRenderer checks", () => {
+  let runtime: rc.RiveCanvas;
+
+  beforeEach(async () => {
+    runtime = await rive.RuntimeLoader.awaitInstance();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test("onLoadError is called when makeRenderer returns null", (done) => {
+    jest.spyOn(runtime, "makeRenderer").mockReturnValue(null);
+
+    const canvas = document.createElement("canvas");
+    new rive.Rive({
+      canvas,
+      buffer: pingPongRiveFileBuffer,
+      onLoadError: (e) => {
+        expect(e.data as string).not.toBeNull();
+        done();
+      },
+      onLoad: () => done(new Error("onLoad should not be called when makeRenderer returns null")),
+    });
+  });
+
+  test("onLoadError is called when makeRenderer throws", (done) => {
+    jest.spyOn(runtime, "makeRenderer").mockImplementation(() => {
+      throw new Error("WebGL context creation failed");
+    });
+
+    const canvas = document.createElement("canvas");
+    new rive.Rive({
+      canvas,
+      buffer: pingPongRiveFileBuffer,
+      onLoadError: (e) => {
+        expect(e.data as string).not.toBeNull();
+        done();
+      },
+      onLoad: () => done(new Error("onLoad should not be called when makeRenderer throws")),
+    });
+  });
+});
+
+// #endregion

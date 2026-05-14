@@ -113,6 +113,9 @@ Module["onRuntimeInitialized"] = function () {
         offscreenCanvas.width = 1;
         offscreenCanvas.height = 1;
         _offscreenGL = makeGLRenderer(offscreenCanvas, enableMSAA);
+        if (!_offscreenGL) {
+          return null;
+        }
 
         _offscreenGL._hasPixelLocalStorage =
               Boolean(_offscreenGL._gl.getExtension("WEBGL_shader_pixel_local_storage"));
@@ -141,6 +144,9 @@ Module["onRuntimeInitialized"] = function () {
       }
 
       _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/true);
+      if (!_offscreenGL) {
+        throw "Unable to create WebGL context, your environment may not support WebGL. Try out @rive-app/canvas as an alternative.";
+      }
       if (!_offscreenGL._enableAntialiasCanvas) {
         // This browser prefers "antialias:false". Re-create the offscreen without MSAA.
         _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/false);
