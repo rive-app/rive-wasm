@@ -5,10 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.6](https://github.com/rive-app/rive-wasm/compare/2.37.5...2.37.6)
+## [2.37.7](https://github.com/rive-app/rive-wasm/compare/2.37.6...2.37.7)
 
 ### Commits
 
+- fix: Make ViewModelInstanceTrigger keyable for Stateful Components (#12556) c2f1000a63 [`95048a9`](https://github.com/rive-app/rive-wasm/commit/95048a90b7fdfc37d7f5f96c718eff9893a092b8)
+- Support ktx2 (#12385) f454e3170e [`3ad1efa`](https://github.com/rive-app/rive-wasm/commit/3ad1efa01e33730d14beaf2fa82dc5cb71602050)
+- fix(js): catch errors when creating the renderer and send to Rive LoadError event (#12553) e89dcdca47 [`b313226`](https://github.com/rive-app/rive-wasm/commit/b313226fba80a178fcfcf790724c2b7605f40df2)
+- Fix render_canvas_prepass_multi GL flip pivot (#12488) db997822be [`575568e`](https://github.com/rive-app/rive-wasm/commit/575568ea021bb0751064399dd8748c36dd5c02f4)
+- chore(runtime): resolve build error after merge conflicts (#12545) 320eff3f97 [`1603626`](https://github.com/rive-app/rive-wasm/commit/1603626855f4263213031f38fe2757202765d949)
+- feat(scripting_workspace): HLSLStructLayout v2 with per-resource stageMask (#12544) a9d6eff838 [`b3c62c7`](https://github.com/rive-app/rive-wasm/commit/b3c62c74482ae599b4102a88f3084298f90f3aa3)
+- chore(rive_native): build microprofiler behind a flag (#12514) 44ba1a605e [`8a3046c`](https://github.com/rive-app/rive-wasm/commit/8a3046c7d3e629b4dc2d28c9676f9375359e1f93)
+- fix: memory pressure during dart allocations from luau trampoline cal… (#12540) 2dab5352d7 [`cce3914`](https://github.com/rive-app/rive-wasm/commit/cce3914ca18fb08e194bce828a8fa95d7f465d0d)
+- fix(scripting_workspace): HLSL export cleanup (#12512) 60b685278c [`6d75a6d`](https://github.com/rive-app/rive-wasm/commit/6d75a6d5fe3e56094f64eb47d130b20cbbfca60d)
+- chore: Guard from calling markNeedsUpdate in update (#12525) fab85a4fd5 [`ea0ff90`](https://github.com/rive-app/rive-wasm/commit/ea0ff90ccdac691ae29ee8e87055319a52fa5905)
+- fix(editor): reset scripted objects initialization when data context is cleared (#12523) 9faec1e36e [`4d5c72c`](https://github.com/rive-app/rive-wasm/commit/4d5c72cb564028a5b4629aa9deb72e847557a1c7)
+- validate inputs for logging (#12521) 8e58f305c1 [`9d804e3`](https://github.com/rive-app/rive-wasm/commit/9d804e36956a094d7b2c0a45d9a3a5e617a49144)
+- Update profiler to fix build (#12515) 687a80a7a8 [`87f8275`](https://github.com/rive-app/rive-wasm/commit/87f8275e24941f9ee0b9bd85c4ccb06149cde318)
+- chore(js): force js/npm/** changes through downstream push with up-to-date versions. add rive_fallback.wasm to webgl2 package files to actually publish with that file (#12502) d3ee0f9e01 [`a64cc66`](https://github.com/rive-app/rive-wasm/commit/a64cc66caf6a050e5d8961345f918e7953cf7f0a)
+- Nnnnn scripted interpolators (#12505) 44b83c5345 [`310b1b8`](https://github.com/rive-app/rive-wasm/commit/310b1b84d34194cc5a07a771fcd9edb1406bdb59)
+- chore(editor): Move stateful toggle to NestedArtboard (#12490) 9f0dc79e3f [`3ad6d1f`](https://github.com/rive-app/rive-wasm/commit/3ad6d1f230666606b02c9f1796755349d2d70e33)
+- refactor(runtime): added overload for decoding shader (#12492) f1c2f2c776 [`1315a1d`](https://github.com/rive-app/rive-wasm/commit/1315a1dc73a1a720c61c12f58ea19ab9e7754c49)
+- chore: drop multi-shader machinery, drop legacy ScriptAsset-RSTB fallback (#12485) f74ec7dfd5 [`c1632cf`](https://github.com/rive-app/rive-wasm/commit/c1632cf0a2f290ac41886ce8dc497f6de46eb77c)
+- chore(shaders): call draw canvases from the draw command and gate met… (#12489) afccc14a00 [`e85a10a`](https://github.com/rive-app/rive-wasm/commit/e85a10af8a0423aacae5e1304f09b278ff020166)
+- added internal asset loader so you can bypass cmdq (#12487) a53f08a914 [`ea4e75c`](https://github.com/rive-app/rive-wasm/commit/ea4e75cfefc4d8d0dddfba47a0273b8a3f18d84c)
+- chore: delay running data binds until necessary (#12469) ee223deb96 [`0439aba`](https://github.com/rive-app/rive-wasm/commit/0439aba0b78211892c5d15c43975865ce23bb1dd)
+- Move from .rtex to .ktx2 (#12369) db268e8c81 [`13064a2`](https://github.com/rive-app/rive-wasm/commit/13064a23d01d586d7399230581a5329b68062ad9)
+
+## [2.37.6](https://github.com/rive-app/rive-wasm/compare/2.37.5...2.37.6) - 2026-05-08
+
+### Commits
+
+- chore: tag 2.37.6 [`219bd99`](https://github.com/rive-app/rive-wasm/commit/219bd9938ccad6b08c400ff55bc4f6da43e4c138)
 - Fix/render bc7 images (#12344) 3b74a52148 [`2833de3`](https://github.com/rive-app/rive-wasm/commit/2833de372c0d22596494c89c328008ce5b1106d7)
 - fix(browserstack): Fix the browserstack run for vk gms (#12473) b70b191146 [`1a46ed8`](https://github.com/rive-app/rive-wasm/commit/1a46ed8267c629fbe0009a4834740027a7d116ae)
 - fix(glmsaa): Fix MSAA artifacts with dstBlend barriers and no KHR (#12413) 82af6951bf [`f59f28b`](https://github.com/rive-app/rive-wasm/commit/f59f28b84aba5013a6eb3e5bcb6ceb8eda0d6268)
