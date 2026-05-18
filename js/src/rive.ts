@@ -3,6 +3,7 @@ import { Animation } from "./animation";
 import { RuntimeLoader, type RuntimeCallback } from "./runtimeLoader";
 import {
   registerTouchInteractions,
+  registerKeyboardInteractions,
   sanitizeUrl,
   BLANK_URL,
   ImageWrapper,
@@ -1234,6 +1235,10 @@ export interface RiveParameters {
   autoplay?: boolean;
   useOffscreenRenderer?: boolean;
   /**
+   * Optional tab index to set for the canvas element if there are any Focus nodes within the graphic
+   */
+  tabIndex?: number;
+  /**
    * Allow the runtime to automatically load assets hosted in Rive's CDN.
    * enabled by default.
    */
@@ -1336,6 +1341,7 @@ export interface RiveLoadParameters {
   stateMachines?: string | string[];
   useOffscreenRenderer?: boolean;
   shouldDisableRiveListeners?: boolean;
+  tabIndex?: number;
 }
 
 // Interface ot Rive.reset function
@@ -1699,8 +1705,11 @@ export class Rive {
   // Runtime artboard
   private artboard: rc.Artboard | null = null;
 
-  // place to clear up event listeners
+  // place to clear up pointer/touch event listeners
   private eventCleanup: VoidCallback | null = null;
+
+  // place to clear up focus/keyboard event listeners
+  private keyboardEventCleanup: VoidCallback | null = null;
 
   // Runtime file
   private file: rc.File;
@@ -1771,6 +1780,8 @@ export class Rive {
 
   private _viewModelInstance: ViewModelInstance | null = null;
   private _dataEnums: DataEnum[] | null = null;
+
+  private _tabIndex: number | null = null;
 
   private drawOptimization: DrawOptimizationOptions =
     DrawOptimizationOptions.DrawOnChanged;
@@ -1859,6 +1870,7 @@ export class Rive {
       stateMachines: params.stateMachines,
       artboard: params.artboard,
       useOffscreenRenderer: params.useOffscreenRenderer,
+      tabIndex: params.tabIndex,
     });
   }
 
@@ -1902,6 +1914,7 @@ export class Rive {
     autoplay = false,
     useOffscreenRenderer = false,
     autoBind = false,
+    tabIndex,
   }: RiveLoadParameters): void {
     if (this.destroyed) {
       return;
@@ -1909,6 +1922,7 @@ export class Rive {
     this.src = src;
     this.buffer = buffer;
     this.riveFile = riveFile;
+    this._tabIndex = tabIndex ?? null;
 
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer && !this.riveFile) {
@@ -1997,9 +2011,14 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
+    }
     if (!this.shouldDisableRiveListeners) {
-      const activeStateMachines = (this.animator.stateMachines || [])
-        .filter((sm) => sm.playing && this.runtime.hasListeners(sm.instance))
+      const playingStateMachines = this.animator.stateMachines.filter((sm) => sm.playing);
+      const activeStateMachines = playingStateMachines
+        .filter((sm) => this.runtime.hasListeners(sm.instance))
         .map((sm) => sm.instance);
       let touchScrollEnabledOption = this.isTouchScrollEnabled;
       let dispatchPointerExit = this.dispatchPointerExit;
@@ -2023,6 +2042,29 @@ export class Rive {
         enableMultiTouch: enableMultiTouch,
         layoutScaleFactor: this._layout.layoutScaleFactor,
       });
+
+      // Wire up keyboard interactions for state machines that have focus nodes.
+      //   hasFocusNodes — unified focus tree check, gates tab traversal
+      const smWithFocusNodes = playingStateMachines
+        .filter((sm) => sm.instance.hasFocusNodes())
+        .map((sm) => sm.instance);
+
+      if (smWithFocusNodes.length) {
+        // Set the canvas as a tabbable element if there are any focus nodes.
+        // Prefer the tabIndex param set by the user, otherwise use 0.
+        // But do not override any explicit tabIndex already set on the canvas, if any.
+        const currentCanvasTabIndex = (this.canvas as HTMLCanvasElement).tabIndex;
+        // By default, canvas elements have a tabIndex of -1
+        if (currentCanvasTabIndex === -1 || isNaN(currentCanvasTabIndex)) {
+          (this.canvas as HTMLCanvasElement).tabIndex = (this._tabIndex !== null ? this._tabIndex : 0);
+        }
+        this.keyboardEventCleanup = registerKeyboardInteractions({
+          canvas: this.canvas as HTMLCanvasElement,
+          stateMachine: smWithFocusNodes[0], // work off assumption of single state machine
+          rive: this.runtime,
+          hasFocusNodes: smWithFocusNodes.length > 0,
+        });
+      }
     }
   }
 
@@ -2033,6 +2075,10 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
       this.eventCleanup = null;
+    }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
     }
   }
 
@@ -2521,6 +2567,10 @@ export class Rive {
     if (this.eventCleanup !== null) {
       this.eventCleanup();
     }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
+    }
     // Delete all animation and state machine instances
     this.stop();
     if (this.artboard) {
@@ -2594,6 +2644,10 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
+    }
     this.setupRiveListeners();
     this.startRendering();
   }
@@ -2611,6 +2665,10 @@ export class Rive {
     }
     if (this.eventCleanup) {
       this.eventCleanup();
+    }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
     }
     this.animator.pause(animationNames);
   }
@@ -2648,6 +2706,10 @@ export class Rive {
     }
     if (this.eventCleanup) {
       this.eventCleanup();
+    }
+    if (this.keyboardEventCleanup) {
+      this.keyboardEventCleanup();
+      this.keyboardEventCleanup = null;
     }
   }
 

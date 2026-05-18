@@ -827,14 +827,6 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   }),
                   allow_raw_pointers());
 
-    class_<rive::FocusNode>("FocusNode")
-        .function("canFocus", select_overload<bool() const>(&rive::FocusNode::canFocus))
-        .function("canTraverse", select_overload<bool() const>(&rive::FocusNode::canTraverse))
-        .function("tabIndex", select_overload<int() const>(&rive::FocusNode::tabIndex))
-        .property("name",
-                  select_overload<const std::string&() const>(&rive::FocusNode::name),
-                  select_overload<void(const std::string&)>(&rive::FocusNode::name));
-
     class_<rive::TransformComponent>("TransformComponent")
         .property("scaleX",
                   select_overload<float() const>(&rive::TransformComponent::scaleX),
@@ -1066,31 +1058,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       self.bindViewModelInstance(runtimeInstance->instance());
                   }),
                   allow_raw_pointers())
-        .function("focusManager",
-                  optional_override([](rive::StateMachineInstance& self) -> rive::FocusManager* {
-                      return self.focusManager();
-                  }),
-                  allow_raw_pointers());
-
-    class_<rive::FocusManager>("FocusManager")
-        .function("focusNext", &rive::FocusManager::focusNext)
-        .function("focusPrevious", &rive::FocusManager::focusPrevious)
-        .function("focusLeft", &rive::FocusManager::focusLeft)
-        .function("focusRight", &rive::FocusManager::focusRight)
-        .function("focusUp", &rive::FocusManager::focusUp)
-        .function("focusDown", &rive::FocusManager::focusDown)
-        .function("primaryFocusBounds", optional_override([](rive::FocusManager& self) -> val {
-                      rive::AABB bounds;
-                      if (!self.primaryFocusBounds(bounds))
-                      {
-                          return val::null();
-                      }
-                      val result = val::object();
-                      result.set("minX", bounds.minX);
-                      result.set("minY", bounds.minY);
-                      result.set("maxX", bounds.maxX);
-                      result.set("maxY", bounds.maxY);
-                      return result;
+        .function("hasFocusNodes", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.hasFocusNodes();
+                  }))
+        .function("focusNext", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusNext();
+                  }))
+        .function("focusPrevious", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusPrevious();
                   }));
 
     class_<rive::SMIInput>("SMIInput")

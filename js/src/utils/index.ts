@@ -1,4 +1,6 @@
 export { registerTouchInteractions } from "./registerTouchInteractions";
+export { registerKeyboardInteractions } from "./registerKeyboardInteractions";
+export type { KeyboardInteractionsParams } from "./registerKeyboardInteractions";
 export { BLANK_URL, sanitizeUrl } from "./sanitizeUrl";
 export {
   Finalizable,

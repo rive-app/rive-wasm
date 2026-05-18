@@ -878,6 +878,23 @@ export declare class StateMachineInstance {
   pointerExit(x: number, y: number, id: number): void;
 
   /**
+   * Returns true if this state machine has any focus nodes registered in its focus tree.
+   * Since the focus tree is unified across nested artboards, this covers the full scene.
+   * Use this to gate whether tab/focus traversal DOM listeners should be attached.
+   */
+  hasFocusNodes(): boolean;
+
+  /**
+   * Move focus to the next focusable node in the focus tree via the state machine's focus manager.
+   */
+  focusNext(): boolean;
+
+  /**
+   * Move focus to the previous focusable node in the focus tree via the state machine's focus manager.
+   */
+  focusPrevious(): boolean;
+
+  /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance
    * when no longer in use
    */
