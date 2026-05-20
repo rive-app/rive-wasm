@@ -1778,6 +1778,14 @@ export class Rive {
   // draw method bound to the class
   private _boundDraw: (t: number) => void | null = null;
 
+  // Page visibility handler — prevents state machine advancing / rAF from being invoked with large time delta
+  // when the browser tab is switched back to after being hidden.
+  private _pageVisibilityHandler: (() => void) | null = null;
+  // True only when the page visibility handler itself cancelled an active frame.
+  // Set by stopRendering(), cleared by startRendering(). Prevents the
+  // visibilitychange handler from restarting a rendering loop the caller intentionally stopped.
+  private _explicitlyStoppedRendering = false;
+
   private _viewModelInstance: ViewModelInstance | null = null;
   private _dataEnums: DataEnum[] | null = null;
 
@@ -1797,6 +1805,10 @@ export class Rive {
 
   constructor(params: RiveParameters) {
     this._boundDraw = this.draw.bind(this);
+    if (typeof document !== 'undefined') {
+      this._pageVisibilityHandler = this._onPageVisibilityChange.bind(this);
+      document.addEventListener('visibilitychange', this._pageVisibilityHandler);
+    }
     this.canvas = params.canvas;
     if (params.canvas.constructor === HTMLCanvasElement) {
       this._observed = observers.add(
@@ -2292,7 +2304,7 @@ export class Rive {
   private lastRenderTime: number;
 
   // Tracks the current animation frame request
-  private frameRequestId: number | null;
+  private frameRequestId: number | null = null;
 
   /**
    * Used be draw to track when a second of active rendering time has passed.
@@ -2541,6 +2553,10 @@ export class Rive {
     if (this._audioEventListener !== null) {
       audioManager.remove(this._audioEventListener);
       this._audioEventListener = null;
+    }
+    if (this._pageVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this._pageVisibilityHandler);
+      this._pageVisibilityHandler = null;
     }
     this._viewModelInstance?.cleanup();
     this._viewModelInstance = null;
@@ -3190,6 +3206,7 @@ export class Rive {
    * they would have been at if rendering had not been stopped.
    */
   public stopRendering() {
+    this._explicitlyStoppedRendering = true;
     if (this.loaded && this.frameRequestId) {
       if (this.runtime.cancelAnimationFrame) {
         this.runtime.cancelAnimationFrame(this.frameRequestId);
@@ -3205,6 +3222,7 @@ export class Rive {
    * renderer is already active, then this will have zero effect.
    */
   public startRendering() {
+    this._explicitlyStoppedRendering = false;
     this.drawFrame();
   }
 
@@ -3217,6 +3235,29 @@ export class Rive {
       } else {
         this.frameRequestId = requestAnimationFrame(this._boundDraw);
       }
+    }
+  }
+
+  /**
+   * Called when document.visibilitychange fires (tab change, window minimize, etc.). 
+   * Cancels the rAF loop on hide and resets the time reference so that no accumulated time is
+   * applied to state machines when the tab becomes visible again. This prevents state machine
+   * advances with large time deltas when rAF starts up again.
+   */
+  private _onPageVisibilityChange(): void {
+    if (document.hidden) {
+      if (this.frameRequestId !== null) {
+        if (this.runtime?.cancelAnimationFrame) {
+          this.runtime.cancelAnimationFrame(this.frameRequestId);
+        } else {
+          cancelAnimationFrame(this.frameRequestId);
+        }
+        this.frameRequestId = null;
+      }
+      // Reset so the first resumed frame starts with elapsedTime === 0.
+      this.lastRenderTime = 0;
+    } else if (this.animator?.isPlaying && !this._explicitlyStoppedRendering) {
+      this.scheduleRendering();
     }
   }
 

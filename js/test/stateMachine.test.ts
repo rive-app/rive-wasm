@@ -8,6 +8,11 @@ const originalWarnLog = console.warn;
 const errorLogMock = jest.fn();
 const warnLogMock = jest.fn();
 
+function setDocumentHidden(hidden: boolean) {
+  Object.defineProperty(document, "hidden", { value: hidden, configurable: true });
+  document.dispatchEvent(new Event("visibilitychange"));
+}
+
 beforeEach(() => {
   errorLogMock.mockClear();
   console.error = errorLogMock;
@@ -18,6 +23,7 @@ beforeEach(() => {
 afterEach(() => {
   console.error = originalErrorLog;
   console.error = originalWarnLog;
+  setDocumentHidden(false);
 });
 
 // #region state machine
@@ -231,6 +237,145 @@ test("Animation with wrong name logs a warning and an error", (done) => {
       expect(errorLogMock.mock.lastCall[0]).toBe(
         "Animation with name wrong! not found.",
       );
+      done();
+    },
+  });
+});
+
+// #endregion
+
+// #region page visibility
+
+test("Registers a visibilitychange listener to the document on construction", () => {
+  const spy = jest.spyOn(document, "addEventListener");
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({ canvas, buffer: stateMachineFileBuffer });
+
+  const calls = spy.mock.calls.filter(([event]) => event === "visibilitychange");
+  expect(calls).toHaveLength(1);
+  spy.mockRestore();
+});
+
+test("Removes the visibilitychange listener from document on cleanup", () => {
+  const addSpy = jest.spyOn(document, "addEventListener");
+  const removeSpy = jest.spyOn(document, "removeEventListener");
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({ canvas, buffer: stateMachineFileBuffer });
+
+  const addCall = addSpy.mock.calls.find(([event]) => event === "visibilitychange");
+  const registeredHandler = addCall?.[1];
+
+  r.cleanup();
+
+  const removeCalls = removeSpy.mock.calls.filter(
+    ([event]) => event === "visibilitychange",
+  );
+  expect(removeCalls).toHaveLength(1);
+  expect(removeCalls[0][1]).toBe(registeredHandler);
+
+  addSpy.mockRestore();
+  removeSpy.mockRestore();
+});
+
+test("Resets lastRenderTime to 0 and frameRequestId when the tab becomes hidden", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: "StateMachine",
+    autoplay: true,
+    onPlay: () => {
+      setDocumentHidden(true);
+      expect((r as any).lastRenderTime).toBe(0);
+      expect((r as any).frameRequestId).toBeNull();
+      done();
+    },
+  });
+});
+
+test("Schedules a new frame when the tab becomes visible while playing", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: "StateMachine",
+    autoplay: true,
+    onPlay: () => {
+      setDocumentHidden(true);
+      expect((r as any).frameRequestId).toBeNull();
+
+      setDocumentHidden(false);
+      expect((r as any).frameRequestId).not.toBeNull();
+
+      done();
+    },
+  });
+});
+
+test("Does not schedule a new frame when the tab becomes visible while not playing", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: "StateMachine",
+    onPause: () => {
+      expect(r.isPlaying).toBeFalsy();
+
+      setDocumentHidden(true);
+      setDocumentHidden(false);
+
+      expect((r as any).frameRequestId).toBeNull();
+      done();
+    },
+  });
+});
+
+test("Does not restart rendering on tab show when stopRendering() was called before document goes hidden", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: "StateMachine",
+    autoplay: true,
+    onPlay: () => {
+      r.stopRendering();
+      expect((r as any).frameRequestId).toBeNull();
+      expect(r.isPlaying).toBeTruthy();
+
+      // A hide/show cycle must not restart the loop we intentionally stopped.
+      setDocumentHidden(true);
+      setDocumentHidden(false);
+
+      expect((r as any).frameRequestId).toBeNull();
+      done();
+    },
+  });
+});
+
+test("Applies zero elapsed time on the first draw after tab restore", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas,
+    buffer: stateMachineFileBuffer,
+    stateMachines: "StateMachine",
+    autoplay: true,
+    onPlay: () => {
+      setDocumentHidden(true);
+
+      const stateMachines: any[] = (r as any).animator.stateMachines;
+      const spies = stateMachines.map((sm) =>
+        jest.spyOn(sm, "advanceAndApply"),
+      );
+
+      // Draw with a large timestamp. Because lastRenderTime was zeroed on hide,
+      // draw() initialises it to this value and computes elapsedTime === 0.
+      (r as any).draw(9000);
+
+      for (const spy of spies) {
+        expect(spy).toHaveBeenCalledWith(0);
+        spy.mockRestore();
+      }
+
       done();
     },
   });
