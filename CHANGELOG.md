@@ -5,10 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.7](https://github.com/rive-app/rive-wasm/compare/2.37.6...2.37.7)
+## [2.37.8](https://github.com/rive-app/rive-wasm/compare/2.37.7...2.37.8)
 
 ### Commits
 
+- fix(unity): add missing neon palette png symbols to fix iOS crash (#12620) 463745fd0b [`bc56011`](https://github.com/rive-app/rive-wasm/commit/bc560112ab2ee7d0afd3418bd97970c2fcb36532)
+- chore(focus): expose focus polling API (#12617) fdb0536723 [`eaac76e`](https://github.com/rive-app/rive-wasm/commit/eaac76e4b7b826a520ba7cbb3331b363cd656190)
+- refactor(ore): convert ore classes to be virtual with per backend implementations (#12599) e5c20369ec [`59b7301`](https://github.com/rive-app/rive-wasm/commit/59b7301119cdd75eadb9ea4ab11d4488828de71b)
+- fix: Scroll to hidden layouts using scrollIndex (#12598) 679b808585 [`bc0cc5f`](https://github.com/rive-app/rive-wasm/commit/bc0cc5f2c2dd3b0002777939b16689f15b6e216d)
+- fix: PropertyRecorder UB calling &front() on empty buffers (#12607) 623d5fe7a3 [`745bf11`](https://github.com/rive-app/rive-wasm/commit/745bf110b2660e5ef6f435e78e4bd798b3ad30cd)
+- fix(js): restart rAF loop on document visibilitychange event to ensure we pause and resume the state machine accordingly (#12596) 1f69963ced [`5d3f1fb`](https://github.com/rive-app/rive-wasm/commit/5d3f1fbf075052ec7931c0fc72439a3fbe138c32)
+- feat(wgpu): Use wgsl (finally) in the WebGPU backend (#12541) d779307982 [`21585e3`](https://github.com/rive-app/rive-wasm/commit/21585e32366d916fb2666a4fd406e9be0f03eefa)
+- fix(runtime): Incorrect modulo in scroll using snap and carousel (#12586) 308565c15e [`cc214a0`](https://github.com/rive-app/rive-wasm/commit/cc214a0d187acf628eeb895612e31f21bb4d4ba4)
+- fix(tests): Update gms & goldens to support 16K page sizes (#12584) 4440cf2dec [`002ab0a`](https://github.com/rive-app/rive-wasm/commit/002ab0ab0936a15ad81c0ed8931bcb85ae69dfd6)
+- feat: add user-driven focus management support for js/wasm. plumb through focus manager methods to SMI (#12522) ea3739b107 [`9a17f5a`](https://github.com/rive-app/rive-wasm/commit/9a17f5a46e78a25561ef04bf888460f8b4337f2b)
+- fix(apple): retain and clear artboard/image property values in ViewModelInstance (#12561) d938779f2b [`e500205`](https://github.com/rive-app/rive-wasm/commit/e50020561860826c7158c72763b7358aa78f8879)
+- refactor(gpu): move beginRenderPass from GPUCanvas to Context (#12579) 1cac286905 [`9edf529`](https://github.com/rive-app/rive-wasm/commit/9edf529b8d97a35c23afc3b5672d8b7b5303f470)
+- fix: drop 32-bit integer vector VertexFormats (#12570) 2e4ed32ffa [`7551667`](https://github.com/rive-app/rive-wasm/commit/755166726120da9094525932681ddb84786095fc)
+- fix: pass file to data bind clone (#12569) 717b403dd9 [`d813fc0`](https://github.com/rive-app/rive-wasm/commit/d813fc042d9c3388b796bfc2070c4e9f0de19b3d)
+- fix(editor): Stateful component fixes (#12563) 26b149f92c [`895600f`](https://github.com/rive-app/rive-wasm/commit/895600f7e1ac61e6bcc3b130da5d92baa1d7df33)
+- fix(runtime): pass pointerId to drag events (#12559) 43b857965b [`1d11be1`](https://github.com/rive-app/rive-wasm/commit/1d11be184af0fcebe62b5f5b2546a9d9cab0cef2)
+
+## [2.37.7](https://github.com/rive-app/rive-wasm/compare/2.37.6...2.37.7) - 2026-05-15
+
+### Commits
+
+- chore: tag 2.37.7 [`3984a8a`](https://github.com/rive-app/rive-wasm/commit/3984a8a6bc01f35f1a9b0b61378b9c26af4d16e4)
 - fix: Make ViewModelInstanceTrigger keyable for Stateful Components (#12556) c2f1000a63 [`95048a9`](https://github.com/rive-app/rive-wasm/commit/95048a90b7fdfc37d7f5f96c718eff9893a092b8)
 - Support ktx2 (#12385) f454e3170e [`3ad1efa`](https://github.com/rive-app/rive-wasm/commit/3ad1efa01e33730d14beaf2fa82dc5cb71602050)
 - fix(js): catch errors when creating the renderer and send to Rive LoadError event (#12553) e89dcdca47 [`b313226`](https://github.com/rive-app/rive-wasm/commit/b313226fba80a178fcfcf790724c2b7605f40df2)
