@@ -1145,8 +1145,14 @@ const audioManager = new AudioManager();
 
 // #region Observers
 
+type ObservedResizeCallback = (
+  hasZeroSize: boolean,
+  width?: number,
+  height?: number,
+) => void;
+
 type ObservedObject = {
-  onResize: Function;
+  onResize: ObservedResizeCallback;
   element: HTMLCanvasElement;
 };
 
@@ -1185,10 +1191,10 @@ class ObjectObservers {
    */
   private _onObservedEntry = (entry: ResizeObserverEntry) => {
     const observed = this._elementsMap.get(entry.target as HTMLCanvasElement);
-    if (observed !== null) {
-      observed.onResize(
-        entry.target.clientWidth == 0 || entry.target.clientHeight == 0,
-      );
+    if (observed != null) {
+      const width = entry.contentRect.width;
+      const height = entry.contentRect.height;
+      observed.onResize(width === 0 || height === 0, width, height);
     } else {
       this._resizeObserver.unobserve(entry.target);
     }
@@ -1199,7 +1205,7 @@ class ObjectObservers {
   };
 
   // Adds an observable element
-  public add(element: HTMLCanvasElement, onResize: Function) {
+  public add(element: HTMLCanvasElement, onResize: ObservedResizeCallback) {
     let observed: ObservedObject = {
       onResize,
       element,
@@ -1903,11 +1909,25 @@ export class Rive {
     this.volume = this._volume;
   }
 
-  private onCanvasResize = (hasZeroSize: boolean) => {
+  // Last dimensions seen by the ResizeObserver. Used to detect non-zero →
+  // non-zero dimension changes (which the legacy zero-toggle check ignored).
+  private _lastObservedWidth?: number;
+  private _lastObservedHeight?: number;
+
+  private onCanvasResize: ObservedResizeCallback = (
+    hasZeroSize,
+    width,
+    height,
+  ) => {
     const toggledDisplay = this._hasZeroSize !== hasZeroSize;
+    const dimensionsChanged =
+      width !== this._lastObservedWidth ||
+      height !== this._lastObservedHeight;
     this._hasZeroSize = hasZeroSize;
+    this._lastObservedWidth = width;
+    this._lastObservedHeight = height;
     if (!hasZeroSize) {
-      if (toggledDisplay) {
+      if (toggledDisplay || dimensionsChanged) {
         this.resizeDrawingSurfaceToCanvas();
       }
     } else if (!this._layout.maxX || !this._layout.maxY) {
@@ -2824,7 +2844,13 @@ export class Rive {
       this.resizeToCanvas();
       this.drawFrame();
 
-      if (this.layout.fit === Fit.Layout) {
+      if (this.layout.fit === Fit.Layout && width > 0 && height > 0) {
+        // Skip writing 0×0 into the artboard: when the canvas is inside a
+        // display:none ancestor at first measurement, getBoundingClientRect
+        // reports 0×0 and a blind write would corrupt the responsive layout
+        // state. Preserve the previously-correct (or design-time) artboard
+        // dimensions; a subsequent observer fire with non-zero dimensions
+        // will overwrite them with the right values.
         const scaleFactor = this._layout.layoutScaleFactor;
         this.artboard.width = width / scaleFactor;
         this.artboard.height = height / scaleFactor;
