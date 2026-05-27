@@ -98,6 +98,14 @@ Module["onRuntimeInitialized"] = function () {
     renderer._gl = gl;
     var nativeDelete = renderer.delete;
     renderer.delete = function () {
+      // Re-bind our context before the native delete: it routes into glDelete*,
+      // which deref the *current* GLctx. At teardown another instance may have
+      // made a different context current or cleared it (GLctx undefined), so the
+      // deletes would throw "...reading 'deleteTexture'". isContextLost() can't
+      // catch this — the context isn't lost, just not current.
+      if (this._handle) {
+        GL.makeContextCurrent(this._handle);
+      }
       nativeDelete.call(this);
       GL.deleteContext(this._handle);
       this._handle = this._canvas = this._width = this._width = this._gl = null;
