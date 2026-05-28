@@ -2,6 +2,71 @@
 // which means there is no loading an external WASM file for tests
 import * as rive from "../src/rive";
 import { loadFile } from "./helpers";
+import { CustomFileAssetLoaderWrapper } from "../src/utils/finalizationRegistry";
+
+function makeRuntime() {
+  return {
+    CustomFileAssetLoader: function (this: any, { loadContents }: any) {
+      this.loadContents = loadContents;
+    },
+  } as any;
+}
+
+function makeAsset(overrides: {
+  isImage?: boolean;
+  isAudio?: boolean;
+  isFont?: boolean;
+}) {
+  return { isImage: false, isAudio: false, isFont: false, ...overrides } as any;
+}
+
+describe("CustomFileAssetLoaderWrapper.loadContents", () => {
+  it("returns false and does not call callback for unknown asset type", () => {
+    const callback = jest.fn();
+    const wrapper = new CustomFileAssetLoaderWrapper(makeRuntime(), callback);
+
+    const result = wrapper.loadContents(makeAsset({}), new Uint8Array());
+
+    expect(result).toBe(false);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it("calls callback with ImageAssetWrapper for image assets", () => {
+    const callback = jest.fn().mockReturnValue(true);
+    const wrapper = new CustomFileAssetLoaderWrapper(makeRuntime(), callback);
+    const bytes = new Uint8Array([1, 2, 3]);
+
+    const result = wrapper.loadContents(makeAsset({ isImage: true }), bytes);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback.mock.calls[0][1]).toBe(bytes);
+    expect(result).toBe(true);
+  });
+
+  it("calls callback with AudioAssetWrapper for audio assets", () => {
+    const callback = jest.fn().mockReturnValue(true);
+    const wrapper = new CustomFileAssetLoaderWrapper(makeRuntime(), callback);
+    const bytes = new Uint8Array([4, 5, 6]);
+
+    const result = wrapper.loadContents(makeAsset({ isAudio: true }), bytes);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback.mock.calls[0][1]).toBe(bytes);
+    expect(result).toBe(true);
+  });
+
+  it("calls callback with FontAssetWrapper for font assets", () => {
+    const callback = jest.fn().mockReturnValue(true);
+    const wrapper = new CustomFileAssetLoaderWrapper(makeRuntime(), callback);
+    const bytes = new Uint8Array([7, 8, 9]);
+
+    const result = wrapper.loadContents(makeAsset({ isFont: true }), bytes);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback.mock.calls[0][1]).toBe(bytes);
+    expect(result).toBe(true);
+  });
+});
 
 test("Ensure onAsset called with hosted asset, contains cdn information.", (done) => {
   const canvas = document.createElement("canvas");

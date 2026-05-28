@@ -119,6 +119,8 @@ class CustomFileAssetLoaderWrapper {
       assetWrapper = new AudioAssetWrapper(asset);
     } else if (asset.isFont) {
       assetWrapper = new FontAssetWrapper(asset);
+    } else {
+      return false;
     }
     return this._assetLoaderCallback(assetWrapper, bytes);
   }
