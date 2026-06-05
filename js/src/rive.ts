@@ -2053,6 +2053,7 @@ export class Rive {
         dispatchPointerExit: dispatchPointerExit,
         enableMultiTouch: enableMultiTouch,
         layoutScaleFactor: this._layout.layoutScaleFactor,
+        advanceAndDrain: this.advanceAndReportChanges.bind(this)
       });
 
       // Wire up keyboard interactions for state machines that have focus nodes.
@@ -2313,31 +2314,12 @@ export class Rive {
   private renderSecondTimer = 0;
 
   /**
-   * Draw rendering loop; renders animation frames at the correct time interval.
-   * @param time the time at which to render a frame
+   * Handles important sequence of reporting Rive events, advancing the state machine or animation, and invoking various callbacks
+   * due to state changes, view model property changes, etc.
+   * 
+   * @param elapsedTime time to advance the state machine by
    */
-  private draw(time: number, onSecond?: VoidCallback): void {
-    // Clear the frameRequestId, as we're now rendering a fresh frame
-    this.frameRequestId = null;
-
-    const before = performance.now();
-
-    // On the first pass, make sure lastTime has a valid value
-    if (!this.lastRenderTime) {
-      this.lastRenderTime = time;
-    }
-
-    // Handle the onSecond callback
-    this.renderSecondTimer += time - this.lastRenderTime;
-    if (this.renderSecondTimer > 5000) {
-      this.renderSecondTimer = 0;
-      onSecond?.();
-    }
-
-    // Calculate the elapsed time between frames in seconds
-    const elapsedTime = (time - this.lastRenderTime) / 1000;
-    this.lastRenderTime = time;
-
+  private advanceAndReportChanges(elapsedTime: number): void {
     // - Advance non-paused animations by the elapsed number of seconds
     // - Advance any animations that require scrubbing
     // - Advance to the first frame even when autoplay is false
@@ -2403,14 +2385,58 @@ export class Rive {
         performance.mark(`rive:sm-advance:end:f${_perfFrame}`);
         performance.measure(`rive:sm-advance:f${_perfFrame}`, `rive:sm-advance:start:f${_perfFrame}`, `rive:sm-advance:end:f${_perfFrame}`);
       }
-      // stateMachine.instance.apply(this.artboard);
     }
 
-    // Once the animations have been applied to the artboard, advance it
+    // For linear animations that have been applied to the artboard, advance it
     // by the elapsed time.
     if (this.animator.stateMachines.length == 0) {
       this.artboard.advance(elapsedTime);
     }
+
+    // Check for any animations that looped
+    this.animator.handleLooping();
+
+    // Check for any state machines that had a state change
+    this.animator.handleStateChanges();
+
+    // Report advanced time
+    this.animator.handleAdvancing(elapsedTime);
+
+    // Handle callbacks for view model property changes
+    this._viewModelInstance?.handleCallbacks();
+  }
+
+  /**
+   * Draw rendering loop; renders animation frames at the correct time interval.
+   * @param time the time at which to render a frame
+   */
+  private draw(time: number, onSecond?: VoidCallback): void {
+    // Clear the frameRequestId, as we're now rendering a fresh frame
+    this.frameRequestId = null;
+    const before = performance.now();
+
+    // Instrument the first 3 frames so the Performance timeline shows precise
+    // per-call latency for advance, draw, and flush without polluting the trace.
+    const _perfFrame =
+      this.enablePerfMarks && this.frameCount < 3 ? this.frameCount : -1;
+
+    // On the first pass, make sure lastTime has a valid value
+    if (!this.lastRenderTime) {
+      this.lastRenderTime = time;
+    }
+
+    // Handle the onSecond callback
+    this.renderSecondTimer += time - this.lastRenderTime;
+    if (this.renderSecondTimer > 5000) {
+      this.renderSecondTimer = 0;
+      onSecond?.();
+    }
+
+    // Calculate the elapsed time between frames in seconds
+    const elapsedTime = (time - this.lastRenderTime) / 1000;
+    this.lastRenderTime = time;
+
+    this.advanceAndReportChanges(elapsedTime);
 
     const { renderer } = this;
     // Do not draw on 0 canvas size
@@ -2454,15 +2480,6 @@ export class Rive {
       }
     }
 
-    // Check for any animations that looped
-    this.animator.handleLooping();
-
-    // Check for any state machines that had a state change
-    this.animator.handleStateChanges();
-
-    // Report advanced time
-    this.animator.handleAdvancing(elapsedTime);
-
     // Add duration to create frame to durations array
     this.frameCount++;
     const after = performance.now();
@@ -2472,8 +2489,6 @@ export class Rive {
       this.frameTimes.shift();
       this.durations.shift();
     }
-
-    this._viewModelInstance?.handleCallbacks();
 
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations

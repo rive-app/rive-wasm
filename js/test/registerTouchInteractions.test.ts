@@ -51,14 +51,24 @@ let mockStateMachines: rc.StateMachineInstance[];
 
 let cleanupRiveListenersFunction: (() => void) | null;
 
+// Mirrors the real `advanceAndReportChanges` wiring in rive.ts: a single call
+// advances (and drains events/data-binding callbacks for) every state machine.
+// Forwarding to advanceAndApply lets tests assert how many synchronous advances
+// a pointer sequence triggers.
+const mockAdvanceAndDrain = jest.fn((elapsedTime: number) => {
+  mockStateMachines.forEach((sm) => sm.advanceAndApply(elapsedTime));
+});
+
 const createCanvasAndRiveListeners = ({
   isTouchScrollEnabled,
   dispatchPointerExit,
   enableMultiTouch,
+  stateMachineCount = 1,
 }: {
   isTouchScrollEnabled?: boolean;
   dispatchPointerExit?: boolean;
   enableMultiTouch?: boolean;
+  stateMachineCount?: number;
 } = {}) => {
   canvas = document.createElement("canvas") as HTMLCanvasElement;
   canvas.width = 500;
@@ -66,14 +76,17 @@ const createCanvasAndRiveListeners = ({
   canvas.style.width = "500px";
   canvas.style.height = "500px";
 
-  mockStateMachines = [
-    {
-      pointerDown: jest.fn(),
-      pointerMove: jest.fn(),
-      pointerUp: jest.fn(),
-      pointerExit: jest.fn(),
-    } as unknown as rc.StateMachineInstance,
-  ];
+  mockStateMachines = Array.from(
+    { length: stateMachineCount },
+    () =>
+      ({
+        pointerDown: jest.fn(),
+        pointerMove: jest.fn(),
+        pointerUp: jest.fn(),
+        pointerExit: jest.fn(),
+        advanceAndApply: jest.fn(),
+      }) as unknown as rc.StateMachineInstance,
+  );
 
   cleanupRiveListenersFunction = registerTouchInteractions({
     canvas,
@@ -86,10 +99,12 @@ const createCanvasAndRiveListeners = ({
     isTouchScrollEnabled,
     dispatchPointerExit,
     enableMultiTouch,
+    advanceAndDrain: mockAdvanceAndDrain,
   });
 };
 
 beforeEach(() => {
+  mockAdvanceAndDrain.mockClear();
   createCanvasAndRiveListeners();
 });
 
@@ -253,6 +268,63 @@ test("touchend event with multiple touch events with multi touch disabled only t
   expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).not.toBeCalled();
 });
+
+// #region same-frame pointer advance (advanceAndApply(0) on pointer down/up)
+
+test("mousedown triggers a synchronous advanceAndApply(0)", (): void => {
+  canvas.dispatchEvent(
+    new MouseEvent("mousedown", { clientX: 100, clientY: 100 }),
+  );
+
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+  expect(mockAdvanceAndDrain).toBeCalledWith(0);
+  expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].advanceAndApply).toBeCalledWith(0);
+});
+
+test("mouseup triggers a synchronous advanceAndApply(0)", (): void => {
+  canvas.dispatchEvent(
+    new MouseEvent("mouseup", { clientX: 100, clientY: 100 }),
+  );
+
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].advanceAndApply).toBeCalledWith(0);
+});
+
+test("a same-frame touchstart + touchend advances the state machine twice (once per pointer event)", (): void => {
+  canvas.dispatchEvent(
+    new TouchEvent("touchstart", {
+      touches: [mockTouchPoint],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+
+  expect(mockStateMachines[0].pointerDown).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(2);
+  expect(mockStateMachines[0].advanceAndApply).toHaveBeenNthCalledWith(1, 0);
+  expect(mockStateMachines[0].advanceAndApply).toHaveBeenNthCalledWith(2, 0);
+});
+
+test("pointer move does not trigger a synchronous advance", (): void => {
+  canvas.dispatchEvent(
+    new MouseEvent("mousemove", { clientX: 100, clientY: 100 }),
+  );
+
+  expect(mockStateMachines[0].pointerMove).toBeCalledWith(100, 100, 0);
+  expect(mockAdvanceAndDrain).not.toHaveBeenCalled();
+  expect(mockStateMachines[0].advanceAndApply).not.toHaveBeenCalled();
+});
+
+// #endregion
 
 // #region single-touch primary finger tracking
 

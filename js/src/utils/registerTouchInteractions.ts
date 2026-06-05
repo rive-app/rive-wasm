@@ -12,6 +12,8 @@ export interface TouchInteractionsParams {
   dispatchPointerExit?: boolean;
   enableMultiTouch?: boolean;
   layoutScaleFactor?: number;
+  // Handles advancing the state machine and draining events/view model property callbacks, applicable to certain pointer interactions
+  advanceAndDrain: (elapsedTime: number) => void;
 }
 
 interface ClientCoordinates {
@@ -115,6 +117,7 @@ export const registerTouchInteractions = ({
   dispatchPointerExit = true,
   enableMultiTouch = false,
   layoutScaleFactor = 1.0,
+  advanceAndDrain,
 }: TouchInteractionsParams) => {
   if (
     !canvas ||
@@ -290,6 +293,8 @@ export const registerTouchInteractions = ({
             );
           });
         }
+        // Advance the state machine immediately so pointer down(s) takes effect synchronously
+        advanceAndDrain(0);
         break;
       }
       // Pointer click released on the canvas
@@ -308,6 +313,8 @@ export const registerTouchInteractions = ({
             );
           });
         }
+        // Advance the state machine immediately so pointer up(s) takes effect synchronously
+        advanceAndDrain(0);
         // Release the primary touch lock once that finger lifts so the next
         // touchstart can claim a new primary finger.
         if (
@@ -328,6 +335,8 @@ export const registerTouchInteractions = ({
             );
           });
         }
+        // Advance the state machine immediately so pointer up(s) takes effect synchronously
+        advanceAndDrain(0);
         break;
       }
       default:
