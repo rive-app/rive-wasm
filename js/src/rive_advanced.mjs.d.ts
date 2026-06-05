@@ -755,6 +755,18 @@ export interface RiveEventCustomProperties {
   [key: string]: number | boolean | string;
 }
 
+/**
+ * Snapshot of the focus state returned by StateMachineInstance.focusState().
+ * Poll this each frame after advanceAndApply() to detect focus changes and
+ * determine whether a virtual keyboard should be shown or hidden.
+ */
+export interface FocusState {
+  /** True if any element currently holds focus in this state machine's active focus manager. */
+  hasFocus: boolean;
+  /** True if the focused element accepts keyboard input (e.g. a TextInput node). */
+  expectsKeyboardInput: boolean;
+}
+
 export declare class LinearAnimation {
   /**
    * The animation's loop type
@@ -893,6 +905,18 @@ export declare class StateMachineInstance {
    * Move focus to the previous focusable node in the focus tree via the state machine's focus manager.
    */
   focusPrevious(): boolean;
+
+  /**
+   * Clear focus from the Rive focus tree.
+   */
+  clearFocus(): void;
+
+  /**
+   * Returns metadata about current focus state:
+   *   1. Whether any node in the focus tree is currently focused
+   *   2. Whether the currently focused node expects keyboard input (i.e. keyboard/text input listener)
+   */
+  focusState(): FocusState;
 
   /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance

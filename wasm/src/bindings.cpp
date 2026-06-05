@@ -1066,6 +1066,17 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   }))
         .function("focusPrevious", optional_override([](rive::StateMachineInstance& self) -> bool {
                       return self.focusPrevious();
+                  }))
+        .function("clearFocus", optional_override([](rive::StateMachineInstance& self) -> void {
+                      return self.clearFocus();
+                  }))
+        .function("focusState",
+                  optional_override([](rive::StateMachineInstance& self) -> emscripten::val {
+                      auto state = self.focusState();
+                      auto obj = emscripten::val::object();
+                      obj.set("hasFocus", state.hasFocus);
+                      obj.set("expectsKeyboardInput", state.expectsKeyboardInput);
+                      return obj;
                   }));
 
     class_<rive::SMIInput>("SMIInput")

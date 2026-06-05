@@ -3,7 +3,8 @@ import { Animation } from "./animation";
 import { RuntimeLoader, type RuntimeCallback } from "./runtimeLoader";
 import {
   registerTouchInteractions,
-  registerKeyboardInteractions,
+  KeyboardInteractions,
+  FocusSessionState,
   sanitizeUrl,
   BLANK_URL,
   ImageWrapper,
@@ -90,7 +91,24 @@ export enum DrawOptimizationOptions {
   DrawOnChanged = "drawOnChanged",
 }
 
-// Interface for the Layout static method contructor
+// Options for Rive focus management
+export interface RiveFocusOptions {
+  /**
+   * When true, allows Rive to interrupt browser focus and programmatically
+   * set/release focus on the canvas when the state machine reports focus
+   * changes in Rive. This allows apps to direct focus to/from the canvas or
+   * related elements as needed if not currently focused, which can happen at
+   * any point in the Rive render loop.
+   *
+   * Note: Nodes in the Rive graphic may still receive/release focus respecting
+   * any focus rules defined in the state machine.
+   *
+   * @default false to prevent unwanted focus interruptions
+   */
+  allowFocusInterrupt: boolean;
+}
+
+// Interface for the Layout static method constructor
 export interface LayoutParameters {
   fit?: Fit;
   alignment?: Alignment;
@@ -326,6 +344,12 @@ class StateMachine {
   public readonly instance: rc.StateMachineInstance;
 
   /**
+   * Whether this state machine has focus nodes that can receive focus
+   * at any point
+   */
+  public readonly hasFocusNodes: boolean;
+
+  /**
    * @constructor
    * @param stateMachine runtime state machine object
    * @param instance runtime state machine instance object
@@ -338,6 +362,7 @@ class StateMachine {
   ) {
     this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
+    this.hasFocusNodes = this.instance.hasFocusNodes();
   }
 
   public get name(): string {
@@ -444,6 +469,21 @@ class StateMachine {
     if (viewModelInstance.runtimeInstance != null) {
       this.instance.bindViewModelInstance(viewModelInstance.runtimeInstance);
     }
+  }
+
+  /**
+   * Get metadata about the state of focus if applicable for this state machine.
+   * @returns FocusState - { hasFocus: boolean, expectsKeyboardInput: boolean }
+   */
+  public focusState(): rc.FocusState { 
+    return this.instance.focusState();
+  }
+
+  /**
+   * Clear focus from the Rive focus node tree.
+   */
+  public clearFocus(): void {
+    this.instance.clearFocus();
   }
 }
 
@@ -1239,6 +1279,10 @@ export interface RiveParameters {
    */
   tabIndex?: number;
   /**
+   * Optional settings for focus behavior
+   */
+  focusOptions?: RiveFocusOptions;
+  /**
    * Allow the runtime to automatically load assets hosted in Rive's CDN.
    * enabled by default.
    */
@@ -1708,8 +1752,8 @@ export class Rive {
   // place to clear up pointer/touch event listeners
   private eventCleanup: VoidCallback | null = null;
 
-  // place to clear up focus/keyboard event listeners
-  private keyboardEventCleanup: VoidCallback | null = null;
+  // Manages keyboard and DOM-focus interactions for the canvas.
+  private _keyboardInteractions: KeyboardInteractions | null = null;
 
   // Runtime file
   private file: rc.File;
@@ -1790,6 +1834,10 @@ export class Rive {
   private _dataEnums: DataEnum[] | null = null;
 
   private _tabIndex: number | null = null;
+  private _prevHasFocus = false;
+  private _focusOptions: RiveFocusOptions = {
+    allowFocusInterrupt: false,
+  };
 
   private drawOptimization: DrawOptimizationOptions =
     DrawOptimizationOptions.DrawOnChanged;
@@ -1837,6 +1885,7 @@ export class Rive {
         : params.enableRiveAssetCDN;
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
+    this._focusOptions = params.focusOptions ?? this._focusOptions;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -2023,10 +2072,7 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
     if (!this.shouldDisableRiveListeners) {
       const playingStateMachines = this.animator.stateMachines.filter((sm) => sm.playing);
       const activeStateMachines = playingStateMachines
@@ -2058,9 +2104,7 @@ export class Rive {
 
       // Wire up keyboard interactions for state machines that have focus nodes.
       //   hasFocusNodes — unified focus tree check, gates tab traversal
-      const smWithFocusNodes = playingStateMachines
-        .filter((sm) => sm.instance.hasFocusNodes())
-        .map((sm) => sm.instance);
+      const smWithFocusNodes = playingStateMachines.filter((sm) => sm.hasFocusNodes);
 
       if (smWithFocusNodes.length) {
         // Set the canvas as a tabbable element if there are any focus nodes.
@@ -2071,13 +2115,21 @@ export class Rive {
         if (currentCanvasTabIndex === -1 || isNaN(currentCanvasTabIndex)) {
           (this.canvas as HTMLCanvasElement).tabIndex = (this._tabIndex !== null ? this._tabIndex : 0);
         }
-        this.keyboardEventCleanup = registerKeyboardInteractions({
-          canvas: this.canvas as HTMLCanvasElement,
-          stateMachine: smWithFocusNodes[0], // work off assumption of single state machine
-          rive: this.runtime,
-          hasFocusNodes: smWithFocusNodes.length > 0,
-        });
+        if (typeof window !== "undefined") {
+          this._keyboardInteractions = new KeyboardInteractions({
+            canvas: this.canvas as HTMLCanvasElement,
+            stateMachine: smWithFocusNodes[0].instance, // work off assumption of single state machine
+            hasFocusNodes: true,
+          });
+        }
       }
+    }
+  }
+
+  private cleanupKeyboardInteractions(): void {
+    if (this._keyboardInteractions) {
+      this._keyboardInteractions.cleanup();
+      this._keyboardInteractions = null;
     }
   }
 
@@ -2089,10 +2141,7 @@ export class Rive {
       this.eventCleanup();
       this.eventCleanup = null;
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
   }
 
   /**
@@ -2300,6 +2349,53 @@ export class Rive {
     return changed;
   }
 
+  /**
+   * Poll focus state each frame to see if we should focus/blur the canvas in case
+   * Rive internally updated focus outside of user interaction (e.g., via listener action)
+   */
+  private pollFocusState() {
+    if (!this._keyboardInteractions) {
+      this._prevHasFocus = false;
+      return;
+    }
+
+    const activeSm = this.animator.stateMachines.find(
+      (sm) => sm.playing && sm.hasFocusNodes,
+    ); // work off assumption of single state machine
+    if (!activeSm) {
+      this._prevHasFocus = false;
+      return;
+    }
+
+    if (this.canvas instanceof HTMLCanvasElement) {
+      const { hasFocus } = activeSm.focusState();
+      if (hasFocus) {
+        // Rive has an active focus node. Mark the session RiveFocused so Tab stays
+        // trapped and a later internal release (hasFocus true → false) is detected.
+        this._keyboardInteractions.notifyRiveFocused();
+        // Only steal DOM focus on the false→true transition. If hasFocus stays
+        // true across frames and the user clicks away, do not re-focus the canvas again.
+        if (!this._prevHasFocus) {
+          if (this.canvas !== document.activeElement && this._focusOptions.allowFocusInterrupt) {
+            this.canvas.focus();
+          }
+          this._prevHasFocus = true;
+        }
+        return;
+      }
+
+      this._prevHasFocus = false;
+
+      // hasFocus is false — only act when Rive previously held focus and released it internally
+      // (state change clears focus). Release the DOM Tab trap so the next Tab moves to the next
+      // page element. EntryPending and NotFocused cases are intentional no-ops — EntryPending in
+      // particular must stay in its state (a click awaiting its first Tab) rather than be reset here.
+      if (this._keyboardInteractions.focusSessionState === FocusSessionState.RiveFocused) {
+        this._keyboardInteractions.setFocusSessionState(FocusSessionState.NotFocused);
+      }
+    }
+  }
+
   // Tracks the last timestamp at which the animation was rendered. Used only in
   // draw().
   private lastRenderTime: number;
@@ -2401,6 +2497,9 @@ export class Rive {
 
     // Report advanced time
     this.animator.handleAdvancing(elapsedTime);
+
+    // Poll focus state to see whether or not to blur or pull up a virtual keyboard for any change to a text input node.
+    this.pollFocusState();
 
     // Handle callbacks for view model property changes
     this._viewModelInstance?.handleCallbacks();
@@ -2598,10 +2697,7 @@ export class Rive {
     if (this.eventCleanup !== null) {
       this.eventCleanup();
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
     // Delete all animation and state machine instances
     this.stop();
     if (this.artboard) {
@@ -2675,10 +2771,7 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
     this.setupRiveListeners();
     this.startRendering();
   }
@@ -2697,10 +2790,7 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
     this.animator.pause(animationNames);
   }
 
@@ -2738,10 +2828,7 @@ export class Rive {
     if (this.eventCleanup) {
       this.eventCleanup();
     }
-    if (this.keyboardEventCleanup) {
-      this.keyboardEventCleanup();
-      this.keyboardEventCleanup = null;
-    }
+    this.cleanupKeyboardInteractions();
   }
 
   /**
@@ -3506,6 +3593,16 @@ export class Rive {
   public getDefaultBindableArtboard(): BindableArtboard | null {
     return this.riveFile?.getDefaultBindableArtboard() ?? null;
   }
+
+  /**
+   * Clear focus applicable to active state machines with focus nodes. Useful if users want to
+   * reset focus state and behavior within the Rive graphic at any point (i.e. blurring off the canvas)
+   */
+  public clearFocus(): void {
+    const playingStateMachines = this.animator.stateMachines.filter((sm) => sm.playing && sm.hasFocusNodes);
+    playingStateMachines.forEach((sm) => sm.clearFocus());
+  }
+
 }
 
 export enum DataType {

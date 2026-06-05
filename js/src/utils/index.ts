@@ -1,5 +1,5 @@
 export { registerTouchInteractions } from "./registerTouchInteractions";
-export { registerKeyboardInteractions } from "./registerKeyboardInteractions";
+export { KeyboardInteractions, FocusSessionState } from "./registerKeyboardInteractions";
 export type { KeyboardInteractionsParams } from "./registerKeyboardInteractions";
 export { BLANK_URL, sanitizeUrl } from "./sanitizeUrl";
 export {
