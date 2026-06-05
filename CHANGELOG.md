@@ -5,10 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.37.8](https://github.com/rive-app/rive-wasm/compare/2.37.7...2.37.8)
+## [2.38.0](https://github.com/rive-app/rive-wasm/compare/2.37.8...2.38.0)
 
 ### Commits
 
+- feat(js): poll Rive focus state to conditionally drive focus back to the canvas from elsewhere in the DOM (#12713) 6169c50d9f [`5099fd7`](https://github.com/rive-app/rive-wasm/commit/5099fd75b77e125a3618fbf6a514ae708073d7b9)
+- feat(Android): Vulkan (#12653) 528ab110eb [`cda1f11`](https://github.com/rive-app/rive-wasm/commit/cda1f11f3da2598e7315231879cd556647f9ce44)
+- feat(js): advance state machine by 0 and process events/vm property changes immediately after pointerUp/Down (#12759) 9b3ff14e24 [`ffd8274`](https://github.com/rive-app/rive-wasm/commit/ffd82746c868b221312593bf728dd4d7cec31af4)
+- fix(runtime): assign view model instances to the right view models (#12756) 018a0724d9 [`be97a0d`](https://github.com/rive-app/rive-wasm/commit/be97a0dc61eefdd0a67dea5f91baf1ecd9a7d97a)
+- gl: route feathers to atlas on Mali-G52 to avoid PLS corruption (#12753) f60e429709 [`570f44f`](https://github.com/rive-app/rive-wasm/commit/570f44fce8b784cad746c27d386e1be6b959e588)
+- Bezier render prototype (#12727) 4b2501f748 [`67e3c26`](https://github.com/rive-app/rive-wasm/commit/67e3c26bc86fff097631f664fff25506a33c84d9)
+- ore: gate float render targets and baseVertex on backend features (#12712) 10e90773d5 [`72e13b7`](https://github.com/rive-app/rive-wasm/commit/72e13b7b66b748d79751318a3699d983175572a6)
+- Deferred GPUCanvas reports speculative format (#12701) 557c18ea05 [`4fd0770`](https://github.com/rive-app/rive-wasm/commit/4fd0770d618ec1179184f6b3760ecf2a7318acc1)
+- feat(editor): Expose ScrollConstraint velocity and scrollActive computed properties (#12671) d797171a0b [`aa3af83`](https://github.com/rive-app/rive-wasm/commit/aa3af83c34d06f9d4697e17657a21f20d0aa0889)
+- fix(js): prevent calling assetLoader callback for asset types not user-provided at runtime (#12684) 33025832b5 [`30208ec`](https://github.com/rive-app/rive-wasm/commit/30208ec2d70d7a44df9f396e0c96b3c7ea5742e9)
+- feature(scripting): serialize implemented methods (#12670) 8957983a44 [`f13de97`](https://github.com/rive-app/rive-wasm/commit/f13de97de5464744d27c51689aea26f7da69f374)
+- Nnnnn gamepad input support (#12646) 867dce9f73 [`09a84f9`](https://github.com/rive-app/rive-wasm/commit/09a84f971319effac62de860ddb4e94252e60929)
+- Add gpu compressed decoders (#12237) 195d4fcb25 [`5997f43`](https://github.com/rive-app/rive-wasm/commit/5997f43774a326b16dac086f2292c3c658191948)
+- feature(scripting): LuauDirectFieldGet for hot userdata reads (#12650) fe77b2ec3d [`d3a6abe`](https://github.com/rive-app/rive-wasm/commit/d3a6abe5d4a566a029c54167213c2a350966f28a)
+- fix(runtime): fix data bind container re-entries (#12649) 0649b58ff5 [`dfd3018`](https://github.com/rive-app/rive-wasm/commit/dfd301888817fa9f1d37016dd0b36c7e97a1fec5)
+- ci: move linux + windows rive_native builds to self-hosted; fetch prebuilt premake on windows (#12640) 1548d0bb39 [`c32db10`](https://github.com/rive-app/rive-wasm/commit/c32db10dc535cf4b562999a855459ff984ac8979)
+- remove lua_gc and set File reference as raw pointer (#12590) 1ff3ef872f [`f166fce`](https://github.com/rive-app/rive-wasm/commit/f166fce1e1cf728ad605b42301a86bafd2aba6cf)
+- fix(luau): GC crash in markroot from FFlag flip after lua_newstate (#12638) 6f4bc8aa47 [`0d5c5e3`](https://github.com/rive-app/rive-wasm/commit/0d5c5e3edecfd698b094f0bb89da291ed048508c)
+- chore: bump vendored luau fork to rive_0_36 (#12632) dc34cab787 [`b449621`](https://github.com/rive-app/rive-wasm/commit/b449621b279fd82cb9b590ca0f2f0b96147b657a)
+- GPUCanvas: deferred construction, beginRenderPass with view sugar, generator gets Context (#12634) 69767598c6 [`177f369`](https://github.com/rive-app/rive-wasm/commit/177f369ead9415a39b418e001af22f4da0430253)
+- chore: Add "resize" Image fit type to differentiate from "fill" (#12627) 91c4dd9b77 [`a64d3b0`](https://github.com/rive-app/rive-wasm/commit/a64d3b0c31acc631821dd185fc6fc6c246660a7f)
+
+## [2.37.8](https://github.com/rive-app/rive-wasm/compare/2.37.7...2.37.8) - 2026-05-21
+
+### Commits
+
+- chore: tag 2.37.8 [`bf02dc7`](https://github.com/rive-app/rive-wasm/commit/bf02dc7087991090388f931118670ddf9db1d360)
 - fix(unity): add missing neon palette png symbols to fix iOS crash (#12620) 463745fd0b [`bc56011`](https://github.com/rive-app/rive-wasm/commit/bc560112ab2ee7d0afd3418bd97970c2fcb36532)
 - chore(focus): expose focus polling API (#12617) fdb0536723 [`eaac76e`](https://github.com/rive-app/rive-wasm/commit/eaac76e4b7b826a520ba7cbb3331b363cd656190)
 - refactor(ore): convert ore classes to be virtual with per backend implementations (#12599) e5c20369ec [`59b7301`](https://github.com/rive-app/rive-wasm/commit/59b7301119cdd75eadb9ea4ab11d4488828de71b)
