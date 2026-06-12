@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.38.0](https://github.com/rive-app/rive-wasm/compare/2.37.8...2.38.0)
+## [2.38.1](https://github.com/rive-app/rive-wasm/compare/2.38.0...2.38.1)
 
 ### Commits
 
+- fix(renderer/d3d11): guard MicroProfile GPU init against multi-context re-entry (#12766) 13fba5c3d5 [`68512c8`](https://github.com/rive-app/rive-wasm/commit/68512c8e5686deabd3df187e4d4d0fcb2b176f2c)
+- chore: Stateful Component handling of source artboard databinds (#12776) e9483b78c4 [`ab6da86`](https://github.com/rive-app/rive-wasm/commit/ab6da86b2b24e11f52d6a1a45f2a6e57ab539791)
+- fix(build): locate Visual Studio via vswhere as a fallback (#12840) c5d462f9d9 [`1f198b0`](https://github.com/rive-app/rive-wasm/commit/1f198b06ffb1e1a50288f9913455166c510f885d)
+- chore(runtime): add computed root values test (#12830) d17e462c1a [`18a6bad`](https://github.com/rive-app/rive-wasm/commit/18a6badbddccc0740f10cf76b04a4dcd13c4d73a)
+- feature: fit text content by font size (#12792) c623003932 [`801a3a1`](https://github.com/rive-app/rive-wasm/commit/801a3a18dcb84a96a3f03dffd54fd71184e1bf46)
+- fix(ore/vk): MSAA resolve corruption on Xclipse 920 (resolve targets missed the post-pass layout hand-off) (#12810) bd3b3f3b75 [`f3afe0a`](https://github.com/rive-app/rive-wasm/commit/f3afe0a236a8eeadc3bec5afcade459ccef4aa10)
+- C++ Runtime Readme revamp (#12537) c8bb275d99 [`8921806`](https://github.com/rive-app/rive-wasm/commit/892180603c43523b717b2c77e30c4d3310387f38)
+- feat(Android/Cmdq): Advance after pointer down and up (#12786) ba9b94960c [`10956bc`](https://github.com/rive-app/rive-wasm/commit/10956bc6553c561ebb56b65840f113c81b649176)
+- Fix: Bind GL context before deleting renderer on cleanup (#12770) a999606644 [`8e31737`](https://github.com/rive-app/rive-wasm/commit/8e31737e18f1924b2c5257eaecb9ffd8f6c173bb)
+- Nnnnn export bindable object with different (#12779) a680ab80e5 [`a096f8e`](https://github.com/rive-app/rive-wasm/commit/a096f8e14d7154b11817120e82f8a6d9a81a6196)
+- Add Factory::ore() and drop the redundant ore context cache in ScriptingContext (#12769) 76eeeed5d9 [`c09c363`](https://github.com/rive-app/rive-wasm/commit/c09c3631684d27a37688b5b985f7a89606cf8a03)
+
+## [2.38.0](https://github.com/rive-app/rive-wasm/compare/2.37.8...2.38.0) - 2026-06-05
+
+### Commits
+
+- chore: tag 2.38.0 [`c0f6ff4`](https://github.com/rive-app/rive-wasm/commit/c0f6ff47b4bf896c047ab3dc73b9b512415f7d0a)
 - feat(js): poll Rive focus state to conditionally drive focus back to the canvas from elsewhere in the DOM (#12713) 6169c50d9f [`5099fd7`](https://github.com/rive-app/rive-wasm/commit/5099fd75b77e125a3618fbf6a514ae708073d7b9)
 - feat(Android): Vulkan (#12653) 528ab110eb [`cda1f11`](https://github.com/rive-app/rive-wasm/commit/cda1f11f3da2598e7315231879cd556647f9ce44)
 - feat(js): advance state machine by 0 and process events/vm property changes immediately after pointerUp/Down (#12759) 9b3ff14e24 [`ffd8274`](https://github.com/rive-app/rive-wasm/commit/ffd82746c868b221312593bf728dd4d7cec31af4)
