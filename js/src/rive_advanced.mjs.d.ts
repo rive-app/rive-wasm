@@ -962,6 +962,7 @@ export declare class SMIInput {
 export declare type ViewModelProperty = {
   name: string;
   type: DataType;
+  enumName?: string;
 };
 
 export declare class ViewModelInstanceValue {
