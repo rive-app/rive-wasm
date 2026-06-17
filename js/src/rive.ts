@@ -2651,6 +2651,11 @@ export class Rive {
     this.destroyed = true;
     // Stop the renderer if it hasn't already been stopped.
     this.stopRendering();
+    // Make the GL context backing this renderer current before any WASM teardown
+    // that frees GPU resources. Binding here covers the artboard/file deletes;
+    // deleteRiveRenderer() re-binds for the renderer's own delete. No-op on the
+    // canvas2d build
+    this.renderer?.bindContext?.();
     // Clean up any artboard, animation or state machine instances.
     this.cleanupInstances();
     // Remove from observer

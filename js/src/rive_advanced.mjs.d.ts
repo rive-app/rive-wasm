@@ -169,6 +169,11 @@ export declare class RendererWrapper {
   flush(): void;
   translate(x: number, y: number): void;
   rotate(angle: number): void;
+  /**
+   * (WebGL only) Makes the GL context that backs this renderer's textures current, before
+   * performing any WASM teardown that frees resources
+   */
+  bindContext?(): void;
 }
 
 export declare class RenderPathWrapper {

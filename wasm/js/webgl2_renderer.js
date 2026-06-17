@@ -62,6 +62,17 @@ Module["onRuntimeInitialized"] = function () {
       }
     };
 
+    // Make the GL context that actually backs this renderer's textures current.
+    // Offscreen instances own no GL context of their own; their draws — and the
+    // textures of any decoded image assets — live on the shared offscreen GL
+    // context.
+    this["bindContext"] = function () {
+      const r = this._realRenderer;
+      if (r && r._handle) {
+        GL.makeContextCurrent(r._handle);
+      }
+    };
+
     // Empty delete method to allow calling delete from the rive file without causing a crash
     this["delete"] = function () {
     };
@@ -96,19 +107,19 @@ Module["onRuntimeInitialized"] = function () {
     renderer._width = canvas.width;
     renderer._height = canvas.height;
     renderer._gl = gl;
-    var nativeDelete = renderer.delete;
-    renderer.delete = function () {
-      // Re-bind our context before the native delete: it routes into glDelete*,
-      // which deref the *current* GLctx. At teardown another instance may have
-      // made a different context current or cleared it (GLctx undefined), so the
-      // deletes would throw "...reading 'deleteTexture'". isContextLost() can't
-      // catch this — the context isn't lost, just not current.
+    // Re-bind our context before any teardown that routes into glDelete*, which
+    // deref the *current* GLctx.
+    renderer.bindContext = function () {
       if (this._handle) {
         GL.makeContextCurrent(this._handle);
       }
+    };
+    var nativeDelete = renderer.delete;
+    renderer.delete = function () {
+      this.bindContext();
       nativeDelete.call(this);
       GL.deleteContext(this._handle);
-      this._handle = this._canvas = this._width = this._width = this._gl = null;
+      this._handle = this._canvas = this._width = this._height = this._gl = null;
     };
     return renderer;
   }
