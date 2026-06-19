@@ -1,3 +1,9 @@
+import type {
+  ImageWrapper,
+  AudioWrapper,
+  FontWrapper,
+} from "./utils/finalizationRegistry";
+
 interface RiveOptions {
   locateFile(file: string): string;
   wasmBinary?: ArrayBuffer;
@@ -1263,7 +1269,7 @@ export declare class AudioAssetInternal extends FileAssetInternal {
  * decoded Audio (via the `decodeAudio()` API) to set a new Audio on the Rive FileAsset
  */
 export declare class AudioAsset extends FileAsset {
-  setAudioSource(audio: Audio): void;
+  setAudioSource(audio: Audio | AudioWrapper): void;
 }
 
 export declare class ImageAssetInternal extends FileAssetInternal {
@@ -1274,7 +1280,7 @@ export declare class ImageAssetInternal extends FileAssetInternal {
  * decoded Image (via the `decodeImage()` API) to set a new Image on the Rive FileAsset
  */
 export declare class ImageAsset extends FileAsset {
-  setRenderImage(image: Image): void;
+  setRenderImage(image: Image | ImageWrapper): void;
 }
 
 export declare class FontAssetInternal extends FileAssetInternal {
@@ -1285,7 +1291,10 @@ export declare class FontAssetInternal extends FileAssetInternal {
  * decoded Font (via the `decodeFont()` API) to set a new Font on the Rive FileAsset
  */
 export declare class FontAsset extends FileAsset {
-  setFont(font: Font): void;
+  // Accepts the high-level `FontWrapper` returned by `decodeFont()` as well as
+  // the low-level embind `Font`. `FontWrapper` lacks the `ptr()` member that was
+  // added to `Font`
+  setFont(font: Font | FontWrapper): void;
 }
 
 export declare class FileAssetLoader {}
