@@ -5,10 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.38.1](https://github.com/rive-app/rive-wasm/compare/2.38.0...2.38.1)
+## [2.38.2](https://github.com/rive-app/rive-wasm/compare/2.38.1...2.38.2)
 
 ### Commits
 
+- Feat: Updates to recorder to enable thumbnail generation in prod (#12878) fcbebb25e4 [`ccb33a6`](https://github.com/rive-app/rive-wasm/commit/ccb33a6c7df4c6d3daa2944764b33b53a1632aa4)
+- fix(js): add asset Wrapper types to type definition on asset setter APIs to fix typescript mismatch error (#12883) 4296a3cd9a [`17d5123`](https://github.com/rive-app/rive-wasm/commit/17d512315bc96c50ee176bfe0a7f715d41f3b879)
+- Add ASTC and ETC2 compression modes (#12518) 0ed7a0a13d [`a4cac9b`](https://github.com/rive-app/rive-wasm/commit/a4cac9b643de8e6a364992db90e1466c1637a922)
+- Update testing_window_android_vulkan.cpp (#12898) 4bf87f97a6 [`e2d3ccd`](https://github.com/rive-app/rive-wasm/commit/e2d3ccd4d7b24ac29e73ff3a1d4ad104024ead1e)
+- Add include instead of fwd declare (#12897) c5b59b956e [`cd85846`](https://github.com/rive-app/rive-wasm/commit/cd85846f0aa7ed019e98952330159dc12687a510)
+- chore(runtime): notify property changes (#12683) 32f2243f54 [`183a278`](https://github.com/rive-app/rive-wasm/commit/183a278bd0a730b9e16bdb55c6914d80d5c2a013)
+- fix(js): bind GL context before artboard/file teardown and for offscreen renderers (#12886) 1b5c4ac067 [`0c74c03`](https://github.com/rive-app/rive-wasm/commit/0c74c0390ca1057a432403539d5f7236a51582b3)
+- feat(wgpu,webgl): Get WebGPU and WebGL deploying to a real browser (#12849) 684824c253 [`6a13820`](https://github.com/rive-app/rive-wasm/commit/6a13820b602b4fc6fcc5a3b78e0cc7e9a3d790de)
+- fix(renderer): Get an external target building again (#12884) 3a6064b95e [`01acae0`](https://github.com/rive-app/rive-wasm/commit/01acae024c3d8d4290ce0f83711fda7b2e086fc7)
+- feat: Scroll constraint drag multiplier (#12880) 2551181ab2 [`7d8c4fb`](https://github.com/rive-app/rive-wasm/commit/7d8c4fb1f3d0f02a60f9fd89475b70edefdd427f)
+- text vertical trim (#12861) a3fb919b91 [`426e219`](https://github.com/rive-app/rive-wasm/commit/426e219e988d3e9311a1acab943950dd089651fe)
+- feat(command-queue): add file asset listing via FileListener (#12662) 4a612198f1 [`317d63a`](https://github.com/rive-app/rive-wasm/commit/317d63af868e71d62f196e6d2ce399dd79035b4c)
+- fix(runtime): invalidate all scripted VM property caches on instance swap (#12863) ca0054c077 [`89a360b`](https://github.com/rive-app/rive-wasm/commit/89a360bdfb48a96d25662b548adc6590fae9c1a4)
+- fix: Snap enabled scrolling not respecting last item padding (#12856) f11274b5d9 [`e9437d9`](https://github.com/rive-app/rive-wasm/commit/e9437d9da6de8a51d82928f86ba516d0daabc529)
+- chore(editor): Generate Windows pdbs for symbolication (#12720) 2fce4282b6 [`ebd004f`](https://github.com/rive-app/rive-wasm/commit/ebd004ff3b06ea71229ed050ea5d489fd2d21fd4)
+
+## [2.38.1](https://github.com/rive-app/rive-wasm/compare/2.38.0...2.38.1) - 2026-06-12
+
+### Commits
+
+- chore: tag 2.38.1 [`f393955`](https://github.com/rive-app/rive-wasm/commit/f3939555a83fc7064b37a2a8d48a5c106a78500a)
 - fix(renderer/d3d11): guard MicroProfile GPU init against multi-context re-entry (#12766) 13fba5c3d5 [`68512c8`](https://github.com/rive-app/rive-wasm/commit/68512c8e5686deabd3df187e4d4d0fcb2b176f2c)
 - chore: Stateful Component handling of source artboard databinds (#12776) e9483b78c4 [`ab6da86`](https://github.com/rive-app/rive-wasm/commit/ab6da86b2b24e11f52d6a1a45f2a6e57ab539791)
 - fix(build): locate Visual Studio via vswhere as a fallback (#12840) c5d462f9d9 [`1f198b0`](https://github.com/rive-app/rive-wasm/commit/1f198b06ffb1e1a50288f9913455166c510f885d)
