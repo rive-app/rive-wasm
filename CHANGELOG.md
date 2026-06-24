@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.38.2](https://github.com/rive-app/rive-wasm/compare/2.38.1...2.38.2)
+## [2.38.3](https://github.com/rive-app/rive-wasm/compare/2.38.2...2.38.3)
 
 ### Commits
 
+- fix(runtime): bidirectional data bind with source preference does not… (#12927) adb0834474 [`1b6d428`](https://github.com/rive-app/rive-wasm/commit/1b6d428236e8dca9663a7e92748814a2f7843c19)
+- feat(renderer): Add scissor support to more backends (#12778) 424d2323f9 [`f4e5e4c`](https://github.com/rive-app/rive-wasm/commit/f4e5e4c8f849b8ab7bba08cdb608c29e3174a01b)
+- Nnnnn focus management fixes (#12303) b2438309fa [`760e86b`](https://github.com/rive-app/rive-wasm/commit/760e86ba05ca86aca88be3c2ef5ec2dd3418efcf)
+
+## [2.38.2](https://github.com/rive-app/rive-wasm/compare/2.38.1...2.38.2) - 2026-06-22
+
+### Commits
+
+- chore: tag 2.38.2 [`73ec2f6`](https://github.com/rive-app/rive-wasm/commit/73ec2f677fecd362a125fcdf0c1da875394d4473)
 - Feat: Updates to recorder to enable thumbnail generation in prod (#12878) fcbebb25e4 [`ccb33a6`](https://github.com/rive-app/rive-wasm/commit/ccb33a6c7df4c6d3daa2944764b33b53a1632aa4)
 - fix(js): add asset Wrapper types to type definition on asset setter APIs to fix typescript mismatch error (#12883) 4296a3cd9a [`17d5123`](https://github.com/rive-app/rive-wasm/commit/17d512315bc96c50ee176bfe0a7f715d41f3b879)
 - Add ASTC and ETC2 compression modes (#12518) 0ed7a0a13d [`a4cac9b`](https://github.com/rive-app/rive-wasm/commit/a4cac9b643de8e6a364992db90e1466c1637a922)
