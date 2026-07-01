@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.38.3](https://github.com/rive-app/rive-wasm/compare/2.38.2...2.38.3)
+## [2.38.4](https://github.com/rive-app/rive-wasm/compare/2.38.3...2.38.4)
 
 ### Commits
 
+- feat(editor - text input): expose trigger property to focus on text i… (#12975) 50fdb3bb9f [`ff5fdbd`](https://github.com/rive-app/rive-wasm/commit/ff5fdbda432b3838615402c299bac682e742d73c)
+- fix(runtime-focus): resolve focus to first leaf on direct focus (#12974) d607980229 [`b164d37`](https://github.com/rive-app/rive-wasm/commit/b164d37c771741e9fd09973882bc0422570d6803)
+- feat(image): compose layout fit as a separate scale so user scale stays independent (#12896) c372d0d9d4 [`36fb99a`](https://github.com/rive-app/rive-wasm/commit/36fb99af1d4ee2c3a49f8c7a6b5fbf92e44ae916)
+- fix: ore buffer per-frame update race (#12976) cc34cea963 [`dc8e0ed`](https://github.com/rive-app/rive-wasm/commit/dc8e0ed2ffcb6fb070f0fec2b269bfb86617a8ec)
+- feat(apple): add semantics support (#12642) 9f3eef8634 [`d82357f`](https://github.com/rive-app/rive-wasm/commit/d82357f7da6d554a73ee6d7573729812e0fa7598)
+- feat(runtime): add semantics command queue api (#12198) bd587cb83f [`d4d9933`](https://github.com/rive-app/rive-wasm/commit/d4d9933cf28397332cb6cc2c71521e31b1bf2a62)
+- feat: add artboard volume to command queue/server (#12816) 88115b0949 [`e7a7980`](https://github.com/rive-app/rive-wasm/commit/e7a79809ad46362587e8600d590b147f7fe76567)
+- Rev Luau to rive_0_726 (upstream 0.726) (#12953) 61822bb247 [`6133d67`](https://github.com/rive-app/rive-wasm/commit/6133d67ec22e39ee96a81800ffa131d684ef32b6)
+- chore(editor): add view model uses to dependencies panel (#12948) 63b8450361 [`1f94d63`](https://github.com/rive-app/rive-wasm/commit/1f94d639695bee2f72c57194bd0150f145e8738e)
+- fix(renderer): Update dead macro names (#12933) 09c54e8737 [`5ce4873`](https://github.com/rive-app/rive-wasm/commit/5ce487317d41b27c73daa4528b8c86fc5e777a69)
+
+## [2.38.3](https://github.com/rive-app/rive-wasm/compare/2.38.2...2.38.3) - 2026-06-24
+
+### Commits
+
+- chore: tag 2.38.3 [`df35482`](https://github.com/rive-app/rive-wasm/commit/df35482bbbebefa872158c0d29dd6b1ec2a2c4d7)
 - fix(runtime): bidirectional data bind with source preference does not… (#12927) adb0834474 [`1b6d428`](https://github.com/rive-app/rive-wasm/commit/1b6d428236e8dca9663a7e92748814a2f7843c19)
 - feat(renderer): Add scissor support to more backends (#12778) 424d2323f9 [`f4e5e4c`](https://github.com/rive-app/rive-wasm/commit/f4e5e4c8f849b8ab7bba08cdb608c29e3174a01b)
 - Nnnnn focus management fixes (#12303) b2438309fa [`760e86b`](https://github.com/rive-app/rive-wasm/commit/760e86ba05ca86aca88be3c2ef5ec2dd3418efcf)
