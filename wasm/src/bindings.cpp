@@ -284,6 +284,9 @@ emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
             case rive::DataType::assetImage:
                 val = "image";
                 break;
+            case rive::DataType::assetFont:
+                val = "font";
+                break;
             case rive::DataType::artboard:
                 val = "artboard";
                 break;
@@ -1291,6 +1294,13 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                           return self.propertyImage(path);
                       }),
                   allow_raw_pointers())
+        .function("font",
+                  optional_override(
+                      [](const rive::ViewModelInstanceRuntime& self,
+                         const std::string& path) -> rive::ViewModelInstanceAssetFontRuntime* {
+                          return self.propertyFont(path);
+                      }),
+                  allow_raw_pointers())
         .function("artboard",
                   optional_override(
                       [](const rive::ViewModelInstanceRuntime& self,
@@ -1448,6 +1458,14 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             "value",
             optional_override([](rive::ViewModelInstanceAssetImageRuntime& self,
                                  rive::RenderImage* renderImage) { self.value(renderImage); }),
+            allow_raw_pointers());
+    class_<rive::ViewModelInstanceAssetFontRuntime, base<rive::ViewModelInstanceValueRuntime>>(
+        "ViewModelInstanceAssetFont")
+        .function(
+            "value",
+            optional_override([](rive::ViewModelInstanceAssetFontRuntime& self, FontWrapper* font) {
+                self.value(font != nullptr ? font->font().get() : nullptr);
+            }),
             allow_raw_pointers());
     class_<rive::ViewModelInstanceArtboardRuntime, base<rive::ViewModelInstanceValueRuntime>>(
         "ViewModelInstanceArtboard")

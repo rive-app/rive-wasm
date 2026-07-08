@@ -3715,6 +3715,7 @@ enum PropertyType {
   Enum = "enum",
   List = "list",
   Image = "image",
+  Font = "font",
   Artboard = "artboard",
 }
 
@@ -3973,6 +3974,15 @@ export class ViewModelInstance {
           );
         }
         break;
+      case PropertyType.Font:
+        instance = this._runtimeInstance?.font(pathSegments[index]) ?? null;
+        if (instance !== null) {
+          return new ViewModelInstanceAssetFont(
+            instance as rc.ViewModelInstanceAssetFont,
+            this,
+          );
+        }
+        break;
       case PropertyType.Artboard:
         instance = this._runtimeInstance?.artboard(pathSegments[index]) ?? null;
         if (instance !== null) {
@@ -4106,6 +4116,19 @@ export class ViewModelInstance {
       PropertyType.Image,
     );
     return viewmodelInstanceValue as ViewModelInstanceAssetImage | null;
+  }
+
+  /**
+   * method to access a view model property instance belonging
+   * to the view model instance or to a nested view model instance
+   * @param path - path to the font property
+   */
+  public font(path: string): ViewModelInstanceAssetFont | null {
+    const viewmodelInstanceValue = this.propertyFromPath(
+      path,
+      PropertyType.Font,
+    );
+    return viewmodelInstanceValue as ViewModelInstanceAssetFont | null;
   }
 
   /**
@@ -4545,6 +4568,25 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
   public set value(image: rc.Image | null) {
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
       image?.nativeImage ?? null,
+    );
+  }
+
+  public internalHandleCallback(callback: Function) {
+    callback();
+  }
+}
+
+export class ViewModelInstanceAssetFont extends ViewModelInstanceValue {
+  constructor(
+    instance: rc.ViewModelInstanceAssetFont,
+    root: ViewModelInstance,
+  ) {
+    super(instance, root);
+  }
+
+  public set value(font: rc.Font | null) {
+    (this._viewModelInstanceValue as rc.ViewModelInstanceAssetFont).value(
+      font?.nativeFont ?? null,
     );
   }
 

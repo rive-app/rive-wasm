@@ -1029,6 +1029,9 @@ export declare class ViewModelInstanceList extends ViewModelInstanceValue {
 export declare class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
   value(image: ImageInternal | null): void;
 }
+export declare class ViewModelInstanceAssetFont extends ViewModelInstanceValue {
+  value(font: FontInternal | null): void;
+}
 export declare class ViewModelInstanceArtboard extends ViewModelInstanceValue {
   value(artboard: BindableArtboard | Artboard): void;
   viewModelInstance(viewModelInstance: ViewModelInstance): void;
@@ -1045,6 +1048,7 @@ export declare class ViewModelInstance {
   list(path: string): ViewModelInstanceList;
   viewModel(path: string): ViewModelInstance;
   image(path: string): ViewModelInstanceAssetImage;
+  font(path: string): ViewModelInstanceAssetFont;
   artboard(path: string): ViewModelInstanceArtboard;
   replaceViewModel(path: string, value: ViewModelInstance): boolean;
   incrementReferenceCount(): void;
