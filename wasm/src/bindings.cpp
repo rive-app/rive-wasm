@@ -264,6 +264,10 @@ emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
                 break;
             case rive::DataType::enumType:
                 val = "enumType";
+                if (!prop.enumName.empty())
+                {
+                    jsProp.set("enumName", prop.enumName);
+                }
                 break;
             case rive::DataType::trigger:
                 val = "trigger";
