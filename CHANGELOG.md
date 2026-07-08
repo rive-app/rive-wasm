@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.38.4](https://github.com/rive-app/rive-wasm/compare/2.38.3...2.38.4)
+## [2.38.5](https://github.com/rive-app/rive-wasm/compare/2.38.4...2.38.5)
 
 ### Commits
 
+- fix(peon_worker): Handle vulkan initialization errors in gpu recorder (#13035) 37997d7366 [`fc180dd`](https://github.com/rive-app/rive-wasm/commit/fc180dd0347ab46a87cbb90e6b3d89987b5dc46a)
+- chore(runtime): add new core type (#12981) ac4657c21c [`9687c86`](https://github.com/rive-app/rive-wasm/commit/9687c8634b0d375e0f80aa0acff46d9431e69452)
+- fix(js): add miniaudio to Closure externs to prevent cross-runtime audio clash (#13017) 48df83c484 [`d573456`](https://github.com/rive-app/rive-wasm/commit/d57345685a201efd953773a935b5222819ca9e46)
+- chore(runtime): expose data bind runtime methods (#13018) eb0c54ee20 [`507405f`](https://github.com/rive-app/rive-wasm/commit/507405fd975755c6ea94f22cf8987ae1219b86ab)
+- perf(tests): Spawn image_diff.py only once per job (#13013) c4ea178471 [`82ff2ef`](https://github.com/rive-app/rive-wasm/commit/82ff2efdd4f533dc7147a1d7045529303cc4ecc9)
+- fix(build): Don't compile metal shaders for android or wasm (#13015) 19d8fb7957 [`edb8279`](https://github.com/rive-app/rive-wasm/commit/edb82799f75a0bcfd1d8efe9f213ce3b6972b191)
+- fix(runtime): ensure lua data is initialized (#13010) e27bf13d74 [`0c7181d`](https://github.com/rive-app/rive-wasm/commit/0c7181d3bdc107d0ae1f46ee19a941d370b3f049)
+- feature: test.blob(name) reads blob assets from test scripts (#13005) afd68206e6 [`c2d5dc6`](https://github.com/rive-app/rive-wasm/commit/c2d5dc68c5d7244f496ce0ebda29ebef3ff4c951)
+- fix(scripting): Advance detached view model instances at end of frame (#13002) a77c1355bd [`5c60809`](https://github.com/rive-app/rive-wasm/commit/5c60809c034c613286278ae5bf8f934988cedced)
+- feat(scripting): 3D Vector ops, Mat4 lookAt/ortho, Vector buffer writes, GPUBuffer write source range (#13003) ef0e100413 [`f524730`](https://github.com/rive-app/rive-wasm/commit/f524730aeb0f4b92b5507df365eafd4413230c4b)
+- feature (Unreal) Ore Support (#12941) eeb280d7f9 [`2f40bb6`](https://github.com/rive-app/rive-wasm/commit/2f40bb64d3dbfae916401c36b3c25dc8e7356070)
+- chore: rev Luau to rive_0_728 (upstream 0.728) (#13000) e4c22c3ef7 [`600e35d`](https://github.com/rive-app/rive-wasm/commit/600e35d9f60bd3c74686271e69983ef3442ae551)
+- fix(runtime): validate bindablePropertyInstance before using it (#12989) e2c7b48dc0 [`d32afbb`](https://github.com/rive-app/rive-wasm/commit/d32afbb5af675ee1f92129852781f9e02ad53f11)
+- Texture compression fixups (#12939) a23e2ba586 [`66da7b7`](https://github.com/rive-app/rive-wasm/commit/66da7b7e4ebe9f41329eb039b3b14c618f310b41)
+
+## [2.38.4](https://github.com/rive-app/rive-wasm/compare/2.38.3...2.38.4) - 2026-07-01
+
+### Commits
+
+- chore: tag 2.38.4 [`1d7d829`](https://github.com/rive-app/rive-wasm/commit/1d7d8292fcc4e8d49a25b89ba451c183a1d4c996)
 - feat(editor - text input): expose trigger property to focus on text i… (#12975) 50fdb3bb9f [`ff5fdbd`](https://github.com/rive-app/rive-wasm/commit/ff5fdbda432b3838615402c299bac682e742d73c)
 - fix(runtime-focus): resolve focus to first leaf on direct focus (#12974) d607980229 [`b164d37`](https://github.com/rive-app/rive-wasm/commit/b164d37c771741e9fd09973882bc0422570d6803)
 - feat(image): compose layout fit as a separate scale so user scale stays independent (#12896) c372d0d9d4 [`36fb99a`](https://github.com/rive-app/rive-wasm/commit/36fb99af1d4ee2c3a49f8c7a6b5fbf92e44ae916)
