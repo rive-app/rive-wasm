@@ -665,6 +665,16 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       return jsProperties;
                   }),
                   allow_raw_pointers())
+        .function("globalViewModelNames",
+                  optional_override([](const rive::File& self) {
+                      emscripten::val names = emscripten::val::array();
+                      for (auto& name : self.globalViewModelNames())
+                      {
+                          names.call<void>("push", name);
+                      }
+                      return names;
+                  }),
+                  allow_raw_pointers())
         .function("unref",
                   optional_override([](const rive::File& self) -> void { self.unref(); }),
                   allow_raw_pointers())
@@ -808,6 +818,33 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::ArtboardInstance& self,
                                        rive::ViewModelInstanceRuntime* runtimeInstance) {
                       self.bindViewModelInstance(runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("setViewModelInstance",
+                  optional_override([](rive::ArtboardInstance& self,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) {
+                      self.setViewModelInstance(runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("bind", optional_override([](rive::ArtboardInstance& self) { self.bind(); }))
+        .function("setGlobalViewModelInstance",
+                  optional_override([](rive::ArtboardInstance& self,
+                                       const std::string& name,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) -> bool {
+                      return self.setGlobalViewModelInstance(name, runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("globalViewModelInstance",
+                  optional_override([](rive::ArtboardInstance& self,
+                                       const std::string& name) -> rive::ViewModelInstanceRuntime* {
+                      auto vmi = self.globalViewModelInstance(name);
+                      if (vmi == nullptr)
+                      {
+                          return nullptr;
+                      }
+                      auto* runtime = new rive::ViewModelInstanceRuntime(vmi);
+                      runtime->ref();
+                      return runtime;
                   }),
                   allow_raw_pointers())
         .property("bounds", optional_override([](const rive::ArtboardInstance& self) -> rive::AABB {
@@ -1063,6 +1100,33 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self,
                                        rive::ViewModelInstanceRuntime* runtimeInstance) {
                       self.bindViewModelInstance(runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("setViewModelInstance",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) {
+                      self.setViewModelInstance(runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("bind", optional_override([](rive::StateMachineInstance& self) { self.bind(); }))
+        .function("setGlobalViewModelInstance",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       const std::string& name,
+                                       rive::ViewModelInstanceRuntime* runtimeInstance) -> bool {
+                      return self.setGlobalViewModelInstance(name, runtimeInstance->instance());
+                  }),
+                  allow_raw_pointers())
+        .function("globalViewModelInstance",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       const std::string& name) -> rive::ViewModelInstanceRuntime* {
+                      auto vmi = self.globalViewModelInstance(name);
+                      if (vmi == nullptr)
+                      {
+                          return nullptr;
+                      }
+                      auto* runtime = new rive::ViewModelInstanceRuntime(vmi);
+                      runtime->ref();
+                      return runtime;
                   }),
                   allow_raw_pointers())
         .function("hasFocusNodes", optional_override([](rive::StateMachineInstance& self) -> bool {

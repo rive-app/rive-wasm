@@ -391,6 +391,12 @@ export declare class File {
    */
   enums(): DataEnum[];
 
+  /**
+   * Returns the names of the file's global view models, in file order.
+   * @returns array of global view model names
+   */
+  globalViewModelNames(): string[];
+
   unref(): void;
 
   /**
@@ -593,6 +599,27 @@ export declare class Artboard {
    * @param instance - Renderer context to draw with
    */
   bindViewModelInstance(instance: ViewModelInstance): void;
+  /**
+   * Sets the main view model instance without rebinding. Call bind() to apply.
+   */
+  setViewModelInstance(instance: ViewModelInstance): void;
+  /**
+   * Applies the current data context (rebinds data binds). No-op if nothing set.
+   */
+  bind(): void;
+  /**
+   * Sets/replaces the global view model instance bound under the given global
+   * view model name without rebinding, preserving the main instance and the
+   * other globals' order. Call bind() to apply.
+   * @returns false if the name does not match a global view model in the file.
+   */
+  setGlobalViewModelInstance(name: string, instance: ViewModelInstance): boolean;
+  /**
+   * @returns the global view model instance currently bound under the given
+   * name (the runtime-seeded default or a previously set instance), or null if
+   * the name does not match a global view model in the file.
+   */
+  globalViewModelInstance(name: string): ViewModelInstance | null;
 
   didChange(): boolean;
 }
@@ -940,6 +967,27 @@ export declare class StateMachineInstance {
    * @param instance - Renderer context to draw with
    */
   bindViewModelInstance(instance: ViewModelInstance): void;
+  /**
+   * Sets the main view model instance without rebinding. Call bind() to apply.
+   */
+  setViewModelInstance(instance: ViewModelInstance): void;
+  /**
+   * Applies the current data context (rebinds data binds). No-op if nothing set.
+   */
+  bind(): void;
+  /**
+   * Sets/replaces the global view model instance bound under the given global
+   * view model name without rebinding, preserving the main instance and the
+   * other globals' order. Call bind() to apply.
+   * @returns false if the name does not match a global view model in the file.
+   */
+  setGlobalViewModelInstance(name: string, instance: ViewModelInstance): boolean;
+  /**
+   * @returns the global view model instance currently bound under the given
+   * name (the runtime-seeded default or a previously set instance), or null if
+   * the name does not match a global view model in the file.
+   */
+  globalViewModelInstance(name: string): ViewModelInstance | null;
 }
 
 export declare class SMIInput {

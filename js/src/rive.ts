@@ -1707,6 +1707,13 @@ export class RiveFile implements rc.FinalizableTarget {
     }
     return null;
   }
+
+  /**
+   * @returns the names of the file's global view models, in file order.
+   */
+  public globalViewModelNames(): string[] {
+    return this.file.globalViewModelNames();
+  }
 }
 
 export class Rive {
@@ -1831,6 +1838,11 @@ export class Rive {
   private _explicitlyStoppedRendering = false;
 
   private _viewModelInstance: ViewModelInstance | null = null;
+  // User-provided global view model instances, keyed by their global view
+  // model's name. Globals not present here are still driven by the default
+  // instances the runtime seeds; the getter only surfaces instances the user
+  // has explicitly set.
+  private _globalViewModelInstances: Map<string, ViewModelInstance> = new Map();
   private _dataEnums: DataEnum[] | null = null;
 
   private _tabIndex: number | null = null;
@@ -2304,6 +2316,7 @@ export class Rive {
     });
 
     if (autoBind) {
+      // Set the main view model instance (if the artboard has one)...
       const viewModel = this.file.defaultArtboardViewModel(rootArtboard);
       if (viewModel !== null) {
         const runtimeInstance = viewModel.defaultInstance();
@@ -2316,9 +2329,21 @@ export class Rive {
             viewModelInstance,
             viewModelInstance.runtimeInstance,
           );
-          this.bindViewModelInstance(viewModelInstance);
+          this.setViewModelInstance(viewModelInstance);
         }
       }
+      // ...and a default instance for each global view model (no longer
+      // auto-created by the runtime), then apply everything in one rebind.
+      for (const name of this.file.globalViewModelNames()) {
+        const globalViewModel = this.file.viewModelByName(name);
+        if (globalViewModel !== null) {
+          const instance = new ViewModel(globalViewModel).defaultInstance();
+          if (instance !== null) {
+            this.setGlobalViewModelInstance(name, instance);
+          }
+        }
+      }
+      this.bind();
     }
   }
 
@@ -2679,6 +2704,8 @@ export class Rive {
     }
     this._viewModelInstance?.cleanup();
     this._viewModelInstance = null;
+    this._globalViewModelInstances.forEach((instance) => instance.cleanup());
+    this._globalViewModelInstances.clear();
     this._dataEnums = null;
   }
 
@@ -3524,29 +3551,145 @@ export class Rive {
   }
 
   /**
-   * Initialize the data context with the view model instance.
+   * Sets the main view model instance and applies it (rebinds). Equivalent to
+   * `setViewModelInstance(vmi)` followed by `bind()`.
    */
   public bindViewModelInstance(viewModelInstance: ViewModelInstance | null) {
-    if (this.artboard && !this.destroyed) {
-      if (viewModelInstance && viewModelInstance.runtimeInstance) {
-        viewModelInstance.internalIncrementReferenceCount();
-        this._viewModelInstance?.cleanup();
-        this._viewModelInstance = viewModelInstance;
-        if (this.animator.stateMachines.length > 0) {
-          this.animator.stateMachines.forEach((stateMachine) =>
-            stateMachine.bindViewModelInstance(viewModelInstance),
-          );
-        } else {
-          this.artboard.bindViewModelInstance(
-            viewModelInstance.runtimeInstance,
-          );
-        }
-      }
+    if (!viewModelInstance) {
+      return;
+    }
+    this.setViewModelInstance(viewModelInstance);
+    this.bind();
+  }
+
+  /**
+   * Sets the main view model instance in the data context WITHOUT rebinding.
+   * Call {@link bind} to apply. Use this with {@link setGlobalViewModelInstance}
+   * to batch multiple changes into a single rebind.
+   */
+  public setViewModelInstance(viewModelInstance: ViewModelInstance | null) {
+    const runtimeInstance = viewModelInstance?.runtimeInstance;
+    if (
+      !this.artboard ||
+      this.destroyed ||
+      !viewModelInstance ||
+      !runtimeInstance
+    ) {
+      return;
+    }
+    viewModelInstance.internalIncrementReferenceCount();
+    this._viewModelInstance?.cleanup();
+    this._viewModelInstance = viewModelInstance;
+    if (this.animator.stateMachines.length > 0) {
+      this.animator.stateMachines.forEach((stateMachine) =>
+        stateMachine.instance.setViewModelInstance(runtimeInstance),
+      );
+    } else {
+      this.artboard.setViewModelInstance(runtimeInstance);
+    }
+  }
+
+  /**
+   * Applies any pending `set*` view model instance changes by rebinding the
+   * data binds once.
+   * Implicitly creates and binds any view models that have not been set.
+   */
+  public bind() {
+    if (!this.artboard || this.destroyed) {
+      return;
+    }
+    if (this.animator.stateMachines.length > 0) {
+      this.animator.stateMachines.forEach((stateMachine) =>
+        stateMachine.instance.bind(),
+      );
+    } else {
+      this.artboard.bind();
     }
   }
 
   public get viewModelInstance(): ViewModelInstance | null {
     return this._viewModelInstance;
+  }
+
+  /**
+   * Sets (or replaces) the global view model instance for the given global view
+   * model name in the data context WITHOUT rebinding. The main instance and any
+   * other globals keep their order. Call {@link bind} to apply — batch several
+   * `set*` calls then a single `bind()` to avoid rebinding per set.
+   * @param name - the name of the global view model
+   * @param viewModelInstance - the instance to set for that global
+   * @returns whether the instance was set (false if `name` does not match a
+   * global view model in the file)
+   */
+  public setGlobalViewModelInstance(
+    name: string,
+    viewModelInstance: ViewModelInstance,
+  ): boolean {
+    const runtimeInstance = viewModelInstance?.runtimeInstance;
+    if (!this.artboard || this.destroyed || !runtimeInstance) {
+      return false;
+    }
+    let bound = false;
+    if (this.animator.stateMachines.length > 0) {
+      this.animator.stateMachines.forEach((stateMachine) => {
+        if (
+          stateMachine.instance.setGlobalViewModelInstance(
+            name,
+            runtimeInstance,
+          )
+        ) {
+          bound = true;
+        }
+      });
+    } else {
+      bound = this.artboard.setGlobalViewModelInstance(name, runtimeInstance);
+    }
+    if (bound) {
+      viewModelInstance.internalIncrementReferenceCount();
+      this._globalViewModelInstances.get(name)?.cleanup();
+      this._globalViewModelInstances.set(name, viewModelInstance);
+    }
+    return bound;
+  }
+
+  /**
+   * @param name - the name of the global view model
+   * @returns the global view model instance bound under the given name — the
+   * instance set via {@link setGlobalViewModelInstance} or one created by
+   * auto-bind — or null if none has been set/created for that name (globals are
+   * not auto-created; the getter never creates one).
+   */
+  public globalViewModelInstance(name: string): ViewModelInstance | null {
+    const cached = this._globalViewModelInstances.get(name);
+    if (cached) {
+      return cached;
+    }
+    if (!this.artboard || this.destroyed) {
+      return null;
+    }
+    // State machines share the artboard's data context; query the first one
+    // when present (mirroring how the setter routes), otherwise the artboard.
+    // This is a pure read — it returns null unless an instance was set/bound.
+    const runtimeInstance =
+      this.animator.stateMachines.length > 0
+        ? this.animator.stateMachines[0].instance.globalViewModelInstance(name)
+        : this.artboard.globalViewModelInstance(name);
+    if (runtimeInstance === null) {
+      return null;
+    }
+    const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
+    createFinalization(viewModelInstance, runtimeInstance);
+    viewModelInstance.internalIncrementReferenceCount();
+    this._globalViewModelInstances.set(name, viewModelInstance);
+    return viewModelInstance;
+  }
+
+  /**
+   * @returns the names of the file's global view models, in file order. Use
+   * these with {@link setGlobalViewModelInstance} / {@link globalViewModelInstance}.
+   */
+  public globalViewModelNames(): string[] {
+    return this.file?.globalViewModelNames() ?? [];
   }
 
   public viewModelByIndex(index: number): ViewModel | null {
