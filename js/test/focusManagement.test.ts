@@ -8,10 +8,19 @@ import { stateMachineFileBuffer } from "./assets/bytes";
 //   sm.playing && sm.hasFocusNodes
 // Only focusState() is called by pollFocusState itself.
 function makeFocusSm(hasFocusResult: boolean) {
+  const instance = {
+    focusNext: jest.fn().mockReturnValue(true),
+    focusPrevious: jest.fn().mockReturnValue(true),
+    focusState: jest.fn().mockReturnValue({
+      hasFocus: hasFocusResult,
+      expectsKeyboardInput: false,
+    }),
+  };
   return {
     name: "FakeFocusSm",
     playing: true,
     hasFocusNodes: true,
+    instance,
     // Render-loop methods (no-op stubs) to keep these tests stable even if a frame renders.
     reportedEventCount: jest.fn().mockReturnValue(0),
     reportedEventAt: jest.fn(),
@@ -237,12 +246,23 @@ describe("Polling focus each frame", () => {
     r.cleanup();
   });
 
-  test("pollFocusState: no _keyboardInteractions → no-op, no crash", async () => {
+  test("pollFocusState: lazily wires keyboard interactions when focus nodes appear", async () => {
     const { r } = await loadRive();
-    injectFocusSm(r, makeFocusSm(true));
-    // _keyboardInteractions is null — the buffer SM has no focus nodes so none was created
+    expect((r as any)._keyboardInteractions).toBeNull();
+    injectFocusSm(r, makeFocusSm(false));
+
+    callPollFocusState(r);
+
+    expect((r as any)._keyboardInteractions).not.toBeNull();
+    r.cleanup();
+  });
+
+  test("pollFocusState: no focus nodes and no _keyboardInteractions → no-op, no crash", async () => {
+    const { r } = await loadRive();
+    expect((r as any)._keyboardInteractions).toBeNull();
 
     expect(() => callPollFocusState(r)).not.toThrow();
+    expect((r as any)._keyboardInteractions).toBeNull();
     r.cleanup();
   });
 

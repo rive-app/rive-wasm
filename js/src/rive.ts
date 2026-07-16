@@ -344,10 +344,11 @@ class StateMachine {
   public readonly instance: rc.StateMachineInstance;
 
   /**
-   * Whether this state machine has focus nodes that can receive focus
-   * at any point
+   * Whether this state machine has focus nodes
    */
-  public readonly hasFocusNodes: boolean;
+  public get hasFocusNodes(): boolean {
+    return this.instance.hasFocusNodes();
+  }
 
   /**
    * @constructor
@@ -362,7 +363,6 @@ class StateMachine {
   ) {
     this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
-    this.hasFocusNodes = this.instance.hasFocusNodes();
   }
 
   public get name(): string {
@@ -2114,28 +2114,41 @@ export class Rive {
         advanceAndDrain: this.advanceAndReportChanges.bind(this)
       });
 
-      // Wire up keyboard interactions for state machines that have focus nodes.
-      //   hasFocusNodes — unified focus tree check, gates tab traversal
-      const smWithFocusNodes = playingStateMachines.filter((sm) => sm.hasFocusNodes);
-
-      if (smWithFocusNodes.length) {
-        // Set the canvas as a tabbable element if there are any focus nodes.
-        // Prefer the tabIndex param set by the user, otherwise use 0.
-        // But do not override any explicit tabIndex already set on the canvas, if any.
-        const currentCanvasTabIndex = (this.canvas as HTMLCanvasElement).tabIndex;
-        // By default, canvas elements have a tabIndex of -1
-        if (currentCanvasTabIndex === -1 || isNaN(currentCanvasTabIndex)) {
-          (this.canvas as HTMLCanvasElement).tabIndex = (this._tabIndex !== null ? this._tabIndex : 0);
-        }
-        if (typeof window !== "undefined") {
-          this._keyboardInteractions = new KeyboardInteractions({
-            canvas: this.canvas as HTMLCanvasElement,
-            stateMachine: smWithFocusNodes[0].instance, // work off assumption of single state machine
-            hasFocusNodes: true,
-          });
-        }
-      }
+      this.ensureKeyboardInteractions();
     }
+  }
+
+  /**
+   * Wire keyboard interactions when a playing state machine has focus nodes.
+   * Called at listener setup and lazily each frame so late-bound bindable artboards work.
+   */
+  private ensureKeyboardInteractions(): void {
+    if (
+      this._keyboardInteractions ||
+      this.shouldDisableRiveListeners ||
+      typeof window === "undefined" ||
+      !(this.canvas instanceof HTMLCanvasElement)
+    ) {
+      return;
+    }
+
+    const smWithFocusNodes = this.animator.stateMachines.find(
+      (sm) => sm.playing && sm.hasFocusNodes,
+    );
+    if (!smWithFocusNodes) {
+      return;
+    }
+
+    const currentCanvasTabIndex = this.canvas.tabIndex;
+    if (currentCanvasTabIndex === -1 || isNaN(currentCanvasTabIndex)) {
+      this.canvas.tabIndex = this._tabIndex !== null ? this._tabIndex : 0;
+    }
+
+    this._keyboardInteractions = new KeyboardInteractions({
+      canvas: this.canvas,
+      stateMachine: smWithFocusNodes.instance,
+      hasFocusNodes: true,
+    });
   }
 
   private cleanupKeyboardInteractions(): void {
@@ -2379,6 +2392,7 @@ export class Rive {
    * Rive internally updated focus outside of user interaction (e.g., via listener action)
    */
   private pollFocusState() {
+    this.ensureKeyboardInteractions();
     if (!this._keyboardInteractions) {
       this._prevHasFocus = false;
       return;
