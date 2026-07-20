@@ -9,6 +9,12 @@ export interface KeyboardInteractionsParams {
    * focusNext() returning false means no more traversable nodes — tab is released to the page.
    */
   hasFocusNodes: boolean;
+  /**
+   * Optional accessibility overlay that should be treated as part of this Rive
+   * instance's focus domain. This is lazy because the overlay may be created
+   * after keyboard listeners are registered.
+   */
+  getOverlayElement?: () => HTMLElement | null;
 }
 
 /**
@@ -47,15 +53,35 @@ export class KeyboardInteractions {
   private canvas: HTMLCanvasElement;
   private mainSm: rc.StateMachineInstance;
   private hasFocusNodes: boolean;
+  /** Cached callback that returns the accessibility overlay element once created. */
+  private getOverlayElement?: () => HTMLElement | null;
 
-  constructor({ canvas, stateMachine, hasFocusNodes }: KeyboardInteractionsParams) {
+  /** Whether the canvas currently has browser DOM focus. */
+  private canvasHasFocus = false;
+  /** After Tab exits the last Rive node, ignore keydowns until focus re-enters the focus domain. */
+  private focusDomainReleased = false;
+  /** Overlay element currently wired with focusin/keydown listeners, if any. */
+  private currentOverlayElement: HTMLElement | null = null;
+  /** Canvas parent (or document) watched for focusin to attach overlay listeners lazily. */
+  private focusDomainHost: HTMLElement | Document;
+
+  constructor({
+    canvas,
+    stateMachine,
+    hasFocusNodes,
+    getOverlayElement,
+  }: KeyboardInteractionsParams) {
     this.canvas = canvas;
     this.mainSm = stateMachine;
     this.hasFocusNodes = hasFocusNodes;
+    this.getOverlayElement = getOverlayElement;
+    this.focusDomainHost = canvas.parentElement ?? document;
 
     canvas.addEventListener("focus", this.onCanvasFocus);
     canvas.addEventListener("blur", this.onCanvasBlur);
     canvas.addEventListener("keydown", this.onKeyDown);
+    this.focusDomainHost.addEventListener("focusin", this.onFocusDomainHostFocusIn);
+    this.syncOverlayListener();
   }
 
   /**
@@ -89,6 +115,10 @@ export class KeyboardInteractions {
    * gates this so a click doesn't yank Rive focus to the first node on the focus event itself.
    */
   public onCanvasFocus = (event: FocusEvent) => {
+    this.syncOverlayListener();
+    this.canvasHasFocus = true;
+    this.focusDomainReleased = false;
+
     if (!this.hasFocusNodes) return;
     if (this.mainSm.focusState().hasFocus) return;
 
@@ -104,10 +134,26 @@ export class KeyboardInteractions {
 
   public onCanvasBlur = (_event: FocusEvent) => {
     this.focusSessionState = FocusSessionState.NotFocused;
+    this.canvasHasFocus = false;
+  };
+
+  private onOverlayFocusIn = (event: FocusEvent) => {
+    if (this.isInOverlay(event.target)) {
+      this.focusDomainReleased = false;
+    }
+  };
+
+  private onFocusDomainHostFocusIn = (_event: FocusEvent) => {
+    this.syncOverlayListener();
   };
 
   public onKeyDown = (event: KeyboardEvent) => {
-    if (this.focusSessionState === FocusSessionState.NotFocused) return;
+    this.syncOverlayListener();
+
+    // After Tab exits the last Rive node, ignore keys until focus re-enters the focus domain.
+    if (this.focusDomainReleased) return;
+
+    if (!this.shouldRiveHandleKeyEvent(event)) return;
 
     if (event.code === "Tab" && this.hasFocusNodes) {
       const forward = !event.shiftKey;
@@ -118,11 +164,68 @@ export class KeyboardInteractions {
         event.preventDefault();
       } else {
         // No more traversable nodes — release Tab to the page.
-        // Set state immediately; onCanvasBlur will also fire naturally.
         this.focusSessionState = FocusSessionState.NotFocused;
+        this.focusDomainReleased = true;
+        this.canvasHasFocus = false;
       }
+      this.syncOverlayListener();
     }
   };
+
+  /**
+   * Whether Rive should handle this keydown — i.e. it currently owns keyboard input.
+   * True when focus is anywhere in the Rive focus domain (the canvas itself or the
+   * accessibility overlay), OR a focus session is active and the key landed on the
+   * canvas.
+   */
+  private shouldRiveHandleKeyEvent(event: KeyboardEvent): boolean {
+    const inFocusDomain =
+      this.isInFocusDomain(document.activeElement) ||
+      this.isInOverlay(event.target);
+    if (inFocusDomain) return true;
+
+    const sessionActive =
+      this.focusSessionState !== FocusSessionState.NotFocused;
+    const eventOnCanvas = event.target === this.canvas;
+    return sessionActive && (this.canvasHasFocus || eventOnCanvas);
+  }
+
+  /** Rive focus domain = the canvas itself OR the accessibility overlay. */
+  private isInFocusDomain(target: EventTarget | null): boolean {
+    if (target === this.canvas) return true;
+    return this.isInOverlay(target);
+  }
+
+  /** Overlay only (excludes the canvas) — the accessibility overlay subtree. */
+  private isInOverlay(target: EventTarget | null): boolean {
+    if (!(target instanceof Node)) return false;
+    return this.getOverlayElement?.()?.contains(target) ?? false;
+  }
+
+  private syncOverlayListener(): void {
+    const nextOverlayElement = this.getOverlayElement?.() ?? null;
+    if (nextOverlayElement === this.currentOverlayElement) return;
+
+    this.currentOverlayElement?.removeEventListener(
+      "focusin",
+      this.onOverlayFocusIn,
+    );
+    this.currentOverlayElement?.removeEventListener(
+      "keydown",
+      this.onKeyDown,
+      true,
+    );
+    this.currentOverlayElement = nextOverlayElement;
+    this.currentOverlayElement?.addEventListener(
+      "focusin",
+      this.onOverlayFocusIn,
+    );
+    this.currentOverlayElement?.addEventListener(
+      "keydown",
+      this.onKeyDown,
+      true,
+    );
+  }
 
   /**
    * Whether the canvas currently matches :focus-visible — the browser's heuristic for keyboard-
@@ -149,5 +252,15 @@ export class KeyboardInteractions {
     this.canvas.removeEventListener("focus", this.onCanvasFocus);
     this.canvas.removeEventListener("blur", this.onCanvasBlur);
     this.canvas.removeEventListener("keydown", this.onKeyDown);
+    this.focusDomainHost.removeEventListener("focusin", this.onFocusDomainHostFocusIn);
+    this.currentOverlayElement?.removeEventListener(
+      "focusin",
+      this.onOverlayFocusIn,
+    );
+    this.currentOverlayElement?.removeEventListener(
+      "keydown",
+      this.onKeyDown,
+      true,
+    );
   }
 }

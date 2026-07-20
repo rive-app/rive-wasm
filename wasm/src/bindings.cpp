@@ -9,6 +9,9 @@
 #include "rive/animation/state_machine_bool.hpp"
 #include "rive/animation/state_machine_input_instance.hpp"
 #include "rive/animation/state_machine_instance.hpp"
+#include "rive/animation/semantic_listener_group.hpp"
+#include "rive/semantic/semantic_manager.hpp"
+#include "rive/semantic/semantic_snapshot.hpp"
 #include "rive/animation/state_machine_number.hpp"
 #include "rive/animation/state_machine_trigger.hpp"
 #include "rive/artboard.hpp"
@@ -154,6 +157,92 @@ bool hasListeners(rive::StateMachineInstance* smi)
         }
     }
     return false;
+}
+
+emscripten::val semanticsDiffNodeToVal(const rive::SemanticsDiffNode& node)
+{
+    emscripten::val obj = emscripten::val::object();
+    obj.set("id", node.id);
+    obj.set("role", node.role);
+    obj.set("label", node.label);
+    obj.set("value", node.value);
+    obj.set("hint", node.hint);
+    obj.set("stateFlags", node.stateFlags);
+    obj.set("traitFlags", node.traitFlags);
+    obj.set("headingLevel", node.headingLevel);
+    obj.set("minX", node.minX);
+    obj.set("minY", node.minY);
+    obj.set("maxX", node.maxX);
+    obj.set("maxY", node.maxY);
+    obj.set("parentId", node.parentId);
+    obj.set("siblingIndex", node.siblingIndex);
+    return obj;
+}
+
+emscripten::val semanticsDiffToVal(const rive::SemanticsDiff& diff)
+{
+    emscripten::val result = emscripten::val::object();
+    result.set("frameNumber", static_cast<double>(diff.frameNumber));
+    result.set("treeVersion", static_cast<double>(diff.treeVersion));
+    result.set("rootId", diff.rootId);
+
+    emscripten::val removed = emscripten::val::array();
+    for (auto id : diff.removed)
+    {
+        removed.call<void>("push", id);
+    }
+    result.set("removed", removed);
+
+    emscripten::val added = emscripten::val::array();
+    for (const auto& node : diff.added)
+    {
+        added.call<void>("push", semanticsDiffNodeToVal(node));
+    }
+    result.set("added", added);
+
+    emscripten::val moved = emscripten::val::array();
+    for (const auto& node : diff.moved)
+    {
+        moved.call<void>("push", semanticsDiffNodeToVal(node));
+    }
+    result.set("moved", moved);
+
+    emscripten::val childrenUpdated = emscripten::val::array();
+    for (const auto& update : diff.childrenUpdated)
+    {
+        emscripten::val obj = emscripten::val::object();
+        obj.set("parentId", update.parentId);
+        emscripten::val childIds = emscripten::val::array();
+        for (auto childId : update.childIds)
+        {
+            childIds.call<void>("push", childId);
+        }
+        obj.set("childIds", childIds);
+        childrenUpdated.call<void>("push", obj);
+    }
+    result.set("childrenUpdated", childrenUpdated);
+
+    emscripten::val updatedSemantic = emscripten::val::array();
+    for (const auto& node : diff.updatedSemantic)
+    {
+        updatedSemantic.call<void>("push", semanticsDiffNodeToVal(node));
+    }
+    result.set("updatedSemantic", updatedSemantic);
+
+    emscripten::val updatedGeometry = emscripten::val::array();
+    for (const auto& update : diff.updatedGeometry)
+    {
+        emscripten::val obj = emscripten::val::object();
+        obj.set("id", update.id);
+        obj.set("minX", update.minX);
+        obj.set("minY", update.minY);
+        obj.set("maxX", update.maxX);
+        obj.set("maxY", update.maxY);
+        updatedGeometry.call<void>("push", obj);
+    }
+    result.set("updatedGeometry", updatedGeometry);
+
+    return result;
 }
 
 emscripten::val createRiveEventObject(rive::Event* event)
@@ -1148,6 +1237,39 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       obj.set("hasFocus", state.hasFocus);
                       obj.set("expectsKeyboardInput", state.expectsKeyboardInput);
                       return obj;
+                  }))
+        .function("enableSemantics", optional_override([](rive::StateMachineInstance& self) {
+                      self.enableSemantics();
+                  }))
+        .function("drainSemanticsDiff",
+                  optional_override([](rive::StateMachineInstance& self) -> emscripten::val {
+                      auto* manager = self.semanticManager();
+                      if (manager == nullptr)
+                      {
+                          return emscripten::val::null();
+                      }
+                      auto diff = manager->drainDiff();
+                      if (diff.empty())
+                      {
+                          return emscripten::val::null();
+                      }
+                      return semanticsDiffToVal(diff);
+                  }))
+        .function("fireSemanticAction",
+                  optional_override(
+                      [](rive::StateMachineInstance& self, uint32_t nodeId, uint8_t actionType) {
+                          self.fireSemanticAction(
+                              nodeId,
+                              static_cast<rive::SemanticActionType>(actionType));
+                      }))
+        .function("focusSemanticNode",
+                  optional_override([](rive::StateMachineInstance& self, uint32_t nodeId) -> bool {
+                      auto* manager = self.semanticManager();
+                      if (manager == nullptr)
+                      {
+                          return false;
+                      }
+                      return manager->requestFocus(nodeId);
                   }));
 
     class_<rive::SMIInput>("SMIInput")

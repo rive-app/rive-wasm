@@ -141,6 +141,61 @@ describe("Polling focus each frame", () => {
     r.cleanup();
   });
 
+  test("pollFocusState: does not force canvas focus when already focused in the overlay scope (allowFocusInterrupt=true)", async () => {
+    const { r, canvas } = await loadRive({
+      focusOptions: { allowFocusInterrupt: true },
+    });
+    attachKeyboardInteractions(r, canvas);
+    injectFocusSm(r, makeFocusSm(true));
+    (r as any)._prevHasFocus = false;
+
+    // The overlay has driven focus onto a semantic node element (e.g. an
+    // appearing alert dialog). Stealing focus to the canvas would knock a
+    // screen reader off that node, so it must be suppressed.
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const semanticNode = document.createElement("div");
+    semanticNode.tabIndex = -1;
+    container.appendChild(semanticNode);
+    semanticNode.focus();
+    expect(document.activeElement).toBe(semanticNode);
+    (r as any)._accessibilityOverlay = {
+      getSemanticOverlayContainer: () => container,
+      destroy: jest.fn(),
+    };
+
+    const focusSpy = jest.spyOn(canvas, "focus");
+    callPollFocusState(r);
+
+    expect(focusSpy).not.toHaveBeenCalled();
+    r.cleanup();
+  });
+
+  test("pollFocusState: forces canvas focus when an overlay exists but focus is outside its scope", async () => {
+    const { r, canvas } = await loadRive({
+      focusOptions: { allowFocusInterrupt: true },
+    });
+    attachKeyboardInteractions(r, canvas);
+    injectFocusSm(r, makeFocusSm(true));
+    (r as any)._prevHasFocus = false;
+
+    // An overlay exists, but focus is on the host page (out of scope). The
+    // in-scope guard is container-scoped, so the canvas steal still applies.
+    (document.activeElement as HTMLElement | null)?.blur();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    (r as any)._accessibilityOverlay = {
+      getSemanticOverlayContainer: () => container,
+      destroy: jest.fn(),
+    };
+
+    const focusSpy = jest.spyOn(canvas, "focus");
+    callPollFocusState(r);
+
+    expect(focusSpy).toHaveBeenCalledTimes(1);
+    r.cleanup();
+  });
+
   test("pollFocusState: hasFocus=true does NOT call canvas.focus() when allowFocusInterrupt=false", async () => {
     const { r, canvas } = await loadRive({
       focusOptions: { allowFocusInterrupt: false },

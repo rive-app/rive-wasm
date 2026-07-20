@@ -988,6 +988,84 @@ export declare class StateMachineInstance {
    * the name does not match a global view model in the file.
    */
   globalViewModelInstance(name: string): ViewModelInstance | null;
+
+  /**
+   * Enables semantic tree tracking for this state machine instance.
+   * Once enabled, the runtime builds and maintains a semantic tree that
+   * describes the accessible structure of the artboard (roles, labels,
+   * states, bounds). Call this before using drainSemanticsDiff().
+   */
+  enableSemantics(): void;
+
+  /**
+   * Returns the incremental semantic diff since the last call, or null if
+   * nothing changed. Each diff contains arrays of added/removed/moved nodes,
+   * updated semantic properties, updated geometry, and children reorderings.
+   */
+  drainSemanticsDiff(): SemanticsDiff | null;
+
+  /**
+   * Fire a semantic action on the node with the given ID.
+   * @param nodeId - The semantic node ID to target
+   * @param actionType - 0 = tap, 1 = increase, 2 = decrease
+   */
+  fireSemanticAction(nodeId: number, actionType: number): void;
+
+  /**
+   * Request focus on the semantic node with the given ID.
+   * Routes through SemanticManager to focus the FocusData sibling of the
+   * SemanticData that owns the node. Returns true if focus was set.
+   * @param nodeId - The semantic node ID to focus
+   * @returns boolean - True if focus was set, false otherwise
+   */
+  focusSemanticNode(nodeId: number): boolean;
+
+  /**
+   * Clears focus from the currently focused node in the focus tree.
+   */
+  clearFocus(): void;
+}
+
+export interface SemanticsDiffNode {
+  id: number;
+  role: number;
+  label: string;
+  value: string;
+  hint: string;
+  stateFlags: number;
+  traitFlags: number;
+  headingLevel: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  parentId: number;
+  siblingIndex: number;
+}
+
+export interface SemanticsBoundsUpdate {
+  id: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+export interface SemanticsChildrenUpdate {
+  parentId: number;
+  childIds: number[];
+}
+
+export interface SemanticsDiff {
+  frameNumber: number;
+  treeVersion: number;
+  rootId: number;
+  removed: number[];
+  added: SemanticsDiffNode[];
+  moved: SemanticsDiffNode[];
+  childrenUpdated: SemanticsChildrenUpdate[];
+  updatedSemantic: SemanticsDiffNode[];
+  updatedGeometry: SemanticsBoundsUpdate[];
 }
 
 export declare class SMIInput {

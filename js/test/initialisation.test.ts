@@ -9,6 +9,12 @@ import {
   oneShotRiveFileBuffer,
   stateMachineFileBuffer,
 } from "./assets/bytes";
+import { loadFile } from "./helpers";
+
+class MockResizeObserver {
+  observe = jest.fn();
+  disconnect = jest.fn();
+}
 
 function setTimeoutPromise(callback, ms) {
   return new Promise((resolve) =>
@@ -19,12 +25,27 @@ function setTimeoutPromise(callback, ms) {
   );
 }
 
+async function waitForPredicate<T>(
+  predicate: () => T | null | undefined | false,
+  timeoutMs = 1500,
+  intervalMs = 25,
+): Promise<T> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const result = predicate();
+    if (result) return result;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error("Timed out waiting for condition");
+}
+
 // #region setup and teardown
 
 beforeEach(() => {
   // needed to prevent logging bad header on the corrupt file loader
   // not sure why mocking in that function does not work
   jest.spyOn(console, "error").mockImplementation(() => {});
+  (window as any).ResizeObserver = MockResizeObserver;
 });
 
 afterEach(() => {
@@ -45,9 +66,10 @@ test("Runtime can be loaded using callbacks", async () => {
     callbacksSucceeded += 1;
   };
 
-  const callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void =>
+  const callback2: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
-  callbacksSucceeded += 1;
+    callbacksSucceeded += 1;
+  };
 
   const callback3: rive.RuntimeCallback = (runtime: rc.RiveCanvas): void => {
     expect(runtime).toBeDefined();
@@ -56,8 +78,12 @@ test("Runtime can be loaded using callbacks", async () => {
 
   rive.RuntimeLoader.getInstance(callback1);
   rive.RuntimeLoader.getInstance(callback2);
-  // Delay 1 second to let library load
-  await setTimeoutPromise(() => rive.RuntimeLoader.getInstance(callback3), 500);
+  rive.RuntimeLoader.getInstance(callback3);
+
+  // Wait until the runtime has actually loaded and fired all three callbacks,
+  // rather than racing a fixed timeout against WASM load time (which made this
+  // flaky: on a cold/slow load the callbacks were still queued at assert time).
+  await waitForPredicate(() => callbacksSucceeded === 3);
   expect(callbacksSucceeded).toBe(3);
 });
 
@@ -314,6 +340,39 @@ test("Corrupt riv file invokes onLoadError", (done) => {
     },
     onLoad: () => {
       expect(false).toBeTruthy();
+    },
+  });
+});
+
+test("Rive creates a semantic tree and accessibility overlay for semantic files", (done) => {
+  const semanticDataBindingListsBuffer = loadFile(
+    "assets/data_binding_lists.riv",
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = 500;
+  canvas.height = 500;
+  document.body.appendChild(canvas);
+
+  const r = new rive.Rive({
+    canvas,
+    buffer: semanticDataBindingListsBuffer,
+    semanticsMode: rive.SemanticMode.Enabled,
+    stateMachines: "State Machine 1",
+    autoplay: true,
+    autoBind: true,
+    onAdvance: () => {
+      const tree = r.semanticTree;
+      expect(tree?.nodeCount).toBeGreaterThan(0);
+      expect(
+        tree.flattened().some(({ node }) => node.label?.length > 0),
+      ).toBe(true);
+
+      const overlay = document.querySelector<HTMLElement>('[id^="rive-a11y-"]');
+      expect(overlay).not.toBeNull();
+      expect(overlay!.getAttribute("role")).toBe("region");
+      expect(overlay!.querySelector('[id*="-sem-"]')).not.toBeNull();
+      canvas.remove();
+      done();
     },
   });
 });

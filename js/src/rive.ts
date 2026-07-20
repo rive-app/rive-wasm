@@ -2,6 +2,13 @@ import * as rc from "./rive_advanced.mjs";
 import { Animation } from "./animation";
 import { RuntimeLoader, type RuntimeCallback } from "./runtimeLoader";
 import {
+  SemanticTreeModel,
+  AccessibilityOverlay,
+  SemanticMode,
+  type RiveSemanticsOptions,
+  type SemanticActionType,
+} from "./semantics";
+import {
   registerTouchInteractions,
   KeyboardInteractions,
   FocusSessionState,
@@ -26,6 +33,8 @@ class RiveError extends Error {
 }
 
 export { RiveFontClassUtil as RiveFont };
+export { SemanticMode };
+export type { RiveSemanticsOptions };
 
 // Note: Re-exporting a few types from rive_advanced.mjs to expose for high-level
 // API usage without re-defining their type definition here. May want to revisit
@@ -397,6 +406,41 @@ class StateMachine {
   }
 
   /**
+   * Enables semantic tree tracking for this state machine instance.
+   */
+  public enableSemantics() {
+    this.instance.enableSemantics();
+  }
+
+  /**
+   * Returns the incremental semantic diff since the last call, or null
+   * if semantics is not enabled or nothing changed.
+   */
+  public drainSemanticsDiff(): rc.SemanticsDiff | null {
+    return this.instance.drainSemanticsDiff();
+  }
+
+  /**
+   * Fire a semantic action (tap, increase, decrease) on a node.
+   * @param nodeId - The semantic node ID to target
+   * @param actionType - 0 = tap, 1 = increase, 2 = decrease
+   */
+  public fireSemanticAction(nodeId: number, actionType: SemanticActionType) {
+    this.instance.fireSemanticAction(nodeId, actionType);
+  }
+
+  /**
+   * When tools that enable accessible experiences traverse elements with focus,
+   * we should call this method to focus the semantic node. It will also trigger
+   * focus on any Focus listeners for this node
+   * @param nodeId ID of the Semantic Node to focus
+   * @returns boolean - True if focus was set, false otherwise
+   */
+  public focusSemanticNode(nodeId: number): boolean {
+    return this.instance.focusSemanticNode(nodeId);
+  }
+
+  /**
    * Returns the number of events reported from the last advance call
    * @returns Number of events reported
    */
@@ -522,6 +566,7 @@ class Animator {
     animatables: string | string[],
     playing: boolean,
     fireEvent = true,
+    semanticsActive = false,
   ): string[] {
     animatables = mapToStringArray(animatables);
     // If animatables is empty, play or pause everything
@@ -567,6 +612,9 @@ class Animator {
                 playing,
                 this.artboard,
               );
+              if (semanticsActive) {
+                newStateMachine.enableSemantics();
+              }
               this.stateMachines.push(newStateMachine);
             }
           }
@@ -635,7 +683,7 @@ class Animator {
    * @param animatables the name(s) of state machines to add
    * @param playing whether state machines should play on instantiation
    */
-  public initStateMachines(animatables: string[], playing: boolean) {
+  public initStateMachines(animatables: string[], playing: boolean, semanticsActive: boolean) {
     // Play/pause already instanced items, or create new instances
     // This validation is kept to maintain compatibility with current behavior.
     // But given that it this is called during artboard initialization
@@ -655,6 +703,9 @@ class Animator {
             playing,
             this.artboard,
           );
+          if (semanticsActive) {
+            newStateMachine.enableSemantics();
+          }
           this.stateMachines.push(newStateMachine);
         } else {
           console.warn(`State Machine with name ${animatables[i]} not found. Falling back to find an animation with the same name.`);
@@ -817,7 +868,7 @@ class Animator {
    * If there are no animations or state machines, add the first one found
    * @returns the name of the animation or state machine instanced
    */
-  public atLeastOne(playing: boolean, fireEvent = true): string {
+  public atLeastOne(playing: boolean, fireEvent = true, semanticsActive = false): string {
     let instancedName: string;
     if (this.animations.length === 0 && this.stateMachines.length === 0) {
       if (this.artboard.animationCount() > 0) {
@@ -833,6 +884,7 @@ class Animator {
           [(instancedName = this.artboard.stateMachineByIndex(0).name)],
           playing,
           fireEvent,
+          semanticsActive,
         );
       }
     }
@@ -1262,6 +1314,8 @@ const observers = new ObjectObservers();
 
 // #region Rive
 
+let nextRiveInstanceId = 0;
+
 // Interface for the Rive static method contructor
 export interface RiveParameters {
   canvas: HTMLCanvasElement | OffscreenCanvas; // canvas is required
@@ -1287,6 +1341,19 @@ export interface RiveParameters {
    * enabled by default.
    */
   enableRiveAssetCDN?: boolean;
+  /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * When to build semantic trees and the accessibility DOM overlay.
+   * Defaults to {@link SemanticMode.Disabled}.
+   */
+  semanticsMode?: SemanticMode;
+  /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * Optional options for the accessibility overlay container.
+   */
+  semanticsOptions?: RiveSemanticsOptions;
   /**
    * Turn off Rive Listeners. This means state machines that have Listeners
    * will not be invoked, and also, no event listeners pertaining to Listeners
@@ -1386,6 +1453,8 @@ export interface RiveLoadParameters {
   useOffscreenRenderer?: boolean;
   shouldDisableRiveListeners?: boolean;
   tabIndex?: number;
+  semanticsMode?: SemanticMode;
+  semanticsOptions?: RiveSemanticsOptions;
 }
 
 // Interface ot Rive.reset function
@@ -1800,6 +1869,15 @@ export class Rive {
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN = true;
 
+  private semanticsMode: SemanticMode = SemanticMode.Disabled;
+
+  private semanticsOptions: RiveSemanticsOptions = {
+    riveCanvasLabel: "Rive animation",
+  };
+
+  /** True when this instance may drain semantics and render the overlay. */
+  private _semanticsActive = false;
+
   // Keep a local value of the set volume to update it asynchronously
   private _volume = 1;
 
@@ -1851,6 +1929,19 @@ export class Rive {
     allowFocusInterrupt: false,
   };
 
+  // Tracks the semantic tree for the given graphic
+  private _semanticTree: SemanticTreeModel | null = null;
+  private _accessibilityOverlay: AccessibilityOverlay | null = null;
+  /**
+   * True when an input to the accessibility overlay's artboard→canvas transform
+   * (layout fit/alignment/bounds, devicePixelRatio, or layout scale) has changed
+   * and the matrix must be recomputed on the next overlay update. Avoids calling
+   * computeAlignment every frame when only the semantic tree changed.
+   */
+  private _overlayTransformDirty = true;
+  // Module-level counter for unique instance IDs for semantic overlay containers
+  private readonly _instanceId = `${nextRiveInstanceId++}`;
+
   private drawOptimization: DrawOptimizationOptions =
     DrawOptimizationOptions.DrawOnChanged;
 
@@ -1898,6 +1989,7 @@ export class Rive {
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
     this._focusOptions = params.focusOptions ?? this._focusOptions;
+    this._tabIndex = params.tabIndex ?? null;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -1944,6 +2036,8 @@ export class Rive {
       artboard: params.artboard,
       useOffscreenRenderer: params.useOffscreenRenderer,
       tabIndex: params.tabIndex,
+      semanticsMode: params.semanticsMode,
+      semanticsOptions: params.semanticsOptions,
     });
   }
 
@@ -1957,6 +2051,47 @@ export class Rive {
       "This function is deprecated: please use `new Rive({})` instead",
     );
     return new Rive(params);
+  }
+
+  /**
+   * @experimental Turns on semantics and the accessibility overlay for this
+   * instance. Idempotent; safe to call before or after load. Use this to drive
+   * a consumer-controlled accessibility toggle when constructed with the
+   * default {@link SemanticMode.Disabled}.
+   */
+  public enableSemantics(): void {
+    this.semanticsMode = SemanticMode.Enabled;
+    this.activateSemantics();
+  }
+
+  private activateSemantics(): void {
+    if (this._semanticsActive || this.semanticsMode === SemanticMode.Disabled) {
+      return;
+    }
+    this._semanticsActive = true;
+    this.syncSemanticsOnStateMachines();
+  }
+
+  private syncSemanticsOnStateMachines(): void {
+    if (!this._semanticsActive || !this.animator) {
+      return;
+    }
+    for (const stateMachine of this.animator.stateMachines) {
+      stateMachine.enableSemantics();
+    }
+  }
+
+  /**
+   * Tears down the semantic tree and accessibility overlay. The overlay captures the
+   * active state machine in its action closures, so it must not outlive the
+   * instances it points at (reset/load delete them)
+   */
+  private cleanupSemantics(): void {
+    this._semanticTree = null;
+    if (this._accessibilityOverlay) {
+      this._accessibilityOverlay.destroy();
+      this._accessibilityOverlay = null;
+    }
   }
 
   // Event handler for when audio context becomes available
@@ -1988,6 +2123,8 @@ export class Rive {
     useOffscreenRenderer = false,
     autoBind = false,
     tabIndex,
+    semanticsMode,
+    semanticsOptions,
   }: RiveLoadParameters): void {
     if (this.destroyed) {
       return;
@@ -1996,6 +2133,8 @@ export class Rive {
     this.buffer = buffer;
     this.riveFile = riveFile;
     this._tabIndex = tabIndex ?? null;
+    this.semanticsMode = semanticsMode ?? SemanticMode.Disabled;
+    this.semanticsOptions = semanticsOptions ?? this.semanticsOptions;
 
     // If no source file url specified, it's a bust
     if (!this.src && !this.buffer && !this.riveFile) {
@@ -2021,6 +2160,9 @@ export class Rive {
         this.runtime = runtime;
 
         this.removeRiveListeners();
+        // load() reinitializes without cleanupInstances(); drop any stale overlay
+        // bound to the previous file's state machines (no-op on first construct).
+        this.cleanupSemantics();
         this.deleteRiveRenderer();
 
         // Get the canvas where you want to render the animation and create a renderer
@@ -2141,13 +2283,15 @@ export class Rive {
 
     const currentCanvasTabIndex = this.canvas.tabIndex;
     if (currentCanvasTabIndex === -1 || isNaN(currentCanvasTabIndex)) {
-      this.canvas.tabIndex = this._tabIndex !== null ? this._tabIndex : 0;
+      this.canvas.tabIndex = (this._tabIndex !== null ? this._tabIndex : 0);
     }
 
     this._keyboardInteractions = new KeyboardInteractions({
-      canvas: this.canvas,
-      stateMachine: smWithFocusNodes.instance,
+      canvas: this.canvas as HTMLCanvasElement,
+      stateMachine: smWithFocusNodes.instance, // work off assumption of single state machine
       hasFocusNodes: true,
+      getOverlayElement: () =>
+        this._accessibilityOverlay?.getSemanticOverlayContainer() ?? null,
     });
   }
 
@@ -2243,6 +2387,12 @@ export class Rive {
       // Check for audio
       this.initializeAudio();
 
+      if (this.semanticsMode === SemanticMode.Enabled) {
+        this.activateSemantics();
+      } else if (this._semanticsActive) {
+        this.syncSemanticsOnStateMachines();
+      }
+
       // Everything's set up, emit a load event
       try {
         this.loaded = true;
@@ -2316,9 +2466,9 @@ export class Rive {
     if (animationNames.length > 0 || stateMachineNames.length > 0) {
       instanceNames = animationNames.concat(stateMachineNames);
       this.animator.initLinearAnimations(animationNames, autoplay);
-      this.animator.initStateMachines(stateMachineNames, autoplay);
+      this.animator.initStateMachines(stateMachineNames, autoplay, this._semanticsActive);
     } else {
-      instanceNames = [this.animator.atLeastOne(autoplay, false)];
+      instanceNames = [this.animator.atLeastOne(autoplay, false, this._semanticsActive)];
     }
     // Queue up firing the playback events
     this.taskQueue.add({
@@ -2415,7 +2565,17 @@ export class Rive {
         // Only steal DOM focus on the false→true transition. If hasFocus stays
         // true across frames and the user clicks away, do not re-focus the canvas again.
         if (!this._prevHasFocus) {
-          if (this.canvas !== document.activeElement && this._focusOptions.allowFocusInterrupt) {
+          // Steal DOM focus to the canvas only when focus isn't already held
+          // somewhere inside this instance's focus scope. When the accessibility
+          // overlay has driven focus onto a specific semantic node element (e.g.
+          // an appearing alert dialog), focus is already in-scope. The steal
+          // stays a fallback for runtime focus nodes that have no overlay element
+          // to hold DOM focus.
+          const scope = this._accessibilityOverlay?.getSemanticOverlayContainer();
+          const focusAlreadyInScope =
+            document.activeElement === this.canvas ||
+            (scope?.contains(document.activeElement) ?? false);
+          if (!focusAlreadyInScope && this._focusOptions.allowFocusInterrupt) {
             this.canvas.focus();
           }
           this._prevHasFocus = true;
@@ -2519,6 +2679,75 @@ export class Rive {
       if (_perfFrame >= 0) {
         performance.mark(`rive:sm-advance:end:f${_perfFrame}`);
         performance.measure(`rive:sm-advance:f${_perfFrame}`, `rive:sm-advance:start:f${_perfFrame}`, `rive:sm-advance:end:f${_perfFrame}`);
+      }
+
+      if (this._semanticsActive) {
+        const diff = stateMachine.drainSemanticsDiff();
+        if (diff) {
+          if (!this._semanticTree) {
+            this._semanticTree = new SemanticTreeModel();
+          }
+          this._semanticTree.applyDiff(diff);
+        }
+      }
+    }
+
+    // Update the accessibility overlay after all state machines have
+    // been advanced and their diffs applied to the tree model.
+    if (
+      this._semanticsActive &&
+      this._semanticTree &&
+      activeStateMachines.length > 0 &&
+      this.canvas instanceof HTMLCanvasElement
+    ) {
+      if (!this._accessibilityOverlay) {
+        const mainSm = activeStateMachines[0];
+        this._accessibilityOverlay = new AccessibilityOverlay({
+          canvas: this.canvas,
+          instanceId: this._instanceId,
+          semanticsOptions: this.semanticsOptions,
+          allowFocusInterrupt: this._focusOptions.allowFocusInterrupt,
+          fireAction: (nodeId, actionType) => {
+            mainSm.fireSemanticAction(nodeId, actionType);
+          },
+          requestFocus: (nodeId) =>
+            mainSm.focusSemanticNode(nodeId),
+          clearFocus: () =>
+            mainSm.instance.clearFocus(),
+        });
+      }
+      const overlayChange = this._accessibilityOverlay?.needsUpdate(this._semanticTree);
+      if (overlayChange || this._overlayTransformDirty) {
+        // Only recompute the artboard→canvas transform when something that
+        // affects it changed (canvas geometry or a layout/dpr input). When only
+        // the semantic tree changed we pass null and reuse the existing CSS
+        // transform on the overlay container.
+        let forwardMat: rc.Mat2D | null = null;
+        if (overlayChange?.layoutChanged || this._overlayTransformDirty) {
+          const fit = this._layout.runtimeFit(this.runtime);
+          const alignment = this._layout.runtimeAlignment(this.runtime);
+          forwardMat = this.runtime.computeAlignment(
+            fit,
+            alignment,
+            {
+              minX: this._layout.minX,
+              minY: this._layout.minY,
+              maxX: this._layout.maxX,
+              maxY: this._layout.maxY,
+            },
+            this.artboard.bounds,
+            this._devicePixelRatioUsed * this._layout.layoutScaleFactor,
+          );
+          this._overlayTransformDirty = false;
+        }
+        this._accessibilityOverlay!.update(
+          this._semanticTree,
+          forwardMat,
+          this._devicePixelRatioUsed,
+          this.artboard.bounds,
+          overlayChange,
+        );
+        forwardMat?.delete();
       }
     }
 
@@ -2744,6 +2973,9 @@ export class Rive {
       this.eventCleanup();
     }
     this.cleanupKeyboardInteractions();
+    // Tear down semantics before deleting state machines — the overlay's action
+    // closures point at instances that stop() is about to free.
+    this.cleanupSemantics();
     // Delete all animation and state machine instances
     this.stop();
     if (this.artboard) {
@@ -2814,6 +3046,7 @@ export class Rive {
       return;
     }
     this.animator.play(animationNames);
+    this.syncSemanticsOnStateMachines();
     if (this.eventCleanup) {
       this.eventCleanup();
     }
@@ -2875,6 +3108,7 @@ export class Rive {
       this.eventCleanup();
     }
     this.cleanupKeyboardInteractions();
+    this.cleanupSemantics();
   }
 
   /**
@@ -2919,6 +3153,8 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
+    // Fit/alignment/bounds feed the overlay transform.
+    this._overlayTransformDirty = true;
     // If the maxX or maxY are 0, then set them to the canvas width and height
     if (!layout.maxX || !layout.maxY) {
       this.resizeToCanvas();
@@ -2948,6 +3184,8 @@ export class Rive {
       maxX: this.canvas.width,
       maxY: this.canvas.height,
     });
+    // Layout bounds feed the overlay transform.
+    this._overlayTransformDirty = true;
   }
 
   /**
@@ -2970,13 +3208,14 @@ export class Rive {
       this.canvas.height = dpr * height;
       this._needsRedraw = true;
       this.resizeToCanvas();
-      this.drawFrame();
 
       if (this.layout.fit === Fit.Layout) {
         const scaleFactor = this._layout.layoutScaleFactor;
         this.artboard.width = width / scaleFactor;
         this.artboard.height = height / scaleFactor;
       }
+
+      this.drawFrame();
     }
   }
 
@@ -2990,6 +3229,24 @@ export class Rive {
    */
   public get activeArtboard(): string {
     return this.artboard ? this.artboard.name : "";
+  }
+
+  /**
+   * Returns the semantic tree model when semantics are enabled, or null.
+   * The overlay and external consumers use this to inspect the
+   * current state of the semantic tree.
+   */
+  public get semanticTree(): SemanticTreeModel | null {
+    return this._semanticTree;
+  }
+
+  /**
+   * Returns the accessibility overlay when semantics are enabled, or null.
+   * External consumers can use this to inspect the
+   * current state of the accessibility overlay for this instance.
+   */
+  public get accessibilityOverlay(): AccessibilityOverlay | null {
+    return this._accessibilityOverlay;
   }
 
   // Returns a list of animation names on the chosen artboard
@@ -3561,6 +3818,9 @@ export class Rive {
   }
 
   public set devicePixelRatioUsed(value: number) {
+    if (value !== this._devicePixelRatioUsed) {
+      this._overlayTransformDirty = true;
+    }
     this._devicePixelRatioUsed = value;
   }
 

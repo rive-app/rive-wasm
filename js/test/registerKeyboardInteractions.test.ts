@@ -31,11 +31,13 @@ function setupKeyboardInteractions({
   focusNextResult = true,
   focusPreviousResult = true,
   hasFocus = false,
+  getOverlayElement,
 }: {
   hasFocusNodes?: boolean;
   focusNextResult?: boolean;
   focusPreviousResult?: boolean;
   hasFocus?: boolean;
+  getOverlayElement?: () => HTMLElement | null;
 } = {}) {
   before = document.createElement("button");
   canvas = document.createElement("canvas");
@@ -48,6 +50,7 @@ function setupKeyboardInteractions({
     canvas,
     stateMachine: mockSm,
     hasFocusNodes,
+    getOverlayElement,
   });
 }
 
@@ -286,4 +289,23 @@ test("cleanup removes all event listeners on the canvas", () => {
 
   expect(mockSm.focusNext).not.toBeCalled();
   expect(tabEvent.preventDefault).not.toBeCalled();
+});
+
+test("routes keydowns from a lazily available overlay element", () => {
+  let overlayElement: HTMLElement | null = null;
+  setupKeyboardInteractions({ getOverlayElement: () => overlayElement });
+
+  overlayElement = document.createElement("div");
+  const focusedNode = document.createElement("div");
+  focusedNode.tabIndex = -1;
+  overlayElement.appendChild(focusedNode);
+  document.body.appendChild(overlayElement);
+  focusedNode.focus();
+
+  const tabEvent = new KeyboardEvent("keydown", { code: "Tab", bubbles: true });
+  jest.spyOn(tabEvent, "preventDefault");
+  focusedNode.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusNext).toHaveBeenCalledTimes(1);
+  expect(tabEvent.preventDefault).toHaveBeenCalled();
 });
