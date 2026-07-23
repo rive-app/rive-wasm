@@ -29,7 +29,8 @@
     "rive.d.ts",
     "rive_advanced.mjs.d.ts",
     "runtimeLoader.d.ts",
-    "utils"
+    "utils",
+    "semantics"
   ],
   "typings": "rive.d.ts",
   "dependencies": {},

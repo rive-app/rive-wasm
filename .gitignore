@@ -54,6 +54,7 @@ node_modules
 /js/npm/**/rive.d.ts
 /js/npm/**/rive_advanced.mjs.d.ts
 /js/npm/**/utils/
+/js/npm/**/semantics/
 /js/npm/**/runtimeLoader.d.ts
 /js/npm/webgl_advanced_single/webgl_advanced_single.mjs
 /js/npm/webgl_advanced/webgl_advanced.mjs

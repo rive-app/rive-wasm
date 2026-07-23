@@ -21,7 +21,8 @@
     "bumpVersions": "./bump_all_versions.sh $npm_package_version",
     "publish:all": "./publish_all.sh --access public",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
-    "test": "jest"
+    "test": "jest",
+    "check:types": "./check_types.sh"
   },
   "keywords": [
     "rive",
@@ -55,6 +56,7 @@
   ],
   "typings": "./dist/rive.d.ts",
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@babel/core": "^7.27.4",
     "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@babel/preset-env": "^7.27.2",

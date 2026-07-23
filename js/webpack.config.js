@@ -68,6 +68,10 @@ const canvas = {
               source: "build/src/utils",
               destination: path.resolve(__dirname, "npm/canvas/utils"),
             },
+            {
+              source: "build/src/semantics",
+              destination: path.resolve(__dirname, "npm/canvas/semantics"),
+            },
           ],
         },
       },
@@ -121,6 +125,10 @@ const canvasLite = {
             {
               source: "build/src/utils",
               destination: path.resolve(__dirname, "npm/canvas_lite/utils"),
+            },
+            {
+              source: "build/src/semantics",
+              destination: path.resolve(__dirname, "npm/canvas_lite/semantics"),
             },
           ],
         },
@@ -196,6 +204,13 @@ const canvasSingle = {
               source: "build/src/utils",
               destination: path.resolve(__dirname, "npm/canvas_single/utils"),
             },
+            {
+              source: "build/src/semantics",
+              destination: path.resolve(
+                __dirname,
+                "npm/canvas_single/semantics"
+              ),
+            },
           ],
         },
       },
@@ -258,6 +273,13 @@ const canvasLiteSingle = {
               destination: path.resolve(
                 __dirname,
                 "build/npm/canvas_lite_single/utils"
+              ),
+            },
+            {
+              source: "build/src/semantics",
+              destination: path.resolve(
+                __dirname,
+                "build/npm/canvas_lite_single/semantics"
               ),
             },
             {
@@ -336,6 +358,10 @@ const webgl2 = {
             {
               source: "build/src/utils",
               destination: path.resolve(__dirname, "npm/webgl2/utils"),
+            },
+            {
+              source: "build/src/semantics",
+              destination: path.resolve(__dirname, "npm/webgl2/semantics"),
             },
           ],
         },
