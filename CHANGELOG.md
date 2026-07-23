@@ -5,10 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.39.0](https://github.com/rive-app/rive-wasm/compare/2.38.5...2.39.0)
+## [2.39.1](https://github.com/rive-app/rive-wasm/compare/2.39.0...2.39.1)
 
 ### Commits
 
+- fix(js): Add new semantics folder types to each npm folder's files (#13206) fcc05484ae [`c8fd52f`](https://github.com/rive-app/rive-wasm/commit/c8fd52f58b8626188bc3d1ddc75aa55b5fd4cb3b)
+- fix: virtualized scroll sizing/overscroll and view model listener event fixes (#13200) b9d702b78d [`185fc17`](https://github.com/rive-app/rive-wasm/commit/185fc17f1f4a818cd25eda8e0767136526c83dca)
+- chore: rev Luau to rive_0_730 (upstream 0.730) (#13190) d9a71b90b5 [`2af4a6a`](https://github.com/rive-app/rive-wasm/commit/2af4a6ad70a26add1e09ac1008c4ac751462baee)
+- chore(js): add github releases to release process for js/wasm runtime alongside tags (#13158) 281b46387e [`6f30375`](https://github.com/rive-app/rive-wasm/commit/6f303754d5c7af5f0f58c7876ef37e1591224011)
+- fix(runtime): guard scripted data converter against unhydrated instance (#13185) 6898043c1e [`2a41f9f`](https://github.com/rive-app/rive-wasm/commit/2a41f9f631948695f0ab4fd9cac6358fca2bca23)
+- fix(scripting): Copy thread data to async coroutines (#13188) 2b3e2f0686 [`df4e23b`](https://github.com/rive-app/rive-wasm/commit/df4e23bcde129aa29ca1f898d6be752d6336f718)
+- refactor(unreal): Unreal ore gm support step 1 (#13172) b66482739b [`327497b`](https://github.com/rive-app/rive-wasm/commit/327497b8304b4b20fb49c1a1a910ed59b73faa66)
+- fix(runtime): Crash when databound Artboard resolves to null (#13175) 2d9f6d3fbe [`12fc887`](https://github.com/rive-app/rive-wasm/commit/12fc88786945041022f1f0998928dc16ee88c99b)
+- feat(editor): bidirectional binding for stateful component properties (#13159) 3d671afd9c [`2b1cf21`](https://github.com/rive-app/rive-wasm/commit/2b1cf21bce38b809e2f482a57d2a550d72621434)
+- Advertise colorBufferHalfFloat on the Metal backend (#13160) a144d9df03 [`4f9cb9f`](https://github.com/rive-app/rive-wasm/commit/4f9cb9f0dcb0e00ce4b0adb1228427a49bfba943)
+- feature: tree-shake unused scripts from runtime export (#13150) f92794960a [`df1a7b7`](https://github.com/rive-app/rive-wasm/commit/df1a7b7e96139d55c879f29b669081ab94890427)
+
+## [2.39.0](https://github.com/rive-app/rive-wasm/compare/2.38.5...2.39.0) - 2026-07-21
+
+### Commits
+
+- chore: tag 2.39.0 [`b808ebe`](https://github.com/rive-app/rive-wasm/commit/b808ebea808ff420a30d1fdc41f2ecb195f7ea63)
 - patch(cpp): add focus dirty flag to prevent unnecessary tree walks on hasFocusNodes each frame (#13126) 0cf838a9ec [`2586730`](https://github.com/rive-app/rive-wasm/commit/25867305d44f854d53e1f3b7173a68eb90ef0a11)
 - chore(unreal): better gm support for unreal (#13139) ac92e5b5fb [`d65e60b`](https://github.com/rive-app/rive-wasm/commit/d65e60be2b2c39c26446211eff9faa8ba1e03736)
 - Tag ore GM shader modules with fixture asset ids (#13148) 504ea98308 [`d861a19`](https://github.com/rive-app/rive-wasm/commit/d861a19c097c28fa03e8501e1647f3d1b0b81b5d)
