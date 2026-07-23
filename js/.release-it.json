@@ -7,6 +7,11 @@
     "commitMessage": "chore: tag ${version}",
     "requireCleanWorkingDir": false
   },
+  "github": {
+    "release": true,
+    "releaseName": "${version}",
+    "releaseNotes": "npx auto-changelog --stdout --unreleased --commit-limit false --template keepachangelog --sort-commits date-desc --hide-credit"
+  },
   "hooks": {
     "after:version:bump": [
       "npm run bumpVersions",
