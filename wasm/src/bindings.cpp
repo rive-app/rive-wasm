@@ -376,6 +376,9 @@ emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
             case rive::DataType::assetFont:
                 val = "font";
                 break;
+            case rive::DataType::assetBlob:
+                val = "blob";
+                break;
             case rive::DataType::artboard:
                 val = "artboard";
                 break;
