@@ -2769,8 +2769,15 @@ export class Rive {
     // Poll focus state to see whether or not to blur or pull up a virtual keyboard for any change to a text input node.
     this.pollFocusState();
 
-    // Handle callbacks for view model property changes
+    // Handle callbacks for main view model property changes
     this._viewModelInstance?.handleCallbacks();
+
+    // Handle callbacks for global view model property changes
+    this._globalViewModelInstances.forEach((instance) => {
+      if (instance) {
+        instance.handleCallbacks();
+      }
+    });
   }
 
   /**

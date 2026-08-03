@@ -93,6 +93,67 @@ test("set then bind: batch several sets, apply once", (done) => {
   });
 });
 
+test("fires .on() callbacks when an auto-bound global's property changes", (done) => {
+  const mockCallback = jest.fn();
+  const canvas = document.createElement("canvas");
+  let currentAdvance = 0;
+  const r = new rive.Rive({
+    canvas,
+    buffer: loadFile("assets/global_view_models_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    onAdvance: () => {
+      if (currentAdvance === 0) {
+        const sizes = r.globalViewModelInstance("Sizes");
+        expect(sizes).not.toBe(null);
+        const gaps = sizes!.number("gaps");
+        expect(gaps).not.toBe(null);
+        expect(gaps!.value).toBe(16);
+        gaps!.on(mockCallback);
+        gaps!.value = 24;
+      } else if (currentAdvance === 1) {
+        const gaps = r.globalViewModelInstance("Sizes")!.number("gaps");
+        expect(gaps!.value).toBe(24);
+        expect(mockCallback).toBeCalledTimes(1);
+        expect(mockCallback).toBeCalledWith(24);
+        done();
+      }
+      currentAdvance++;
+    },
+  });
+});
+
+test("a replaced global instance stops firing callbacks", (done) => {
+  const mockCallback = jest.fn();
+  const canvas = document.createElement("canvas");
+  let currentAdvance = 0;
+  const r = new rive.Rive({
+    canvas,
+    buffer: loadFile("assets/global_view_models_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    onAdvance: () => {
+      if (currentAdvance === 0) {
+        const gaps = r.globalViewModelInstance("Sizes")!.number("gaps");
+        gaps!.on(mockCallback);
+        // Swap in a fresh instance for the same global; the old instance is
+        // cleaned up and its callbacks must not fire again.
+        const replacement = r.viewModelByName("Sizes")!.defaultInstance()!;
+        expect(r.setGlobalViewModelInstance("Sizes", replacement)).toBe(true);
+        r.bind();
+        r.globalViewModelInstance("Sizes")!.number("gaps")!.value = 42;
+      } else if (currentAdvance === 1) {
+        expect(r.globalViewModelInstance("Sizes")!.number("gaps")!.value).toBe(
+          42,
+        );
+        expect(mockCallback).not.toBeCalled();
+        done();
+      }
+      currentAdvance++;
+    },
+  });
+});
+
 test("setting an unknown or non-global name returns false", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
