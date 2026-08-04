@@ -5,10 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.39.1](https://github.com/rive-app/rive-wasm/compare/2.39.0...2.39.1)
+## [2.39.2](https://github.com/rive-app/rive-wasm/compare/2.39.1...2.39.2)
 
 ### Commits
 
+- feat(editor): instance TextInput from a library, bundled into the edi… (#13345) 289d353ac5 [`00efe34`](https://github.com/rive-app/rive-wasm/commit/00efe346b9e20193a290edaf62812f65f7d52972)
+- feat: Allow clipping to shapes with path effects (#13356) 0c254772d2 [`657028a`](https://github.com/rive-app/rive-wasm/commit/657028aa7c3053c37d736dea4ac19a11da8a72e5)
+- build: pin macOS deployment floor at link time (minos) (#13341) 5df57079b5 [`916be15`](https://github.com/rive-app/rive-wasm/commit/916be1575d311e701214c2c48651e68c73a89b70)
+- feature: text style backgrounds with corner rounding (#13338) 5cdcaab570 [`6ab954a`](https://github.com/rive-app/rive-wasm/commit/6ab954a74a71091aad485d1d8f614e4e2f5fa583)
+- fix(renderer): Disable VK_EXT_color_write_enable on Adreno and PowerVR (#13300) 3b27c1c696 [`e066302`](https://github.com/rive-app/rive-wasm/commit/e0663021e0ac2cdbc313861a6e5a2fb4eef7e46a)
+- fix(js): make sure global view model instances have observability on their property values (#13343) 3ef275bfaa [`1fa6174`](https://github.com/rive-app/rive-wasm/commit/1fa61748af3f697e5f8ee7ef04e0f441e6fe932c)
+- chore: single non-root updatePass for the layout-fit leaf reflow (#13329) 6485df5f2d [`987348f`](https://github.com/rive-app/rive-wasm/commit/987348f97fa097cdb0e7d7ab399019e4b6682c3f)
+- feature: FileFormat protocol (#13275) f82054a61f [`cd51a36`](https://github.com/rive-app/rive-wasm/commit/cd51a361fd83f943a0ac377753e162e623be8249)
+- fix(scripting): stable identity for asset Property.value reads (#13326) eaf1c9dcb6 [`bc3e382`](https://github.com/rive-app/rive-wasm/commit/bc3e382ee849fdbd62500471e280452e6812d15d)
+- feat(cmdq+unreal) asset blob support (#13327) 7316a7b1c4 [`2524dde`](https://github.com/rive-app/rive-wasm/commit/2524ddeb057b55244327830da3ec47e4013115ef)
+- chore: run Unreal gms/goldens on win-runner-01 (UE 5.7) (#13310) b22111c1db [`2f9ee71`](https://github.com/rive-app/rive-wasm/commit/2f9ee71240aa914553d6a1dfe94d2925c90aafab)
+- fix(renderer): Don't dither when alpha == 0 (#13309) 797918509f [`1a4eff7`](https://github.com/rive-app/rive-wasm/commit/1a4eff72e143f2509c9407ef8e47bf05f2b88b92)
+- feat: add blob view-model data binding with script access (#13297) 2ebcaa259c [`98d74eb`](https://github.com/rive-app/rive-wasm/commit/98d74eb62a85a9f6cf9e131a2b4315a5441d9fba)
+- chore(runtime): Build layout backgrounds without a Rectangle (#13320) 0420a01877 [`12584af`](https://github.com/rive-app/rive-wasm/commit/12584af5bf246f33196bb8f9728f7a4bacb2334b)
+- fix(unreal): rhi msaa update (#13321) c5e5fea584 [`df0ccea`](https://github.com/rive-app/rive-wasm/commit/df0ccea3cf106d5549fd738b8ac7e08ca89267a2)
+- fix(runtime): prevent use-after-free when remapping text-run listeners (#13317) 665fbe83c0 [`18b4206`](https://github.com/rive-app/rive-wasm/commit/18b4206c383119eb92c0f4bd204365544118796b)
+- feat: Layout improvements (#13033) 1d47d5a857 [`98d8884`](https://github.com/rive-app/rive-wasm/commit/98d888435de1421766653dc9de1f89bcba923a19)
+- fix(js): fix github release notes template to match other runtimes template (#13222) 8dd57832fa [`0983f06`](https://github.com/rive-app/rive-wasm/commit/0983f06e9bf7386db679c1c1febb561e51b25b6f)
+- fix(unreal): RHI vulkan atomics was broken now it's not. (#13281) 38ad1ef498 [`9a3ca5f`](https://github.com/rive-app/rive-wasm/commit/9a3ca5f9cce0fe16cf3ed0abf06ef93cd0b5730c)
+- fix(renderer): Make interior triangulations cacheable (#13252) 9e498b2635 [`6d99a6e`](https://github.com/rive-app/rive-wasm/commit/6d99a6ec28d71846c94467f7ccbc2933d703c4df)
+- fix(runtime): propagate render image/font when data binding into a ne… (#13284) b8c8df7cf4 [`37594f1`](https://github.com/rive-app/rive-wasm/commit/37594f1b88d58cda5ca5d8a17a41872d689c6946)
+- feat(build): More tweaks for Incredibuild (#13263) a89a351b4b [`f19367a`](https://github.com/rive-app/rive-wasm/commit/f19367a53a7224a0ba9ec73ed21f19db27544226)
+- fix(rive_native): windows fence wait thread use after free and join deadlock on teardown (#13248) 4512342b3b [`c9e3999`](https://github.com/rive-app/rive-wasm/commit/c9e399956ab4bdb1f1301f848a423e0b1a26d223)
+- feat(wgpu): Hook up GL blend & msaa exensions (#13240) b1240d8ad7 [`def1935`](https://github.com/rive-app/rive-wasm/commit/def1935370b43d661c8e1c419f3acfe5d9ce4df5)
+- refactor(Unreal): check golds refactor (#13246) 6c1e5ce40d [`a8ef19f`](https://github.com/rive-app/rive-wasm/commit/a8ef19fc4e4a2d77b74a03f1cc683b938c423c9a)
+- fix(feather): Remove inner feather when converting fill to stroke (#13239) d991cbd65b [`2890795`](https://github.com/rive-app/rive-wasm/commit/2890795007b95a15b18e76d70aaf22a60d065b8c)
+- fix(runtime): skip non-solo-set children when data binding a solo by … (#13243) bbaae8e464 [`ff58535`](https://github.com/rive-app/rive-wasm/commit/ff5853554dd911d449c5ae681b4712e02633ebaf)
+- perf(vulkan): Combine MSAA fast-path fill subpasses, +47% on Adreno 750 (#13227) 0ab7665690 [`4780c7b`](https://github.com/rive-app/rive-wasm/commit/4780c7b30cb2fa4a0c8c6938952828bca061eb44)
+- refactor(unreal): Ue build linux (#13209) fb62252e58 [`b76d2d6`](https://github.com/rive-app/rive-wasm/commit/b76d2d6cd274f6eb92919da3eb32592fadc17043)
+- fix(runtime): harden file import against truncated/corrupt input (#13221) 7052067aef [`369dcda`](https://github.com/rive-app/rive-wasm/commit/369dcda510a61f565de58f20e8af128018315f7e)
+- chore: rev Luau to rive_0_731 (upstream 0.731) (#13232) 2ea12e7438 [`eda9bf6`](https://github.com/rive-app/rive-wasm/commit/eda9bf65ebaaaf3ca9ba4d3ef07b49c779398044)
+- feature: font data binding from Luau scripts (#13230) 25347a39e4 [`d9881b0`](https://github.com/rive-app/rive-wasm/commit/d9881b08022f948e8a35ce96fe9ca3910b68c12f)
+- feat(runtime): add opacity and transform (rotation/scale) support on … (#13224) 76284ae1ea [`3bcfa53`](https://github.com/rive-app/rive-wasm/commit/3bcfa53ce122678a011e1fbb699e7274b491ff79)
+- fix: host-bound view models bind through riveLuaPushArtboard (#13229) b144bfbfb3 [`ef5f1ac`](https://github.com/rive-app/rive-wasm/commit/ef5f1ac71c1721d43f503424cdc9479dec18c40b)
+- chore: Ensure text sizes to its parent layout with min/max sizes applied (#13223) 61c50c6f87 [`263437c`](https://github.com/rive-app/rive-wasm/commit/263437c64c256a35dc75f1ef2a12b9882749f00c)
+- feat(build): Add support for Incredibuild (#13213) 44509e3c52 [`cad25e5`](https://github.com/rive-app/rive-wasm/commit/cad25e5595085b50d51a1149cb9338a6ae2e0a3d)
+- fix(runtime): Image computed width/height always returned 0 (#13219) aaf9a7f344 [`8cf33dc`](https://github.com/rive-app/rive-wasm/commit/8cf33dcb5a07b94a8b1f1311a0a76199a9852111)
+- fix(runtime): propagate opacity and layout to paused nested artboards (#13210) 284d33e8cd [`d0fe055`](https://github.com/rive-app/rive-wasm/commit/d0fe0551c7a545bad7057e6de31b903129f7cc44)
+- Nested view model properties mint the referenced type from scripts (#13208) 50c75768ff [`353e667`](https://github.com/rive-app/rive-wasm/commit/353e667701a6a901e5d906d3b4451c19dfdc90fa)
+
+## [2.39.1](https://github.com/rive-app/rive-wasm/compare/2.39.0...2.39.1) - 2026-07-23
+
+### Commits
+
+- chore: tag 2.39.1 [`a7629a9`](https://github.com/rive-app/rive-wasm/commit/a7629a91010ef99f05629f1fd1836a08afcf2cbd)
 - fix(js): Add new semantics folder types to each npm folder's files (#13206) fcc05484ae [`c8fd52f`](https://github.com/rive-app/rive-wasm/commit/c8fd52f58b8626188bc3d1ddc75aa55b5fd4cb3b)
 - fix: virtualized scroll sizing/overscroll and view model listener event fixes (#13200) b9d702b78d [`185fc17`](https://github.com/rive-app/rive-wasm/commit/185fc17f1f4a818cd25eda8e0767136526c83dca)
 - chore: rev Luau to rive_0_730 (upstream 0.730) (#13190) d9a71b90b5 [`2af4a6a`](https://github.com/rive-app/rive-wasm/commit/2af4a6ad70a26add1e09ac1008c4ac751462baee)
