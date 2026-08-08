@@ -16,7 +16,7 @@ function MaxRecentSize(milliseconds, bitShift) {
         // Set an eviction timer for the value 'size'.
         _map.set(size, setTimeout(function() {
             _map.delete(size);
-            if (_map.length == 0) {
+            if (_map.size == 0) {
                 _maxSize = -Infinity;
             } else if (size == _maxSize) {
                 _maxSize = Math.max(..._map.keys());
