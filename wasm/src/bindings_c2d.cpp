@@ -104,17 +104,20 @@ public:
 
     void drawPath(rive::RenderPath* path, rive::RenderPaint* paint) override
     {
-        call<void>("_drawPath", path, paint);
+        call<void>("_drawPath", path, paint, allow_raw_pointers());
     }
 
-    void clipPath(rive::RenderPath* path) override { call<void>("_clipPath", path); }
+    void clipPath(rive::RenderPath* path) override
+    {
+        call<void>("_clipPath", path, allow_raw_pointers());
+    }
 
     void drawImage(const rive::RenderImage* image,
                    const rive::ImageSampler options,
                    rive::BlendMode value,
                    float opacity) override
     {
-        call<void>("_drawRiveImage", image, options, value, opacity);
+        call<void>("_drawRiveImage", image, options, value, opacity, allow_raw_pointers());
     }
 
     void drawImageMesh(const rive::RenderImage* image,
@@ -165,7 +168,8 @@ public:
                    l,
                    t,
                    r,
-                   b);
+                   b,
+                   allow_raw_pointers());
     }
 };
 
@@ -213,7 +217,7 @@ public:
         float yy = transform.yy();
         float tx = transform.tx();
         float ty = transform.ty();
-        call<void>("addPath", path, xx, xy, yx, yy, tx, ty);
+        call<void>("addPath", path, xx, xy, yx, yy, tx, ty, allow_raw_pointers());
     }
     void fillRule(rive::FillRule value) override { call<void>("fillRule", value); }
 

@@ -34,9 +34,10 @@ do
         '-s DISABLE_EXCEPTION_CATCHING=1',
         '-s WASM=1',
         -- "-s EXPORT_ES6=1",
-        '-s USE_ES6_IMPORT_META=0',
         '-s EXPORT_NAME="Rive"',
         '-s ENVIRONMENT="web,webview,worker"',
+        -- The pre-js glue reads these off Module; they are not exported by default.
+        '-s EXPORTED_RUNTIME_METHODS=HEAP8,HEAPU8,HEAP32,HEAPU32,HEAPF32,HEAPU16',
         '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
         '-DSINGLE',
         '-DANSI_DECLARATORS',
@@ -56,7 +57,6 @@ do
         '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
         '-s ASSERTIONS=1',
         '-s ABORTING_MALLOC=0',
-        '-s DEMANGLE_SUPPORT=1',
     })
 end
 
@@ -75,7 +75,8 @@ end
 
 filter('options:config=release')
 do
-    linkoptions({ '-s ASSERTIONS=0', '--closure 1' })
+    -- Link-time -Os gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
+    linkoptions({ '-Os', '-s ASSERTIONS=0', '--closure 1' })
 end
 
 filter({})
@@ -155,6 +156,10 @@ do
     do
         defines({ 'RIVE_CANVAS_2D_RENDERER' })
         linkoptions({
+            -- Classic-script wrapper: currentScript-based, no import.meta.
+            -- finalize_glue.py converts it to the published ESM shape we
+            -- ship in v2.x
+            '--oformat=js',
             '--pre-js ' .. path.getabsolute('./js/renderer.js'),
         })
     end
@@ -169,6 +174,8 @@ do
     filter({ 'options:renderer=c2d', 'options:wasm_single' })
     do
         linkoptions({
+            -- Embed the wasm as base64; raw binary-in-UTF-8 gzips worse.
+            '-s SINGLE_FILE_BINARY_ENCODE=0',
             '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/canvas_advanced_single.mjs',
         })
     end
@@ -185,18 +192,11 @@ do
             '-s USE_WEBGL2=1',
             '-s MIN_WEBGL_VERSION=2',
             '-s MAX_WEBGL_VERSION=2',
+            -- See the c2d filter.
+            '--oformat=js',
             '--pre-js ' .. path.getabsolute('./js/webgl2_renderer.js'),
+            '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
         })
-    end
-
-    filter({ 'options:renderer=webgl2', 'options:wasm_single' })
-    do
-        linkoptions({ '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced_single.mjs' })
-    end
-
-    filter({ 'options:renderer=webgl2', 'options:not wasm_single' })
-    do
-        linkoptions({ '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs' })
     end
 
     filter({ 'options:renderer=webgl2', 'system:not emscripten' })

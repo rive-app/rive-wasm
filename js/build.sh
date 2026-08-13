@@ -15,8 +15,7 @@ set -e
 #   -r <targets> LOCAL DEV ONLY. Comma-separated list of targets to build.
 #               Skips all fallback WASM builds and only compiles + bundles the
 #               specified targets. Faster iteration when testing a single package.
-#               Available targets: canvas, canvas-lite, canvas-single,
-#                 canvas-lite-single, webgl2, webgl2-single
+#               Available targets: canvas, canvas-lite, canvas-single, webgl2
 #               Usage: ./build.sh -r canvas,webgl2
 
 WASM_FLAGS=""

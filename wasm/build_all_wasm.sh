@@ -7,8 +7,7 @@ set -e
 #             changed C++ files are recompiled.
 # -r <targets> For local dev. Comma-separated list of targets to build.
 #             Skips all fallback WASM builds and only compiles the specified targets.
-#             Available: canvas, canvas-lite, canvas-single, canvas-lite-single,
-#               webgl2, webgl2-single
+#             Available: canvas, canvas-lite, canvas-single, webgl2
 WASM_CONFIG=release
 TARGETS=""
 INCREMENTAL=0
@@ -78,6 +77,7 @@ if target_enabled "canvas"; then
     echo "::::: building @rive-app/canvas_advanced"
     echo
     OUT_DIR=build/canvas_advanced/bin/${WASM_CONFIG} ./build_wasm.sh ${WASM_CONFIG}
+    python3 ./finalize_glue.py build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.mjs
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
@@ -98,6 +98,7 @@ if target_enabled "canvas-lite"; then
     echo "::::: building @rive-app/canvas_advanced_lite"
     echo
     OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -l ${WASM_CONFIG}
+    python3 ./finalize_glue.py build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.mjs
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.mjs ../js/npm/canvas_advanced_lite/canvas_advanced.mjs
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced_lite/rive.wasm
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_lite/rive.wasm
@@ -109,18 +110,9 @@ if target_enabled "canvas-single"; then
     echo "::::: building @rive-app/canvas_advanced_single"
     echo
     OUT_DIR=build/canvas_advanced_single/bin/${WASM_CONFIG} ./build_wasm.sh -c -s ${WASM_CONFIG}
+    python3 ./finalize_glue.py build/canvas_advanced_single/bin/${WASM_CONFIG}/canvas_advanced_single.mjs
     cp build/canvas_advanced_single/bin/${WASM_CONFIG}/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_single/rive_advanced.mjs.d.ts
-fi
-
-if target_enabled "canvas-lite-single"; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced_lite_single"
-    echo
-    OUT_DIR=build/canvas_advanced_lite_single/bin/${WASM_CONFIG} ./build_wasm.sh -c -l -s ${WASM_CONFIG}
-    # We probably don't need to create a package for the lite+single version for canvas
-    # so no need to create a folder in npm to stage for publishing, but we'll keep the local
-    # build for testing purposes, and let webpack reference the wasm/build for this package here
 fi
 
 if [ -z "$TARGETS" ]; then
@@ -137,16 +129,9 @@ if target_enabled "webgl2"; then
     echo "::::: building @rive-app/webgl2_advanced"
     echo
     OUT_DIR=build/webgl2_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -r webgl2 ${WASM_CONFIG}
+    python3 ./finalize_glue.py build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.mjs
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
-fi
-
-if target_enabled "webgl2-single"; then
-    echo
-    echo "::::: building @rive-app/webgl2_advanced_single"
-    echo
-    OUT_DIR=build/webgl2_advanced_single/bin/${WASM_CONFIG} ./build_wasm.sh -r webgl2 -s ${WASM_CONFIG}
-    # Don't build a package for this one. Just do the build so we can test it.
 fi

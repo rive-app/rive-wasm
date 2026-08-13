@@ -5,17 +5,8 @@ import "regenerator-runtime";
 // (Debug) Canvas Advanced
 // import RiveCanvas from "../../build/bin/debug/canvas_advanced.mjs";
 
-// (Release) WebGL Advanced Single
-// import RiveCanvas from "../../../js/npm/webgl_advanced_single/webgl_advanced_single.mjs";
-
-// (Release) WebGL2 Advanced Single
-// import RiveCanvas from "../../build/webgl2_advanced_single/bin/release/webgl2_advanced_single.mjs"
-
 // (Release) Canvas Advanced Single
 import RiveCanvas from "../../../js/npm/canvas_advanced_single/canvas_advanced_single.mjs";
-
-// (Release) Canvas Advanced Single Lite
-// import RiveCanvas from "../../build/canvas_advanced_lite_single/bin/release/canvas_advanced_single.mjs";
 
 // import {checkForLeaks} from "./checkForLeaks";
 
