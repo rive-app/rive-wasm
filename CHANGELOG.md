@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.39.2](https://github.com/rive-app/rive-wasm/compare/2.39.1...2.39.2)
+## [2.40.0](https://github.com/rive-app/rive-wasm/compare/2.39.2...2.40.0)
 
 ### Commits
 
+- fix(deferred): construct the path geometry test session from caps (#13553) ee809ba7f0 [`1e93918`](https://github.com/rive-app/rive-wasm/commit/1e9391880df1d501b98d165d2db89284025462eb)
+- fix(renderer): drop empty segments from recorded and scripted geometry (#13550) bd16ad7c56 [`79c696a`](https://github.com/rive-app/rive-wasm/commit/79c696a6cae99e936fc31b0e9778a01850ca8245)
+- refactor(deferred): caps are the only way to construct a session (#13547) 7c5552a159 [`b5d2e79`](https://github.com/rive-app/rive-wasm/commit/b5d2e79d3b49cd1f9f86f62542c602cfb1ac855b)
+- feat(scripting): report shader bake failures in the problems panel, and rev naga to 30 (#13517) 6be5324af7 [`d1cc807`](https://github.com/rive-app/rive-wasm/commit/d1cc8072a97550c39092775beab5bac678694902)
+- fix(editor): focus brackets track the focused element through host-side motion (#13531) 20a1155662 [`f75baf1`](https://github.com/rive-app/rive-wasm/commit/f75baf154e49267f807197b892464797cf75a622)
+- feat(editor): interpolatable color channels with bitmask passthroughs (#13532) 2e258b0fcb [`138380a`](https://github.com/rive-app/rive-wasm/commit/138380a7e076fb18a2f49e42865c56bf7cf310da)
+- chore(build): Bump the build_rive.sh emsdk version to 4.0.23 (#13536) 002824f2d3 [`16af7fe`](https://github.com/rive-app/rive-wasm/commit/16af7fe78ecdf64f56231ac139c40be2e07aa7ce)
+- refactor(deferred): carry replay device caps as data, recording never holds the device (#13537) a51af172cb [`3d693b6`](https://github.com/rive-app/rive-wasm/commit/3d693b68e610e94b5c27cf9da14e18e77182eb71)
+- feat(js): bump emscripten to 4.0.23 and add -Os linker optimization (#13375) 1588036da0 [`f8c9b7e`](https://github.com/rive-app/rive-wasm/commit/f8c9b7e084bc566151e5a68cd928385239499deb)
+- fix: Proper handling of components and artboard lists in layout stack (#13519) 26581e759f [`3e74f1e`](https://github.com/rive-app/rive-wasm/commit/3e74f1e564167222155fa2c22f2384d281e952fa)
+- fix(ore): apply gl sampler state to the units the shader actually samples from (#13498) 0bcde60fa2 [`6433998`](https://github.com/rive-app/rive-wasm/commit/6433998b93f948af924b2f9c44bf22d38352c974)
+- feat: Add support for layout translation offset & compat with all constraints (#13418) 504b4ece0d [`d592fe2`](https://github.com/rive-app/rive-wasm/commit/d592fe24f7ba94679203984e98b65489f6acbc97)
+- chore: refactor deferred host layer for the runtimes, and a deferred player (#13439) 0683749ce0 [`8823f1d`](https://github.com/rive-app/rive-wasm/commit/8823f1d90f2d8f1e30190bb4f7f147d08edce289)
+- feature(rive-cli): the Rive command line tool (#13112) 098135fb37 [`7622351`](https://github.com/rive-app/rive-wasm/commit/76223514558c40612f81d4c2dbb8ae2b75a61799)
+- feat(renderer): Begin adding image to RenderPaint (#13337) cea8da5875 [`8a6eb82`](https://github.com/rive-app/rive-wasm/commit/8a6eb820a45aca89b00ea2973a77f90c36451636)
+- feature: image sampler filter and wrap options on assets and image nodes (#13428) f192e02d5f [`0c7fd07`](https://github.com/rive-app/rive-wasm/commit/0c7fd07058d738e5308dcf7f2a2118ad024e58cf)
+- chore(runtime): store rarely-set Core properties in lazy sidecars (#13415) 586ddfa997 [`feef73d`](https://github.com/rive-app/rive-wasm/commit/feef73dec11c342ef16ba590d2002c8212c32f6b)
+- feat(runtime and editor): expose global view models to Lua scripts (#13420) 37b731d146 [`9df9cf8`](https://github.com/rive-app/rive-wasm/commit/9df9cf897709e1c0cdee174c74b2d02a6f1e1862)
+- chore: Reset legacy layout transforms (#13400) 6dec243962 [`4bd0cec`](https://github.com/rive-app/rive-wasm/commit/4bd0cec46ca3b8a8964e6a885284c40ffff02474)
+- refactor(gms): Testing framework reactor (#13371) b1e4c061ec [`30423ff`](https://github.com/rive-app/rive-wasm/commit/30423ff927819f42d4fffdfa9d74dd21ec0287bc)
+- chore(ci): count gms runs toward coverage (#13387) c6de07afe5 [`dbfb4b0`](https://github.com/rive-app/rive-wasm/commit/dbfb4b0ab216066c2b42f1457e477ce57b5ef01c)
+- feat(editor and runtime): per-channel (R/G/B/A) passthrough color pro… (#13324) 20db61d6e7 [`a51c1cf`](https://github.com/rive-app/rive-wasm/commit/a51c1cf13291798bb940021bdd266d7e6d789f49)
+- feat(deferred): one session per render context, multi target replay, and the context tier deleted (#13368) e9f24d0296 [`bb5c527`](https://github.com/rive-app/rive-wasm/commit/bb5c527d6050cca7e2bc18a9c5c43d7e82758949)
+- fix(runtime): prevent IK constraint pose pop from stale FK base (#13301) e17fbf4aa8 [`a608659`](https://github.com/rive-app/rive-wasm/commit/a6086590db4162df15aac45fb69ec8bd73fcda11)
+
+## [2.39.2](https://github.com/rive-app/rive-wasm/compare/2.39.1...2.39.2) - 2026-08-04
+
+### Commits
+
+- chore: tag 2.39.2 [`68dbf3a`](https://github.com/rive-app/rive-wasm/commit/68dbf3a775df37fc4a6f128fb685eb9ed4bf149b)
 - feat(editor): instance TextInput from a library, bundled into the edi… (#13345) 289d353ac5 [`00efe34`](https://github.com/rive-app/rive-wasm/commit/00efe346b9e20193a290edaf62812f65f7d52972)
 - feat: Allow clipping to shapes with path effects (#13356) 0c254772d2 [`657028a`](https://github.com/rive-app/rive-wasm/commit/657028aa7c3053c37d736dea4ac19a11da8a72e5)
 - build: pin macOS deployment floor at link time (minos) (#13341) 5df57079b5 [`916be15`](https://github.com/rive-app/rive-wasm/commit/916be1575d311e701214c2c48651e68c73a89b70)
