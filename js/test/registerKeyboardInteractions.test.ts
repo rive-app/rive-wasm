@@ -13,6 +13,7 @@ const makeMockSm = ({
   ({
     focusNext: jest.fn().mockReturnValue(focusNextResult),
     focusPrevious: jest.fn().mockReturnValue(focusPreviousResult),
+    clearFocus: jest.fn(),
     focusState: jest
       .fn()
       .mockReturnValue({ hasFocus, expectsKeyboardInput: false }),
@@ -42,6 +43,8 @@ function setupKeyboardInteractions({
   before = document.createElement("button");
   canvas = document.createElement("canvas");
   after = document.createElement("button");
+  // Mirrors what Rive sets in production, and jsdom needs it for real focus() calls.
+  canvas.tabIndex = 0;
   document.body.append(before, canvas, after);
   // Default to keyboard-driven focus; pointer-focus tests override this.
   jest.spyOn(canvas, "matches").mockReturnValue(true);
@@ -54,9 +57,19 @@ function setupKeyboardInteractions({
   });
 }
 
-// Fire a focus event on the canvas with an optional element focus came from.
-function focusCanvasFrom(relatedTarget: Element | null) {
-  canvas.dispatchEvent(new FocusEvent("focus", { relatedTarget }));
+// Real DOM focus rather than a synthetic FocusEvent, so document.activeElement is the canvas
+// and relatedTarget is the element focus came from — what the browser hands onCanvasFocus.
+// Focusing nothing first (from === null) reports relatedTarget null, as a cold focus does.
+function focusCanvasFrom(from: HTMLElement | null) {
+  from?.focus();
+  canvas.focus();
+}
+
+// Focusing the canvas may itself enter the focus tree. Reset the counts when a test asserts on
+// what a later key press did.
+function clearFocusNavigationCalls() {
+  (mockSm.focusNext as jest.Mock).mockClear();
+  (mockSm.focusPrevious as jest.Mock).mockClear();
 }
 
 beforeEach(() => setupKeyboardInteractions());
@@ -185,6 +198,51 @@ test("blur resets focus state so subsequent keydowns are ignored", () => {
   expect(tabEvent.preventDefault).not.toBeCalled();
 });
 
+// Blur → runtime focus
+
+test("blurring the canvas to another page element clears Rive's internal focus", () => {
+  focusCanvasFrom(before);
+  canvas.dispatchEvent(new FocusEvent("blur", { relatedTarget: after }));
+
+  expect(mockSm.clearFocus).toHaveBeenCalledTimes(1);
+  expect(ki.focusSessionState).toBe(FocusSessionState.NotFocused);
+});
+
+test("blurring into the accessibility overlay leaves Rive's internal focus intact", () => {
+  let overlayElement: HTMLElement | null = null;
+  setupKeyboardInteractions({ getOverlayElement: () => overlayElement });
+
+  overlayElement = document.createElement("div");
+  const semanticNode = document.createElement("div");
+  semanticNode.tabIndex = -1;
+  overlayElement.appendChild(semanticNode);
+  document.body.appendChild(overlayElement);
+
+  focusCanvasFrom(before);
+  canvas.dispatchEvent(new FocusEvent("blur", { relatedTarget: semanticNode }));
+
+  expect(mockSm.clearFocus).not.toBeCalled();
+  overlayElement.remove();
+});
+
+test("blurring because the whole document lost focus leaves Rive's internal focus intact", () => {
+  focusCanvasFrom(before);
+  jest.spyOn(document, "hasFocus").mockReturnValue(false);
+
+  canvas.dispatchEvent(new FocusEvent("blur"));
+
+  expect(mockSm.clearFocus).not.toBeCalled();
+});
+
+test("blurring to nothing while the document keeps focus clears Rive's internal focus", () => {
+  focusCanvasFrom(before);
+  jest.spyOn(document, "hasFocus").mockReturnValue(true);
+
+  canvas.dispatchEvent(new FocusEvent("blur"));
+
+  expect(mockSm.clearFocus).toHaveBeenCalledTimes(1);
+});
+
 // notifyRiveFocused
 
 test("notifyRiveFocused sets state to RiveFocused", () => {
@@ -246,6 +304,36 @@ test("keydown is ignored when NotFocused (Rive released focus → next Tab leave
   expect(tabEvent.preventDefault).not.toBeCalled();
 });
 
+test("keydown is ignored when NotFocused even while the canvas holds real DOM focus", () => {
+  // The test above passes on the fallback branch alone: with focus on <body>, the session gate
+  // isn't what rejects the key. Only DOM focus on the canvas exercises isInFocusDomain.
+  focusCanvasFrom(before);
+  clearFocusNavigationCalls();
+  ki.setFocusSessionState(FocusSessionState.NotFocused);
+
+  const tabEvent = new KeyboardEvent("keydown", { code: "Tab", bubbles: true });
+  jest.spyOn(tabEvent, "preventDefault");
+  canvas.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusNext).not.toBeCalled();
+  expect(tabEvent.preventDefault).not.toBeCalled();
+});
+
+test("Tab still enters the tree from EntryPending while the canvas holds real DOM focus", () => {
+  // Guards the session gate against over-reach: only NotFocused releases keyboard input.
+  focusCanvasFrom(before);
+  clearFocusNavigationCalls();
+  ki.setFocusSessionState(FocusSessionState.EntryPending);
+
+  const tabEvent = new KeyboardEvent("keydown", { code: "Tab", bubbles: true });
+  jest.spyOn(tabEvent, "preventDefault");
+  canvas.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusNext).toHaveBeenCalledTimes(1);
+  expect(tabEvent.preventDefault).toHaveBeenCalled();
+  expect(ki.focusSessionState).toBe(FocusSessionState.RiveFocused);
+});
+
 // Shift+Tab traversal while RiveFocused
 
 test("Shift+Tab calls focusPrevious and prevents default while a Rive node holds focus", () => {
@@ -302,10 +390,16 @@ test("routes keydowns from a lazily available overlay element", () => {
   document.body.appendChild(overlayElement);
   focusedNode.focus();
 
+  // Overlay focus opens a session, so the session gate doesn't swallow overlay keys.
+  expect(ki.focusSessionState).toBe(FocusSessionState.EntryPending);
+
   const tabEvent = new KeyboardEvent("keydown", { code: "Tab", bubbles: true });
   jest.spyOn(tabEvent, "preventDefault");
   focusedNode.dispatchEvent(tabEvent);
 
   expect(mockSm.focusNext).toHaveBeenCalledTimes(1);
   expect(tabEvent.preventDefault).toHaveBeenCalled();
+  expect(ki.focusSessionState).toBe(FocusSessionState.RiveFocused);
+
+  overlayElement.remove();
 });

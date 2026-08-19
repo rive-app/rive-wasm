@@ -18,21 +18,21 @@ export interface KeyboardInteractionsParams {
 }
 
 /**
- * Tracks the relationship between the canvas's DOM focus and Rive's internal focus for the
- * current focus session.
+ * Tracks the relationship between DOM focus inside this Rive focus domain (canvas or semantic overlay)
+ * and Rive's internal focus for the current focus session.
  *
- * NotFocused   — the canvas is not the active DOM element, or Rive entered and then released focus
- *                internally this session. Either way the next Tab should move on to the next page
- *                element, so Tab events are ignored.
- * EntryPending — the canvas has DOM focus but Rive holds no active focus node yet, and the next Tab should enter
- *                the focus tree. This is the resting state for pointer-driven focus (a click on the
- *                canvas), or an edge case for keyboard focus where initial focus action did not land on a focus node. 
- * RiveFocused  — a Rive node currently holds focus. Tab/Shift+Tab are routed to the Rive focus
- *                manager and trapped inside the canvas until Rive notifies focus has ended.
+ * NotFocused   — DOM focus left the domain, Rive released focus internally, or Tab walked
+ *                off the end of the tree. Keyboard input isn't ours, so Tab is ignored and
+ *                reaches the next page element.
+ * EntryPending — DOM focus is inside the domain but Rive holds no node yet, so the next Tab
+ *                enters the focus tree. Set by pointer focus on the canvas, by assistive technology (AT) focus landing
+ *                in the overlay, and by keyboard focus whose entry attempt found no eligible node.
+ * RiveFocused  — a Rive node holds focus. Tab/Shift+Tab route to the Rive focus manager and stay
+ *                inside the domain until either Rive reports focus ended (pollFocusState) or
+ *                focusNext()/focusPrevious() returns false at the edge of the tree.
  *
- * When keyboard focus lands on the canvas, onCanvasFocus reads the direction focus came from and 
- * moves into the focus tree immediately, going straight to RiveFocused. EntryPending is only set via pointer focus (or keyboard focus
- * where focusNext()/focusPrevious() return false but respects tabindex).
+ * Keyboard focus on the canvas enters the tree immediately: onCanvasFocus infers direction from
+ * where focus came from and goes straight to RiveFocused when a node accepts.
  */
 export enum FocusSessionState {
   NotFocused = "notFocused",
@@ -41,7 +41,9 @@ export enum FocusSessionState {
 }
 
 /**
- * Manages keyboard and DOM focus interactions for a Rive canvas.
+ * Manages keyboard and DOM focus interactions for Rive's focus domain (<canvas> or semantic overlay).
+ * Because keyboard events can apply on either part of the domain, we need to track what events we should
+ * handle/intercept, and when to release focus back to the page outside of the domain.
  *
  * Tracks the canvas focus session state (focusSessionState) and routes
  * Tab/Shift+Tab to the Rive state machine's focus manager. Exposes shared
@@ -97,7 +99,8 @@ export class KeyboardInteractions {
   /**
    * Called by pollFocusState on the Rive instance when it observes hasFocus=true. Rive acquired
    * focus internally (e.g. via a listener action or state transition) without a DOM focus event,
-   * so mark the session RiveFocused.
+   * so mark the session RiveFocused. This cannot resurrect a session that a DOM blur ended,
+   * because onCanvasBlur clears Rive's focus alongside it.
    */
   public notifyRiveFocused(): void {
     this.focusSessionState = FocusSessionState.RiveFocused;
@@ -132,19 +135,47 @@ export class KeyboardInteractions {
     }
   };
 
-  public onCanvasBlur = (_event: FocusEvent) => {
+  /**
+   * Marks internal state that the canvas has lost DOM focus. Do not actually clear
+   * Rive focus though if:
+   * 1. DOM focus is still within Rive domain (i.e., semantic overlay)
+   * 2. Document just lost focus (i.e. tab switching)
+   * 
+   * When we're not in either of those buckets, it's safe to call `clearFocus()` on the SMI.
+   */
+  public onCanvasBlur = (event: FocusEvent) => {
     this.focusSessionState = FocusSessionState.NotFocused;
     this.canvasHasFocus = false;
+
+    const movedWithinFocusDomain = this.isInFocusDomain(event.relatedTarget);
+    const documentLostFocus =
+      event.relatedTarget === null && !document.hasFocus();
+    if (movedWithinFocusDomain || documentLostFocus) return;
+
+    this.mainSm.clearFocus();
   };
 
+  /**
+   * Assistive technology (AT) focus landing inside the overlay is DOM focus inside the Rive focus domain, so open a
+   * session even when no Rive node holds focus yet. shouldRiveHandleKeyEvent treats NotFocused
+   * as authoritative, so without this the overlay's Tab keydowns reach onKeyDown and get dropped
+   * at that gate — the browser would move focus out of Rive instead of to the next focus node.
+   */
   private onOverlayFocusIn = (event: FocusEvent) => {
-    if (this.isInOverlay(event.target)) {
-      this.focusDomainReleased = false;
-    }
+    if (!this.isInOverlay(event.target)) return;
+    this.focusDomainReleased = false;
+
+    if (!this.hasFocusNodes) return;
+    if (this.focusSessionState !== FocusSessionState.NotFocused) return;
+    this.focusSessionState = this.mainSm.focusState().hasFocus
+      ? FocusSessionState.RiveFocused
+      : FocusSessionState.EntryPending;
   };
 
-  private onFocusDomainHostFocusIn = (_event: FocusEvent) => {
+  /** Overlay listeners attach lazily, so the first focusin only ever lands here. */
+  private onFocusDomainHostFocusIn = (event: FocusEvent) => {
     this.syncOverlayListener();
+    this.onOverlayFocusIn(event);
   };
 
   public onKeyDown = (event: KeyboardEvent) => {
@@ -159,7 +190,7 @@ export class KeyboardInteractions {
       const forward = !event.shiftKey;
       const focusMoved = forward ? this.mainSm.focusNext() : this.mainSm.focusPrevious();
       if (focusMoved) {
-        // A Rive node accepted focus — keep trapping Tab inside the canvas.
+        // A Rive node accepted focus — keep trapping Tab inside Rive.
         this.focusSessionState = FocusSessionState.RiveFocused;
         event.preventDefault();
       } else {
@@ -173,24 +204,29 @@ export class KeyboardInteractions {
   };
 
   /**
-   * Whether Rive should handle this keydown — i.e. it currently owns keyboard input.
-   * True when focus is anywhere in the Rive focus domain (the canvas itself or the
-   * accessibility overlay), OR a focus session is active and the key landed on the
-   * canvas.
+   * Determine if Rive should handle keyboard input. If session state is `NotFocused` - no.
+   * DOM focus stays parked on the canvas after Rive releases focus internally, and that Tab
+   * has to reach the page rather than re-enter the tree.
+   *
+   * Otherwise, the event still has to belong to Rive:
+   * 1. If the current DOM focus is in Rive domain (canvas or semantic overlay)
+   * 2. If the target for the key input is for the semantic overlay, or the canvas
    */
   private shouldRiveHandleKeyEvent(event: KeyboardEvent): boolean {
+    if (this.focusSessionState === FocusSessionState.NotFocused) return false;
+
     const inFocusDomain =
       this.isInFocusDomain(document.activeElement) ||
       this.isInOverlay(event.target);
-    if (inFocusDomain) return true;
-
-    const sessionActive =
-      this.focusSessionState !== FocusSessionState.NotFocused;
     const eventOnCanvas = event.target === this.canvas;
-    return sessionActive && (this.canvasHasFocus || eventOnCanvas);
+    return inFocusDomain || this.canvasHasFocus || eventOnCanvas;
   }
 
-  /** Rive focus domain = the canvas itself OR the accessibility overlay. */
+  /**
+   * The Rive focus domain: the DOM that counts as "inside" Rive for focus purposes — today the
+   * canvas itself OR the accessibility overlay subtree. Anything added later belongs here, so
+   * session bookkeeping and keydown routing pick it up for free.
+   */
   private isInFocusDomain(target: EventTarget | null): boolean {
     if (target === this.canvas) return true;
     return this.isInOverlay(target);

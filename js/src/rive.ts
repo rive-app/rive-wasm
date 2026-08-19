@@ -2562,8 +2562,9 @@ export class Rive {
         // Rive has an active focus node. Mark the session RiveFocused so Tab stays
         // trapped and a later internal release (hasFocus true → false) is detected.
         this._keyboardInteractions.notifyRiveFocused();
-        // Only steal DOM focus on the false→true transition. If hasFocus stays
-        // true across frames and the user clicks away, do not re-focus the canvas again.
+        // Only steal DOM focus on the false→true transition. Rive can hold focus across
+        // frames while DOM focus sits elsewhere — a window switch preserves runtime focus
+        // by design — and that must not re-focus the canvas again.
         if (!this._prevHasFocus) {
           // Steal DOM focus to the canvas only when focus isn't already held
           // somewhere inside this instance's focus scope. When the accessibility
@@ -2587,8 +2588,9 @@ export class Rive {
 
       // hasFocus is false — only act when Rive previously held focus and released it internally
       // (state change clears focus). Release the DOM Tab trap so the next Tab moves to the next
-      // page element. EntryPending and NotFocused cases are intentional no-ops — EntryPending in
-      // particular must stay in its state (a click awaiting its first Tab) rather than be reset here.
+      // page element. A DOM blur reaches here too now that onCanvasBlur clears Rive focus, but it
+      // has already set NotFocused, so this is a no-op. EntryPending and NotFocused are likewise
+      // intentional no-ops — EntryPending must stay put (a click awaiting its first Tab).
       if (this._keyboardInteractions.focusSessionState === FocusSessionState.RiveFocused) {
         this._keyboardInteractions.setFocusSessionState(FocusSessionState.NotFocused);
       }
