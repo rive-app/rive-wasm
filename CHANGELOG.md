@@ -5,10 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.40.0](https://github.com/rive-app/rive-wasm/compare/2.39.2...2.40.0)
+## [2.40.1](https://github.com/rive-app/rive-wasm/compare/2.40.0...2.40.1)
 
 ### Commits
 
+- fix(renderer): Include ubershaders for dynamic-state DrawTypes (#13619) 3a60a0f69d [`d1fa312`](https://github.com/rive-app/rive-wasm/commit/d1fa31259e16151742eb6ca42cc730dff4754d60)
+- fix(focus): gamepad input fixes (#13649) 3de152d473 [`d344aab`](https://github.com/rive-app/rive-wasm/commit/d344aab78d7a9eff41c7cf2bbc851743c0227dda)
+- feat(Android): Asset manifest (#13651) 688b6ed4a0 [`3c2b373`](https://github.com/rive-app/rive-wasm/commit/3c2b373a7b656b5ae9e4d3fe62926a5988097a68)
+- chore(runtime): shrink LayoutComponent per-instance memory (#13565) e776cb3cc5 [`7f290ad`](https://github.com/rive-app/rive-wasm/commit/7f290adee5a304101929d1e590f64a17e49ec32b)
+- feat(editor): clipboard copy/cut/paste in Rive-based artboard header (#13641) a8f3a6828c [`9269da0`](https://github.com/rive-app/rive-wasm/commit/9269da02ba9bd177cac3e84a2d76e255714b64a1)
+- fix(gms): build the canvas dag gms without scripting (#13643) c3bd820e64 [`192f6d5`](https://github.com/rive-app/rive-wasm/commit/192f6d58c8d4dcf672c451d2412700c4131d17f1)
+- fix(runtime): rehome semantics when a data-bound nested artboard swaps (#13633) 16f53812e8 [`d6f091e`](https://github.com/rive-app/rive-wasm/commit/d6f091ea0118ff1fc3655de70f711cefd5056e21)
+- chore(editor): Enable layout transforms (#13632) 6369d54dc7 [`eae6857`](https://github.com/rive-app/rive-wasm/commit/eae68571f64405f71adbf9f6bab9949035a95a33)
+- fix(js): blur Rive focus on Rive domain blur. Ensure internal Rive cleared focus allows DOM to move on (#13615) dd7a165c5b [`f4489af`](https://github.com/rive-app/rive-wasm/commit/f4489af93737718bd133b8b70a8d921fea1bf85c)
+- feat(deferred): allocate canvas backings at replay, not at record (#13604) 610f9a3366 [`765aae8`](https://github.com/rive-app/rive-wasm/commit/765aae8e0959fc93be079deeea141bdaa30f83cb)
+- fix(scripting): route the device off the import factory, not the command server's (#13605) 7e613062a0 [`e2a0126`](https://github.com/rive-app/rive-wasm/commit/e2a0126a4bb541fb1215ba1d7e1c0e8045b72a41)
+- fix(text): make feather work on text style backgrounds (#13611) 54fe0949ab [`7d210ee`](https://github.com/rive-app/rive-wasm/commit/7d210eee695ba1e9fe4a1707abc3a8d3b3250683)
+- feat(unreal): initial deferred renderer support (#13602) e7b57f6bad [`6fe3c6e`](https://github.com/rive-app/rive-wasm/commit/6fe3c6ee1db8b2a071c97b16b02ddbb692a207ba)
+- refactor(unreal) msaa mode for android with engine patches for performance (#13527) 3026fa99a0 [`9ef71a7`](https://github.com/rive-app/rive-wasm/commit/9ef71a7e6f6f92c8a3df7f2060da563a9cf5b259)
+- fix(renderer): fail Vulkan init gracefully instead of aborting (#13546) edc6b5c78c [`82480d0`](https://github.com/rive-app/rive-wasm/commit/82480d03629174986239b45692b14adfaca6e447)
+- fix(unreal): Unreal random fixes (#13593) 54b48a70ae [`e9c4e93`](https://github.com/rive-app/rive-wasm/commit/e9c4e93e2bd564754a791e6d5cec66d1572008dd)
+- fix: Grid, core int type fixes (#13580) 584f66bc95 [`49a04f7`](https://github.com/rive-app/rive-wasm/commit/49a04f7812ba7c5ad3ddb29dced9948b4facb8b4)
+- fix(runtime): resolve data-bound keyframe values on all playback paths (#13579) f997139aa3 [`87d5ca5`](https://github.com/rive-app/rive-wasm/commit/87d5ca5dcc0eca109d3e7bd99689e3ec06b0cd1e)
+- chore(text): scale font attributes with fitFontSize (#13572) 77e027c061 [`76229e9`](https://github.com/rive-app/rive-wasm/commit/76229e9420e934b730215ce9ceebb628f9088ff7)
+- feat(ore): bake bind group layout identity into the shader sidecar (#13577) 4d73f37a3d [`5c7337c`](https://github.com/rive-app/rive-wasm/commit/5c7337c20643da5eeeecf429f86f9167791a8e22)
+- refactor(ore): derive bind group layouts from shaders at the ore layer (#13566) d93e7c98b2 [`f600f75`](https://github.com/rive-app/rive-wasm/commit/f600f75ada71ab05924034330f29a7c4f97b2314)
+- chore: rev luau to rive_0_734 (#13561) ba609f1a74 [`816a04b`](https://github.com/rive-app/rive-wasm/commit/816a04ba2e99e5380720843506b68c096e259ec2)
+- perf(runtime): write layout styles into the yoga node directly (#13438) 976a024a33 [`74feed4`](https://github.com/rive-app/rive-wasm/commit/74feed4358f5938030480a53f35475f3f971f175)
+- fix(web): build every heap view from wasmMemory (#13574) 0490b73a17 [`97bbe87`](https://github.com/rive-app/rive-wasm/commit/97bbe87c7de95c1a3b78066ac33b30a243a253dd)
+- chore(renderer): Update GrTriangulator to skia:fee7272f5b (#13570) 16992a5769 [`d76c03a`](https://github.com/rive-app/rive-wasm/commit/d76c03a6d4436afd6e6de262fe1006e78a758b9c)
+- feat(renderer): Implement interior triangulation for MSAA (#13535) 4e97bffbd8 [`836336b`](https://github.com/rive-app/rive-wasm/commit/836336ba89334f35a5c000858b1a4456dca5d538)
+- chore(viewer): add support for recording an interaction session with … (#13551) a764fff4f6 [`8ae4a44`](https://github.com/rive-app/rive-wasm/commit/8ae4a449c66f6de79d0c4abef17472c6bc9c8b35)
+- fix(Android): Silently handle other asset classes (#13462) cde6977172 [`f7624d9`](https://github.com/rive-app/rive-wasm/commit/f7624d985e2f3fb6395f331875c6ed63dae4663b)
+
+## [2.40.0](https://github.com/rive-app/rive-wasm/compare/2.39.2...2.40.0) - 2026-08-14
+
+### Commits
+
+- chore: tag 2.40.0 [`8143708`](https://github.com/rive-app/rive-wasm/commit/814370888ce77cdcef54ad8b1deac87770469844)
 - fix(deferred): construct the path geometry test session from caps (#13553) ee809ba7f0 [`1e93918`](https://github.com/rive-app/rive-wasm/commit/1e9391880df1d501b98d165d2db89284025462eb)
 - fix(renderer): drop empty segments from recorded and scripted geometry (#13550) bd16ad7c56 [`79c696a`](https://github.com/rive-app/rive-wasm/commit/79c696a6cae99e936fc31b0e9778a01850ca8245)
 - refactor(deferred): caps are the only way to construct a session (#13547) 7c5552a159 [`b5d2e79`](https://github.com/rive-app/rive-wasm/commit/b5d2e79d3b49cd1f9f86f62542c602cfb1ac855b)
