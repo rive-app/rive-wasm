@@ -5,10 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.40.1](https://github.com/rive-app/rive-wasm/compare/2.40.0...2.40.1)
+## [2.41.0](https://github.com/rive-app/rive-wasm/compare/2.40.1...2.41.0)
 
 ### Commits
 
+- perf(ore): lend scratch FBO/VAO to GL render passes instead of minting per pass (#13757) aa6d454839 [`6de63f3`](https://github.com/rive-app/rive-wasm/commit/6de63f3c400c8f2262b243d96ac2c375e0b01e9c)
+- feat(text input): add more text input properties (#13761) ed7059fc0b [`8bf8d50`](https://github.com/rive-app/rive-wasm/commit/8bf8d5032b0d05cae8d700cd7dad0f609a8210a5)
+- fix: Fix forward declare use issue for ore::context (#13737) 6debf52e7d [`d611b67`](https://github.com/rive-app/rive-wasm/commit/d611b67791c43ab282e3cc1f58ec36a920347d91)
+- bug: check for animator before running animator.stop (#13775) 7be51ecfb7 [`40c222b`](https://github.com/rive-app/rive-wasm/commit/40c222bf6666b7e189b755c1f87e40dcb0c059d2)
+- Revert "bug: check for animator before running animator.stop (#378)" [`a0fe814`](https://github.com/rive-app/rive-wasm/commit/a0fe814ba4b2b3b4425d085d3b437fc1a815e320)
+- perf(runtime): shrink StateMachineInstance and DataBindContainer (#13697) d13f76fdc4 [`f418733`](https://github.com/rive-app/rive-wasm/commit/f4187333958f67d474f91ed6fb03750d14d7d48b)
+- feat(scripting_workspace): rasc format, definitions, tests protocol and in-memory bake (#13701) daa3a2ec88 [`5aaa322`](https://github.com/rive-app/rive-wasm/commit/5aaa3222c68fda42a4b8c2c9560936c14862314e)
+- chore: Address layout consistency items (#13692) 1da7f74c5b [`6a51373`](https://github.com/rive-app/rive-wasm/commit/6a51373304f5d64c28a856ac0c04edfd563b22e2)
+- fix(focus): stop a destroyed FocusData leaving a live node in the foc… (#13678) f663d597cb [`65d42ea`](https://github.com/rive-app/rive-wasm/commit/65d42eaaaabc8d158561d52308b33f36c00d6d4c)
+- feat(scripting): arena-epoch reaping of wasm module handles (#13698) 554ba71bef [`367507c`](https://github.com/rive-app/rive-wasm/commit/367507c82c0a789b2d63b5ca5b3040022572bacc)
+- fix: Honor a nested artboard's fill/hug inside grid/stack layouts (#13685) b6eba932c6 [`978d9e5`](https://github.com/rive-app/rive-wasm/commit/978d9e58819b0c7b0a34ee0d78d4b28cc31fa47b)
+- refactor(rasc): move rasc under one package so its downstream ci mirrors from mono (#13671) d8604cbf13 [`070991d`](https://github.com/rive-app/rive-wasm/commit/070991df28c1e0ca3cfab10b35d89cb47da15713)
+- fix(unreal): raster order mode fix. (#13658) 56da77ec1c [`48ad4e8`](https://github.com/rive-app/rive-wasm/commit/48ad4e83e6a4c007469b104f146ca62ce81939d2)
+- feat(scripting): wasm script execution lane (#13595) e6598b59db [`c91898d`](https://github.com/rive-app/rive-wasm/commit/c91898d8a0bcb24dc19e0a1c16a0d15cff0e563a)
+- fix: Layouts propagate size down to solo children (#13656) 2f12e4ae15 [`7d62219`](https://github.com/rive-app/rive-wasm/commit/7d622192b2d62076343073ff7fb361c7764bd04f)
+- fix(ore): let a pipeline take its vertex and fragment from different shader files (#13646) a156d37294 [`a1dd79a`](https://github.com/rive-app/rive-wasm/commit/a1dd79a512675ef31d388685915fe67057b0027c)
+
+## [2.40.1](https://github.com/rive-app/rive-wasm/compare/2.40.0...2.40.1) - 2026-08-20
+
+### Commits
+
+- chore: tag 2.40.1 [`3a0405f`](https://github.com/rive-app/rive-wasm/commit/3a0405f262eb24e875e2bca7b4609bb086a8e4f6)
 - fix(renderer): Include ubershaders for dynamic-state DrawTypes (#13619) 3a60a0f69d [`d1fa312`](https://github.com/rive-app/rive-wasm/commit/d1fa31259e16151742eb6ca42cc730dff4754d60)
 - fix(focus): gamepad input fixes (#13649) 3de152d473 [`d344aab`](https://github.com/rive-app/rive-wasm/commit/d344aab78d7a9eff41c7cf2bbc851743c0227dda)
 - feat(Android): Asset manifest (#13651) 688b6ed4a0 [`3c2b373`](https://github.com/rive-app/rive-wasm/commit/3c2b373a7b656b5ae9e4d3fe62926a5988097a68)
