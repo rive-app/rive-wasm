@@ -3,6 +3,15 @@
 import * as rive from "../src/rive";
 import { loopRiveFileBuffer, stateMachineFileBuffer } from "./assets/bytes";
 
+beforeEach(() => {
+  // Silence the deprecation warnings the legacy playback APIs emit
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 // #region playback control
 
 test("Playing animations can be manually started and stopped", (done) => {
@@ -105,6 +114,61 @@ test("An animation can be played and scrubbed without altering playback state", 
         isDone = true;
         done();
       }
+    },
+  });
+});
+
+// #endregion
+
+// #region starting playback selection
+
+test("With nothing specified, the first animation plays (v2)", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "MyArtboard",
+    onLoad: () => {
+      // Current (v2) default: the first linear animation is chosen over
+      // the artboard's state machine
+      expect(r.pausedAnimationNames).toEqual(["WorkAreaPingPongAnimation"]);
+      expect(r.pausedStateMachineNames).toHaveLength(0);
+      done();
+    },
+  });
+});
+
+test("The deprecated stateMachines parameter still starts playback", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "MyArtboard",
+    stateMachines: "StateMachine",
+    onLoad: () => {
+      expect(r.pausedStateMachineNames).toEqual(["StateMachine"]);
+      expect(r.pausedAnimationNames).toHaveLength(0);
+      done();
+    },
+  });
+});
+
+// #endregion
+
+// #region resetting
+
+test("reset accepts the stateMachine parameter", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "MyArtboard",
+    stateMachine: "StateMachine",
+    onLoad: () => {
+      r.reset({ artboard: "MyArtboard", stateMachine: "StateMachine" });
+      expect(r.pausedStateMachineNames).toEqual(["StateMachine"]);
+      expect(r.pausedAnimationNames).toHaveLength(0);
+      done();
     },
   });
 });

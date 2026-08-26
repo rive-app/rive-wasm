@@ -22,7 +22,7 @@ beforeEach(() => {
 
 afterEach(() => {
   console.error = originalErrorLog;
-  console.error = originalWarnLog;
+  console.warn = originalWarnLog;
   setDocumentHidden(false);
 });
 
@@ -42,14 +42,33 @@ test("State machine names can be retrieved", (done) => {
   });
 });
 
-test("State machines can be instanced", (done) => {
+test("The stateMachine parameter starts playback with just that state machine", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    stateMachines: "StateMachine",
-    onPause: () => {
-      expect(r.pausedStateMachineNames).toHaveLength(1);
+    artboard: "MyArtboard",
+    stateMachine: "StateMachine",
+    onLoad: () => {
+      expect(r.pausedStateMachineNames).toEqual(["StateMachine"]);
+      expect(r.pausedAnimationNames).toHaveLength(0);
+      expect(r.playingAnimationNames).toHaveLength(0);
+      done();
+    },
+  });
+});
+
+test("The stateMachine parameter takes priority over the deprecated plural parameters", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: stateMachineFileBuffer,
+    artboard: "MyArtboard",
+    stateMachine: "StateMachine",
+    animations: "WorkAreaPingPongAnimation",
+    onLoad: () => {
+      expect(r.pausedStateMachineNames).toEqual(["StateMachine"]);
+      expect(r.pausedAnimationNames).toHaveLength(0);
       done();
     },
   });
@@ -232,7 +251,6 @@ test("Animation with wrong name logs a warning and an error", (done) => {
     buffer: stateMachineFileBuffer,
     animations: ["wrong!"],
     onLoad: () => {
-      expect(warnLogMock.mock.calls.length).toBe(0);
       expect(errorLogMock.mock.calls.length).toBe(1);
       expect(errorLogMock.mock.lastCall[0]).toBe(
         "Animation with name wrong! not found.",

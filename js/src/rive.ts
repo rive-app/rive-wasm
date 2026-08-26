@@ -247,6 +247,12 @@ export { RuntimeLoader, type RuntimeCallback };
 
 // #region state machines
 
+/**
+ * @deprecated State machine inputs are deprecated and will be removed in a
+ * future major version: please use data binding properties instead. See
+ * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+ * for how to migrate.
+ */
 export enum StateMachineInputType {
   Number = 56,
   Trigger = 58,
@@ -255,6 +261,10 @@ export enum StateMachineInputType {
 
 /**
  * An input for a state machine
+ * @deprecated State machine inputs are deprecated and will be removed in a
+ * future major version: please use data binding properties instead. See
+ * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+ * for how to migrate.
  */
 export class StateMachineInput {
   constructor(
@@ -300,6 +310,11 @@ export class StateMachineInput {
   }
 }
 
+/**
+ * @deprecated Rive Events are deprecated and will be removed in a future major
+ * version: please use data binding instead. See
+ * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
+ */
 export enum RiveEventType {
   General = 128,
   OpenUrl = 131,
@@ -872,6 +887,14 @@ class Animator {
     let instancedName: string;
     if (this.animations.length === 0 && this.stateMachines.length === 0) {
       if (this.artboard.animationCount() > 0) {
+        // Warn only when the v3 default would actually change what plays
+        if (this.artboard.stateMachineCount() > 0) {
+          warnOnce(
+            "No `stateMachine` was specified, so the artboard's first linear animation is playing by default. " +
+              "In the next major version, the artboard's state machine will be played by default instead when one exists. " +
+              "Pass the `stateMachine` parameter to adopt that behavior now.",
+          );
+        }
         // Add the first animation
         this.add(
           [(instancedName = this.artboard.animationByIndex(0).name)],
@@ -963,11 +986,75 @@ export enum EventType {
   Draw = "draw",
   Advance = "advance",
   StateChange = "statechange",
+  /**
+   * @deprecated Rive Events are deprecated and will be removed in a future
+   * major version: please use data binding instead. See
+   * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
+   */
   RiveEvent = "riveevent",
   AudioStatusChange = "audiostatuschange", // internal event. TODO: split
 }
 
+/**
+ * @deprecated Rive Events are deprecated and will be removed in a future major
+ * version: please use data binding instead. See
+ * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
+ */
 export type RiveEventPayload = rc.RiveEvent | rc.OpenUrlEvent;
+
+const riveEventsDeprecationWarning =
+  "Rive Events are deprecated and will be removed in a future major version: " +
+  "please use data binding instead. See " +
+  "https://rive.app/docs/runtimes/web/rive-events for how to migrate.";
+
+const stateMachineInputsDeprecationWarning =
+  "State machine inputs are deprecated and will be removed in a future major version: " +
+  "please use data binding properties instead. See " +
+  "https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs for how to migrate.";
+
+const textRunsDeprecationWarning =
+  "Text run APIs are deprecated and will be removed in a future major version: " +
+  "please use data binding instead. See " +
+  "https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime for how to migrate.";
+
+// Deprecation warnings already emitted; each is logged at most once per page
+// session to avoid flooding the console when many instances are created.
+const emittedWarnings = new Set<string>();
+const warnOnce = (message: string) => {
+  if (!emittedWarnings.has(message)) {
+    emittedWarnings.add(message);
+    console.warn(`[Rive] ${message}`);
+  }
+};
+
+/**
+ * Warns that a playback-control method received an array of names; the next
+ * major version restricts these parameters to a single string, since playing
+ * multiple animations or state machines at once will not be supported.
+ */
+const warnIfNamesArray = (
+  names: string | string[] | undefined,
+  methodName: string,
+) => {
+  if (Array.isArray(names)) {
+    warnOnce(
+      `Passing an array of names to \`${methodName}()\` is deprecated: in the next major version this parameter will be a single string, and playing multiple animations or state machines at once will not be supported.`,
+    );
+  }
+};
+
+/**
+ * Warns that a playback-control method received linear animation names;
+ * name-based control remains supported for state machines only, so
+ * user-specified linear animation names are going away in a future major
+ * version.
+ */
+const warnDeprecatedAnimationNames = (methodName: string) => {
+  warnOnce(
+    `Passing linear animation names to \`${methodName}()\` is deprecated and will be removed in a future major version: ` +
+      "Pass a single state machine name to control playback instead.",
+  );
+};
 
 // Event reported by Rive for significant events during animation playback (i.e. play, pause, stop, etc.),
 // as well as for custom Rive events reported from the state machine defined at design-time.
@@ -1319,11 +1406,40 @@ let nextRiveInstanceId = 0;
 // Interface for the Rive static method contructor
 export interface RiveParameters {
   canvas: HTMLCanvasElement | OffscreenCanvas; // canvas is required
-  src?: string; // one of src or buffer or file is required
-  buffer?: ArrayBuffer; // one of src or buffer or file is required
+  /**
+   * URI of the `.riv` file to load. Will be fetched by the runtime. Can be used instead of
+   * `buffer` or `riveFile`.
+   */
+  src?: string;
+  /**
+   * ArrayBuffer of .riv file contents. Can be used instead of `src` or `riveFile` if you
+   * fetch the file contents yourself.
+   */
+  buffer?: ArrayBuffer;
+  /**
+   * RiveFile instance if created separately. Useful if you reuse a Rive file across multiple instances.
+   * Can be used instead of `src` or `buffer`.
+   */
   riveFile?: RiveFile;
+  /**
+   * Name of the artboard to display.
+   */
   artboard?: string;
+  /**
+   * Name of the state machine to play.
+   */
+  stateMachine?: string;
+  /**
+   * @deprecated Use the `stateMachine` parameter to play a state machine
+   * instead. Support for starting playback with named animations will be
+   * removed in a future major version.
+   */
   animations?: string | string[];
+  /**
+   * @deprecated Use `stateMachine` with a single state machine name instead.
+   * Support for playing multiple state machines at once will be removed in a
+   * future major version.
+   */
   stateMachines?: string | string[];
   layout?: Layout;
   autoplay?: boolean;
@@ -1376,6 +1492,10 @@ export interface RiveParameters {
    * This flag is false by default to prevent any unwanted behaviors from taking place.
    * This means any special Rive Event will have to be handled manually by subscribing to
    * EventType.RiveEvent
+   *
+   * @deprecated Rive Events are deprecated and will be removed in a future
+   * major version: please use data binding instead. See
+   * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
    */
   automaticallyHandleEvents?: boolean;
   /**
@@ -1448,7 +1568,21 @@ export interface RiveLoadParameters {
   autoplay?: boolean;
   autoBind?: boolean;
   artboard?: string;
+  /**
+   * Name of the state machine to play.
+   */
+  stateMachine?: string;
+  /**
+   * @deprecated Use the `stateMachine` parameter to play a state machine
+   * instead. Support for starting playback with named animations will be
+   * removed in a future major version.
+   */
   animations?: string | string[];
+  /**
+   * @deprecated Use `stateMachine` with a single state machine name instead.
+   * Support for playing multiple state machines at once will be removed in a
+   * future major version.
+   */
   stateMachines?: string | string[];
   useOffscreenRenderer?: boolean;
   shouldDisableRiveListeners?: boolean;
@@ -1460,7 +1594,21 @@ export interface RiveLoadParameters {
 // Interface ot Rive.reset function
 export interface RiveResetParameters {
   artboard?: string;
+  /**
+   * Name of the state machine to play.
+   */
+  stateMachine?: string;
+  /**
+   * @deprecated Use the `stateMachine` parameter to play a state machine
+   * instead. Support for starting playback with named animations will be
+   * removed in a future major version.
+   */
   animations?: string | string[];
+  /**
+   * @deprecated Use `stateMachine` with a single state machine name instead.
+   * Support for playing multiple state machines at once will be removed in a
+   * future major version.
+   */
   stateMachines?: string | string[];
   autoplay?: boolean;
   autoBind?: boolean;
@@ -1479,6 +1627,46 @@ export interface RiveFileParameters {
    */
   enablePerfMarks?: boolean;
 }
+
+/**
+ * Resolves which animation/state machine names playback should start with.
+ * The `stateMachine` parameter takes priority; the deprecated plural
+ * `animations`/`stateMachines` parameters apply only when it
+ * is not provided.
+ */
+const resolveStartingPlayback = ({
+  stateMachine,
+  animations,
+  stateMachines,
+}: {
+  stateMachine?: string;
+  animations?: string | string[];
+  stateMachines?: string | string[];
+}): {
+  startingAnimationNames: string[];
+  startingStateMachineNames: string[];
+} => {
+  if (animations !== undefined) {
+    warnOnce(
+      "The `animations` parameter is deprecated and will be removed in a future major version: please use the `stateMachine` parameter to play a state machine instead.",
+    );
+  }
+  if (stateMachines !== undefined) {
+    warnOnce(
+      "The `stateMachines` parameter is deprecated: please use `stateMachine` with a single state machine name instead.",
+    );
+  }
+  if (stateMachine) {
+    return {
+      startingAnimationNames: [],
+      startingStateMachineNames: [stateMachine],
+    };
+  }
+  return {
+    startingAnimationNames: mapToStringArray(animations),
+    startingStateMachineNames: mapToStringArray(stateMachines),
+  };
+};
 
 export class RiveFile implements rc.FinalizableTarget {
   // Error message for missing source or buffer
@@ -1975,6 +2163,12 @@ export class Rive {
     this.layout = params.layout ?? new Layout();
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
+    if (params.automaticallyHandleEvents) {
+      warnOnce(
+        "The `automaticallyHandleEvents` parameter is deprecated. " +
+          riveEventsDeprecationWarning,
+      );
+    }
     this.automaticallyHandleEvents = !!params.automaticallyHandleEvents;
     this.dispatchPointerExit =
       params.dispatchPointerExit === false
@@ -2031,6 +2225,7 @@ export class Rive {
       riveFile: this.riveFile,
       autoplay: params.autoplay,
       autoBind: params.autoBind,
+      stateMachine: params.stateMachine,
       animations: params.animations,
       stateMachines: params.stateMachines,
       artboard: params.artboard,
@@ -2116,6 +2311,7 @@ export class Rive {
     src,
     buffer,
     riveFile,
+    stateMachine,
     animations,
     stateMachines,
     artboard,
@@ -2141,11 +2337,13 @@ export class Rive {
       throw new RiveError(Rive.missingErrorMessage);
     }
 
-    // List of animations that should be initialized.
-    const startingAnimationNames = mapToStringArray(animations);
-
-    // List of state machines that should be initialized
-    const startingStateMachineNames = mapToStringArray(stateMachines);
+    // Names of the animations and state machines that should be initialized
+    const { startingAnimationNames, startingStateMachineNames } =
+      resolveStartingPlayback({
+        stateMachine,
+        animations,
+        stateMachines,
+      });
 
     // Ensure loaded is marked as false if loading new file
     this.loaded = false;
@@ -2985,8 +3183,9 @@ export class Rive {
     // Tear down semantics before deleting state machines — the overlay's action
     // closures point at instances that stop() is about to free.
     this.cleanupSemantics();
-    // Delete all animation and state machine instances
-    this.stop();
+    // Delete all animation and state machine instances synchronously via the
+    // animator
+    this.animator?.stop();
     if (this.artboard) {
       this.artboard.delete();
       this.artboard = null;
@@ -3022,10 +3221,14 @@ export class Rive {
    * Returns a string from a given text run node name, or undefined if the text run
    * cannot be queried.
    *
+   * @deprecated Text run APIs are deprecated: use data binding instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime}
+   * for how to migrate.
    * @param textRunName - Name of the text run node associated with a text object
    * @returns - String value of the text run node or undefined
    */
   public getTextRunValue(textRunName: string): string | undefined {
+    warnOnce(textRunsDeprecationWarning);
     const textRun = this.retrieveTextRun(textRunName);
     return textRun ? textRun.text : undefined;
   }
@@ -3033,19 +3236,47 @@ export class Rive {
   /**
    * Sets a text value for a given text run node name if possible
    *
+   * @deprecated Text run APIs are deprecated: use data binding instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime}
+   * for how to migrate.
    * @param textRunName - Name of the text run node associated with a text object
    * @param textRunValue - String value to set on the text run node
    */
   public setTextRunValue(textRunName: string, textRunValue: string): void {
+    warnOnce(textRunsDeprecationWarning);
     const textRun = this.retrieveTextRun(textRunName);
     if (textRun) {
       textRun.text = textRunValue;
     }
   }
 
-  // Plays specified animations; if none specified, it unpauses everything.
+  /**
+   * Warns when playback-control names match linear animations in the
+   * Animator's instanced context; state machine playback remain supported.
+   *
+   * Remove for v3 release
+   */
+  private warnIfLinearAnimationNames(names: string[], methodName: string): void {
+    if (
+      this.animator &&
+      this.animator.animations.some((a) => names.includes(a.name))
+    ) {
+      warnDeprecatedAnimationNames(methodName);
+    }
+  }
+
+  /**
+   * Plays specified animations or state machines; if none specified, it
+   * unpauses everything.
+   * @param animationNames Animation or state machine name(s) to play.
+   * 
+   * Deprecated usage: passing linear animation names (control playback with a
+   * state machine instead) and passing an array of names (this parameter
+   * becomes a single string in the next major version).
+   */
   public play(animationNames?: string | string[], autoplay?: true): void {
-    animationNames = mapToStringArray(animationNames);
+    warnIfNamesArray(animationNames, "play");
+    const names = mapToStringArray(animationNames);
 
     // If the file's not loaded, queue up the play
     if (!this.readyForPlaying) {
@@ -3054,7 +3285,8 @@ export class Rive {
       });
       return;
     }
-    this.animator.play(animationNames);
+    this.animator.play(names);
+    this.warnIfLinearAnimationNames(names, "play");
     this.syncSemanticsOnStateMachines();
     if (this.eventCleanup) {
       this.eventCleanup();
@@ -3064,9 +3296,18 @@ export class Rive {
     this.startRendering();
   }
 
-  // Pauses specified animations; if none specified, pauses all.
+  /**
+   * Pauses specified animations or state machines; if none specified, pauses
+   * all.
+   * @param animationNames Animation or state machine name(s) to pause.
+   * 
+   * Deprecated usage: passing linear animation names (control playback with a
+   * state machine instead) and passing an array of names (this parameter
+   * becomes a single string in the next major version).
+   */
   public pause(animationNames?: string | string[]): void {
-    animationNames = mapToStringArray(animationNames);
+    warnIfNamesArray(animationNames, "pause");
+    const names = mapToStringArray(animationNames);
 
     // If the file's not loaded, early out, nothing to pause
     if (!this.readyForPlaying) {
@@ -3079,11 +3320,22 @@ export class Rive {
       this.eventCleanup();
     }
     this.cleanupKeyboardInteractions();
-    this.animator.pause(animationNames);
+    this.animator.pause(names);
+    this.warnIfLinearAnimationNames(names, "pause");
   }
 
+  /**
+   * Scrubs specified animations to the given time; if none specified, scrubs
+   * all of them.
+   * @deprecated `scrub()` will be removed in a future major version: use a
+   * state machine to control playback instead
+   */
   public scrub(animationNames?: string | string[], value?: number): void {
-    animationNames = mapToStringArray(animationNames);
+    warnOnce(
+      "`scrub()` is deprecated and will be removed in a future major version: " +
+        "use a state machine to control playback instead.",
+    );
+    const names = mapToStringArray(animationNames);
 
     // If the file's not loaded, early out, nothing to pause
     if (!this.readyForPlaying) {
@@ -3092,16 +3344,24 @@ export class Rive {
       });
       return;
     }
-
     // Scrub the animation time; we draw a single frame here so that if
     // nothing's currently playing, the scrubbed animation is still rendered/
-    this.animator.scrub(animationNames, value || 0);
+    this.animator.scrub(names, value || 0);
     this.drawFrame();
   }
 
-  // Stops specified animations; if none specifies, stops them all.
+  /**
+   * Stops specified animations or state machines; if none specified, stops
+   * them all.
+   * @param animationNames Animation or state machine name(s) to stop.
+   * 
+   * Deprecated usage: passing linear animation names (control playback with a
+   * state machine instead) and passing an array of names (this parameter
+   * becomes a single string in the next major version).
+   */
   public stop(animationNames?: string | string[] | undefined): void {
-    animationNames = mapToStringArray(animationNames);
+    warnIfNamesArray(animationNames, "stop");
+    const names = mapToStringArray(animationNames);
     // If the file's not loaded, early out, nothing to pause
     if (!this.readyForPlaying) {
       this.taskQueue.add({
@@ -3109,7 +3369,11 @@ export class Rive {
       });
       return;
     }
-    this.animator.stop(animationNames);
+    this.warnIfLinearAnimationNames(names, "stop");
+    // If there is no artboard, this.animator will be undefined
+    if (this.animator) {
+      this.animator.stop(names);
+    }
     if (this.eventCleanup) {
       this.eventCleanup();
     }
@@ -3120,16 +3384,21 @@ export class Rive {
   /**
    * Resets the animation
    * @param artboard the name of the artboard, or default if none given
-   * @param animations the names of animations for playback
-   * @param stateMachines the names of state machines for playback
+   * @param stateMachine the name of the state machine for playback
    * @param autoplay whether to autoplay when reset, defaults to false
    *
    */
   public reset(params?: RiveResetParameters): void {
     // Get the current artboard, animations, state machines, and playback states
     const artBoardName = params?.artboard;
-    const animationNames = mapToStringArray(params?.animations);
-    const stateMachineNames = mapToStringArray(params?.stateMachines);
+    const {
+      startingAnimationNames: animationNames,
+      startingStateMachineNames: stateMachineNames,
+    } = resolveStartingPlayback({
+      stateMachine: params?.stateMachine,
+      animations: params?.animations,
+      stateMachines: params?.stateMachines,
+    });
     const autoplay = params?.autoplay ?? false;
     const autoBind = params?.autoBind ?? false;
 
@@ -3144,7 +3413,11 @@ export class Rive {
       autoplay,
       autoBind,
     );
-    this.taskQueue.process();
+    // Only drain the task queue once playback commands can execute; tasks
+    // queued before then re-add themselves in a loop.
+    if (this.readyForPlaying) {
+      this.taskQueue.process();
+    }
   }
 
   // Loads a new Rive file, keeping listeners in place
@@ -3285,11 +3558,18 @@ export class Rive {
 
   /**
    * Returns the inputs for the specified instanced state machine, or an empty
-   * list if the name is invalid or the state machine is not instanced
+   * list if the name is invalid or the state machine is not instanced. Returns
+   * undefined if the file is not loaded yet.
+   * 
+   * @deprecated State machine inputs are deprecated: use data binding
+   * properties instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+   * for how to migrate.
    * @param name the state machine name
-   * @returns the inputs for the named state machine
+   * @returns the inputs for the named state machine or undefined
    */
-  public stateMachineInputs(name: string): StateMachineInput[] {
+  public stateMachineInputs(name: string): StateMachineInput[] | undefined {
+    warnOnce(stateMachineInputsDeprecationWarning);
     // If the file's not loaded, early out, nothing to pause
     if (!this.loaded) {
       return;
@@ -3328,6 +3608,10 @@ export class Rive {
 
   /**
    * Set the boolean input with the provided name at the given path with value
+   * @deprecated State machine inputs are deprecated: use data binding
+   * properties instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+   * for how to migrate.
    * @param input the state machine input name
    * @param value the value to set the input to
    * @param path the path the input is located at an artboard level
@@ -3337,6 +3621,7 @@ export class Rive {
     value: boolean,
     path: string,
   ) {
+    warnOnce(stateMachineInputsDeprecationWarning);
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -3351,11 +3636,16 @@ export class Rive {
 
   /**
    * Set the number input with the provided name at the given path with value
+   * @deprecated State machine inputs are deprecated: use data binding
+   * properties instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+   * for how to migrate.
    * @param input the state machine input name
    * @param value the value to set the input to
    * @param path the path the input is located at an artboard level
    */
   public setNumberStateAtPath(inputName: string, value: number, path: string) {
+    warnOnce(stateMachineInputsDeprecationWarning);
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -3370,10 +3660,15 @@ export class Rive {
 
   /**
    * Fire the trigger with the provided name at the given path
+   * @deprecated State machine inputs are deprecated: use data binding
+   * properties instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#state-machine-inputs}
+   * for how to migrate.
    * @param input the state machine input name
    * @param path the path the input is located at an artboard level
    */
   public fireStateAtPath(inputName: string, path: string) {
+    warnOnce(stateMachineInputsDeprecationWarning);
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -3431,11 +3726,16 @@ export class Rive {
    *
    * @remarks
    * If the text run cannot be found at the specified path, a warning will be logged to the console.
+   *
+   * @deprecated Text run APIs are deprecated: use data binding instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime}
+   * for how to migrate.
    */
   public getTextRunValueAtPath(
     textName: string,
     path: string,
   ): string | undefined {
+    warnOnce(textRunsDeprecationWarning);
     const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
     if (!run) {
       console.warn(
@@ -3463,8 +3763,13 @@ export class Rive {
    *
    * @remarks
    * If the text run cannot be found at the specified path, a warning will be logged to the console.
+   *
+   * @deprecated Text run APIs are deprecated: use data binding instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime}
+   * for how to migrate.
    */
   public setTextRunValueAtPath(textName: string, value: string, path: string) {
+    warnOnce(textRunsDeprecationWarning);
     const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
     if (!run) {
       console.warn(
@@ -3551,10 +3856,17 @@ export class Rive {
 
   /**
    * Subscribe to Rive-generated events
+   *
+   * Note: subscribing to {@link EventType.RiveEvent} is deprecated; use data
+   * binding instead. See {@link https://rive.app/docs/runtimes/web/rive-events}
+   * for how to migrate.
    * @param type the type of event to subscribe to
    * @param callback callback to fire when the event occurs
    */
   public on(type: EventType, callback: EventCallback) {
+    if (type === EventType.RiveEvent) {
+      warnOnce(riveEventsDeprecationWarning);
+    }
     this.eventManager.add({
       type: type,
       callback: callback,
