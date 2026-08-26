@@ -1,3 +1,8 @@
+// Style note:
+// - foo["bar"] is used for anything that's part of the public API to prevent minification
+// - foo["_bar"] is used for anything that's private but needs to be accessed from the C++ side to prevent minification
+// - foo._bar is used for anything that's private to only this file and can be minified
+
 function makeMatrix(xx, xy, yx, yy, tx, ty) {
   const m = new DOMMatrix();
   m.a = xx;
@@ -95,7 +100,7 @@ const offscreenWebGL = new (function () {
               _hasLoggedContextLostError = true;
             }
             if (typeof target[property] === "function") {
-              return function () {};
+              return function () { };
             }
             return;
           } else {
@@ -113,7 +118,7 @@ const offscreenWebGL = new (function () {
             if (!_hasLoggedContextLostError) {
               console.error(
                 "Cannot render the mesh because the GL Context was lost. Tried to set property " +
-                  property
+                property
               );
               _hasLoggedContextLostError = true;
             }
@@ -498,32 +503,152 @@ Module["onRuntimeInitialized"] = function () {
         return "luminosity";
     }
   }
+
+  class RefCountedPath2D {
+    constructor() {
+      this._refCount = 0;
+      this._executedInstructionCount = 0;
+      this._path2D = new Path2D();
+    }
+
+    clear() {
+      this._refCount = 0;
+      this._executedInstructionCount = 0;
+      this._path2D = new Path2D();
+    }
+
+    // Returns a copy of the path that is up to date with the given instructions. The
+    // caller is responsible for releasing the path when done, or calling `clear()` to
+    // discard all references.
+    acquire(instructions) {
+      if (this._refCount > 0 && this._executedInstructionCount < instructions.length) {
+        // If new instructions have been added, we need to bring the path up to date
+        // before returning it. However, if the path is being actively referenced, we
+        // cannot directly modify it. Instead, we will create a new path by replaying all
+        // instructions.
+        this.clear();
+      }
+
+      while (this._executedInstructionCount < instructions.length) {
+        instructions[this._executedInstructionCount++](this._path2D);
+      }
+
+      this._refCount++;
+      return this._path2D;
+    }
+
+    release(path2D) {
+      // Only decrement the ref count if the path being released is the same as the one
+      // we are tracking. This excludes the case where we've created a new path since the
+      // last acquire.
+      if (path2D === this._path2D) {
+        this._refCount--;
+      }
+    }
+  }
+
   var CanvasRenderPath = RenderPath.extend("CanvasRenderPath", {
     "__construct": function () {
       this["__parent"]["__construct"].call(this);
-      this._path2D = new Path2D();
+      // The caller may interleave draw and path modification calls, but because the draw
+      // calls themselves are deferred, we cannot directly modify the path. Instead, we
+      // record the path modification calls and apply them when a draw call is enqueued.
+      // We may need to replay the path from scratch if there is already an outstanding
+      // draw call holding a reference to the current Path2D object.
+      this._pathInstructions = [];
+      this._path2D = new RefCountedPath2D();
+
+      // See _ensureSubpath().
+      this._hasSubpath = false;
+
+      // See _continueSubpath().
+      this._pendingMove = null;
     },
     "rewind": function () {
-      this._path2D = new Path2D();
+      this._pathInstructions.length = 0;
+      this._path2D.clear();
+      this._hasSubpath = false;
+      this._pendingMove = null;
     },
     "addPath": function (path, xx, xy, yx, yy, tx, ty) {
-      this._path2D["addPath"](path._path2D, makeMatrix(xx, xy, yx, yy, tx, ty));
+      const path2DToAdd = path._copyPath();
+      this._addPathInstruction((path2D) => {
+        let transform = makeMatrix(xx, xy, yx, yy, tx, ty);
+        path2D["addPath"](path2DToAdd, transform);
+      });
     },
     "fillRule": function (fillRule) {
       this._fillRule = fillRule;
     },
     "moveTo": function (x, y) {
-      this._path2D["moveTo"](x, y);
+      this._hasSubpath = true;
+      const subpath = { degenerate: true };
+      this._pendingMove = subpath;
+      this._addPathInstruction((path2D) => {
+        path2D["moveTo"](x, y);
+        if (subpath.degenerate) {
+          path2D["lineTo"](x, y);
+        }
+      });
     },
     "lineTo": function (x, y) {
-      this._path2D["lineTo"](x, y);
+      this._ensureSubpath();
+      this._continueSubpath();
+      this._addPathInstruction((path2D) => {
+        path2D["lineTo"](x, y);
+      });
     },
     "cubicTo": function (ox, oy, ix, iy, x, y) {
-      this._path2D["bezierCurveTo"](ox, oy, ix, iy, x, y);
+      this._ensureSubpath();
+      this._continueSubpath();
+      this._addPathInstruction((path2D) => {
+        path2D["bezierCurveTo"](ox, oy, ix, iy, x, y);
+      });
     },
     "close": function () {
-      this._path2D["closePath"]();
+      this._continueSubpath();
+      this._addPathInstruction((path2D) => {
+        path2D["closePath"]();
+      });
     },
+    // If we haven't yet started a path, issue a moveTo(0, 0) command to match the
+    // behavior of the Rive renderer (see RawPath::injectImplicitMoveIfNeeded). Canvas2D
+    // instead begins it at the verb's own first point (e.g. moveTo(cp1x, cp1y) for
+    // bezierCurveTo).
+    _ensureSubpath: function () {
+      if (!this._hasSubpath) {
+        this["moveTo"](0, 0);
+      }
+    },
+    // Canvas2D strokes nothing for a subpath that is only a moveTo, whereas Rive
+    // caps it. moveTo() therefore records a zero-length line, which Canvas2D does
+    // cap, and any verb that continues the subpath takes it back off again. The
+    // instructions read the flag when they replay, so it is always up to date by
+    // the time it matters.
+    _continueSubpath: function () {
+      if (this._pendingMove !== null) {
+        this._pendingMove.degenerate = false;
+        this._pendingMove = null;
+      }
+    },
+    _addPathInstruction: function (lambda) {
+      this._pathInstructions.push(lambda);
+    },
+    _acquirePath: function () {
+      return this._path2D.acquire(this._pathInstructions);
+    },
+    _releasePath: function (path2D) {
+      // We can safely call release() because the release() call gates on whether the
+      // path being released is the same as the one being tracked.
+      this._path2D.release(path2D);
+    },
+    _copyPath: function () {
+      // Acquire the path and immediately stop tracking it. This creates a copy that 
+      // doesn't need to be released.
+      const path2D = this._acquirePath();
+      this._path2D.clear();
+      return path2D;
+    }
   });
 
   function _colorStyle(value) {
@@ -540,79 +665,112 @@ Module["onRuntimeInitialized"] = function () {
     );
   }
   var CanvasRenderPaint = RenderPaint.extend("CanvasRenderPaint", {
-    "color": function (value) {
-      this._value = _colorStyle(value);
-    },
-    "thickness": function (value) {
-      this._thickness = value;
-    },
-    "join": function (value) {
-      switch (value) {
-        case StrokeJoin.miter:
-          this._join = "miter";
-          break;
-        case StrokeJoin.round:
-          this._join = "round";
-          break;
-        case StrokeJoin.bevel:
-          this._join = "bevel";
-          break;
-      }
-    },
-    "cap": function (value) {
-      switch (value) {
-        case StrokeCap.butt:
-          this._cap = "butt";
-          break;
-        case StrokeCap.round:
-          this._cap = "round";
-          break;
-        case StrokeCap.square:
-          this._cap = "square";
-          break;
-      }
-    },
-    "style": function (value) {
-      this._style = value;
-    },
-    "blendMode": function (value) {
-      this._blend = _canvasBlend(value);
-    },
-    "clearGradient": function () {
+    "__construct": function () {
+      this["__parent"]["__construct"].call(this);
+      // Because draw calls are deferred and a paint object may be used across multiple
+      // draw calls, we don't immediately apply modifications. Instead, we record a list
+      // of modifications and apply them when a draw call is executed.
+      this._modifications = [];
+      this._executedModificationCount = 0;
+
+      // Match the defaults of other renderers.
+      this._style = fill;
+      this._value = _colorStyle(0xff000000);
+      this._thickness = 1;
+      this._join = "miter";
+      this._cap = "butt";
+      this._blend = _canvasBlend(BlendMode.srcOver);
       this._gradient = null;
     },
+    "color": function (value) {
+      this._modifications.push(() => { this._value = _colorStyle(value); });
+    },
+    "thickness": function (value) {
+      this._modifications.push(() => { this._thickness = Math.abs(value); });
+    },
+    "join": function (value) {
+      this._modifications.push(() => {
+        switch (value) {
+          case StrokeJoin.miter:
+            this._join = "miter";
+            break;
+          case StrokeJoin.round:
+            this._join = "round";
+            break;
+          case StrokeJoin.bevel:
+            this._join = "bevel";
+            break;
+        }
+      })
+    },
+    "cap": function (value) {
+      this._modifications.push(() => {
+        switch (value) {
+          case StrokeCap.butt:
+            this._cap = "butt";
+            break;
+          case StrokeCap.round:
+            this._cap = "round";
+            break;
+          case StrokeCap.square:
+            this._cap = "square";
+            break;
+        }
+      });
+    },
+    "style": function (value) {
+      this._modifications.push(() => { this._style = value; });
+    },
+    "blendMode": function (value) {
+      this._modifications.push(() => { this._blend = _canvasBlend(value); });
+    },
+    "clearGradient": function () {
+      this._modifications.push(() => { this._gradient = null; });
+    },
     "linearGradient": function (sx, sy, ex, ey) {
-      this._gradient = {
-        sx,
-        sy,
-        ex,
-        ey,
-        stops: [],
-      };
+      this._modifications.push(() => {
+        this._gradient = {
+          sx,
+          sy,
+          ex,
+          ey,
+          stops: [],
+        };
+      });
     },
     "radialGradient": function (sx, sy, ex, ey) {
-      this._gradient = {
-        sx,
-        sy,
-        ex,
-        ey,
-        stops: [],
-        isRadial: true,
-      };
+      this._modifications.push(() => {
+        this._gradient = {
+          sx,
+          sy,
+          ex,
+          ey,
+          stops: [],
+          isRadial: true,
+        };
+      });
     },
     "addStop": function (color, stop) {
-      this._gradient.stops.push({
-        color,
-        stop,
+      this._modifications.push(() => {
+        this._gradient.stops.push({
+          color,
+          stop,
+        });
       });
     },
 
-    "completeGradient": function () {},
+    "completeGradient": function () { },
+
     // https://github.com/rive-app/rive/issues/3816: The fill rule (and only the fill rule) on a
     // path object can mutate before flush(). To work around this, we capture the fill rule at
     // draw time. It's a little awkward having a fill rule here even though we might be a
     // stroke, so we probably want to rework this.
-    "draw": function (ctx, path2D, fillRule, modulatedOpacity) {
+    _draw: function (ctx, path2D, fillRule, modulatedOpacity) {
+      // Skip the draw if invalid thickness has been set (this includes NaN).
+      if (this._style === stroke && !(this._thickness > 0)) {
+        return;
+      }
+
       let _style = this._style;
       let _value = this._value;
       let _gradient = this._gradient;
@@ -650,6 +808,7 @@ Module["onRuntimeInitialized"] = function () {
         this._value = _value;
         this._gradient = null;
       }
+
       switch (_style) {
         case stroke:
           ctx["strokeStyle"] = _value;
@@ -668,6 +827,17 @@ Module["onRuntimeInitialized"] = function () {
       ctx["globalCompositeOperation"] = prevBlend;
       ctx["globalAlpha"] = prevAlpha;
     },
+    _getModificationCount: function () {
+      return this._executedModificationCount + this._modifications.length;
+    },
+    _executeModifications: function (modificationCount) {
+      const count = modificationCount - this._executedModificationCount;
+      for (let i = 0; i < count; i++) {
+        this._modifications[i]();
+      }
+      this._modifications.splice(0, count);
+      this._executedModificationCount = modificationCount;
+    }
   });
 
   const _pendingCanvasRenderers = new Set();
@@ -760,7 +930,7 @@ Module["onRuntimeInitialized"] = function () {
     "rotate": function (angle) {
       const sin = Math.sin(angle);
       const cos = Math.cos(angle);
-      this.transform(cos, sin, -sin, cos, 0, 0);
+      this["transform"](cos, sin, -sin, cos, 0, 0);
     },
     "modulateOpacity": function (opacity) {
       this._opacityStack[this._opacityStack.length - 1] *= opacity;
@@ -768,11 +938,15 @@ Module["onRuntimeInitialized"] = function () {
     "_drawPath": function (path, paint) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
       const modulatedOpacity = Math.max(0, this._opacityStack[this._opacityStack.length - 1]);
-      this._drawList.push(
-        paint["draw"].bind(paint, this._ctx, path._path2D, fillRule, modulatedOpacity)
-      );
+      const path2D = path._acquirePath();
+      const modificationCount = paint._getModificationCount();
+      this._drawList.push(() => {
+        paint._executeModifications(modificationCount);
+        paint._draw(this._ctx, path2D, fillRule, modulatedOpacity);
+        path._releasePath(path2D);
+      });
     },
-    "_drawRiveImage": function (image, options, blend, opacity) {
+    "_drawRiveImage": function (image, blend, opacity) {
       var img = image._image;
       if (!img) {
         return;
@@ -796,7 +970,6 @@ Module["onRuntimeInitialized"] = function () {
     },
     "_drawImageMesh": function (
       image,
-      options,
       blend,
       opacity,
       vtxByteOffset, vtxCount,
@@ -813,8 +986,8 @@ Module["onRuntimeInitialized"] = function () {
       // Catching here is a safeguard to skip rendering the mesh for one frame rather than crashing
       let vtxCopy, uvCopy, indicesCopy;
       try {
-        vtxCopy     = Module["HEAPF32"].slice(vtxByteOffset >> 2, (vtxByteOffset >> 2) + vtxCount);
-        uvCopy      = Module["HEAPF32"].slice(uvByteOffset  >> 2, (uvByteOffset  >> 2) + uvCount);
+        vtxCopy = Module["HEAPF32"].slice(vtxByteOffset >> 2, (vtxByteOffset >> 2) + vtxCount);
+        uvCopy = Module["HEAPF32"].slice(uvByteOffset >> 2, (uvByteOffset >> 2) + uvCount);
         indicesCopy = Module["HEAPU16"].slice(indicesByteOffset >> 1, (indicesByteOffset >> 1) + indicesCount);
       } catch (e) {
         console.error("[Rive] _drawImageMesh: failed to read mesh data from WASM heap. Mesh skipped for this frame.");
@@ -926,14 +1099,22 @@ Module["onRuntimeInitialized"] = function () {
     },
     "_clipPath": function (path) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
-      this._drawList.push(
-        this._ctx["clip"].bind(this._ctx, path._path2D, fillRule)
+      const path2D = path._acquirePath();
+      this._drawList.push(() => {
+        this._ctx["clip"](path2D, fillRule)
+        path._releasePath(path2D);
+      }
       );
     },
-    "clear": function () {
-      // Add ourselves to the list of deferred canvases. This works here because clear aways
-      // gets called first.
+    // Begins a frame. Pass clear=false to draw on top of whatever the canvas
+    // already holds.
+    "beginFrame": function (clear = true) {
+      // Add ourselves to the list of deferred canvases. This works here because
+      // beginFrame always gets called first.
       _pendingCanvasRenderers.add(this);
+      if (!clear) {
+        return;
+      }
       this._drawList.push(
         this._ctx["clearRect"].bind(
           this._ctx,
@@ -944,7 +1125,12 @@ Module["onRuntimeInitialized"] = function () {
         )
       );
     },
-    "flush": function () {},
+    // Deprecated alias for beginFrame(); kept because it is part of the
+    // documented public API.
+    "clear": function () {
+      this["beginFrame"](true);
+    },
+    "flush": function () { },
     "translate": function (x, y) {
       this.transform(1, 0, 0, 1, x, y);
     },
@@ -963,8 +1149,8 @@ Module["onRuntimeInitialized"] = function () {
           if (c2dMethodBlockList.indexOf(property) > -1) {
             throw new Error(
               "RiveException: Method call to '" +
-                property +
-                "()' is not allowed, as the renderer cannot immediately pass through the return \
+              property +
+              "()' is not allowed, as the renderer cannot immediately pass through the return \
                 values of any canvas 2d context methods."
             );
           } else {

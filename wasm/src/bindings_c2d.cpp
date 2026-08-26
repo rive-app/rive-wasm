@@ -23,7 +23,13 @@
 
 using namespace emscripten;
 
-// Computes the post-transform bounding box of an array of points in high performance WASM SIMD.
+#ifdef WITH_RIVE_TOOLS
+// Defined at the bottom of this file, once gC2DFactory exists.
+extern rive::Factory* jsFactory();
+#endif
+
+// Computes the post-transform bounding box of an array of points in high
+// performance WASM SIMD.
 static std::array<float, 4> bbox(const float m[6], const float* vertexData, int numVertexFloats)
 {
     using float2 = skvx::Vec<2, float>;
@@ -44,13 +50,15 @@ static std::array<float, 4> bbox(const float m[6], const float* vertexData, int 
     // TODO: could 128-bit alignment on loads impact our speed in WASM?
     if (!(numVertexFloats & 3))
     {
-        // Even number of vertices -- number of floats is divisible by 4. Load 2 vertices initially.
+        // Even number of vertices -- number of floats is divisible by 4. Load 2
+        // vertices initially.
         v0 = float4::Load(vertexData);
         i = 4;
     }
     else
     {
-        // Odd number of vertices. Load 1 vertex initially so the rest will be divisible by 4.
+        // Odd number of vertices. Load 1 vertex initially so the rest will be
+        // divisible by 4.
         v0 = float2::Load(vertexData).xyxy();
         i = 2;
     }
@@ -65,7 +73,8 @@ static std::array<float, 4> bbox(const float m[6], const float* vertexData, int 
     }
     assert(i == numVertexFloats);
 
-    // Merge the two parallel bounding boxes into one complete, translated, integer bounding box.
+    // Merge the two parallel bounding boxes into one complete, translated,
+    // integer bounding box.
     float2 topLeft = floor(min(partialTopLefts.lo, partialTopLefts.hi) + translate);
     float2 botRight = ceil(max(partialBotRights.lo, partialBotRights.hi) + translate);
     return {topLeft.x(), topLeft.y(), botRight.x(), botRight.y()};
@@ -117,7 +126,7 @@ public:
                    rive::BlendMode value,
                    float opacity) override
     {
-        call<void>("_drawRiveImage", image, options, value, opacity, allow_raw_pointers());
+        call<void>("_drawRiveImage", image, value, opacity, allow_raw_pointers());
     }
 
     void drawImageMesh(const rive::RenderImage* image,
@@ -156,7 +165,6 @@ public:
 
         call<void>("_drawImageMesh",
                    image,
-                   options,
                    value,
                    opacity,
                    vtxByteOffset,
@@ -182,8 +190,9 @@ public:
 
     void addRawPath(const rive::RawPath& path) override
     {
-        // It might be faster to do this on the JS side, and just pass up the arrays...
-        // for now, we do it one segment at a time (each turns into an up-call to JS)
+        // It might be faster to do this on the JS side, and just pass up the
+        // arrays... for now, we do it one segment at a time (each turns into an
+        // up-call to JS)
         const rive::Vec2D* pts = path.points().data();
         for (auto v : path.verbs())
         {
@@ -311,6 +320,7 @@ public:
         }
         static_cast<GradientShader*>(shader.get())->passToJS(*this);
     }
+
     void invalidateStroke() override {}
 };
 
@@ -419,9 +429,11 @@ class C2DFactory : public Factory
         // This path is only used for hostedImages & embedded images.
         // I think we should refactor this so everything follows the same path.
 
-        // TODO: seems like we should change the constructor the the JS RenderImage to
-        //       be passed the byteArray, and have it decode (or fail) right away.
-        //       It could just return null to us for its object if it failed.
+        // TODO: seems like we should change the constructor the the JS
+        // RenderImage to
+        //       be passed the byteArray, and have it decode (or fail) right
+        //       away. It could just return null to us for its object if it
+        //       failed.
         //   ... that would avoid that tricky cast to RenderImageWrapper*
 
         val renderImage = val::module_property("renderFactory").call<val>("makeRenderImage");
@@ -439,34 +451,127 @@ class C2DFactory : public Factory
     }
 };
 
+#ifdef WITH_RIVE_TOOLS
+// The test harness (testing_window_canvas2d.cpp) lives in a separate wasm
+// module, so it cannot hold pointers into our heap, and thus cannot directly
+// invoke the functions defined above. However, most of this functionality is
+// just making simple calls into JS via `call`, so the test harness can just
+// make these same calls directly. However, a few functions in this file are
+// more complex, and we want to avoid duplicating their logic in the test
+// harness. Therefore, Canvas2DTestUtilities implements wrappers for these
+// more complex functions. These wrappers have emscripten bindings (see below)
+// which can be invoked from the test harness.
+class Canvas2DTestUtilities
+{
+public:
+    // Copies `elementCount` elements out of a JS TypedArray into a fresh
+    // DataRenderBuffer on *our* heap. The source typically views a different
+    // wasm module's memory, which is fine: a TypedArray is an ordinary JS
+    // object, so it reads correctly from here regardless of which ArrayBuffer
+    // it wraps. Matching the element type keeps TypedArray.set() a straight
+    // copy -- setting a Uint8Array from a Float32Array would silently convert
+    // each element instead.
+    template <typename T>
+    static rive::rcp<rive::RenderBuffer> uploadRenderBuffer(rive::RenderBufferType type,
+                                                            const emscripten::val& source,
+                                                            size_t elementCount)
+    {
+        rive::rcp<rive::RenderBuffer> buffer =
+            jsFactory()->makeRenderBuffer(type,
+                                          rive::RenderBufferFlags::none,
+                                          elementCount * sizeof(T));
+        T* dst = static_cast<T*>(buffer->map());
+        emscripten::val{emscripten::typed_memory_view(elementCount, dst)}.call<void>("set", source);
+        buffer->unmap();
+        return buffer;
+    }
+
+    // This exists so the harness can drive the real
+    // RendererWrapper::drawImageMesh() rather than reimplementing its
+    // bounding-box and buffer handling on its own side.
+    static void testDrawImageMesh(RendererWrapper* rendererWrapper,
+                                  RenderImageWrapper* imageWrapper,
+                                  const emscripten::val& vertices_f32,
+                                  const emscripten::val& uvCoords_f32,
+                                  const emscripten::val& indices_u16,
+                                  rive::BlendMode blendMode,
+                                  float opacity)
+    {
+        const uint32_t f32Count = vertices_f32["length"].as<uint32_t>();
+        const uint32_t indexCount = indices_u16["length"].as<uint32_t>();
+        assert(uvCoords_f32["length"].as<uint32_t>() == f32Count);
+        assert(f32Count % 2 == 0);
+
+        static_cast<rive::Renderer*>(rendererWrapper)
+            ->drawImageMesh(
+                static_cast<rive::RenderImage*>(imageWrapper),
+                rive::ImageSampler::LinearClamp(),
+                uploadRenderBuffer<float>(rive::RenderBufferType::vertex, vertices_f32, f32Count),
+                uploadRenderBuffer<float>(rive::RenderBufferType::vertex, uvCoords_f32, f32Count),
+                uploadRenderBuffer<uint16_t>(rive::RenderBufferType::index,
+                                             indices_u16,
+                                             indexCount),
+                f32Count / 2,
+                indexCount,
+                blendMode,
+                opacity);
+    }
+
+    // The harness needs the decoded dimensions to populate its own
+    // rive::RenderImage. It could read them off the <img> element that
+    // renderer.js stashes on the CanvasRenderImage, but that field is private
+    // to renderer.js and only ever accessed there with dot notation, so closure
+    // renames it in release builds. These go through the values renderer.js
+    // sets via size(), which is what the runtime itself draws with.
+    static int testImageWidth(RenderImageWrapper* imageWrapper) { return imageWrapper->width(); }
+
+    static int testImageHeight(RenderImageWrapper* imageWrapper) { return imageWrapper->height(); }
+};
+#endif // WITH_RIVE_TOOLS
 } // namespace rive
+
+// Placeholder for a method that only exists in JS.
+//
+// pure_virtual() is what makes embind reject a .extend() subclass that forgot a
+// method, but it registers against the class that *declares* the bound member
+// -- .function() deduces that from the pointer and ignores the class_<>.
+// Neither obvious choice works here. The wrapper's override declares its own
+// member, so it registers against RendererWrapper and the check silently never
+// runs. The real base method often isn't declared where you'd expect either:
+// RenderPath's verbs come from CommandPath, which has no class_<>, so the
+// registration waits forever on an unresolved type and the method never appears
+// at all. (The signature is a fiction regardless -- these JS classes are not
+// the same shape as the C++ ones; they take loose floats where C++ takes a
+// Mat2D.)
+//
+// A null pointer-to-member pins the class explicitly, sidestepping both. Only
+// valid alongside pure_virtual(), which guarantees the JS override shadows this
+// binding so the null is never invoked.
+template <typename T> constexpr void (T::* pureVirtualMethod())() { return nullptr; }
 
 EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
 {
     class_<rive::Renderer>("Renderer")
-        .function("save", &RendererWrapper::save, pure_virtual(), allow_raw_pointers())
-        .function("restore", &RendererWrapper::restore, pure_virtual(), allow_raw_pointers())
-        .function("transform", &RendererWrapper::transform, pure_virtual(), allow_raw_pointers())
-        .function("modulateOpacity",
-                  &RendererWrapper::modulateOpacity,
-                  pure_virtual(),
-                  allow_raw_pointers())
-        .function("drawPath", &RendererWrapper::drawPath, pure_virtual(), allow_raw_pointers())
-        .function("clipPath", &RendererWrapper::clipPath, pure_virtual(), allow_raw_pointers())
-        .function("align", &RendererWrapper::align, pure_virtual(), allow_raw_pointers())
+        .function("save", pureVirtualMethod<rive::Renderer>(), pure_virtual())
+        .function("restore", pureVirtualMethod<rive::Renderer>(), pure_virtual())
+        .function("transform", pureVirtualMethod<rive::Renderer>(), pure_virtual())
+        .function("modulateOpacity", pureVirtualMethod<rive::Renderer>(), pure_virtual())
+        // These three are not pure_virtual(): drawPath and clipPath are
+        // implemented in JS under different names (_drawPath / _clipPath), and
+        // align is a C++ helper that JS calls rather than implements.
+        .function("drawPath", &RendererWrapper::drawPath, allow_raw_pointers())
+        .function("clipPath", &RendererWrapper::clipPath, allow_raw_pointers())
+        .function("align", &RendererWrapper::align, allow_raw_pointers())
         .allow_subclass<RendererWrapper>("RendererWrapper");
 
     class_<rive::RenderPath>("RenderPath")
-        .function("rewind", &RenderPathWrapper::rewind, pure_virtual(), allow_raw_pointers())
-        .function("addPath",
-                  &RenderPathWrapper::addRenderPath,
-                  pure_virtual(),
-                  allow_raw_pointers())
-        .function("fillRule", &RenderPathWrapper::fillRule, pure_virtual())
-        .function("moveTo", &RenderPathWrapper::moveTo, pure_virtual(), allow_raw_pointers())
-        .function("lineTo", &RenderPathWrapper::lineTo, pure_virtual(), allow_raw_pointers())
-        .function("cubicTo", &RenderPathWrapper::cubicTo, pure_virtual(), allow_raw_pointers())
-        .function("close", &RenderPathWrapper::close, pure_virtual(), allow_raw_pointers())
+        .function("rewind", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("addPath", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("fillRule", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("moveTo", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("lineTo", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("cubicTo", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
+        .function("close", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
         .allow_subclass<RenderPathWrapper>("RenderPathWrapper");
     enum_<rive::RenderPaintStyle>("RenderPaintStyle")
         .value("fill", rive::RenderPaintStyle::fill)
@@ -518,20 +623,34 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
     class_<rive::rcp<rive::RenderShader>>("RenderShader");
 
     class_<rive::RenderPaint>("RenderPaint")
-        .function("color", &RenderPaintWrapper::color, pure_virtual(), allow_raw_pointers())
-
-        .function("style", &RenderPaintWrapper::style, pure_virtual(), allow_raw_pointers())
-        .function("thickness", &RenderPaintWrapper::thickness, pure_virtual(), allow_raw_pointers())
-        .function("join", &RenderPaintWrapper::join, pure_virtual(), allow_raw_pointers())
-        .function("cap", &RenderPaintWrapper::cap, pure_virtual(), allow_raw_pointers())
-        .function("blendMode", &RenderPaintWrapper::blendMode, pure_virtual(), allow_raw_pointers())
-        .function("shader", &RenderPaintWrapper::shader, pure_virtual(), allow_raw_pointers())
+        .function("color", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("style", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("thickness", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("join", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("cap", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("blendMode", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        // Not pure_virtual(): implemented in C++, which decomposes it into the
+        // linearGradient / radialGradient / addStop calls that JS does provide.
+        .function("shader", &RenderPaintWrapper::shader, allow_raw_pointers())
         .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
 
     class_<rive::RenderImage>("RenderImage")
         .function("size", &RenderImageWrapper::size)
         .function("unref", &RenderImageWrapper::unref)
         .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
+
+#ifdef WITH_RIVE_TOOLS
+    class_<rive::Canvas2DTestUtilities>("Canvas2DTestUtilities")
+        .class_function("drawImageMesh",
+                        &rive::Canvas2DTestUtilities::testDrawImageMesh,
+                        allow_raw_pointers())
+        .class_function("imageWidth",
+                        &rive::Canvas2DTestUtilities::testImageWidth,
+                        allow_raw_pointers())
+        .class_function("imageHeight",
+                        &rive::Canvas2DTestUtilities::testImageHeight,
+                        allow_raw_pointers());
+#endif
 }
 
 static rive::C2DFactory gC2DFactory;

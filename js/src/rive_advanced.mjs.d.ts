@@ -164,11 +164,18 @@ export declare class RendererWrapper {
   drawPath(path: RenderPath, paint: RenderPaint): void;
   clipPath(path: RenderPath): void;
   /**
-   * Calls the context's clearRect() function to clear the entire canvas. Crucial to call
-   * this at the start of the render loop to clear the canvas before drawing the next frame
+   * Begins a frame. Crucial to call this at the start of the render loop: besides clearing
+   * the canvas, it registers the renderer so that its queued draws actually get flushed.
    *
-   * For the underlying API, check
+   * Pass clear=false to draw on top of whatever the canvas already holds instead of
+   * starting from a blank one.
+   *
+   * For the underlying clear, check
    * https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/clearRect
+   */
+  beginFrame(clear?: boolean): void;
+  /**
+   * @deprecated Use {@link beginFrame} instead. Equivalent to `beginFrame(true)`.
    */
   clear(): void;
   delete(): void;
@@ -184,7 +191,15 @@ export declare class RendererWrapper {
 
 export declare class RenderPathWrapper {
   reset(): void;
-  addPath(path: CommandPath, transform: Mat2D): void;
+  addPath(
+    path: CommandPath,
+    xx: number,
+    xy: number,
+    yx: number,
+    yy: number,
+    tx: number,
+    ty: number,
+  ): void;
   fillRule(value: FillRule): void;
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
@@ -233,11 +248,11 @@ export declare class Renderer extends RendererWrapper {
   ): void;
 }
 
-export declare class CommandPath {}
+export declare class CommandPath { }
 
-export declare class RenderPath extends RenderPathWrapper {}
+export declare class RenderPath extends RenderPathWrapper { }
 
-export declare class RenderPaint extends RenderPaintWrapper {}
+export declare class RenderPaint extends RenderPaintWrapper { }
 
 /////////////////////
 // CANVAS RENDERER //
@@ -287,7 +302,7 @@ export declare class CanvasRenderPaint extends RenderPaint {
   ): void;
 }
 
-export declare class CanvasRenderPath extends RenderPath {}
+export declare class CanvasRenderPath extends RenderPath { }
 
 export interface CanvasRenderFactory {
   makeRenderPaint(): CanvasRenderPaint;
@@ -1202,11 +1217,11 @@ export declare class DataEnum {
   get values(): string[];
 }
 
-export declare class SMIBool {}
+export declare class SMIBool { }
 
-export declare class SMINumber {}
+export declare class SMINumber { }
 
-export declare class SMITrigger {}
+export declare class SMITrigger { }
 
 ///////////
 // ENUMS //
@@ -1428,7 +1443,7 @@ export declare class FontAsset extends FileAsset {
   setFont(font: Font | FontWrapper): void;
 }
 
-export declare class FileAssetLoader {}
+export declare class FileAssetLoader { }
 
 export declare class CustomFileAssetLoader extends FileAssetLoader {
   constructor({ loadContents }: { loadContents: Function });

@@ -4,83 +4,6 @@ newoption({
     trigger = 'profiling-funcs',
     description = 'Build with --profiling-funcs for named WASM symbols in DevTools (uses -O2 instead of -Oz)',
 })
-
--- Filter these options out when generate the compilation database.
-filter('system:emscripten')
-do
-    buildoptions({
-        '-s STRICT=1',
-        '-s DISABLE_EXCEPTION_CATCHING=1',
-        '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
-        '-DSINGLE',
-        '-DANSI_DECLARATORS',
-        '-Wno-c++17-extensions',
-        '-fno-exceptions',
-        '-fno-rtti',
-        '-fno-unwind-tables',
-        '--no-entry',
-        '-DYOGA_EXPORT=',
-    })
-
-    linkoptions({
-        '--bind',
-        -- TODO: uncomment this to enable asyncify for wasm, check in with -Oz as well
-        -- '-O3',
-        -- '-s ASYNCIFY',
-        '-s STACK_SIZE=256kb',
-        '-s FORCE_FILESYSTEM=0',
-        '-s MODULARIZE=1',
-        '-s NO_EXIT_RUNTIME=1',
-        '-s DISABLE_EXCEPTION_CATCHING=1',
-        '-s WASM=1',
-        -- "-s EXPORT_ES6=1",
-        '-s EXPORT_NAME="Rive"',
-        '-s ENVIRONMENT="web,webview,worker"',
-        -- The pre-js glue reads these off Module; they are not exported by default.
-        '-s EXPORTED_RUNTIME_METHODS=HEAP8,HEAPU8,HEAP32,HEAPU32,HEAPF32,HEAPU16',
-        '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
-        '-DSINGLE',
-        '-DANSI_DECLARATORS',
-        '-Wno-c++17-extensions',
-        '-fno-exceptions',
-        '-fno-rtti',
-        '-fno-unwind-tables',
-        '--no-entry',
-    })
-end
-
-filter('options:config=debug')
-do
-    defines({ 'DEBUG' })
-    symbols('On')
-    linkoptions({
-        '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
-        '-s ASSERTIONS=1',
-        '-s ABORTING_MALLOC=0',
-    })
-end
-
-filter('options:profiling-funcs')
-do
-    optimize('On')
-    defines({ 'NDEBUG' })
-    -- Explicit -O2 overrides the -Oz added by rive_build_config.lua's release wasm-arch block,
-    -- since it appears later in the accumulated flags (last opt flag wins in Clang).
-    buildoptions({ '-O2' })
-    linkoptions({
-        '-s ASSERTIONS=0',
-        '--profiling-funcs',
-    })
-end
-
-filter('options:config=release')
-do
-    -- Link-time -Os gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
-    linkoptions({ '-Os', '-s ASSERTIONS=0', '--closure 1' })
-end
-
-filter({})
-
 RIVE_RUNTIME_DIR = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-runtime'
 dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 
@@ -90,8 +13,103 @@ if _OPTIONS['renderer'] == 'webgl2' then
     dofile(RIVE_PLS_DIR .. '/premake5_pls_renderer.lua')
 end
 
+-- emcc emits a UMD script; finalize_glue.py rewrites it into the ES module we
+-- publish. Part of the link so that no caller has to remember it.
+local function finalizeGlue(moduleName)
+    postbuildcommands({
+        'python3 '
+            .. path.getabsolute('./finalize_glue.py')
+            .. ' '
+            .. path.getabsolute(RIVE_BUILD_OUT)
+            .. '/'
+            .. moduleName,
+    })
+end
+
 project('rive_wasm')
 do
+    -- Filter these options out when generate the compilation database.
+    filter('system:emscripten')
+    do
+        buildoptions({
+            '-s STRICT=1',
+            '-s DISABLE_EXCEPTION_CATCHING=1',
+            '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
+            '-DSINGLE',
+            '-DANSI_DECLARATORS',
+            '-Wno-c++17-extensions',
+            '-fno-exceptions',
+            '-fno-rtti',
+            '-fno-unwind-tables',
+            '--no-entry',
+            '-DYOGA_EXPORT=',
+        })
+
+        -- The pre-js glue reads these off Module; they are not exported by default.
+        local exported_runtime_methods = 'HEAP8,HEAPU8,HEAP32,HEAPU32,HEAPF32,HEAPU16'
+        if WITH_RIVE_TOOLS then
+            exported_runtime_methods = exported_runtime_methods .. ',flushPendingDeletes'
+        end
+
+        linkoptions({
+            '--bind',
+            -- TODO: uncomment this to enable asyncify for wasm, check in with -Oz as well
+            -- '-O3',
+            -- '-s ASYNCIFY',
+            '-s STACK_SIZE=256kb',
+            '-s FORCE_FILESYSTEM=0',
+            '-s MODULARIZE=1',
+            '-s NO_EXIT_RUNTIME=1',
+            '-s DISABLE_EXCEPTION_CATCHING=1',
+            '-s WASM=1',
+            -- "-s EXPORT_ES6=1",
+            '-s EXPORT_NAME="Rive"',
+            '-s ENVIRONMENT="web,webview,worker"',
+            '-s EXPORTED_RUNTIME_METHODS=' .. exported_runtime_methods,
+            '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
+            '-DSINGLE',
+            '-DANSI_DECLARATORS',
+            '-Wno-c++17-extensions',
+            '-fno-exceptions',
+            '-fno-rtti',
+            '-fno-unwind-tables',
+            '--no-entry',
+        })
+    end
+
+    filter('options:config=debug')
+    do
+        defines({ 'DEBUG' })
+        symbols('On')
+        linkoptions({
+            '-s ERROR_ON_UNDEFINED_SYMBOLS=0',
+            '-s ASSERTIONS=1',
+            '-s ABORTING_MALLOC=0',
+            '-g',
+        })
+    end
+
+    filter('options:profiling-funcs')
+    do
+        optimize('On')
+        defines({ 'NDEBUG' })
+        -- Explicit -O2 overrides the -Oz added by rive_build_config.lua's release wasm-arch block,
+        -- since it appears later in the accumulated flags (last opt flag wins in Clang).
+        buildoptions({ '-O2' })
+        linkoptions({
+            '-s ASSERTIONS=0',
+            '--profiling-funcs',
+        })
+    end
+
+    filter('options:config=release')
+    do
+        -- Link-time -Os gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
+        linkoptions({ '-Os', '-s ASSERTIONS=0', '--closure 1' })
+    end
+
+    filter({})
+
     kind('ConsoleApp')
     language('C++')
     includedirs({
@@ -169,6 +187,7 @@ do
         linkoptions({
             '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/canvas_advanced.mjs',
         })
+        finalizeGlue('canvas_advanced.mjs')
     end
 
     filter({ 'options:renderer=c2d', 'options:wasm_single' })
@@ -178,6 +197,7 @@ do
             '-s SINGLE_FILE_BINARY_ENCODE=0',
             '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/canvas_advanced_single.mjs',
         })
+        finalizeGlue('canvas_advanced_single.mjs')
     end
 
     filter({ 'options:renderer=webgl2' })
@@ -197,6 +217,7 @@ do
             '--pre-js ' .. path.getabsolute('./js/webgl2_renderer.js'),
             '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
         })
+        finalizeGlue('webgl2_advanced.mjs')
     end
 
     filter({ 'options:renderer=webgl2', 'system:not emscripten' })

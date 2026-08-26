@@ -31,22 +31,38 @@ UMD_TAIL = re.compile(
 )
 
 
+def mask_line_comments(src: str) -> str:
+    """Blank out whole-line // comments, preserving every offset.
+
+    Release builds run --closure 1 and carry no comments, but debug builds keep
+    emcc's. Those comments mention import.meta and sit between the two
+    module.exports assignments, so matching against the raw source would reject
+    output that is in fact the shape we want.
+    """
+    return "\n".join(
+        " " * len(line) if line.lstrip().startswith("//") else line
+        for line in src.split("\n")
+    )
+
+
 def finalize(path: str) -> None:
     with open(path, encoding="utf-8") as f:
         src = f.read()
 
-    if "import.meta" in src:
+    code = mask_line_comments(src)
+
+    if "import.meta" in code:
         sys.exit(
             f"finalize_glue: {path}: contains import.meta — "
             "unexpected emcc output shape (was --oformat=js dropped?)"
         )
     if src.rstrip().endswith("export default Rive;"):
-        if "module.exports" in src:
+        if "module.exports" in code:
             sys.exit(
                 f"finalize_glue: {path}: finalized export still contains "
                 "module.exports"
             )
-        if "currentScript" not in src:
+        if "currentScript" not in code:
             sys.exit(
                 f"finalize_glue: {path}: finalized output has no currentScript "
                 "location logic"
@@ -54,7 +70,7 @@ def finalize(path: str) -> None:
         print(f"finalize_glue: {path}: already finalized, skipping")
         return
 
-    matches = list(UMD_TAIL.finditer(src))
+    matches = list(UMD_TAIL.finditer(code))
     if len(matches) != 1:
         sys.exit(
             f"finalize_glue: {path}: expected exactly 1 UMD tail, found "
@@ -62,9 +78,10 @@ def finalize(path: str) -> None:
         )
 
     out = src[: matches[0].start()] + "\nexport default Rive;\n"
-    if "module.exports" in out:
+    code_out = code[: matches[0].start()]
+    if "module.exports" in code_out:
         sys.exit(f"finalize_glue: {path}: UMD strip left module.exports behind")
-    if "currentScript" not in out:
+    if "currentScript" not in code_out:
         sys.exit(
             f"finalize_glue: {path}: transformed output has no currentScript "
             "location logic"
