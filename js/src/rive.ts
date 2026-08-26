@@ -982,9 +982,23 @@ export enum EventType {
   Play = "play",
   Pause = "pause",
   Stop = "stop",
+  /**
+   * @deprecated Loop events are deprecated and will be removed in a future
+   * major version: they are only reported for linear animation playback, which
+   * is deprecated. Use a state machine to control playback and data binding to
+   * react to changes instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide} for how
+   * to migrate.
+   */
   Loop = "loop",
   Draw = "draw",
   Advance = "advance",
+  /**
+   * @deprecated State change events are deprecated and will be removed in a
+   * future major version. Use data binding (view model property observers) or 
+   * state machine actions to react to changes from your graphic instead. See
+   * {@link https://rive.app/docs/editor/state-machine/states#actions} for more details.
+   */
   StateChange = "statechange",
   /**
    * @deprecated Rive Events are deprecated and will be removed in a future
@@ -1016,6 +1030,18 @@ const textRunsDeprecationWarning =
   "Text run APIs are deprecated and will be removed in a future major version: " +
   "please use data binding instead. See " +
   "https://rive.app/docs/editor/data-binding/migration-guide#updating-text-runs-at-runtime for how to migrate.";
+
+const loopEventsDeprecationWarning =
+  "Loop events are deprecated and will be removed in a future major version: " +
+  "they are only reported for linear animation playback, which is deprecated. " +
+  "Use a state machine to control playback and data binding to react to changes instead. See " +
+  "https://rive.app/docs/editor/data-binding/migration-guide for how to migrate.";
+
+const stateChangeEventsDeprecationWarning =
+  "State change events are deprecated and will be removed in a future major version: " +
+  "use data binding (view model property observers) or state machine actions to react to " + 
+  "changes from your graphic instead. See " +
+  "https://rive.app/docs/editor/state-machine/states#actions for how to migrate.";
 
 // Deprecation warnings already emitted; each is logged at most once per page
 // session to avoid flooding the console when many instances are created.
@@ -1065,6 +1091,10 @@ export interface Event {
 
 /**
  * Looping types: one-shot, loop, and ping-pong
+ * @deprecated Loop events are deprecated and will be removed in a future major
+ * version: they are only reported for linear animation playback, which is
+ * deprecated. Use a state machine to control playback and data binding to
+ * react to changes instead.
  */
 export enum LoopType {
   OneShot = "oneshot", // has value 0 in runtime
@@ -1074,6 +1104,10 @@ export enum LoopType {
 
 /**
  * Loop events are returned through onloop callbacks
+ * @deprecated Loop events are deprecated and will be removed in a future major
+ * version: they are only reported for linear animation playback, which is
+ * deprecated. Use a state machine to control playback and data binding to
+ * react to changes instead.
  */
 export interface LoopEvent {
   animation: string;
@@ -1526,7 +1560,22 @@ export interface RiveParameters {
   onPlay?: EventCallback;
   onPause?: EventCallback;
   onStop?: EventCallback;
+  /**
+   * @deprecated Loop events are deprecated and will be removed in a future
+   * major version: they are only reported for linear animation playback, which
+   * is deprecated. Use a state machine to control playback and data binding to
+   * react to changes instead. See
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide} for how
+   * to migrate.
+   */
   onLoop?: EventCallback;
+  /**
+   * @deprecated State change events are deprecated and will be removed in a
+   * future major version: use use data binding (view model property observers) or 
+   * state machine actions to react to changes from your graphic instead. See
+   * {@link https://rive.app/docs/editor/state-machine/states#actions} for how
+   * to migrate.
+   */
   onStateChange?: EventCallback;
   onAdvance?: EventCallback;
   assetLoader?: AssetLoadCallback;
@@ -3857,15 +3906,22 @@ export class Rive {
   /**
    * Subscribe to Rive-generated events
    *
-   * Note: subscribing to {@link EventType.RiveEvent} is deprecated; use data
-   * binding instead. See {@link https://rive.app/docs/runtimes/web/rive-events}
-   * for how to migrate.
+   * Note: subscribing to {@link EventType.RiveEvent},
+   * {@link EventType.StateChange}, or {@link EventType.Loop} is deprecated;
+   * use data binding instead. See
+   * {@link https://rive.app/docs/runtimes/web/rive-events} (Rive Events) and
+   * {@link https://rive.app/docs/editor/data-binding/migration-guide} for how
+   * to migrate Rive graphics to a data binding workflow instead.
    * @param type the type of event to subscribe to
    * @param callback callback to fire when the event occurs
    */
   public on(type: EventType, callback: EventCallback) {
     if (type === EventType.RiveEvent) {
       warnOnce(riveEventsDeprecationWarning);
+    } else if (type === EventType.StateChange) {
+      warnOnce(stateChangeEventsDeprecationWarning);
+    } else if (type === EventType.Loop) {
+      warnOnce(loopEventsDeprecationWarning);
     }
     this.eventManager.add({
       type: type,
