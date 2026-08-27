@@ -4,9 +4,11 @@ import type { SemanticNodeData } from "./types";
 import {
   SemanticRole,
   SemanticState,
+  SemanticCheckState,
   SemanticTrait,
   SemanticActionType,
   RiveSemanticsOptions,
+  checkStateOf,
   hasState,
   hasTrait,
 } from "./types";
@@ -888,12 +890,20 @@ export class AccessibilityOverlay {
     }
 
     if (hasTrait(traits, SemanticTrait.Checkable) && ARIA_CHECKED_ROLES.has(role)) {
-      // Mixed wins over Checked per the C++ precedence contract, but
-      // role="switch" only accepts true/false — "mixed" is invalid per ARIA.
-      if (hasState(flags, SemanticState.Mixed) && role !== SemanticRole.switchControl) {
+      // Check state is a tri-state field, but not every checkable role
+      // accepts all three values — see ARIA_MIXED_ROLES.
+      const checkState = checkStateOf(flags);
+      if (
+        checkState === SemanticCheckState.Mixed &&
+        ARIA_MIXED_ROLES.has(role)
+      ) {
         setAttr(el, "aria-checked", "mixed");
       } else {
-        setBoolAttr(el, "aria-checked", hasState(flags, SemanticState.Checked));
+        setBoolAttr(
+          el,
+          "aria-checked",
+          checkState === SemanticCheckState.Checked
+        );
       }
     } else {
       removeAttr(el, "aria-checked");
@@ -1174,6 +1184,16 @@ const ARIA_CHECKED_ROLES: Set<number> = new Set([
   SemanticRole.checkbox,
   SemanticRole.radioButton,
   SemanticRole.switchControl,
+]);
+
+/**
+ * aria-checked="mixed": checkbox only. ARIA defines checkbox as three-valued
+ * (true/false/mixed) but radio and switch as two-valued (true/false), so an
+ * indeterminate check state degrades to false for those roles rather than
+ * emitting a value they do not support.
+ */
+const ARIA_MIXED_ROLES: Set<number> = new Set([
+  SemanticRole.checkbox,
 ]);
 
 /**

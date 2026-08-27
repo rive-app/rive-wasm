@@ -39,6 +39,10 @@ export type SemanticRole = (typeof SemanticRole)[keyof typeof SemanticRole];
 //
 // Bits 0-7 are trait-gated (only meaningful when the corresponding
 // SemanticTrait is set). Bits 8-13 are non-trait states.
+//
+// Check state is the exception: it is a two-bit *field* at bits 2-3 rather
+// than a flag, because a checkbox is tri-state. It is not a member of this
+// table — read it with checkStateOf().
 // ---------------------------------------------------------------------------
 export const SemanticState = {
   None: 0,
@@ -46,8 +50,7 @@ export const SemanticState = {
   // Trait-gated
   Expanded: 1 << 0, // requires Expandable
   Selected: 1 << 1, // requires Selectable
-  Checked: 1 << 2, // requires Checkable
-  Mixed: 1 << 3, // requires Checkable; wins over Checked
+  // Bits 2-3 are the check state field, not independent flags -- see SemanticCheckState.
   Toggled: 1 << 4, // requires Toggleable
   Required: 1 << 5, // requires Requirable
   Disabled: 1 << 6, // requires Enablable
@@ -64,6 +67,37 @@ export const SemanticState = {
 
 export function hasState(flags: number, state: number): boolean {
   return (flags & state) !== 0;
+}
+
+// SemanticCheckState — mirrors rive::SemanticCheckState
+//
+// The tri-state of a checkable node. Occupies two bits of stateFlags at
+// CHECK_STATE_OFFSET, so it is read as a value rather than tested as a flag.
+// Only meaningful when the Checkable trait is set.
+export const SemanticCheckState = {
+  Unchecked: 0,
+  Checked: 1,
+  Mixed: 2,
+} as const;
+
+export type SemanticCheckState =
+  (typeof SemanticCheckState)[keyof typeof SemanticCheckState];
+
+/** Bit offset of the check field within stateFlags. */
+export const CHECK_STATE_OFFSET = 2;
+
+/** Mask of the check field within stateFlags. */
+export const CHECK_STATE_MASK = 0b11 << CHECK_STATE_OFFSET;
+
+/**
+ * Decodes the check field out of `flags`. The field is two bits. Returns 0, 1, or 2
+ * per the mapping in SemanticCheckState.
+ */
+export function checkStateOf(flags: number): SemanticCheckState {
+  const value = (flags & CHECK_STATE_MASK) >> CHECK_STATE_OFFSET;
+  return value >= SemanticCheckState.Mixed
+    ? SemanticCheckState.Mixed
+    : (value as SemanticCheckState);
 }
 
 /**
@@ -165,6 +199,14 @@ export function stateNames(flags: number): string {
   const active: string[] = [];
   for (const [name, bit] of _stateEntries) {
     if (flags & bit) active.push(name);
+  }
+  switch (checkStateOf(flags)) {
+    case SemanticCheckState.Checked:
+      active.push("Checked");
+      break;
+    case SemanticCheckState.Mixed:
+      active.push("Mixed");
+      break;
   }
   return active.join(", ") || "none";
 }

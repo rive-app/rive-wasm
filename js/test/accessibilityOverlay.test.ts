@@ -1,7 +1,17 @@
 import { AccessibilityOverlay } from "../src/semantics/accessibilityOverlay";
 import { SemanticTreeModel } from "../src/semantics/semanticTreeModel";
-import { SemanticRole, SemanticState, SemanticTrait, SemanticActionType } from "../src/semantics/types";
+import {
+  SemanticRole,
+  SemanticState,
+  SemanticCheckState,
+  SemanticTrait,
+  SemanticActionType,
+  CHECK_STATE_OFFSET,
+} from "../src/semantics/types";
 import { node, children, bounds, diff } from "./semanticsFixtures";
+
+/** Packs a check-state value into the two-bit field of stateFlags. */
+const checkFlags = (value: number) => value << CHECK_STATE_OFFSET;
 
 class MockResizeObserver {
   observe = jest.fn();
@@ -1072,11 +1082,21 @@ describe("AccessibilityOverlay", () => {
       return { el, overlay };
     }
 
+    test("checkbox with Checkable+Unchecked gets aria-checked=false", () => {
+      const { el, overlay } = applyAndGet(
+        SemanticRole.checkbox,
+        SemanticTrait.Checkable,
+        checkFlags(SemanticCheckState.Unchecked)
+      );
+      expect(el.getAttribute("aria-checked")).toBe("false");
+      overlay.destroy();
+    });
+
     test("checkbox with Checkable+Checked gets aria-checked=true", () => {
       const { el, overlay } = applyAndGet(
         SemanticRole.checkbox,
         SemanticTrait.Checkable,
-        SemanticState.Checked
+        checkFlags(SemanticCheckState.Checked)
       );
       expect(el.getAttribute("aria-checked")).toBe("true");
       overlay.destroy();
@@ -1086,9 +1106,55 @@ describe("AccessibilityOverlay", () => {
       const { el, overlay } = applyAndGet(
         SemanticRole.checkbox,
         SemanticTrait.Checkable,
-        SemanticState.Mixed
+        checkFlags(SemanticCheckState.Mixed)
       );
       expect(el.getAttribute("aria-checked")).toBe("mixed");
+      overlay.destroy();
+    });
+
+    // The field is two bits wide, so a bad write can land a fourth value in
+    // it. It has no meaning and reads as mixed rather than as an unnamed
+    // state, matching checkStateOf() in C++.
+    test("checkbox with an out-of-range check value gets aria-checked=mixed", () => {
+      const { el, overlay } = applyAndGet(
+        SemanticRole.checkbox,
+        SemanticTrait.Checkable,
+        checkFlags(3)
+      );
+      expect(el.getAttribute("aria-checked")).toBe("mixed");
+      overlay.destroy();
+    });
+
+    // ARIA defines checkbox as three-valued but radio and switch as
+    // two-valued, so an indeterminate check state degrades to false for
+    // those roles rather than emitting a value they do not support.
+    test("switch with Checkable+Mixed gets aria-checked=false", () => {
+      const { el, overlay } = applyAndGet(
+        SemanticRole.switchControl,
+        SemanticTrait.Checkable,
+        checkFlags(SemanticCheckState.Mixed)
+      );
+      expect(el.getAttribute("aria-checked")).toBe("false");
+      overlay.destroy();
+    });
+
+    test("radio with Checkable+Mixed gets aria-checked=false", () => {
+      const { el, overlay } = applyAndGet(
+        SemanticRole.radioButton,
+        SemanticTrait.Checkable,
+        checkFlags(SemanticCheckState.Mixed)
+      );
+      expect(el.getAttribute("aria-checked")).toBe("false");
+      overlay.destroy();
+    });
+
+    test("radio with Checkable+Checked still gets aria-checked=true", () => {
+      const { el, overlay } = applyAndGet(
+        SemanticRole.radioButton,
+        SemanticTrait.Checkable,
+        checkFlags(SemanticCheckState.Checked)
+      );
+      expect(el.getAttribute("aria-checked")).toBe("true");
       overlay.destroy();
     });
 
@@ -1096,7 +1162,7 @@ describe("AccessibilityOverlay", () => {
       const { el, overlay } = applyAndGet(
         SemanticRole.checkbox,
         SemanticTrait.None,
-        SemanticState.Checked
+        checkFlags(SemanticCheckState.Checked)
       );
       expect(el.getAttribute("aria-checked")).toBeNull();
       overlay.destroy();
