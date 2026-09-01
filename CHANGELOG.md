@@ -5,10 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.41.0](https://github.com/rive-app/rive-wasm/compare/2.40.1...2.41.0)
+## [2.41.1](https://github.com/rive-app/rive-wasm/compare/2.41.0...2.41.1)
 
 ### Commits
 
+- chore(vulkan): Add Vulkan frame sync coordinator (#13058) bcdfe4fe5f [`4ebb27c`](https://github.com/rive-app/rive-wasm/commit/4ebb27c8e39c5e21210f1e60b13d3d56f2c9f104)
+- feat(runtime): report successful view model instance lookups (#13875) 1c69c3de41 [`3526380`](https://github.com/rive-app/rive-wasm/commit/35263808eefb5597262adfeccd765cd0aac8bdfe)
+- feat(runtime): gate the wasm tier ladder behind tools builds (#13882) 314202c0f2 [`9dd2e46`](https://github.com/rive-app/rive-wasm/commit/9dd2e46c649f06632ab9a9330b78e2cead857a1e)
+- fix(runtime): keep pre-7.3 files on the legacy text sizing path (#13886) 9fe2b415a7 [`8bfc506`](https://github.com/rive-app/rive-wasm/commit/8bfc506c09acb94dfef4957e07f5af09b2c8364f)
+- chore(renderer): split ImageDrawInstance (#13746) 636e181568 [`324d9b8`](https://github.com/rive-app/rive-wasm/commit/324d9b81f1978b864224e270807da1768859106f)
+- feat(scripting): frame generational collector for wasm scripts (#13869) 0613f5b262 [`2676b15`](https://github.com/rive-app/rive-wasm/commit/2676b154db7a7150954638f10bf24aed49257dcf)
+- chore(editor): add some small features and improvements (#13887) 6066a2edc0 [`1afe46c`](https://github.com/rive-app/rive-wasm/commit/1afe46c8a6ce416460048ffc2651736ee60362ef)
+- test(layout): add a generated layout conformance matrix (#13870) c3f33e5c04 [`d69a6e4`](https://github.com/rive-app/rive-wasm/commit/d69a6e40fc01e25899119a3b9a1783d67a911d92)
+- feat(rive-cli): build and run on windows (#13880) 95154f6907 [`be2d3a6`](https://github.com/rive-app/rive-wasm/commit/be2d3a6369b193f18b53b6db961e2b9b0a36ccdb)
+- fix(runtime): keep focus on a leaf as visibility changes (#13848) b261e90067 [`7e123e5`](https://github.com/rive-app/rive-wasm/commit/7e123e5520f8c7df847f4c6126e4daf02392e878)
+- fix: Stop a constraint discarding a nested artboard's origin (#13855) c2dd421f6a [`fe23264`](https://github.com/rive-app/rive-wasm/commit/fe23264e1faa9833140532473a9b2d6789a0cdce)
+- feat(scripting): layout resize and surface scale for assemblyscript protocols (#13849) f239d55c5c [`a004be9`](https://github.com/rive-app/rive-wasm/commit/a004be9bf1ac6d968040e961b2bcef448ade0dc7)
+- feat(unreal): Artemis 2 framebuffer fetch support (#13838) b40bf7760e [`41c6fcb`](https://github.com/rive-app/rive-wasm/commit/41c6fcb6eace7a92711fd678fb127f3cb64d482d)
+- fix(editor_native): render coop files faithfully on the native editor stage (#13829) f1ca57510e [`d9bfc83`](https://github.com/rive-app/rive-wasm/commit/d9bfc83e0c77c986188f8745434bf51cd66c162f)
+- fix(renderer): Work around Adreno 530 driver bugs (#13833) 71e9c6a055 [`d898ce9`](https://github.com/rive-app/rive-wasm/commit/d898ce95a0563f03d46b85046a401ddb172f3775)
+- feat(Android): Accessibility semantics (#13783) ef32137d74 [`e4a804a`](https://github.com/rive-app/rive-wasm/commit/e4a804aafb58da8e9ed7542db76213b5c4893b36)
+- fix(runtime): own the FocusManager on the artboard, not the state machine (#13830) ce1fc479e8 [`dd2ee9b`](https://github.com/rive-app/rive-wasm/commit/dd2ee9bf81f560db97fd6fde93bd642accbbdb9c)
+- feat(apple): add opt-in gpu canvas support to the Concurrency API (#13676) 7924855ea3 [`b0091dd`](https://github.com/rive-app/rive-wasm/commit/b0091dd86124e4a7cbeb83a2657e24fbdb55ab04)
+- fix(rive-cli): drain autoreleased drawables on the deferred render thread (#13818) 25bbf3ee6a [`f134043`](https://github.com/rive-app/rive-wasm/commit/f1340438790915c9ac3e8327f7c2e6c28000664c)
+- fix(js): Parse checked semantic state as a single value, not 2 independent bit flags (#13814) 3ac56c1897 [`e0f47b8`](https://github.com/rive-app/rive-wasm/commit/e0f47b87ce9f48ede0c980a8f0e3604ac26b6e21)
+- feat(Runtime): Add GMs for SVG renderer (#13647) 83e416ed15 [`630af62`](https://github.com/rive-app/rive-wasm/commit/630af6279d0791e393117c91cb0b9e178786c01d)
+- feat(text_input): obscured mode for password entry (#13785) e53cfbe655 [`1d5ca37`](https://github.com/rive-app/rive-wasm/commit/1d5ca37c25c625b6e5523a18737223b4d5bdd53f)
+- refactor(renderer): Rename InterlockMode::msaa -&gt; depthStencil (#13807) c0abfa2ee7 [`0f3e19d`](https://github.com/rive-app/rive-wasm/commit/0f3e19d519b863f21ae97ffb5daff6202797d848)
+- feat(command-queue): add focus traversal (#13501) 42c3f6efef [`e9704ae`](https://github.com/rive-app/rive-wasm/commit/e9704ae39743ba8948086b426065bbe7b5075894)
+- chore(semantic): make semantic check state bindable (#13804) 40c1d72941 [`d3b6882`](https://github.com/rive-app/rive-wasm/commit/d3b688208665ae5140936ba42e1f919842aaf157)
+- chore(renderer): Eliminate redundant set entries in minify.py (#13790) 6fd7b5d78f [`cafa3d5`](https://github.com/rive-app/rive-wasm/commit/cafa3d5fee5c535e3272aec9db32952f9bf17c3b)
+- feat(gl): Implement dynamic state on GL (#13779) 1bde1cb854 [`1db098a`](https://github.com/rive-app/rive-wasm/commit/1db098a753fea7d0572910472653f92c12342947)
+- fix(runtime): high surrogate calculation for SMP chars in UTF::ToUTF16 (#13789) 6d8968a21d [`5a1151e`](https://github.com/rive-app/rive-wasm/commit/5a1151e72317b55f344eedbdad8f7dcdb5ac6817)
+- feat(runtime): Add GMs for canvas 2D (#13571) 416c5f2ae2 [`aa9ae94`](https://github.com/rive-app/rive-wasm/commit/aa9ae94704c4cfbc736781812991c6222cc3a524)
+
+## [2.41.0](https://github.com/rive-app/rive-wasm/compare/2.40.1...2.41.0) - 2026-08-26
+
+### Commits
+
+- chore: tag 2.41.0 [`f659d18`](https://github.com/rive-app/rive-wasm/commit/f659d18bd86e2e2c11dc22f95d72ff5300505337)
 - perf(ore): lend scratch FBO/VAO to GL render passes instead of minting per pass (#13757) aa6d454839 [`6de63f3`](https://github.com/rive-app/rive-wasm/commit/6de63f3c400c8f2262b243d96ac2c375e0b01e9c)
 - feat(text input): add more text input properties (#13761) ed7059fc0b [`8bf8d50`](https://github.com/rive-app/rive-wasm/commit/8bf8d5032b0d05cae8d700cd7dad0f609a8210a5)
 - fix: Fix forward declare use issue for ore::context (#13737) 6debf52e7d [`d611b67`](https://github.com/rive-app/rive-wasm/commit/d611b67791c43ab282e3cc1f58ec36a920347d91)
