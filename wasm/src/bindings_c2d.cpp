@@ -5,6 +5,8 @@
 #include "rive/factory.hpp"
 #include "rive/renderer.hpp"
 #include "rive/math/path_types.hpp"
+#include "rive/renderer/cmd/deferred_replayer.hpp"
+#include "rive/renderer/cmd/deferred_session.hpp"
 #include "utils/factory_utils.hpp"
 
 #include "rive/assets/file_asset.hpp"
@@ -16,6 +18,7 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -654,6 +657,242 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
 }
 
 static rive::C2DFactory gC2DFactory;
+
+namespace
+{
+// Pure 2D deferred: one session per deferred file records, and replay drives
+// the JS implemented RendererWrapper so the canvas2d draw list receives the
+// real draws. No ore backend exists here, so the ore half of the session stays
+// empty. JS owns the session and deletes it with the file that imported
+// through it; the replayer's resident table travels with it so a session is
+// self contained.
+class C2DDeferredSession : public rive::cmd::DeferredSession
+{
+public:
+    // 2D only: no ore replays, so default caps are never consulted.
+    C2DDeferredSession() :
+        DeferredSession(rive::ore::ReplayCaps{}), m_screenTarget(acquireScreenTarget())
+    {}
+
+    uint64_t screenTarget() const { return m_screenTarget; }
+    rive::Renderer* recorder() { return screenRenderer(m_screenTarget); }
+    rive::cmd::DeferredReplayer& replayer() { return m_replayer; }
+
+    // The browser decodes asynchronously, so a recorded decode would only
+    // start at first replay: load() resolves with nothing pending and a
+    // static first frame draws before the image exists, permanently blank.
+    // Decoding through the immediate factory keeps load() waiting exactly as
+    // an immediate import does, and the recorder draws the image as a
+    // foreign image through the registry.
+    rive::rcp<rive::RenderImage> decodeImage(rive::Span<const uint8_t> bytes) override
+    {
+        return static_cast<rive::Factory&>(gC2DFactory).decodeImage(bytes);
+    }
+
+    // A claim is for the session's whole life, not just the attachment:
+    // detaching resets the replayer's resident table, so the recorded stream's
+    // handles resolve against nothing and a second renderer cannot replay it.
+    // Never cleared, detach included; the caller re-imports instead.
+    bool claim()
+    {
+        if (m_everClaimed)
+        {
+            return false;
+        }
+        m_everClaimed = true;
+        return true;
+    }
+
+private:
+    // Claimed for this session's lifetime; canvas2d replay targets one canvas.
+    const uint64_t m_screenTarget;
+    rive::cmd::DeferredReplayer m_replayer;
+    bool m_everClaimed = false;
+};
+
+class C2DFrameSink : public rive::cmd::DeferredFrameSink
+{
+public:
+    C2DFrameSink(rive::Renderer* target, uint64_t screenTarget) :
+        m_target(target), m_screenTarget(screenTarget)
+    {}
+    rive::Factory* factory() override { return &gC2DFactory; }
+    // Content no screen segment claimed still belongs to this canvas.
+    uint64_t defaultScreenTarget() override { return m_screenTarget; }
+    rive::Renderer* beginScreenFrame(uint64_t target) override
+    {
+        // The session drives a single canvas; anything else is another
+        // session's stream and must not paint here.
+        return target == m_screenTarget ? m_target : nullptr;
+    }
+
+private:
+    rive::Renderer* m_target;
+    const uint64_t m_screenTarget;
+};
+} // namespace
+
+// JS owns the returned session and deletes it with the file that imported
+// through it; the file must not outlive it.
+static C2DDeferredSession* makeDeferredSession() { return new C2DDeferredSession(); }
+
+// Takes the one renderer attachment a session ever gets, so JS learns before
+// it mutates anything that a session another renderer already took, live or
+// since detached, is spent. False also for no session at all: there is nothing
+// to attach to.
+static bool c2dDeferredClaim(C2DDeferredSession* session)
+{
+    return session != nullptr && session->claim();
+}
+
+static rive::Renderer* c2dDeferredRenderer(C2DDeferredSession* session)
+{
+    return session != nullptr ? session->recorder() : nullptr;
+}
+
+// Opens the recording window; the replay below closes it.
+static void c2dDeferredBeginFrame(C2DDeferredSession* session)
+{
+    if (session != nullptr)
+    {
+        session->beginTargetFrame(session->screenTarget());
+    }
+}
+
+// The target renderer arrives at replay rather than at attach, so one session
+// can be replayed into whichever canvas renderer currently displays it.
+static void c2dDeferredReplay(C2DDeferredSession* session, rive::Renderer* target)
+{
+    if (session == nullptr || target == nullptr)
+    {
+        return;
+    }
+    session->endTargetFrame(session->screenTarget());
+    if (session->commandBuffer().empty())
+    {
+        return;
+    }
+    C2DFrameSink sink(target, session->screenTarget());
+    session->replayer().replayFrame(*session, sink);
+    session->resetFrame();
+}
+
+// Pending stream content the artboard's own dirt flag cannot see, so the frame
+// gate can keep a recorded stream from parking. Bound as a free function
+// because the method is the base class's: embind registers a member pointer
+// against the class that declares it, and cmd::DeferredSession is unbound.
+// Must be read before the renderer clears: clear opens the recording window,
+// so a later read reports every frame as dirty.
+static bool sessionRecordedThisFrame(C2DDeferredSession* session)
+{
+    return session != nullptr && session->recordedThisFrame();
+}
+
+// The canvas renderer this session recorded for is going away. The resident
+// table would otherwise keep holding JS side resources created against it, and
+// a later session restarts its handle namespace, so it must not inherit them.
+// Idempotent: nothing here needs an open frame or a live renderer.
+static void c2dDeferredDetach(C2DDeferredSession* session)
+{
+    if (session == nullptr)
+    {
+        return;
+    }
+    // Whatever the last frame left open is never going to close, and a stuck
+    // target holds the session's window shut.
+    session->abandonTargetFrame(session->screenTarget());
+    // Drops the unreplayed frame; the screen target stays claimed, since it is
+    // this session's identity for its whole life.
+    session->resetFrame();
+    session->replayer().reset();
+}
+
 rive::Factory* jsFactory() { return &gC2DFactory; }
+
+// Resolves the optional deferred session that import and decode entry points
+// accept. Routing is per call and never global, so a deferred file leaves
+// every other instance on the page alone.
+rive::Factory* jsSessionFactory(const emscripten::val& session)
+{
+    if (session.isUndefined() || session.isNull())
+    {
+        return &gC2DFactory;
+    }
+    return session.as<C2DDeferredSession*>(allow_raw_pointers());
+}
+
+// The Renderer JS class only materializes methods on JS subclasses, so the
+// recorder records through these instead of bound member calls.
+static void c2dDeferredSave(C2DDeferredSession* session)
+{
+    if (session != nullptr)
+    {
+        session->recorder()->save();
+    }
+}
+
+static void c2dDeferredRestore(C2DDeferredSession* session)
+{
+    if (session != nullptr)
+    {
+        session->recorder()->restore();
+    }
+}
+
+static void c2dDeferredTransform(C2DDeferredSession* session,
+                                 float xx,
+                                 float xy,
+                                 float yx,
+                                 float yy,
+                                 float tx,
+                                 float ty)
+{
+    if (session != nullptr)
+    {
+        session->recorder()->transform(rive::Mat2D(xx, xy, yx, yy, tx, ty));
+    }
+}
+
+static void c2dDeferredAlign(C2DDeferredSession* session,
+                             rive::Fit fit,
+                             JsAlignment alignment,
+                             float frameMinX,
+                             float frameMinY,
+                             float frameMaxX,
+                             float frameMaxY,
+                             float contentMinX,
+                             float contentMinY,
+                             float contentMaxX,
+                             float contentMaxY,
+                             float scaleFactor)
+{
+    if (session != nullptr)
+    {
+        session->recorder()->transform(
+            rive::computeAlignment(fit,
+                                   convertAlignment(alignment),
+                                   rive::AABB(frameMinX, frameMinY, frameMaxX, frameMaxY),
+                                   rive::AABB(contentMinX, contentMinY, contentMaxX, contentMaxY),
+                                   scaleFactor));
+    }
+}
+
+EMSCRIPTEN_BINDINGS(RiveWASM_C2D_Deferred)
+{
+    // Deferred resources are Factory resources, so JS can hand the session
+    // straight to load()/decode*() wherever a factory is expected.
+    class_<C2DDeferredSession, base<rive::Factory>>("DeferredSession")
+        .function("recordedThisFrame", &sessionRecordedThisFrame, allow_raw_pointers());
+    function("makeDeferredSession", &makeDeferredSession, allow_raw_pointers());
+    function("c2dDeferredClaim", &c2dDeferredClaim, allow_raw_pointers());
+    function("c2dDeferredRenderer", &c2dDeferredRenderer, allow_raw_pointers());
+    function("c2dDeferredBeginFrame", &c2dDeferredBeginFrame, allow_raw_pointers());
+    function("c2dDeferredReplay", &c2dDeferredReplay, allow_raw_pointers());
+    function("c2dDeferredDetach", &c2dDeferredDetach, allow_raw_pointers());
+    function("c2dDeferredSave", &c2dDeferredSave, allow_raw_pointers());
+    function("c2dDeferredRestore", &c2dDeferredRestore, allow_raw_pointers());
+    function("c2dDeferredTransform", &c2dDeferredTransform, allow_raw_pointers());
+    function("c2dDeferredAlign", &c2dDeferredAlign, allow_raw_pointers());
+}
 
 #endif // RIVE_CANVAS_2D_RENDERER

@@ -83,8 +83,14 @@
 
 using namespace emscripten;
 
-// Returns the global factory (either c2d, skia, or webgl2 backed)
+// Returns the immediate factory (either c2d, skia, or webgl2 backed)
 extern rive::Factory* jsFactory();
+
+// Resolves the optional deferred session that import and decode entry points
+// accept: the session when JS passes one, jsFactory() when it passes null or
+// omits it. Backend defined next to jsFactory. Routing is per call and never
+// global, so a deferred file leaves every other instance on the page alone.
+extern rive::Factory* jsSessionFactory(const emscripten::val& session);
 
 // We had to do this because binding the core class const defined types directly
 // caused wasm-ld linker issues. See
@@ -438,7 +444,11 @@ public:
     };
 };
 
-rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoader)
+// The optional trailing session fixes the file's mode at import: its resources
+// are typed by the factory that made them and can never switch afterwards.
+rive::File* load(emscripten::val byteArray,
+                 rive::FileAssetLoader* fileAssetLoader,
+                 emscripten::val session)
 {
     std::vector<unsigned char> rv;
 
@@ -449,7 +459,10 @@ rive::File* load(emscripten::val byteArray, rive::FileAssetLoader* fileAssetLoad
     memoryView.call<void>("set", byteArray);
 
     // QUESTION (max) we ignore the result currently, we could use it and throw exceptions with it.
-    auto file = rive::File::import(rv, jsFactory(), nullptr, fileAssetLoader);
+    // Importing through the deferred session wires scripting by itself: the
+    // context derives the ore recorder and canvas host from its import
+    // factory, and the session carries the bound render context.
+    auto file = rive::File::import(rv, jsSessionFactory(session), nullptr, fileAssetLoader);
     // Need to manually ref the file to keep alive until the JS runtime cleans it up.
     return file.release();
 }
@@ -471,8 +484,9 @@ public:
     rive::rcp<rive::Font> font() { return m_font; }
 };
 
-// Standalone method to create a Rive Font from byte array
-FontWrapper* decodeFont(emscripten::val byteArray)
+// Standalone method to create a Rive Font from byte array. Pass the session of
+// the deferred file this font is bound into, otherwise nothing.
+FontWrapper* decodeFont(emscripten::val byteArray, emscripten::val session)
 {
     std::vector<unsigned char> vector;
 
@@ -482,7 +496,7 @@ FontWrapper* decodeFont(emscripten::val byteArray)
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
     // Calls into the shared.js layer to decode the font with this vector
-    auto font = new FontWrapper(jsFactory()->decodeFont(vector));
+    auto font = new FontWrapper(jsSessionFactory(session)->decodeFont(vector));
 
     return font;
 }
@@ -548,7 +562,8 @@ public:
     rive::rcp<rive::AudioSource> audio() { return m_audio; }
 };
 
-AudioWrapper* decodeAudio(emscripten::val byteArray)
+// Same optional trailing session as decodeFont.
+AudioWrapper* decodeAudio(emscripten::val byteArray, emscripten::val session)
 {
     std::vector<unsigned char> vector;
 
@@ -557,7 +572,7 @@ AudioWrapper* decodeAudio(emscripten::val byteArray)
 
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
-    auto audio = new AudioWrapper(jsFactory()->decodeAudio(vector));
+    auto audio = new AudioWrapper(jsSessionFactory(session)->decodeAudio(vector));
 
     return audio;
 }
@@ -1084,18 +1099,22 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 
                 return ss.str();
             }))
-        .function("decode",
-                  optional_override([](rive::FileAsset& self, emscripten ::val byteArray) {
-                      auto length = byteArray["byteLength"].as<unsigned>();
-                      rive::SimpleArray<uint8_t> bytes((size_t)length);
+        // The session belongs to the file this asset was imported from; an
+        // out of band asset decoded against a different factory would be
+        // dropped at draw.
+        .function(
+            "decode",
+            optional_override(
+                [](rive::FileAsset& self, emscripten ::val byteArray, emscripten::val session) {
+                    auto length = byteArray["byteLength"].as<unsigned>();
+                    rive::SimpleArray<uint8_t> bytes((size_t)length);
 
-                      emscripten::val memoryView{
-                          emscripten::typed_memory_view(length, bytes.data())};
+                    emscripten::val memoryView{emscripten::typed_memory_view(length, bytes.data())};
 
-                      memoryView.call<void>("set", byteArray);
-                      self.decode(bytes, jsFactory());
-                  }),
-                  allow_raw_pointers());
+                    memoryView.call<void>("set", byteArray);
+                    self.decode(bytes, jsSessionFactory(session));
+                }),
+            allow_raw_pointers());
 
     class_<rive::ImageAsset, base<rive::FileAsset>>("ImageAsset")
         .function(

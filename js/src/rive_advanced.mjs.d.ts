@@ -43,17 +43,41 @@ export interface RiveCanvas {
   setFallbackFontCallback: (callback: (missingGlyph: number, fallbackFontIndex: number, weight: number) => number | null) => void;
 
   /**
+   * @experimental Creates a deferred recording session. Only present in builds
+   * with deferred rendering compiled in, so always feature-detect it.
+   *
+   * The session is a Factory: pass it to `load()` and to the decode APIs of the
+   * assets that belong to that file, and attach it to exactly one renderer with
+   * `attachSession()`.
+   *
+   * Teardown order should be:
+   *   1. release the file the session imported,
+   *   2. `detachSession()` on the renderer it is attached to,
+   *   3. `delete()` the session.
+   * Deleting an attached session leaves the renderer pointing at freed memory
+   * on the canvas2d build — the next frame either draws from freed heap or
+   * throws `Cannot pass deleted object`. Detach first, always, even when the
+   * renderer is about to be deleted too.
+   *
+   * @returns A DeferredSession, or undefined if the session could not be created
+   */
+  makeDeferredSession?(): DeferredSession | undefined;
+
+  /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
    *
    * @param buffer - Array buffer of a Rive file
    * @param assetLoader - FileAssetLoader used to optionally customize loading of font and image assets
    * @param enableRiveAssetCDN - boolean flag to allow loading assets from the Rive CDN, enabled by default.
+   * @param session - @experimental Deferred session to import through. The file's mode is fixed
+   * at import: pass null (the default) for an immediate file.
    * @returns A Promise for a Rive File class
    */
   load(
     buffer: Uint8Array,
     assetLoader?: FileAssetLoader,
     enableRiveAssetCDN?: boolean,
+    session?: DeferredSession | null,
   ): Promise<File>;
 
   /**
@@ -142,6 +166,24 @@ export interface RiveCanvas {
 //////////////
 
 /**
+ * @experimental A deferred recording session, owned by the RiveFile that imported
+ * through it.
+ *
+ * A session records for one ore/GL context, so it binds to exactly one renderer
+ * and can never rebind once detached. It must outlive the file it imported.
+ */
+export declare class DeferredSession {
+  delete(): void;
+  /**
+   * @experimental Whether anything was recorded into this session's stream this
+   * frame, including ore content the artboard's own change flag cannot see.
+   * Only meaningful before the renderer clears: clear opens a recording window
+   * that marks the stream, so a later read reports every frame as recorded.
+   */
+  recordedThisFrame(): boolean;
+}
+
+/**
  * Rive wrapper around a rendering context for a canvas element, implementing a subset of the APIs
  * from the rendering context interface
  */
@@ -187,6 +229,25 @@ export declare class RendererWrapper {
    * performing any WASM teardown that frees resources
    */
   bindContext?(): void;
+  /**
+   * @experimental Binds a deferred session to this renderer's context: draws record
+   * into the session and replay at flush. Absent on renderers that cannot replay a
+   * session (an offscreen renderer, or a build without deferred support).
+   *
+   * @param session - The session the file was imported through
+   * @returns false if this renderer already has a session, or the session is (or was)
+   * bound elsewhere. Attaching is once per session: re-import into a fresh session instead
+   */
+  attachSession?(session: DeferredSession): boolean;
+  /**
+   * @experimental Releases the attached session's replay state. The session can never
+   * be attached again.
+   */
+  detachSession?(): void;
+  /**
+   * @experimental Whether a deferred session is currently attached.
+   */
+  deferredActive?(): boolean;
 }
 
 export declare class RenderPathWrapper {
@@ -319,8 +380,16 @@ export class Audio {
 export interface AudioCallback {
   (audio: Audio): void;
 }
+/**
+ * The trailing session is the one of the deferred file the asset is bound into;
+ * an asset decoded against any other factory is dropped when that file draws.
+ */
 export interface DecodeAudio {
-  (bytes: Uint8Array, callback: AudioCallback): void;
+  (
+    bytes: Uint8Array,
+    callback: AudioCallback,
+    session?: DeferredSession | null,
+  ): void;
 }
 export class ImageInternal {
   unref(): void;
@@ -333,7 +402,11 @@ export interface ImageCallback {
   (image: Image): void;
 }
 export interface DecodeImage {
-  (bytes: Uint8Array, callback: ImageCallback): void;
+  (
+    bytes: Uint8Array,
+    callback: ImageCallback,
+    session?: DeferredSession | null,
+  ): void;
 }
 export class FontInternal {
   unref(): void;
@@ -348,7 +421,11 @@ export interface FontCallback {
   (font: Font): void;
 }
 export interface DecodeFont {
-  (bytes: Uint8Array, callback: FontCallback): void;
+  (
+    bytes: Uint8Array,
+    callback: FontCallback,
+    session?: DeferredSession | null,
+  ): void;
 }
 
 //////////
@@ -1386,7 +1463,12 @@ export declare class FileAsset {
   isFont: boolean;
   cdnUuid: string;
 
-  decode(bytes: Uint8Array): void;
+  /**
+   * @param session - @experimental The session of the deferred file this asset belongs
+   * to, null for an immediate file. Wired by the runtime; pass it explicitly only when
+   * calling the native asset directly.
+   */
+  decode(bytes: Uint8Array, session?: DeferredSession | null): void;
   get nativeAsset(): FileAssetInternal;
 }
 
@@ -1403,7 +1485,7 @@ export declare class FileAssetInternal {
   isFont: boolean;
   cdnUuid: string;
 
-  decode(bytes: Uint8Array): void;
+  decode(bytes: Uint8Array, session?: DeferredSession | null): void;
 }
 
 export declare class AudioAssetInternal extends FileAssetInternal {

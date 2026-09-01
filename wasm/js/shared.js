@@ -3,16 +3,26 @@ Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.
   sharedOnRuntimeInitialized && sharedOnRuntimeInitialized();
 
+  // The optional session belongs to the deferred file this asset is bound
+  // into; anything decoded against another factory is dropped when that file
+  // draws. Null (never omitted) keeps the arity the bindings assert on.
   let decodeAudio = Module["decodeAudio"];
-  Module["decodeAudio"] = function (bytes, onComplete) {
-    const audio = decodeAudio(bytes);
+  Module["decodeAudio"] = function (bytes, onComplete, session = null) {
+    const audio = decodeAudio(bytes, session ?? null);
     onComplete(audio);
   };
 
   let decodeFont = Module["decodeFont"];
-  Module["decodeFont"] = function (bytes, onComplete) {
-    const font = decodeFont(bytes);
+  Module["decodeFont"] = function (bytes, onComplete, session = null) {
+    const font = decodeFont(bytes, session ?? null);
     onComplete(font);
+  };
+
+  // FileAsset.decode() is raw embind with no wrapper of its own; default the
+  // session so the pre-existing 1-arg call site keeps working.
+  const assetDecode = Module["FileAsset"]["prototype"]["decode"];
+  Module["FileAsset"]["prototype"]["decode"] = function (bytes, session) {
+    return assetDecode.call(this, bytes, session ?? null);
   };
 
   let setFallbackFontCb = Module["setFallbackFontCb"];
@@ -60,8 +70,11 @@ Module["onRuntimeInitialized"] = function () {
   );
 
   Module["CDNFileAssetLoader"] = FileAssetLoader.extend("CDNFileAssetLoader", {
-    "__construct": function () {
+    // Constructed by the load() wrapper with the session that imports the
+    // file, so CDN hosted assets decode into the same factory as the file.
+    "__construct": function (session) {
       this["__parent"]["__construct"].call(this);
+      this._session = session ?? null;
     },
     "loadContents": function (assetAddress) {
       let asset = Module["ptrToAsset"](assetAddress);
@@ -82,8 +95,9 @@ Module["onRuntimeInitialized"] = function () {
         xmlHttp.send(null);
       }
 
+      const session = this._session ?? null;
       httpGetAsync(asset.cdnBaseUrl + "/" + cdnUuid, (res) => {
-        asset.decode(new Uint8Array(res.response));
+        asset.decode(new Uint8Array(res.response), session);
       });
       return true;
     },

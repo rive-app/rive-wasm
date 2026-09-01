@@ -76,7 +76,9 @@ while getopts "clsr:" flag; do
         OPTIONS=$((OPTIONS + 2))
         if [ "${OPTARG}" = "webgl2" ]; then
             # Emscripten has a bug when building PLS with LTO.
-            PREMAKE_FLAGS+="--renderer=webgl2 --no-rive-decoders --no-lto "
+            # with_rive_canvas brings in the ore GL backend and the deferred
+            # host layer for the synchronous deferred renderer.
+            PREMAKE_FLAGS+="--renderer=webgl2 --no-rive-decoders --no-lto --with_rive_canvas "
         fi
         ;;
     *)

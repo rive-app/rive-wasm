@@ -145,6 +145,8 @@ do
 
     filter({ 'options:with_rive_audio=system or options:with_rive_audio=external' })
     do
+        -- rive_lua_libs.hpp reaches audio headers, which include miniaudio.h.
+        includedirs({ miniaudio })
         links({
             'miniaudio',
         })
@@ -173,6 +175,17 @@ do
     filter({ 'options:renderer=c2d' })
     do
         defines({ 'RIVE_CANVAS_2D_RENDERER' })
+        -- The pure 2D deferred layer needs only the cmd headers and sources,
+        -- no ore backend. gpu_resource carries the GPUResource vtable,
+        -- ore_binding_map the blob codec and ore_bind_group_layout the layout
+        -- queries the ore cmd headers reference.
+        includedirs({ RIVE_PLS_DIR .. '/include' })
+        files({
+            RIVE_PLS_DIR .. '/src/deferred_cmd.cpp',
+            RIVE_PLS_DIR .. '/src/gpu_resource.cpp',
+            RIVE_PLS_DIR .. '/src/ore/ore_binding_map.cpp',
+            RIVE_PLS_DIR .. '/src/ore/ore_bind_group_layout.cpp',
+        })
         linkoptions({
             -- Classic-script wrapper: currentScript-based, no import.meta.
             -- finalize_glue.py converts it to the published ESM shape we

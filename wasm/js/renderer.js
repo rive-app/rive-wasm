@@ -202,7 +202,8 @@ const offscreenWebGL = new (function () {
     return _maxRTSize;
   };
   this.deleteImageTexture = function (texture) {
-    if (!_gl.deleteTexture) {
+    // _gl is only assigned once initGL() succeeds, so guard the object too.
+    if (!_gl || !_gl.deleteTexture) {
       return;
     }
     _gl.deleteTexture(texture);
@@ -841,6 +842,8 @@ Module["onRuntimeInitialized"] = function () {
   });
 
   const _pendingCanvasRenderers = new Set();
+
+  const _hasOwn = Object.prototype.hasOwnProperty;
   const INITIAL_ATLAS_SIZE = 512;
   let _rectanizer = null;
   let _atlasMeshList = [];
@@ -1136,11 +1139,125 @@ Module["onRuntimeInitialized"] = function () {
     },
   }));
 
-  Module["makeRenderer"] = function (canvas) {
+  Module["makeRenderer"] = function (canvas, _useOffscreenRenderer) {
     const newCanvasRenderer = new CanvasRenderer(canvas);
     const c2dSource = newCanvasRenderer._ctx;
+    // Set by attachSession, which is how deferred mode arrives for every
+    // backend. While set, the app records into the file's session and flush
+    // replays the stream through the real CanvasRenderer, whose draw list
+    // paints at the end of the frame as usual.
+    let _session = null;
+    let _recorder = null;
+    const _deferredApi = {
+      "attachSession": function (session) {
+        // Re-attaching what we already hold changes nothing, and taking the
+        // claim a second time would fail.
+        if (session && _session === session) {
+          return true;
+        }
+        // A session records for one canvas and can never rebind once
+        // detached, so refuse rather than share; the caller re-imports.
+        if (
+          !session ||
+          _session ||
+          typeof Module["c2dDeferredClaim"] !== "function" ||
+          typeof Module["c2dDeferredRenderer"] !== "function"
+        ) {
+          return false;
+        }
+        // Native owns the once per session claim, so a session spent against
+        // another renderer is refused here too. Taken before anything is
+        // touched: a refusal has to leave this renderer in immediate mode.
+        if (!Module["c2dDeferredClaim"](session)) {
+          return false;
+        }
+        const recorder = Module["c2dDeferredRenderer"](session);
+        if (!recorder) {
+          return false;
+        }
+        _session = session;
+        _recorder = recorder;
+        return true;
+      },
+      "detachSession": function () {
+        // The session outlives this renderer, so its replay state has to drop
+        // while we still have a reference to hand the native side.
+        if (_session) {
+          Module["c2dDeferredDetach"](_session);
+        }
+        _session = null;
+        _recorder = null;
+      },
+      "deferredActive": function () {
+        return _recorder !== null;
+      },
+    };
+    // The Renderer JS class only materializes methods on JS subclasses, so
+    // recording goes through these free functions rather than bound member
+    // calls on the recorder.
+    const _recordingApi = {
+      "save": function () {
+        Module["c2dDeferredSave"](_session);
+      },
+      "restore": function () {
+        Module["c2dDeferredRestore"](_session);
+      },
+      "transform": function (xx, xy, yx, yy, tx, ty) {
+        Module["c2dDeferredTransform"](_session, xx, xy, yx, yy, tx, ty);
+      },
+      "translate": function (x, y) {
+        Module["c2dDeferredTransform"](_session, 1, 0, 0, 1, x, y);
+      },
+      // CanvasRenderer.rotate() reaches transform() through `this`, which the
+      // proxy binds to the canvas renderer, not to this table.
+      "rotate": function (angle) {
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+        Module["c2dDeferredTransform"](_session, cos, sin, -sin, cos, 0, 0);
+      },
+      "align": function (fit, alignment, frame, content, scaleFactor) {
+        Module["c2dDeferredAlign"](
+          _session,
+          fit,
+          alignment,
+          frame["minX"],
+          frame["minY"],
+          frame["maxX"],
+          frame["maxY"],
+          content["minX"],
+          content["minY"],
+          content["maxX"],
+          content["maxY"],
+          scaleFactor === undefined ? 1 : scaleFactor
+        );
+      },
+      // clear() is a deprecated alias for beginFrame(); both must open the
+      // session's recording window.
+      "beginFrame": function (clear = true) {
+        newCanvasRenderer["beginFrame"](clear);
+        Module["c2dDeferredBeginFrame"](_session);
+      },
+      "clear": function () {
+        newCanvasRenderer["beginFrame"](true);
+        Module["c2dDeferredBeginFrame"](_session);
+      },
+      "flush": function () {
+        Module["c2dDeferredReplay"](_session, newCanvasRenderer);
+      },
+    };
     return new Proxy(newCanvasRenderer, {
       get(target, property) {
+        if (_hasOwn.call(_deferredApi, property)) {
+          return _deferredApi[property];
+        }
+        // Native draws have to reach the session's recorder; the canvas
+        // renderer stays the replay target. Read by the Artboard draw patch.
+        if (property === "_deferredRecorder") {
+          return _recorder;
+        }
+        if (_recorder !== null && _hasOwn.call(_recordingApi, property)) {
+          return _recordingApi[property];
+        }
         if (typeof target[property] === "function") {
           return function (...args) {
             return target[property].apply(target, args);
@@ -1174,7 +1291,9 @@ Module["onRuntimeInitialized"] = function () {
     });
   };
 
-  Module["decodeImage"] = function (bytes, onComplete) {
+  // Canvas2D images decode in JS, so there is no session variant to route to;
+  // the argument exists to keep one decode signature across backends.
+  Module["decodeImage"] = function (bytes, onComplete, _session = null) {
     let renderImage = new CanvasRenderImage({ onComplete });
     renderImage.decode(bytes);
   };
@@ -1208,17 +1327,21 @@ Module["onRuntimeInitialized"] = function () {
 
   let load = Module["load"];
   let loadContext = null;
+  // The session fixes the file's mode at import: every resource it creates is
+  // typed by the factory it came from, so out of band assets have to decode
+  // through the same session (the CDN loader carries it for that reason).
   Module["load"] = function (
     bytes,
     fileAssetLoader,
-    enableRiveAssetCDN = true
+    enableRiveAssetCDN = true,
+    session = null
   ) {
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
       loader.addLoader(fileAssetLoader);
     }
     if (enableRiveAssetCDN) {
-      const cdnLoader = new Module["CDNFileAssetLoader"]();
+      const cdnLoader = new Module["CDNFileAssetLoader"](session);
       loader.addLoader(cdnLoader);
     }
     return new Promise(function (resolve, reject) {
@@ -1230,11 +1353,18 @@ Module["onRuntimeInitialized"] = function () {
           resolve(result);
         },
       };
-      result = load(bytes, loader);
+      result = load(bytes, loader, session ?? null);
       if (loadContext.total == 0) {
         resolve(result);
       }
     });
+  };
+
+  const wasmDraw = Module["Artboard"]["prototype"]["draw"];
+  Module["Artboard"]["prototype"]["draw"] = function (renderer) {
+    // While a session is attached the artboard draws into its recorder, not
+    // into the canvas renderer that replays it at flush.
+    wasmDraw.call(this, renderer["_deferredRecorder"] || renderer);
   };
 
   let align = Module["RendererWrapper"]["prototype"]["align"];

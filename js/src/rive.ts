@@ -1549,6 +1549,17 @@ export interface RiveParameters {
    */
   drawingOptions?: DrawOptimizationOptions;
   /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * Render GPU Canvas content, which draws through the deferred renderer.
+   *
+   * Only applies when this instance loads its own file (`src`/`buffer`), where it
+   * is forwarded to that file as {@link RiveFileParameters.enableGPUCanvas}. With a
+   * supplied `riveFile` the file's own flag wins, since a file's mode is fixed at
+   * import. False by default.
+   */
+  enableGPUCanvas?: boolean;
+  /**
    * Emit performance.mark / performance.measure entries for load lifecycle
    * events and the first 3 render frames. Useful for profiling Rive's
    * contribution to load and render time in browser devtools.
@@ -1638,6 +1649,14 @@ export interface RiveLoadParameters {
   tabIndex?: number;
   semanticsMode?: SemanticMode;
   semanticsOptions?: RiveSemanticsOptions;
+  /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * Render GPU Canvas content, which draws through the deferred renderer. Forwarded
+   * to the file this instance loads; with a supplied `riveFile` the file's flag wins.
+   * False by default.
+   */
+  enableGPUCanvas?: boolean;
 }
 
 // Interface ot Rive.reset function
@@ -1675,6 +1694,19 @@ export interface RiveFileParameters {
    * events. False by default.
    */
   enablePerfMarks?: boolean;
+  /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * Render GPU Canvas content in this file, importing it through a deferred
+   * rendering session.
+   *
+   * Fixed at import and has no setter: a file's resources are typed by the factory
+   * that made them and can never switch. The session records for the one canvas that
+   * displays the file, so a second Rive instance sharing this file re-imports it into
+   * a session of its own.
+   * False by default.
+   */
+  enableGPUCanvas?: boolean;
 }
 
 /**
@@ -1758,9 +1790,32 @@ export class RiveFile implements rc.FinalizableTarget {
 
   private bindableArtboards: BindableArtboard[] = [];
 
+  // Deferred rendering was requested; the session may still be null if this
+  // build has no deferred support.
+  private deferred: boolean = false;
+
+  // The session this file imported through, null when immediate. Owned here:
+  // it has to outlive the file, so it is deleted after the file is released.
+  private session: rc.DeferredSession | null = null;
+
+  // Attaching is once per session: a detached session can never replay again,
+  // so a claimed file re-imports for the next instance implicitly. Mirrors the native
+  // latch (WebGL2DeferredSession::everBound, C2DDeferredSession::claim).
+  private _sessionClaimed: boolean = false;
+
+  // Releasing this file has to be deterministic once a session owns its
+  // resources, so the finalizer is disarmed rather than left to GC.
+  private fileFinalizer: FileFinalizer | null = null;
+
+  private boundElsewhereWarned: boolean = false;
+
+  // Deferred support is per build, so the warning is per page, not per file.
+  private static deferredUnsupportedWarned: boolean = false;
+
   constructor(params: RiveFileParameters) {
     this.src = params.src;
     this.buffer = params.buffer;
+    this.deferred = !!params.enableGPUCanvas;
 
     if (params.assetLoader) this.assetLoader = params.assetLoader;
     this.enableRiveAssetCDN =
@@ -1777,10 +1832,22 @@ export class RiveFile implements rc.FinalizableTarget {
   }
 
   private releaseFile() {
-    if (this.selfUnref) {
-      this.file?.unref();
-    }
+    // Release here rather than leaving it to the finalization registry. The
+    // native file frees GL-backed resources when its last reference goes, and
+    // callers reach this with the renderer's context current; a finalizer runs
+    // with none, so those deletes would silently do nothing.
+    this.fileFinalizer?.release();
+    this.file?.unref();
+    this.fileFinalizer = null;
     this.file = null;
+  }
+
+  private releaseSession() {
+    // Known limitation: cleanup() on a file an instance is still drawing
+    // deletes the session under it. A RiveFile's creator holds no reference of
+    // its own, so their cleanup() can take the count to zero.
+    this.session?.delete();
+    this.session = null;
   }
 
   private releaseBindableArtboards() {
@@ -1803,40 +1870,63 @@ export class RiveFile implements rc.FinalizableTarget {
     if (this.destroyed) {
       return;
     }
+    if (this.deferred && this.session === null) {
+      this.session = RiveFile.makeDeferredSession(this.runtime);
+    }
     let loader;
     if (this.assetLoader) {
+      // The session reaches out of band assets through here: a resource made
+      // by any other factory is dropped when this file draws.
       const loaderWrapper = new CustomFileAssetLoaderWrapper(
         this.runtime,
         this.assetLoader,
+        this.session,
       );
       loader = loaderWrapper.assetLoader;
     }
     // Load the Rive file
     if (this.enablePerfMarks) performance.mark('rive:file-load:start');
-    this.file = await this.runtime.load(
-      new Uint8Array(this.buffer),
-      loader,
-      this.enableRiveAssetCDN,
-    );
+    try {
+      this.file = await this.runtime.load(
+        new Uint8Array(this.buffer),
+        loader,
+        this.enableRiveAssetCDN,
+        this.session,
+      );
+    } catch (error) {
+      // The finalizer that would reclaim the session is only registered once
+      // the import succeeds, so a failed load has to release it here.
+      this.releaseSession();
+      throw error;
+    }
     if (this.enablePerfMarks) {
       performance.mark('rive:file-load:end');
       performance.measure('rive:file-load', 'rive:file-load:start', 'rive:file-load:end');
     }
-    const fileFinalizer = new FileFinalizer(this.file);
-    finalizationRegistry.register(this, fileFinalizer);
-
     if (this.destroyed) {
       this.releaseFile();
+      this.releaseSession();
       return;
     }
-    if (this.file !== null) {
-      this.eventManager.fire({
-        type: EventType.Load,
-        data: this,
-      });
-    } else {
+    if (this.file === null) {
+      // A malformed file resolves to null rather than rejecting. Release the
+      // session now: a finalizer for a file that does not exist would keep it
+      // alive until GC, or for as long as the caller holds the failed RiveFile.
+      this.releaseSession();
       this.fireLoadError(RiveFile.fileLoadErrorMessage);
+      return;
     }
+    // The finalizer carries the session too: a RiveFile that becomes
+    // unreachable without cleanup() would otherwise unref its file on GC and
+    // strand the session, which nothing else reclaims.
+    const fileFinalizer = new FileFinalizer(this.file, this.session);
+    this.fileFinalizer = fileFinalizer;
+    finalizationRegistry.register(this, fileFinalizer);
+
+    this.eventManager.fire({
+      type: EventType.Load,
+      data: this,
+    });
   }
 
   private async loadRiveFileBytes(): Promise<ArrayBuffer> {
@@ -1936,8 +2026,88 @@ export class RiveFile implements rc.FinalizableTarget {
       this.removeAllRiveEventListeners();
       this.releaseFile();
       this.releaseBindableArtboards();
+      // Everything imported through the session is gone; the session can go.
+      this.releaseSession();
       this.destroyed = true;
     }
+  }
+
+  // Deferred is only compiled into some runtime builds, so feature detect it
+  // and degrade to an immediate import rather than failing the load.
+  private static makeDeferredSession(
+    runtime: rc.RiveCanvas,
+  ): rc.DeferredSession | null {
+    const session = runtime.makeDeferredSession?.() ?? null;
+    if (session === null && !RiveFile.deferredUnsupportedWarned) {
+      RiveFile.deferredUnsupportedWarned = true;
+      console.warn(
+        "Rive: `enableGPUCanvas: true` was ignored because this runtime build has no GPU Canvas support; importing in immediate mode. Use a @rive-app/webgl2 or @rive-app/canvas build with deferred rendering compiled in.",
+      );
+    }
+    return session;
+  }
+
+  /**
+   * @internal The deferred session this file imported through, or null if it
+   * was imported in immediate mode.
+   */
+  public get deferredSession(): rc.DeferredSession | null {
+    return this.session;
+  }
+
+  /**
+   * @internal Whether deferred was asked for, even when this build could not
+   * honor it and imported immediate.
+   */
+  public get deferredRequested(): boolean {
+    return this.deferred;
+  }
+
+  /**
+   * @internal Whether this file's session has ever been attached to a renderer.
+   * Attaching is once per session, so a claimed file re-imports for the next
+   * instance even after the renderer it was bound to is gone.
+   */
+  public get sessionClaimed(): boolean {
+    return this._sessionClaimed;
+  }
+
+  /**
+   * @internal Marks this file's session as spent. There is no matching release:
+   * a session that has been attached can never replay for another renderer.
+   */
+  public claimSession(): void {
+    this._sessionClaimed = true;
+  }
+
+  /**
+   * @internal One warning per file however many instances collide on it.
+   */
+  public warnBoundElsewhereOnce(): void {
+    if (this.boundElsewhereWarned) {
+      return;
+    }
+    this.boundElsewhereWarned = true;
+    console.warn(
+      "Rive: this deferred RiveFile is already bound to another Rive instance's canvas, and a deferred session cannot span canvases. Re-importing the file for this instance (an extra parse of the retained buffer, no extra network request).",
+    );
+  }
+
+  /**
+   * @internal Re-imports this file from its retained buffer into a mode of its
+   * own. The copy is owned by whoever asked for it and never joins this file's
+   * reference count.
+   */
+  public async reimport(deferred: boolean): Promise<RiveFile> {
+    const copy = new RiveFile({
+      buffer: this.buffer,
+      assetLoader: this.assetLoader,
+      enableRiveAssetCDN: this.enableRiveAssetCDN,
+      enablePerfMarks: this.enablePerfMarks,
+      enableGPUCanvas: deferred,
+    });
+    await copy.init();
+    return copy;
   }
 
   /**
@@ -2058,6 +2228,15 @@ export class Rive {
 
   // Wasm runtime
   private runtime: rc.RiveCanvas;
+
+  // Deferred rendering was requested for this instance. The file it renders
+  // has the final say, since a file's mode is fixed at import.
+  private deferredRenderer: boolean = false;
+
+  // Whether this instance imported the file in `riveFile` (true) or the caller
+  // supplied it (false). Only a file we imported may be released without a
+  // matching getInstance(): a caller's file is theirs however this init ends.
+  private ownsRiveFile: boolean = false;
 
   // Runtime artboard
   private artboard: rc.Artboard | null = null;
@@ -2233,6 +2412,7 @@ export class Rive {
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
     this._focusOptions = params.focusOptions ?? this._focusOptions;
     this._tabIndex = params.tabIndex ?? null;
+    this.deferredRenderer = !!params.enableGPUCanvas;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -2282,6 +2462,7 @@ export class Rive {
       tabIndex: params.tabIndex,
       semanticsMode: params.semanticsMode,
       semanticsOptions: params.semanticsOptions,
+      enableGPUCanvas: this.deferredRenderer,
     });
   }
 
@@ -2370,21 +2551,46 @@ export class Rive {
     tabIndex,
     semanticsMode,
     semanticsOptions,
+    enableGPUCanvas,
   }: RiveLoadParameters): void {
     if (this.destroyed) {
       return;
     }
+    // Validated before any state changes, so a call with no source leaves a
+    // running instance untouched.
+    if (!src && !buffer && !riveFile) {
+      throw new RiveError(Rive.missingErrorMessage);
+    }
+    // Reload releases the outgoing file in the same order cleanup() uses:
+    // artboard, then the renderer's session, then the file. The artboard goes
+    // first because it holds an rcp<File> and its resources came from the
+    // session about to be released. stop() has already deleted the animation
+    // and state machine instances; reload deliberately skips cleanupInstances(),
+    // which would also drop the event listeners load() keeps in place.
+    if (this.artboard) {
+      // Free GPU-backed resources with their own context current. No-op on
+      // the canvas2d build.
+      this.renderer?.bindContext?.();
+      this.animator?.stop();
+      this.artboard.delete();
+      this.artboard = null;
+    }
+    // Detach before the session is deleted: the handle dies with it.
+    if (this.renderer) {
+      this.renderer.detachSession?.();
+    }
+    this.releaseCurrentRiveFile(/* isTeardown */ false);
     this.src = src;
     this.buffer = buffer;
     this.riveFile = riveFile;
+    // initData flips this if it ends up importing the file itself.
+    this.ownsRiveFile = false;
+    // Sticky across reloads so a constructor-set flag survives; an explicit
+    // `false` still turns it off.
+    this.deferredRenderer = enableGPUCanvas ?? this.deferredRenderer;
     this._tabIndex = tabIndex ?? null;
     this.semanticsMode = semanticsMode ?? SemanticMode.Disabled;
     this.semanticsOptions = semanticsOptions ?? this.semanticsOptions;
-
-    // If no source file url specified, it's a bust
-    if (!this.src && !this.buffer && !this.riveFile) {
-      throw new RiveError(Rive.missingErrorMessage);
-    }
 
     // Names of the animations and state machines that should be initialized
     const { startingAnimationNames, startingStateMachineNames } =
@@ -2415,6 +2621,8 @@ export class Rive {
         // Get the canvas where you want to render the animation and create a renderer
         if (this.enablePerfMarks) performance.mark('rive:make-renderer:start');
         try {
+          // Always immediate at creation; a deferred file attaches its session
+          // to this renderer once the file has loaded.
           this.renderer = this.runtime.makeRenderer(
             this.canvas,
             useOffscreenRenderer,
@@ -2601,13 +2809,18 @@ export class Rive {
     autoBind: boolean,
   ): Promise<boolean> {
     try {
-      if (this.riveFile == null) {
+      // A caller-supplied riveFile is theirs to release; one we import here is
+      // ours, which matters if a deferred fallback replaces it below.
+      this.ownsRiveFile = this.riveFile == null;
+      if (this.ownsRiveFile) {
         const riveFile = new RiveFile({
           src: this.src,
           buffer: this.buffer,
           enableRiveAssetCDN: this.enableRiveAssetCDN,
           assetLoader: this.assetLoader,
           enablePerfMarks: this.enablePerfMarks,
+          // The instance owns this file, so its flag is the file's flag.
+          enableGPUCanvas: this.deferredRenderer,
         });
         this.riveFile = riveFile;
         await riveFile.init();
@@ -2615,6 +2828,21 @@ export class Rive {
           // In the very unlikely scenario where the rive file created by this Rive is shared by
           // another rive file, we only want to destroy it if this file is the only owner.
           riveFile.destroyIfUnused();
+          return false;
+        }
+      }
+      // May replace this.riveFile with a re-import, so it runs before the
+      // instance takes its reference. Skipped unless something deferred is in
+      // play, so the default path stays synchronous through to the load event.
+      if (this.riveFile.deferredSession !== null || this.deferredRenderer) {
+        await this.resolveDeferredRendering();
+        if (this.destroyed) {
+          // cleanup() ran during a re-import. Taking a reference now would
+          // resurrect a file this instance is never going to draw. Only ours
+          // to release — a caller-supplied file stays theirs.
+          if (this.ownsRiveFile) {
+            this.riveFile?.destroyIfUnused();
+          }
           return false;
         }
       }
@@ -2671,6 +2899,101 @@ export class Rive {
       const msg = resolveErrorMessage(error);
       this.eventManager.fire({ type: EventType.LoadError, data: msg });
       return Promise.reject(msg);
+    }
+  }
+
+  /**
+   * Settles which rendering mode this Rive instance runs in. The file dictates: its rendering mode
+   * is fixed at import, and an immediate renderer silently drops a deferred
+   * file's resources. Every mismatch warns and degrades to something that
+   * renders, so users shouldn't have a blank canvas. A fallback self-reimport replaces `this.riveFile`;
+   * only a file this instance imported is released when that happens.
+   */
+  private async resolveDeferredRendering(): Promise<void> {
+    const file = this.riveFile;
+    const ownsFile = this.ownsRiveFile;
+    const renderer = this.renderer;
+    const session = file.deferredSession;
+    if (session === null) {
+      // No second warning when the file asked for deferred and the build
+      // could not honor it; the unsupported-build warning already fired, and
+      // telling the user to set a flag they set would mislead.
+      if (this.deferredRenderer && !file.deferredRequested) {
+        console.warn(
+          "Rive: `enableGPUCanvas: true` was ignored because this RiveFile was imported without it. The mode is fixed at import: construct the RiveFile with `enableGPUCanvas: true` to opt in.",
+        );
+      }
+      return;
+    }
+    if (!this.deferredRenderer) {
+      console.warn(
+        "Rive: this RiveFile was imported with `enableGPUCanvas: true`, so this instance renders deferred even though `enableGPUCanvas` is false on the instance. An immediate renderer would drop the file's deferred resources and draw nothing.",
+      );
+    }
+    const attachSession = renderer?.attachSession;
+    if (typeof attachSession !== "function") {
+      // Offscreen renderers share one context across canvases, which a session
+      // cannot record for. An immediate copy of the file still renders.
+      console.warn(
+        "Rive: this renderer cannot replay a deferred session (`useOffscreenRenderer` is not supported with deferred rendering). Re-importing the file in immediate mode for this instance.",
+      );
+      const immediate = await file.reimport(false);
+      if (this.destroyed) {
+        // cleanup() ran while we were importing; nothing will use this copy.
+        immediate.destroyIfUnused();
+        return;
+      }
+      this.riveFile = immediate;
+      this.ownsRiveFile = true;
+      if (ownsFile) {
+        // Nothing else can reach the deferred import we just walked away from.
+        file.destroyIfUnused();
+      }
+      return;
+    }
+    // Never re-offered once claimed, even if that renderer is gone: the
+    // resources the session's stream refers to died with it.
+    if (!file.sessionClaimed && attachSession.call(renderer, session)) {
+      file.claimSession();
+      return;
+    }
+    // Bound to another instance. Re-import from the retained buffer into a
+    // session of our own.
+    file.warnBoundElsewhereOnce();
+    const copy = await file.reimport(true);
+    if (this.destroyed) {
+      // The renderer was deleted while we imported; attaching to it would hand
+      // embind a deleted object.
+      copy.destroyIfUnused();
+      return;
+    }
+    this.riveFile = copy;
+    this.ownsRiveFile = true;
+    const copySession = copy.deferredSession;
+    if (copySession !== null && attachSession.call(renderer, copySession)) {
+      copy.claimSession();
+      return;
+    }
+    // The copy's session could not take this canvas either (this renderer
+    // already holds one). An immediate re-import still renders; a deferred file
+    // on an immediate renderer would drop its resources and draw nothing.
+    console.warn(
+      "Rive: could not attach the re-imported file's deferred session to this canvas; falling back to immediate rendering for this instance.",
+    );
+    // If a leftover session is why the attach failed, it would keep routing
+    // the immediate file's draws into its recorder, which drops them.
+    renderer.detachSession?.();
+    const fallback = await file.reimport(false);
+    // The deferred copy was only ever ours, so it always goes.
+    copy.destroyIfUnused();
+    if (this.destroyed) {
+      fallback.destroyIfUnused();
+      return;
+    }
+    this.riveFile = fallback;
+    this.ownsRiveFile = true;
+    if (ownsFile) {
+      file.destroyIfUnused();
     }
   }
 
@@ -2782,6 +3105,13 @@ export class Rive {
       }
     }
     return changed;
+  }
+
+  // Content the artboard's change flag cannot see: ore and GPU canvas commands
+  // scripts record straight into the session. Must be read before the renderer
+  // clears — clearing marks the stream, so a later read is true every frame.
+  private _deferredWorkPending(): boolean {
+    return this.riveFile?.deferredSession?.recordedThisFrame() ?? false;
   }
 
   /**
@@ -3036,6 +3366,11 @@ export class Rive {
   private draw(time: number, onSecond?: VoidCallback): void {
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
+    // load() tears the artboard down and re-inits asynchronously; a frame
+    // queued before that lands here with nothing to draw.
+    if (!this.artboard) {
+      return;
+    }
     const before = performance.now();
 
     // Instrument the first 3 frames so the Performance timeline shows precise
@@ -3064,10 +3399,14 @@ export class Rive {
     const { renderer } = this;
     // Do not draw on 0 canvas size
     if (!this._hasZeroSize) {
-      // If there was no dirt on this frame, do not clear and draw
+      // If there was no dirt on this frame, do not clear and draw. The deferred
+      // term has to be read here, before `clear()` below: clearing opens the
+      // session's recording window and marks its stream, so a read taken after
+      // it reports every frame as dirty and nothing is ever skipped.
       if (
         this.drawOptimization == DrawOptimizationOptions.AlwaysDraw ||
         this.artboard.didChange() ||
+        this._deferredWorkPending() ||
         this._needsRedraw ||
         this._canvasSizeChanged()
       ) {
@@ -3187,10 +3526,14 @@ export class Rive {
       observers.remove(this._observed);
     }
     this.removeRiveListeners();
-    if (this.file) {
-      this.riveFile?.cleanup();
-      this.file = null;
+    // The file and its session go before the renderer: the session's replay
+    // state lives in the renderer's context. But the renderer must let go of
+    // the session first — its detach handle dies with session.delete(), and a
+    // later detach would pass embind a deleted object.
+    if (this.renderer) {
+      this.renderer.detachSession?.();
     }
+    this.releaseCurrentRiveFile(/* isTeardown */ true);
     this.riveFile = null;
     this.deleteRiveRenderer();
     if (this._audioEventListener !== null) {
@@ -3209,12 +3552,51 @@ export class Rive {
   }
 
   /**
+   * Drops this instance's hold on `this.riveFile`. A reference taken through
+   * getInstance() is given back; a file we imported but never referenced is
+   * released outright so its session goes with it. A caller-supplied file we
+   * never referenced is left alone.
+   *
+   * `isTeardown` distinguishes cleanup() from a reload. Teardown always hands
+   * the reference back, as it always has. A reload must not do that for a
+   * caller-supplied file: a RiveFile carries no reference for its creator, so
+   * releasing here would take the last one and destroy a file the caller still
+   * holds.
+   */
+  private releaseCurrentRiveFile(isTeardown: boolean): void {
+    if (this.file) {
+      if (isTeardown || this.ownsRiveFile) {
+        this.riveFile?.cleanup();
+      }
+      this.file = null;
+    } else if (this.ownsRiveFile) {
+      this.riveFile?.destroyIfUnused();
+    }
+  }
+
+  /**
    * Cleans up the Renderer object. Only call this API if you no longer
    * need to render Rive content in your session.
    */
   public deleteRiveRenderer() {
-    this.renderer?.delete();
+    if (this.renderer) {
+      // A session outliving this renderer has to stop pointing at it, and its
+      // replay state has to drop while this context is still alive. No-op when
+      // nothing was ever attached.
+      this.renderer.detachSession?.();
+      this.renderer.delete();
+    }
     this.renderer = null;
+  }
+
+  /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * Whether this instance is rendering through a deferred session. False whenever
+   * a fallback ran, whatever was requested.
+   */
+  public get deferredRendererActive(): boolean {
+    return this.renderer?.deferredActive?.() ?? false;
   }
 
   /**
@@ -3471,7 +3853,10 @@ export class Rive {
 
   // Loads a new Rive file, keeping listeners in place
   public load(params: RiveLoadParameters): void {
-    this.file = null;
+    // Before stop(), so a call with no source leaves playback running.
+    if (!params.src && !params.buffer && !params.riveFile) {
+      throw new RiveError(Rive.missingErrorMessage);
+    }
     // Stop all animations
     this.stop();
     // Reinitialize
@@ -5498,10 +5883,12 @@ export const Testing = {
  * Be sure to call `.unref()` on the audio once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeAudio = async (bytes: Uint8Array): Promise<AudioWrapper> => {
+export const decodeAudio = async (
+  bytes: Uint8Array,
+): Promise<AudioWrapper> => {
   const decodedPromise = new Promise<rc.Audio>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
-      rive.decodeAudio(bytes, resolve);
+      rive.decodeAudio(bytes, resolve, null);
     }),
   );
   const audio: rc.Audio = await decodedPromise;
@@ -5516,10 +5903,15 @@ export const decodeAudio = async (bytes: Uint8Array): Promise<AudioWrapper> => {
  * Be sure to call `.unref()` on the image once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeImage = async (bytes: Uint8Array): Promise<ImageWrapper> => {
+export const decodeImage = async (
+  bytes: Uint8Array,
+): Promise<ImageWrapper> => {
+  // Immediate-typed on purpose, even for deferred files: the recorder routes
+  // images it didn't make through the session's ForeignImageRegistry at draw,
+  // so callers never need to know which mode their file imported in.
   const decodedPromise = new Promise<rc.Image>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
-      rive.decodeImage(bytes, resolve);
+      rive.decodeImage(bytes, resolve, null);
     }),
   );
   const image: rc.Image = await decodedPromise;
@@ -5534,10 +5926,12 @@ export const decodeImage = async (bytes: Uint8Array): Promise<ImageWrapper> => {
  * Be sure to call `.unref()` on the font once it is no longer needed. This
  * allows the engine to clean it up when it is not used by any more animations.
  */
-export const decodeFont = async (bytes: Uint8Array): Promise<FontWrapper> => {
+export const decodeFont = async (
+  bytes: Uint8Array,
+): Promise<FontWrapper> => {
   const decodedPromise = new Promise<rc.Font>((resolve) =>
     RuntimeLoader.getInstance((rive: rc.RiveCanvas): void => {
-      rive.decodeFont(bytes, resolve);
+      rive.decodeFont(bytes, resolve, null);
     }),
   );
   const font: rc.Font = await decodedPromise;

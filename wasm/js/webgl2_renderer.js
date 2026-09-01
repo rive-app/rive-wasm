@@ -101,6 +101,8 @@ Module["onRuntimeInitialized"] = function () {
 
     GL.makeContextCurrent(handle);
 
+    // Immediate at creation; deferred mode arrives later through
+    // attachSession(), which binds a file's session to this context.
     const renderer = makeRenderer(canvas.width, canvas.height);
     renderer._handle = handle;
     renderer._canvas = canvas;
@@ -172,6 +174,8 @@ Module["onRuntimeInitialized"] = function () {
       }
     }
     if (useOffScreenRenderer) {
+      // No attachSession: offscreen renderers share one GL context across
+      // canvases, which a session cannot record for.
       return new OffscreenRenderer(canvas);
     }
     return makeGLRenderer(
@@ -387,21 +391,25 @@ Module["onRuntimeInitialized"] = function () {
   Module["resolveAnimationFrame"] = flushOffscreenRenderers;
 
   let load = Module["load"];
+  // The session fixes the file's mode at import: every resource it creates is
+  // typed by the factory it came from, so out of band assets have to decode
+  // through the same session (the CDN loader carries it for that reason).
   Module["load"] = function (
     bytes,
     fileAssetLoader,
-    enableRiveAssetCDN = true
+    enableRiveAssetCDN = true,
+    session = null
   ) {
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
       loader.addLoader(fileAssetLoader);
     }
     if (enableRiveAssetCDN) {
-      const cdnLoader = new Module["CDNFileAssetLoader"]();
+      const cdnLoader = new Module["CDNFileAssetLoader"](session);
       loader.addLoader(cdnLoader);
     }
 
-    return Promise.resolve(load(bytes, loader));
+    return Promise.resolve(load(bytes, loader, session ?? null));
   };
 
   const cppClear = Module["WebGL2Renderer"]["prototype"]["clear"];
@@ -417,8 +425,10 @@ Module["onRuntimeInitialized"] = function () {
     cppClear.call(this);
   };
 
-  Module["decodeImage"] = function (bytes, onComplete) {
-    let image = Module["decodeWebGL2Image"](bytes);
+  // Pass the session of the deferred file this image is bound into; an image
+  // decoded against any other factory is dropped when that file draws.
+  Module["decodeImage"] = function (bytes, onComplete, session = null) {
+    let image = Module["decodeWebGL2Image"](bytes, session ?? null);
     onComplete(image);
   };
 

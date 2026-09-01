@@ -631,6 +631,146 @@ test("Rive deletes rive file instance on the cleanup", async () => {
   });
 });
 
+test("one RiveFile with immediate renderer drives five instances", async () => {
+  // The one-file/one-session/one-renderer rule is deferred-only: an immediate
+  // file has no session, so initData skips the resolver entirely and every
+  // instance just takes a reference.
+  const riveFile = new rive.RiveFile({ buffer: stateMachineFileBuffer });
+  await riveFile.init();
+
+  const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+  const instances: rive.Rive[] = [];
+  try {
+    for (let i = 0; i < 5; i++) {
+      instances.push(
+        await new Promise<rive.Rive>((resolve, reject) => {
+          const inst = new rive.Rive({
+            canvas: document.createElement("canvas"),
+            riveFile: riveFile,
+            artboard: "MyArtboard",
+            autoplay: true,
+            onLoad: () => resolve(inst),
+            onLoadError: (e: rive.Event) =>
+              reject(new Error(String(e?.data ?? "load error"))),
+          });
+        }),
+      );
+    }
+
+    expect(instances).toHaveLength(5);
+    instances.forEach((r) => expect(r.activeArtboard).toBe("MyArtboard"));
+    expect(riveFile.referenceCount).toBe(5);
+    // No session, so no deferred fallback and nothing to warn about.
+    instances.forEach((r) => expect(r.deferredRendererActive).toBe(false));
+    expect(
+      warnSpy.mock.calls
+        .map((c) => String(c[0]))
+        .filter((m) => m.startsWith("Rive:")),
+    ).toEqual([]);
+
+    // Each instance hands its reference back independently.
+    instances[0].cleanup();
+    expect(riveFile.referenceCount).toBe(4);
+  } finally {
+    warnSpy.mockRestore();
+    instances.forEach((r) => {
+      try {
+        r.cleanup();
+      } catch {
+        /* already cleaned up */
+      }
+    });
+  }
+});
+
+// #region reload (rive.load)
+
+/** Resolves once the instance reports a completed load. */
+const loadInto = (r: rive.Rive, params: any): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const onLoad = () => {
+      r.off(rive.EventType.Load, onLoad);
+      resolve();
+    };
+    r.on(rive.EventType.Load, onLoad);
+    r.on(rive.EventType.LoadError, (e: rive.Event) =>
+      reject(new Error(String(e?.data ?? "load error"))),
+    );
+    r.load(params);
+  });
+
+test("load() keeps a caller-supplied RiveFile usable", async () => {
+  // load() gives back the reference this instance took, but must not destroy a
+  // file the caller still holds: a RiveFile carries no reference for its
+  // creator, so releasing here would take the last one.
+  const riveFile = new rive.RiveFile({ buffer: stateMachineFileBuffer });
+  await riveFile.init();
+
+  const r = await new Promise<rive.Rive>((resolve) => {
+    const inst = new rive.Rive({
+      canvas: document.createElement("canvas"),
+      riveFile: riveFile,
+      artboard: "MyArtboard",
+      autoplay: true,
+      onLoad: () => resolve(inst),
+    });
+  });
+  expect(riveFile.referenceCount).toBe(1);
+
+  await loadInto(r, {
+    buffer: loopRiveFileBuffer,
+    autoplay: true,
+  });
+
+  // The instance moved on, and the caller's file survived it.
+  expect((riveFile as any).destroyed).toBe(false);
+
+  // Known cost of that: reload does not hand back the reference getInstance()
+  // took, because doing so would drop a caller-supplied file to zero and
+  // destroy it. The count stays inflated until the caller cleans up
+  expect(riveFile.referenceCount).toBe(1);
+
+  // Still usable: a fresh instance can load it again.
+  const second = await new Promise<rive.Rive>((resolve, reject) => {
+    const inst = new rive.Rive({
+      canvas: document.createElement("canvas"),
+      riveFile: riveFile,
+      artboard: "MyArtboard",
+      autoplay: true,
+      onLoad: () => resolve(inst),
+      onLoadError: (e: rive.Event) =>
+        reject(new Error(String(e?.data ?? "load error"))),
+    });
+  });
+  expect(second.activeArtboard).toBe("MyArtboard");
+
+  r.cleanup();
+  second.cleanup();
+});
+
+test("load() with no source throws before stopping playback", async () => {
+  const r = await new Promise<rive.Rive>((resolve) => {
+    const inst = new rive.Rive({
+      canvas: document.createElement("canvas"),
+      buffer: stateMachineFileBuffer,
+      artboard: "MyArtboard",
+      autoplay: true,
+      onLoad: () => resolve(inst),
+    });
+  });
+  expect(r.isPlaying).toBe(true);
+
+  expect(() => r.load({})).toThrow();
+
+  // The bad call must leave the running instance untouched.
+  expect(r.isPlaying).toBe(true);
+  expect(r.activeArtboard).toBe("MyArtboard");
+
+  r.cleanup();
+});
+
+// #endregion
+
 test("Cleaning up file before load does not reduce reference count", async () => {
   const canvas = document.createElement("canvas");
   const riveFile = new rive.RiveFile({

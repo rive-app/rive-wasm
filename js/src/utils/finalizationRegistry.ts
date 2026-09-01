@@ -6,15 +6,30 @@ interface Finalizable {
 
 class FileFinalizer implements Finalizable {
   private _file: rc.File;
+  // Nothing else reclaims a session on GC, so a RiveFile dropped without
+  // cleanup() would leak it and everything recorded into it.
+  private _session: rc.DeferredSession | null;
   public selfUnref: boolean = false;
-  constructor(file: rc.File) {
+  constructor(file: rc.File, session: rc.DeferredSession | null = null) {
     this._file = file;
+    this._session = session;
   }
 
   public unref() {
     if (this._file) {
       this._file.unref();
     }
+    // After the file, never before: the file's resources belong to the session.
+    if (this._session) {
+      this._session.delete();
+      this._session = null;
+    }
+  }
+
+  // Disarms the GC path for a file cleanup() already released.
+  public release() {
+    this._file = null;
+    this._session = null;
   }
 }
 
@@ -100,12 +115,17 @@ export type AssetLoadCallbackWrapper = (
 class CustomFileAssetLoaderWrapper {
   assetLoader: rc.CustomFileAssetLoader;
   _assetLoaderCallback: AssetLoadCallbackWrapper;
+  // Session of the file being imported, null for an immediate file. Assets of
+  // a deferred file have to decode through the factory that imported it.
+  _session: rc.DeferredSession | null;
 
   constructor(
     runtime: rc.RiveCanvas,
     loaderCallback: AssetLoadCallbackWrapper,
+    session: rc.DeferredSession | null = null,
   ) {
     this._assetLoaderCallback = loaderCallback;
+    this._session = session;
     this.assetLoader = new runtime.CustomFileAssetLoader({
       loadContents: this.loadContents.bind(this),
     });
@@ -114,11 +134,11 @@ class CustomFileAssetLoaderWrapper {
   loadContents(asset: rc.FileAsset, bytes: any) {
     let assetWrapper: FileAssetWrapper;
     if (asset.isImage) {
-      assetWrapper = new ImageAssetWrapper(asset);
+      assetWrapper = new ImageAssetWrapper(asset, this._session);
     } else if (asset.isAudio) {
-      assetWrapper = new AudioAssetWrapper(asset);
+      assetWrapper = new AudioAssetWrapper(asset, this._session);
     } else if (asset.isFont) {
-      assetWrapper = new FontAssetWrapper(asset);
+      assetWrapper = new FontAssetWrapper(asset, this._session);
     } else {
       return false;
     }
@@ -132,13 +152,20 @@ class CustomFileAssetLoaderWrapper {
  */
 class FileAssetWrapper {
   _nativeFileAsset: rc.FileAssetInternal;
+  _session: rc.DeferredSession | null;
 
-  constructor(nativeAsset: rc.FileAssetInternal) {
+  constructor(
+    nativeAsset: rc.FileAssetInternal,
+    session: rc.DeferredSession | null = null,
+  ) {
     this._nativeFileAsset = nativeAsset;
+    this._session = session;
   }
 
   decode(bytes: Uint8Array): void {
-    this._nativeFileAsset.decode(bytes);
+    // The session travels with the asset so a deferred file's assets are
+    // session-typed without the caller needing to know the file's rendering mode.
+    this._nativeFileAsset.decode(bytes, this._session);
   }
 
   get name(): string {
