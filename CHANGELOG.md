@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.41.1](https://github.com/rive-app/rive-wasm/compare/2.41.0...2.41.1)
+## [2.42.0](https://github.com/rive-app/rive-wasm/compare/2.41.1...2.42.0)
 
 ### Commits
 
+- feat(wasm): synchronous deferred rendering for webgl2 and canvas2d (#13450) ad527a507e [`cb8b0d6`](https://github.com/rive-app/rive-wasm/commit/cb8b0d6a679746c77e33bee3f47a0fb749e25b9c)
+
+## [2.41.1](https://github.com/rive-app/rive-wasm/compare/2.41.0...2.41.1) - 2026-09-01
+
+### Commits
+
+- chore: tag 2.41.1 [`0c5af63`](https://github.com/rive-app/rive-wasm/commit/0c5af63634a5267a740417c662b17d1132e319dc)
 - chore(vulkan): Add Vulkan frame sync coordinator (#13058) bcdfe4fe5f [`4ebb27c`](https://github.com/rive-app/rive-wasm/commit/4ebb27c8e39c5e21210f1e60b13d3d56f2c9f104)
 - feat(runtime): report successful view model instance lookups (#13875) 1c69c3de41 [`3526380`](https://github.com/rive-app/rive-wasm/commit/35263808eefb5597262adfeccd765cd0aac8bdfe)
 - feat(runtime): gate the wasm tier ladder behind tools builds (#13882) 314202c0f2 [`9dd2e46`](https://github.com/rive-app/rive-wasm/commit/9dd2e46c649f06632ab9a9330b78e2cead857a1e)
