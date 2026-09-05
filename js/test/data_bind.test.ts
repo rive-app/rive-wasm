@@ -53,6 +53,29 @@ test("Autobinds correctly to the right view model instance", (done) => {
   });
 });
 
+test("View model properties expose the name of the view model they reference", (done) => {
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: loadFile("assets/data_bind_runtime_test.riv"),
+    autoplay: true,
+    autoBind: true,
+    onLoad: () => {
+      const properties = r.viewModelByName("vm1")?.properties;
+      expect(properties?.[0].type).toBe("viewModel");
+      expect(properties?.[0].viewModelName).toBe("vm2");
+      expect(properties?.[1].type).toBe("string");
+      expect(properties?.[1].viewModelName).toBeUndefined();
+
+      const instanceProperties = r.viewModelInstance?.properties;
+      expect(instanceProperties?.[0].viewModelName).toBe("vm2");
+      expect(instanceProperties?.[1].viewModelName).toBeUndefined();
+
+      done();
+    },
+  });
+});
+
 test("Binds the default view model instance correctly", (done) => {
   const canvas = document.createElement("canvas");
   const r = new rive.Rive({
