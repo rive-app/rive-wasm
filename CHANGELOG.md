@@ -5,10 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.42.0](https://github.com/rive-app/rive-wasm/compare/2.41.1...2.42.0)
+## [2.42.1](https://github.com/rive-app/rive-wasm/compare/2.42.0...2.42.1)
 
 ### Commits
 
+- fix(text): measure a fitFontSize text at its fitted size (#14074) 2505c4bb9c [`e0bfcec`](https://github.com/rive-app/rive-wasm/commit/e0bfcec3ccd0f1dee01686776da68f439a95cbfa)
+- feat(cli): debug AssemblyScript scripts in the preview (#14047) c5874e1044 [`8209048`](https://github.com/rive-app/rive-wasm/commit/82090488b215f5c12114a65b20c8d4bbebf78837)
+- fix(renderer): render GL canvas targets top down (#14059) acc1e5016d [`b7d181c`](https://github.com/rive-app/rive-wasm/commit/b7d181c378d1953db952c6525561723328b1a25c)
+- feat(renderer): Implement "msaa1" modes (#13964) 131951d4d4 [`9d87919`](https://github.com/rive-app/rive-wasm/commit/9d8791973d7b0c2021683393a629122dbe6a8153)
+- fix(cli): Fix crash and pointer positions in Windows viewer (#14070) 2c4d9a91a2 [`d6d223d`](https://github.com/rive-app/rive-wasm/commit/d6d223db1719140e35a4c942970af37cc14f3610)
+- fix(renderer): Fix assert with dynamic state enabled (#14058) f9b508d875 [`f97bc10`](https://github.com/rive-app/rive-wasm/commit/f97bc10f131fda5e9301bae1f4fbd9b30661eeee)
+- chore(runtime): Add [[nodiscard]] to some AABB functions (#14035) 2b02c3bacb [`fac9748`](https://github.com/rive-app/rive-wasm/commit/fac97480c94e822afaffc5025e01de433ffd96e5)
+- Check golds refactor (#13965) 0173b0daa6 [`f8e6e5b`](https://github.com/rive-app/rive-wasm/commit/f8e6e5bf6d3e96efa66f1344942e339aa3d0f33e)
+- feat(scripting): wasm scripting and prelinked aot for artemis (#13876) 17390ee227 [`338cd25`](https://github.com/rive-app/rive-wasm/commit/338cd250ad2b150f6e91cd9c40852d8d0ea591a0)
+- fix(ore): reject a uniform buffer shorter than the shader's block (#14044) dc8aa9cbcc [`6c96b4b`](https://github.com/rive-app/rive-wasm/commit/6c96b4b918a6801c2252aae98b4ce2321642e28e)
+- feat(cli): luau script debugger for vs code (#14017) 5ceb65b029 [`2633afa`](https://github.com/rive-app/rive-wasm/commit/2633afafc89d59c769161704bb163e428a8d33d5)
+- fix(web): write decoded image pixels through wasmMemory (#14036) 67ea382322 [`2fa8b14`](https://github.com/rive-app/rive-wasm/commit/2fa8b140732f9d86edfe2087ebb64aad6fcb4e73)
+- feat(data): bind view model instance values in lists (#13998) 43d66a1b34 [`e5cd8df`](https://github.com/rive-app/rive-wasm/commit/e5cd8dfcd4c745b7eb40f01fa9c9737b03c7a1bd)
+- feat(wasm): 2d canvas for the assemblyscript library (#14003) 08a4ca3bb9 [`ece4e3b`](https://github.com/rive-app/rive-wasm/commit/ece4e3bbe5c629dc256c0dd7bffa433d05ac8a1f)
+- feat(cli): semantics authoring support (#13944) c343828fbe [`5d6ba49`](https://github.com/rive-app/rive-wasm/commit/5d6ba49123f149d46f848359efadcd1559eda000)
+- feat(ore): nestable script render passes (#14001) 5e4ad7e34e [`4a81d38`](https://github.com/rive-app/rive-wasm/commit/4a81d38af5e39a59f3d8fd81d8c3a281c9c5f888)
+- fix(runtime): reclaim only the canvas frames and render pass a script… (#13996) f5f2a5c824 [`52045f2`](https://github.com/rive-app/rive-wasm/commit/52045f2e07de769797d435b88ea286bdcf1af17c)
+- fix(runtime): hold one data context per DataBindContainer (#13929) a8b09b6b40 [`d1b1a94`](https://github.com/rive-app/rive-wasm/commit/d1b1a941a4f3c4b9b63ae3f3d4ae60e68717c5ed)
+- feat(editor): text input playback capture + layout-aware placement (#13972) 15c001515b [`09f94d1`](https://github.com/rive-app/rive-wasm/commit/09f94d1e83e5ab45b67312dac4f757dbc106af70)
+- feat(text): select all on keyboard focus and selectAllOnFocus (#13997) 4b89f3eea6 [`f7bd3bb`](https://github.com/rive-app/rive-wasm/commit/f7bd3bb174458cc8b3c7b570c2c80401310e650b)
+- feat(scripting): @input artboard and view model kinds typed by class, with @input("name") renames (#13993) dd77cc28cf [`25480fa`](https://github.com/rive-app/rive-wasm/commit/25480fad31769f41ed07117de5d22a0a2933dbcf)
+- feat(scripting): assemblyscript rive library with artboard, data binding, paint, path and events (#13992) 2d863a5854 [`bf472b0`](https://github.com/rive-app/rive-wasm/commit/bf472b0b6b833b0eb8d99b1c09a48ada05c1af9d)
+- feat(scripting): pin the debug tier so sync-o0 boots stay on -O0 (#13978) f7fd4b5d04 [`36fa02e`](https://github.com/rive-app/rive-wasm/commit/36fa02e8c269288c423d2b90143aefa6176297ec)
+- feat(scripting): sync aot boot compiles at load instead of running interp (#13976) ef43b97105 [`2021d5b`](https://github.com/rive-app/rive-wasm/commit/2021d5bfbe7c65405c8f5e0832c7e899a2f14c1f)
+- perf(renderer): Compile out atomic shaders on android (#13985) 9092512ab0 [`a7059b3`](https://github.com/rive-app/rive-wasm/commit/a7059b3777c9e18cb24f001d13418b029a38c1bf)
+- fix(runtime): stop layouts reading uninitialized interpolator pointers (#13970) a87af1c977 [`f63ef94`](https://github.com/rive-app/rive-wasm/commit/f63ef94e5adcd03528e656594b2ef8314a7b4b99)
+- feat: Add fit to parent layout toggle on NestedArtboardLeaf (#13977) e46ec77959 [`7ba3daa`](https://github.com/rive-app/rive-wasm/commit/7ba3daa394d01ddfd0eb8f3a9fe3c033f09c7fb3)
+- fix(scripting): boot wamrc artifacts of vm_host, compile the ladder from pristine bytes (#13958) 87109f7956 [`c099f23`](https://github.com/rive-app/rive-wasm/commit/c099f23dcf3fed1221a5becb49fed77297650c82)
+- fix(scripting): reserve x18 in wamrc artifacts for apple and windows aarch64 (#13956) b7a396a8da [`f9266b7`](https://github.com/rive-app/rive-wasm/commit/f9266b73ecab813191448570549a1634a6092af1)
+- feat(flutter): first-class semantics opt-in and stability fixes (#13892) 9311d9445b [`f8f2356`](https://github.com/rive-app/rive-wasm/commit/f8f2356aa9637d2d7b450a20151d0edc8febb93c)
+- fix(renderer): Reset the GL color mask in Ore before clearing (#13893) b33e0ef17d [`9ccb099`](https://github.com/rive-app/rive-wasm/commit/9ccb0996cc52a316e22cd8994efa7b48d8d57203)
+- fix(renderer): Get stroke/feathered paths working with image paint in atomic mode (#13952) 1d33b08f44 [`2b05ff1`](https://github.com/rive-app/rive-wasm/commit/2b05ff1805f39ab66b855fc47143c75027b31250)
+- feat(Android): Synchronous deferred rendering with GPU canvas (#13442) 622f60fe50 [`c23e701`](https://github.com/rive-app/rive-wasm/commit/c23e7014fa698f02c88bc91a6454a79cf14afc60)
+- fix(renderer): Add partial support for image paint to atomic mode (#13907) 601805c212 [`ff32fb9`](https://github.com/rive-app/rive-wasm/commit/ff32fb943c046ab322afac9cb9cbe26ade6457af)
+- feat(cli): watermark .riv exports with a bundled pre-roll artboard (#13930) 3162948820 [`2b12be1`](https://github.com/rive-app/rive-wasm/commit/2b12be19dfd99d79700063085dc693a2a7f3875c)
+- feat(command-queue): apply global asset changes to all loaded files (#12954) cfd611f559 [`b9f5fc5`](https://github.com/rive-app/rive-wasm/commit/b9f5fc571ddec39bff44dcf3495c7b57b5c4e801)
+- fix(runtime): read the header file id at full 64 bit width (#13900) 11ef1543e1 [`0dbd927`](https://github.com/rive-app/rive-wasm/commit/0dbd927357de82eabda4fb141cc0d15e74920927)
+- perf(runtime): shrink StateMachineLayerInstance and LinearAnimationInstance (#13894) 51f34f0bfb [`c476c8f`](https://github.com/rive-app/rive-wasm/commit/c476c8f0de5ac64b11dc5826780e8c67bffd738d)
+- chore(goldens): gate --deferred on RIVE_CANVAS, not scripting (#13902) ec359aee6a [`584654d`](https://github.com/rive-app/rive-wasm/commit/584654d17f628fdc4b8a1b718b413c12cc3866f1)
+- feat(Renderer): Allow GMs in testing to use Uber shader or not (#13626) f0c2d52b31 [`3077c32`](https://github.com/rive-app/rive-wasm/commit/3077c32fcbee6665e27b9f96352fa7438c6ad5e5)
+
+## [2.42.0](https://github.com/rive-app/rive-wasm/compare/2.41.1...2.42.0) - 2026-09-02
+
+### Commits
+
+- chore: tag 2.42.0 [`9290fb8`](https://github.com/rive-app/rive-wasm/commit/9290fb809aabb9580148854aaae17db4a4fc95eb)
 - feat(wasm): synchronous deferred rendering for webgl2 and canvas2d (#13450) ad527a507e [`cb8b0d6`](https://github.com/rive-app/rive-wasm/commit/cb8b0d6a679746c77e33bee3f47a0fb749e25b9c)
 
 ## [2.41.1](https://github.com/rive-app/rive-wasm/compare/2.41.0...2.41.1) - 2026-09-01
