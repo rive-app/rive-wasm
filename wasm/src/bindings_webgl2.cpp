@@ -17,6 +17,11 @@
 #endif
 #endif
 
+#ifdef RIVE_CANVAS
+#include "rive/renderer/cmd/deferred_canvas_host.hpp"
+#include "rive/renderer/render_canvas.hpp"
+#endif
+
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -92,7 +97,19 @@ public:
 
     // Register GL contexts for resource deletion notifications.
     void registerContext(WebGL2Renderer* renderer) { m_renderers.insert(renderer); }
-    void unregisterContext(WebGL2Renderer* renderer) { m_renderers.erase(renderer); }
+    void unregisterContext(WebGL2Renderer* renderer);
+
+    // This factory is a singleton shared by every GL context, so it has no one
+    // render context to hand out. Whoever has a frame open claims it for the
+    // duration, which is the only window in which anything can ask -- an
+    // artboard caching itself as a bitmap does so mid-draw.
+    void bindActiveRenderer(WebGL2Renderer* renderer) { m_activeRenderer = renderer; }
+#ifdef RIVE_CANVAS
+    // Only canvasContentHost: answering deferredCanvasHost() would tell the
+    // scripting layer its canvas work is being recorded for a replay, and it
+    // would hand out unbacked canvases and never draw.
+    rive::cmd::DeferredCanvasHost* canvasContentHost() override;
+#endif
 
     // Hooks for WebGL 2 objects to notify all contexts when they get deleted.
     void onWebGL2BufferDeleted(WebGL2RenderBuffer*);
@@ -106,6 +123,7 @@ private:
     WebGL2Factory() = default;
 
     std::set<WebGL2Renderer*> m_renderers;
+    WebGL2Renderer* m_activeRenderer = nullptr;
 };
 
 // RAII utility to set and restore the current GL context.
@@ -318,6 +336,10 @@ private:
 // Wraps a tightly coupled RiveRenderer and RenderContext, which are tied to a specific WebGL2
 // context.
 class WebGL2Renderer : public RiveRenderer
+#ifdef RIVE_CANVAS
+    ,
+                       public rive::cmd::DeferredCanvasHost
+#endif
 {
 public:
     WebGL2Renderer(std::unique_ptr<RenderContext> renderContext, int width, int height) :
@@ -349,6 +371,8 @@ public:
     {
         return m_renderContext->static_impl_cast<RenderContextGLImpl>();
     }
+
+    RenderContext* plsContext() const { return m_renderContext.get(); }
 
     void resize(int width, int height)
     {
@@ -398,7 +422,13 @@ public:
             // Always use MSAA if we don't have WEBGL_shader_pixel_local_storage.
             frameDescriptor.msaaSampleCount = 4;
         }
+        // Kept so an offscreen canvas can interrupt this frame and put it
+        // back the way it found it.
+        m_screenFrame = frameDescriptor;
         m_renderContext->beginFrame(std::move(frameDescriptor));
+        // Claim the factory for the length of the frame: anything that draws
+        // between here and flush() may need to reach this context.
+        WebGL2Factory::Instance()->bindActiveRenderer(this);
     }
 
     void saveClipRect(float l, float t, float r, float b)
@@ -524,6 +554,11 @@ public:
 #endif
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
         m_renderContext->flush({.renderTarget = m_renderTarget.get()});
+        WebGL2Factory::Instance()->bindActiveRenderer(nullptr);
+#ifdef RIVE_CANVAS
+        // The frame is over, so nothing is still compositing through these.
+        m_compositeRenderers.clear();
+#endif
     }
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
@@ -610,6 +645,119 @@ public:
     }
 #endif
 
+#ifdef RIVE_CANVAS
+    // ---- DeferredCanvasHost ----
+    // Immediate: the content is drawn into the canvas as it is issued, so it
+    // needs a real texture up front rather than one a replay would allocate.
+    // GL cannot hand its canvas texture straight to a 2D draw: it renders
+    // into one bottom-up, and the backend keeps a Y-flipped companion for
+    // anything that samples it. Asking for the mirror both fixes the
+    // orientation and gives us an image the draw path can actually sample.
+    // The companion is created on first ask and re-blitted at the end of
+    // every flush that targets this canvas, so it stays current by itself.
+    // A renderer that carried state across the interrupt cannot draw the
+    // composite -- proven by probe: the same canvas composites through a
+    // renderer made after the resume and not through the one that was mid
+    // draw. So hand back a clean one.
+    //
+    // Known limitation: a clean renderer inherits no clip. The caller
+    // re-applies the CTM, but an ancestor clip that constrained the original
+    // vector draw does not constrain the composite, so a cached artboard under
+    // a clipping shape can paint outside it on WebGL. Fixing it needs the clip
+    // stack captured and replayed onto the resumed renderer.
+    Renderer* compositeRenderer() override
+    {
+        // Retained rather than replaced: a cached artboard nested inside
+        // another one composites first, and freeing its renderer when the
+        // enclosing artboard asks for its own would pull the ground out from
+        // under a draw that is still in progress. The whole set is dropped
+        // when the screen frame flushes.
+        m_compositeRenderers.push_back(std::make_unique<RiveRenderer>(m_renderContext.get()));
+        return m_compositeRenderers.back().get();
+    }
+
+    rcp<RenderImage> contentCanvasImage(gpu::RenderCanvas* canvas) override
+    {
+        if (canvas == nullptr)
+        {
+            return nullptr;
+        }
+        // GL renders canvas targets top down, so the canvas's own image
+        // samples upright and needs no Y-flipped companion.
+        return ref_rcp<RenderImage>(canvas->renderImage());
+    }
+
+    rcp<gpu::RenderCanvas> makeContentCanvas(uint32_t width, uint32_t height) override
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        return m_renderContext->makeRenderCanvas(width, height);
+    }
+
+    Renderer* beginCanvasContent(gpu::RenderCanvas* canvas, uint32_t clearColor) override
+    {
+        if (canvas == nullptr || canvas->renderTarget() == nullptr)
+        {
+            return nullptr; // unbacked; the caller falls back to a vector draw
+        }
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        // What this pass is about to interrupt. Not necessarily the screen:
+        // a cached artboard can nest inside another one, and the inner pass
+        // has to resume the outer canvas rather than jump back to the window.
+        const RenderContext::FrameDescriptor& outerFrame =
+            m_canvasPasses.empty() ? m_screenFrame : m_canvasPasses.back().frame;
+        gpu::RenderTarget* outerTarget = m_canvasPasses.empty()
+                                             ? static_cast<gpu::RenderTarget*>(m_renderTarget.get())
+                                             : m_canvasPasses.back().target.get();
+
+        // Frames cannot nest, so resolve what the interrupted target has drawn
+        // so far and give the context to the canvas.
+        m_renderContext->flush({.renderTarget = outerTarget});
+
+        RenderContext::FrameDescriptor canvasFrame = {
+            .renderTargetWidth = canvas->width(),
+            .renderTargetHeight = canvas->height(),
+            .loadAction = gpu::LoadAction::clear,
+            .clearColor = clearColor,
+        };
+        // Mirror the screen's fallback: without pixel local storage or
+        // atomics there is no way to render correctly except MSAA.
+        if (!m_renderContext->platformFeatures().supportsRasterOrderingMode &&
+            !m_renderContext->platformFeatures().supportsAtomicMode)
+        {
+            canvasFrame.msaaSampleCount = 4;
+        }
+
+        m_canvasPasses.push_back({
+            .frame = canvasFrame,
+            .target = ref_rcp(canvas->renderTarget()),
+            .renderer = std::make_unique<RiveRenderer>(m_renderContext.get()),
+            .outerFrame = outerFrame,
+            .outerTarget = outerTarget,
+        });
+        m_renderContext->beginFrame(std::move(canvasFrame));
+        return m_canvasPasses.back().renderer.get();
+    }
+
+    void endCanvasContent(gpu::RenderCanvas*) override
+    {
+        if (m_canvasPasses.empty())
+        {
+            return;
+        }
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        m_renderContext->flush({.renderTarget = m_canvasPasses.back().target.get()});
+
+        // Put back whatever this pass interrupted -- an enclosing canvas, or
+        // the screen at the bottom -- keeping what it had already drawn.
+        RenderContext::FrameDescriptor resumed = m_canvasPasses.back().outerFrame;
+        resumed.loadAction = gpu::LoadAction::preserveRenderTarget;
+        // Popped before the resume so the renderer this pass handed out dies
+        // here, not while the resumed frame is live.
+        m_canvasPasses.pop_back();
+        m_renderContext->beginFrame(std::move(resumed));
+    }
+#endif
+
     // Delete our corresponding PLS buffer when a WebGL2RenderBuffer is deleted.
     void onWebGL2BufferDeleted(PLSResourceID webglBufferID)
     {
@@ -632,6 +780,25 @@ private:
 
     std::unique_ptr<RenderContext> m_renderContext;
     rcp<FramebufferRenderTargetGL> m_renderTarget;
+    RenderContext::FrameDescriptor m_screenFrame;
+#ifdef RIVE_CANVAS
+    // One entry per canvas pass that is currently open, outermost first. A
+    // single slot would do for one cached artboard, but they nest: the inner
+    // pass would overwrite the outer's target and free the renderer the outer
+    // artboard is still drawing through, then resume the screen instead of the
+    // outer canvas.
+    struct CanvasPass
+    {
+        RenderContext::FrameDescriptor frame;
+        rcp<gpu::RenderTarget> target;
+        std::unique_ptr<RiveRenderer> renderer;
+        // The frame and target this pass interrupted, to be restored at its end.
+        RenderContext::FrameDescriptor outerFrame;
+        gpu::RenderTarget* outerTarget;
+    };
+    std::vector<CanvasPass> m_canvasPasses;
+    std::vector<std::unique_ptr<RiveRenderer>> m_compositeRenderers;
+#endif
 
     std::map<PLSResourceID, PLSSynchronizedBuffer> m_plsSynchronizedBuffers;
 
@@ -646,6 +813,20 @@ private:
     Renderer* m_target = nullptr;
 #endif
 };
+
+void WebGL2Factory::unregisterContext(WebGL2Renderer* renderer)
+{
+    m_renderers.erase(renderer);
+    if (m_activeRenderer == renderer)
+    {
+        // A renderer torn down mid-frame must not leave a dangling claim.
+        m_activeRenderer = nullptr;
+    }
+}
+
+#ifdef RIVE_CANVAS
+rive::cmd::DeferredCanvasHost* WebGL2Factory::canvasContentHost() { return m_activeRenderer; }
+#endif
 
 RenderImage* WebGL2RenderImage::prep(WebGL2Renderer* webglRenderer,
                                      const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
