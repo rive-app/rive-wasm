@@ -5,10 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.42.1](https://github.com/rive-app/rive-wasm/compare/2.42.0...2.42.1)
+## [2.42.2](https://github.com/rive-app/rive-wasm/compare/2.42.1...2.42.2)
+
+### Fixed
+
+- fix(Cmdq): Suppress value callbacks for failed property reads (#14078) c09464b052 [`#470`](https://github.com/rive-app/rive-android/issues/470)
 
 ### Commits
 
+- feat(runtime): add command queue font data binding (#13405) 880afe5687 [`a047758`](https://github.com/rive-app/rive-wasm/commit/a0477589f5d0a979c5d3990d405d6b388332d68e)
+- feat(editor,runtime): author-controlled word breaking on text (#14172) 1a54eafd1e [`501d2b2`](https://github.com/rive-app/rive-wasm/commit/501d2b24293dde300acf48a72782ece3077afe51)
+- fix(ore): apply bound vertex buffers under the current pipeline, guard wasm draws (#14163) a30921151e [`c286917`](https://github.com/rive-app/rive-wasm/commit/c286917406d095930c08c4d741bb6e5d8b7aa134)
+- fix(scroll): drag threshold for new scroll constraints, and no fling when content fits (#14165) f8a17aa43a [`ec29d1c`](https://github.com/rive-app/rive-wasm/commit/ec29d1ce5d299e9b759aaaeae31101e52ed84813)
+- feat(wasm): os.date and runtime string.format for the assemblyscript library (#14162) 05a3b72fe9 [`d57ba41`](https://github.com/rive-app/rive-wasm/commit/d57ba418bf4ba539079bac096236073761060a1f)
+- perf(renderer): Single exit from unpack_tessellated_path_vertex() (#14141) ce124a773e [`02b7c7f`](https://github.com/rive-app/rive-wasm/commit/02b7c7f40279d819a9cae7d4d882a34dc58d1550)
+- feat(renderer) : Add additive blending (#14051) 77a122fbb0 [`f66fb86`](https://github.com/rive-app/rive-wasm/commit/f66fb864e87ee1c09e3139c1b38eb78b8e3b5d0a)
+- Nnnnn improve load performance (#14149) 1d51731ef0 [`efb4583`](https://github.com/rive-app/rive-wasm/commit/efb4583e6339ccebef0b13b2daf18167375f67c0)
+- fix(editor,runtime,cli) (#14151) 1d567b30ab [`a26ceb6`](https://github.com/rive-app/rive-wasm/commit/a26ceb62261e3ba1cbd0e9de581b8f66fe5456ac)
+- feat(wasm): audio and node data surface for assemblyscript scripts (#14153) 0050835bb9 [`680b106`](https://github.com/rive-app/rive-wasm/commit/680b10667c8424410c6bb8204bf6f20a7cea0d12)
+- Rive CLI: rigging diagnostics (named verify errors, decoded inspect, two runtime crash fixes) (#14137) 2e25993fe5 [`b6595cc`](https://github.com/rive-app/rive-wasm/commit/b6595ccc9fc74219233bb39b08168d7c8c7fba29)
+- fix(command-queue): preserve parent listener when releasing list children (#14138) cf297a3880 [`2586270`](https://github.com/rive-app/rive-wasm/commit/258627051ca4de3691a229962d34d47df599acbc)
+- fix(cli): rml and cli fixes (#14133) 0a79ccbd4f [`f78d12c`](https://github.com/rive-app/rive-wasm/commit/f78d12c44c985b17830d26b5e796d45f0d141ed4)
+- feat(cli): improvements to keyboard input and focus (#14129) 10e8c5874e [`658e751`](https://github.com/rive-app/rive-wasm/commit/658e7519cfce3a1ad369cbb0462c58845be6b67b)
+- perf(runtime): stop DependencySorter copying and shifting per component (#14130) 3eb9df63bc [`f9b6869`](https://github.com/rive-app/rive-wasm/commit/f9b6869fe22d127e0ea62ac57d3fb0ee5f68e290)
+- fix(runtime,recorder): stop artboard audio when no engine is assigned (#14107) e0f985d128 [`735ad4f`](https://github.com/rive-app/rive-wasm/commit/735ad4f68b209e0f910ba6843668e19f19e7baab)
+- feat(text): unicode line breaking (#14113) 2432604068 [`668d256`](https://github.com/rive-app/rive-wasm/commit/668d2566f1c9006d3a0d227da613428935759c2d)
+- feat(renderer): Add ability to clip against stroked paths (#14090) cbcf536e4c [`e44a148`](https://github.com/rive-app/rive-wasm/commit/e44a148bc9cca9879486852ce5b718693b6504f0)
+- Chore(Renderer): Hybrid premult (#13969) 789960dd5a [`a198298`](https://github.com/rive-app/rive-wasm/commit/a1982981ea651481a297217c308f7ba5e6e52b56)
+- Nnnnn cache components as bitmap (#13778) 121398eae3 [`c2b2632`](https://github.com/rive-app/rive-wasm/commit/c2b26325faeff519635b5727ebda870d7137bf71)
+- feat(image paint and transition protocol) (#13763) 7219a2d76e [`67a4445`](https://github.com/rive-app/rive-wasm/commit/67a44454b0a39477cb90dcfb59a2c8c50845d51a)
+- fix(wasm): request a major collection on handle growth before warning (#14097) 37a6d9cb68 [`820bed6`](https://github.com/rive-app/rive-wasm/commit/820bed63c00c5e9f02ee2a6e934da11edf2e4000)
+- fix(ore): clear instead of load on a never written vulkan texture (#14087) 2d96efeede [`661dbaa`](https://github.com/rive-app/rive-wasm/commit/661dbaa9a470b7bdfd682a0ac2c06aa1cec1183c)
+- feat(evi,cli): Integrated macOS title bar with native traffic lights (#14086) aa4c17a6cf [`4eca41e`](https://github.com/rive-app/rive-wasm/commit/4eca41e5e4fa27bd0c6e37d0112f86877b214186)
+- fix(ore): keep vulkan depth test on for always compare writes (#14089) 554ba2e7e2 [`149f254`](https://github.com/rive-app/rive-wasm/commit/149f2547d6e0e8210294267b8637f60b25cebd2a)
+- cleanup(renderer): Delete NEVER_GENERATE_PREMULTIPLIED_PAINT_COLORS (#14085) 3f8420dbaf [`0b82e2a`](https://github.com/rive-app/rive-wasm/commit/0b82e2aacc062a95567f60cf7f7c87189d669941)
+
+## [2.42.1](https://github.com/rive-app/rive-wasm/compare/2.42.0...2.42.1) - 2026-09-10
+
+### Commits
+
+- chore: tag 2.42.1 [`d1e45a0`](https://github.com/rive-app/rive-wasm/commit/d1e45a0a3b8f7355b8f0b768acdeef2b80892534)
 - fix(text): measure a fitFontSize text at its fitted size (#14074) 2505c4bb9c [`e0bfcec`](https://github.com/rive-app/rive-wasm/commit/e0bfcec3ccd0f1dee01686776da68f439a95cbfa)
 - feat(cli): debug AssemblyScript scripts in the preview (#14047) c5874e1044 [`8209048`](https://github.com/rive-app/rive-wasm/commit/82090488b215f5c12114a65b20c8d4bbebf78837)
 - fix(renderer): render GL canvas targets top down (#14059) acc1e5016d [`b7d181c`](https://github.com/rive-app/rive-wasm/commit/b7d181c378d1953db952c6525561723328b1a25c)
