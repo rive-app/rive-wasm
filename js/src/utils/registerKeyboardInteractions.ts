@@ -6,7 +6,8 @@ export interface KeyboardInteractionsParams {
   /**
    * Whether this canvas has focus nodes that should participate in tab traversal.
    * When true, Tab/Shift+Tab will be intercepted and routed to the Rive focus manager.
-   * focusNext() returning false means no more traversable nodes — tab is released to the page.
+   * Tab is released to the page only when focusNext() returns false and Rive no longer holds
+   * focus; a Stop edge also returns false but keeps focus, so Tab stays trapped.
    */
   hasFocusNodes: boolean;
   /**
@@ -29,7 +30,8 @@ export interface KeyboardInteractionsParams {
  *                in the overlay, and by keyboard focus whose entry attempt found no eligible node.
  * RiveFocused  — a Rive node holds focus. Tab/Shift+Tab route to the Rive focus manager and stay
  *                inside the domain until either Rive reports focus ended (pollFocusState) or
- *                focusNext()/focusPrevious() returns false at the edge of the tree.
+ *                Tab walks off the edge of the tree (focusNext()/focusPrevious() returns false and
+ *                Rive no longer holds focus).
  *
  * Keyboard focus on the canvas enters the tree immediately: onCanvasFocus infers direction from
  * where focus came from and goes straight to RiveFocused when a node accepts.
@@ -189,8 +191,11 @@ export class KeyboardInteractions {
     if (event.code === "Tab" && this.hasFocusNodes) {
       const forward = !event.shiftKey;
       const focusMoved = forward ? this.mainSm.focusNext() : this.mainSm.focusPrevious();
-      if (focusMoved) {
-        // A Rive node accepted focus — keep trapping Tab inside Rive.
+      const focusState = this.mainSm.focusState();
+      // focusMoved is false both at a Stop edge (focus stays put) and after walking off
+      // the tree (focus cleared), so hasFocus discerns Stop edge from Rive releasing focus
+      if (focusMoved || focusState.hasFocus) {
+        // A Rive node holds focus — keep trapping Tab inside Rive.
         this.focusSessionState = FocusSessionState.RiveFocused;
         event.preventDefault();
       } else {

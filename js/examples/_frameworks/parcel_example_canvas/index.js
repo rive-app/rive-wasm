@@ -11,6 +11,7 @@ const JigSaw = new URL("./jigsaw.riv", import.meta.url);
 const StringRive = new URL("./string.riv", import.meta.url);
 const RatingAnimation = new URL("./rating_animation.riv", import.meta.url);
 const TextAnimation = new URL("./text_test_2.riv", import.meta.url);
+const FocusAnimation = new URL("./focus.riv", import.meta.url);
 
 const RIVE_EXAMPLES = {
   0: {
@@ -60,6 +61,12 @@ const RIVE_EXAMPLES = {
     hasStateMachine: true,
     stateMachine: "State Machine 1",
   },
+  10: {
+    riveFile: FocusAnimation,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+    artboard: "EdgeStop",
+  }
 };
 
 async function loadFile(num) {
@@ -86,6 +93,7 @@ async function main(num) {
       alignment: Alignment.Center,
     }),
     autoBind: true,
+    ...(riveEx.artboard && { artboard: riveEx.artboard }),
     ...(riveEx.hasStateMachine && { stateMachines: riveEx.stateMachine }),
   });
   function onRiveEventReceived(riveEvent) {
@@ -94,6 +102,6 @@ async function main(num) {
   r.on(EventType.RiveEvent, onRiveEventReceived);
 }
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 11; i++) {
   main(i);
 }

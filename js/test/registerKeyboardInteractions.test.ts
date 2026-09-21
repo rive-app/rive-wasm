@@ -291,6 +291,42 @@ test("Tab releases focus to the page when focusNext returns false (no more focus
   expect(mockSm.focusNext).toHaveBeenCalledTimes(1);
 });
 
+// A "stop" scope reports no move at its edge but keeps focus on the canvas, so Tab has to
+// stay trapped
+test("Tab stays trapped when focusNext returns false but Rive still holds focus (stop scope)", () => {
+  setupKeyboardInteractions({ focusNextResult: false, hasFocus: true });
+  ki.setFocusSessionState(FocusSessionState.RiveFocused);
+
+  const tabEvent = new KeyboardEvent("keydown", { code: "Tab", bubbles: true });
+  jest.spyOn(tabEvent, "preventDefault");
+  canvas.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusNext).toHaveBeenCalledTimes(1);
+  expect(tabEvent.preventDefault).toHaveBeenCalledTimes(1);
+  expect(ki.focusSessionState).toBe(FocusSessionState.RiveFocused);
+
+  // Still ours: the next Tab routes to Rive again rather than passing through to the page.
+  canvas.dispatchEvent(new KeyboardEvent("keydown", { code: "Tab", bubbles: true }));
+  expect(mockSm.focusNext).toHaveBeenCalledTimes(2);
+});
+
+test("Shift+Tab stays trapped when focusPrevious returns false but Rive still holds focus", () => {
+  setupKeyboardInteractions({ focusPreviousResult: false, hasFocus: true });
+  ki.setFocusSessionState(FocusSessionState.RiveFocused);
+
+  const tabEvent = new KeyboardEvent("keydown", {
+    code: "Tab",
+    shiftKey: true,
+    bubbles: true,
+  });
+  jest.spyOn(tabEvent, "preventDefault");
+  canvas.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusPrevious).toHaveBeenCalledTimes(1);
+  expect(tabEvent.preventDefault).toHaveBeenCalled();
+  expect(ki.focusSessionState).toBe(FocusSessionState.RiveFocused);
+});
+
 test("keydown is ignored when NotFocused (Rive released focus → next Tab leaves)", () => {
   // Simulate Rive having entered then released focus internally (pollFocusState resets to
   // NotFocused while the canvas keeps DOM focus). The next Tab must pass through, not re-enter.
