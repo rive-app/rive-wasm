@@ -162,7 +162,8 @@ export class Layout {
     maxX,
     maxY,
   }: LayoutParameters): Layout {
-    console.warn(
+    warnOnce(
+      DeprecationKeys.legacyConstructors,
       "This function is deprecated: please use `new Layout({})` instead",
     );
     return new Layout({ fit, alignment, minX, minY, maxX, maxY });
@@ -311,7 +312,7 @@ export class StateMachineInput {
 }
 
 /**
- * @deprecated Rive Events are deprecated and will be removed in a future major
+ * @deprecated Subscribing to Rive Events at runtime is deprecated and will be removed in a future major
  * version: please use data binding instead. See
  * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
  */
@@ -890,6 +891,7 @@ class Animator {
         // Warn only when the v3 default would actually change what plays
         if (this.artboard.stateMachineCount() > 0) {
           warnOnce(
+            DeprecationKeys.defaultStateMachine,
             "No `stateMachine` was specified, so the artboard's first linear animation is playing by default. " +
               "In the next major version, the artboard's state machine will be played by default instead when one exists. " +
               "Pass the `stateMachine` parameter to adopt that behavior now.",
@@ -994,14 +996,15 @@ export enum EventType {
   Draw = "draw",
   Advance = "advance",
   /**
-   * @deprecated State change events are deprecated and will be removed in a
-   * future major version. Use data binding (view model property observers) or 
-   * state machine actions to react to changes from your graphic instead. See
+   * @deprecated Subscribing to state change events at runtime is deprecated
+   * and will be removed in a future major version: use data binding (view model
+   * property observers) or state machine actions to react to changes from your
+   * graphic instead. See
    * {@link https://rive.app/docs/editor/state-machine/states#actions} for more details.
    */
   StateChange = "statechange",
   /**
-   * @deprecated Rive Events are deprecated and will be removed in a future
+   * @deprecated Subscribing to Rive Events at runtime is deprecated and will be removed in a future
    * major version: please use data binding instead. See
    * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
    */
@@ -1010,14 +1013,14 @@ export enum EventType {
 }
 
 /**
- * @deprecated Rive Events are deprecated and will be removed in a future major
+ * @deprecated Subscribing to Rive Events at runtime is deprecated and will be removed in a future major
  * version: please use data binding instead. See
  * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
  */
 export type RiveEventPayload = rc.RiveEvent | rc.OpenUrlEvent;
 
 const riveEventsDeprecationWarning =
-  "Rive Events are deprecated and will be removed in a future major version: " +
+  "Subscribing to Rive Events at runtime is deprecated and will be removed in a future major version: " +
   "please use data binding instead. See " +
   "https://rive.app/docs/runtimes/web/rive-events for how to migrate.";
 
@@ -1038,19 +1041,88 @@ const loopEventsDeprecationWarning =
   "https://rive.app/docs/editor/data-binding/migration-guide for how to migrate.";
 
 const stateChangeEventsDeprecationWarning =
-  "State change events are deprecated and will be removed in a future major version: " +
+  "Subscribing to state change events at runtime is deprecated and will be removed in a future major version: " +
   "use data binding (view model property observers) or state machine actions to react to " + 
   "changes from your graphic instead. See " +
   "https://rive.app/docs/editor/state-machine/states#actions for how to migrate.";
 
+/**
+ * The deprecations this runtime warns about. Each warning prints its own id, so
+ * the value can be copied straight out of the console into
+ * {@link Rive.suppressDeprecationWarnings}.
+ */
+export const DeprecationKeys = {
+  animationNames: "animation-names",
+  animationsParam: "animations-param",
+  defaultStateMachine: "default-state-machine",
+  legacyConstructors: "legacy-constructors",
+  legacyUnsubscribe: "legacy-unsubscribe",
+  loopEvents: "loop-events",
+  namesArray: "names-array",
+  riveEvents: "rive-events",
+  scrub: "scrub",
+  stateChangeEvents: "state-change-events",
+  stateMachineInputs: "state-machine-inputs",
+  stateMachinesParam: "state-machines-param",
+  textRuns: "text-runs",
+} as const;
+
+/**
+ * An id accepted by {@link Rive.suppressDeprecationWarnings}, as either a
+ * {@link DeprecationKeys} entry or the string literal it holds.
+ */
+export type DeprecationId =
+  (typeof DeprecationKeys)[keyof typeof DeprecationKeys];
+
+// Derived from `DeprecationKeys`
+const deprecationIds = new Set<string>(
+  Object.keys(DeprecationKeys).map(
+    (name) => DeprecationKeys[name as keyof typeof DeprecationKeys],
+  ),
+);
+
+// Deprecations that a consumer has opted out of. Kept at module scope so
+// `warnOnce` can read it without referencing the `Rive` class
+const suppressedDeprecations = new Set<DeprecationId>();
+
+/** @internal Backing store for `Rive.suppressDeprecationWarnings`. */
+const setSuppressedDeprecations = (ids: readonly DeprecationId[]): void => {
+  suppressedDeprecations.clear();
+  if (!Array.isArray(ids)) {
+    console.warn(
+      "[Rive] `suppressDeprecationWarnings` expects an array of deprecation ids, " +
+        `received ${typeof ids}. Nothing was suppressed.`,
+    );
+    return;
+  }
+  for (const id of ids) {
+    if (deprecationIds.has(id)) {
+      suppressedDeprecations.add(id);
+    }
+  }
+};
+
 // Deprecation warnings already emitted; each is logged at most once per page
 // session to avoid flooding the console when many instances are created.
 const emittedWarnings = new Set<string>();
-const warnOnce = (message: string) => {
-  if (!emittedWarnings.has(message)) {
-    emittedWarnings.add(message);
-    console.warn(`[Rive] ${message}`);
+
+/**
+ * Logs a deprecation warning at most once per page session, unless its id has
+ * been passed to `Rive.suppressDeprecationWarnings`.
+ */
+const warnOnce = (id: DeprecationId, message: string) => {
+  if (suppressedDeprecations.has(id)) {
+    return;
   }
+  const key = `${id}:${message}`;
+  if (emittedWarnings.has(key)) {
+    return;
+  }
+  emittedWarnings.add(key);
+  console.warn(
+    `[Rive: ${id}] ${message}\n` +
+      `To suppress this warning, set Rive.suppressDeprecationWarnings = ["${id}"]`,
+  );
 };
 
 /**
@@ -1064,6 +1136,7 @@ const warnIfNamesArray = (
 ) => {
   if (Array.isArray(names)) {
     warnOnce(
+      DeprecationKeys.namesArray,
       `Passing an array of names to \`${methodName}()\` is deprecated: in the next major version this parameter will be a single string, and playing multiple animations or state machines at once will not be supported.`,
     );
   }
@@ -1077,6 +1150,7 @@ const warnIfNamesArray = (
  */
 const warnDeprecatedAnimationNames = (methodName: string) => {
   warnOnce(
+    DeprecationKeys.animationNames,
     `Passing linear animation names to \`${methodName}()\` is deprecated and will be removed in a future major version: ` +
       "Pass a single state machine name to control playback instead.",
   );
@@ -1527,7 +1601,7 @@ export interface RiveParameters {
    * This means any special Rive Event will have to be handled manually by subscribing to
    * EventType.RiveEvent
    *
-   * @deprecated Rive Events are deprecated and will be removed in a future
+   * @deprecated Subscribing to Rive Events at runtime is deprecated and will be removed in a future
    * major version: please use data binding instead. See
    * {@link https://rive.app/docs/runtimes/web/rive-events} for how to migrate.
    */
@@ -1581,9 +1655,10 @@ export interface RiveParameters {
    */
   onLoop?: EventCallback;
   /**
-   * @deprecated State change events are deprecated and will be removed in a
-   * future major version: use use data binding (view model property observers) or 
-   * state machine actions to react to changes from your graphic instead. See
+   * @deprecated Subscribing to state change events at runtime is deprecated
+   * and will be removed in a future major version: use data binding (view model
+   * property observers) or state machine actions to react to changes from your
+   * graphic instead. See
    * {@link https://rive.app/docs/editor/state-machine/states#actions} for how
    * to migrate.
    */
@@ -1729,11 +1804,13 @@ const resolveStartingPlayback = ({
 } => {
   if (animations !== undefined) {
     warnOnce(
+      DeprecationKeys.animationsParam,
       "The `animations` parameter is deprecated and will be removed in a future major version: please use the `stateMachine` parameter to play a state machine instead.",
     );
   }
   if (stateMachines !== undefined) {
     warnOnce(
+      DeprecationKeys.stateMachinesParam,
       "The `stateMachines` parameter is deprecated: please use `stateMachine` with a single state machine name instead.",
     );
   }
@@ -2273,6 +2350,25 @@ export class Rive {
   private static readonly cleanupErrorMessage: string =
     "Attempt to use file after calling cleanup.";
 
+  /**
+   * Deprecation warnings to silence, by {@link DeprecationId}. Each warning
+   * prints the id needed to silence it, so you can copy it out of the console.
+   *
+   * ```ts
+   * Rive.suppressDeprecationWarnings = ["rive-events", "text-runs"];
+   * ```
+   *
+   * Assigning replaces the whole list.
+   * There is no option to silence everything
+   */
+  public static get suppressDeprecationWarnings(): readonly DeprecationId[] {
+    return Object.freeze(Array.from(suppressedDeprecations));
+  }
+
+  public static set suppressDeprecationWarnings(ids: readonly DeprecationId[]) {
+    setSuppressedDeprecations(ids);
+  }
+
   private shouldDisableRiveListeners = false;
 
   private automaticallyHandleEvents = false;
@@ -2393,6 +2489,7 @@ export class Rive {
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
     if (params.automaticallyHandleEvents) {
       warnOnce(
+        DeprecationKeys.riveEvents,
         "The `automaticallyHandleEvents` parameter is deprecated. " +
           riveEventsDeprecationWarning,
       );
@@ -2472,7 +2569,8 @@ export class Rive {
 
   // Alternative constructor to build a Rive instance from an interface/object
   public static new(params: RiveParameters): Rive {
-    console.warn(
+    warnOnce(
+      DeprecationKeys.legacyConstructors,
       "This function is deprecated: please use `new Rive({})` instead",
     );
     return new Rive(params);
@@ -3659,7 +3757,7 @@ export class Rive {
    * @returns - String value of the text run node or undefined
    */
   public getTextRunValue(textRunName: string): string | undefined {
-    warnOnce(textRunsDeprecationWarning);
+    warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const textRun = this.retrieveTextRun(textRunName);
     return textRun ? textRun.text : undefined;
   }
@@ -3674,7 +3772,7 @@ export class Rive {
    * @param textRunValue - String value to set on the text run node
    */
   public setTextRunValue(textRunName: string, textRunValue: string): void {
-    warnOnce(textRunsDeprecationWarning);
+    warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const textRun = this.retrieveTextRun(textRunName);
     if (textRun) {
       textRun.text = textRunValue;
@@ -3763,6 +3861,7 @@ export class Rive {
    */
   public scrub(animationNames?: string | string[], value?: number): void {
     warnOnce(
+      DeprecationKeys.scrub,
       "`scrub()` is deprecated and will be removed in a future major version: " +
         "use a state machine to control playback instead.",
     );
@@ -4003,7 +4102,10 @@ export class Rive {
    * @returns the inputs for the named state machine or undefined
    */
   public stateMachineInputs(name: string): StateMachineInput[] | undefined {
-    warnOnce(stateMachineInputsDeprecationWarning);
+    warnOnce(
+      DeprecationKeys.stateMachineInputs,
+      stateMachineInputsDeprecationWarning,
+    );
     // If the file's not loaded, early out, nothing to pause
     if (!this.loaded) {
       return;
@@ -4055,7 +4157,10 @@ export class Rive {
     value: boolean,
     path: string,
   ) {
-    warnOnce(stateMachineInputsDeprecationWarning);
+    warnOnce(
+      DeprecationKeys.stateMachineInputs,
+      stateMachineInputsDeprecationWarning,
+    );
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -4079,7 +4184,10 @@ export class Rive {
    * @param path the path the input is located at an artboard level
    */
   public setNumberStateAtPath(inputName: string, value: number, path: string) {
-    warnOnce(stateMachineInputsDeprecationWarning);
+    warnOnce(
+      DeprecationKeys.stateMachineInputs,
+      stateMachineInputsDeprecationWarning,
+    );
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -4102,7 +4210,10 @@ export class Rive {
    * @param path the path the input is located at an artboard level
    */
   public fireStateAtPath(inputName: string, path: string) {
-    warnOnce(stateMachineInputsDeprecationWarning);
+    warnOnce(
+      DeprecationKeys.stateMachineInputs,
+      stateMachineInputsDeprecationWarning,
+    );
     const input: rc.SMIInput = this.retrieveInputAtPath(inputName, path);
     if (!input) return;
 
@@ -4169,7 +4280,7 @@ export class Rive {
     textName: string,
     path: string,
   ): string | undefined {
-    warnOnce(textRunsDeprecationWarning);
+    warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
     if (!run) {
       console.warn(
@@ -4203,7 +4314,7 @@ export class Rive {
    * for how to migrate.
    */
   public setTextRunValueAtPath(textName: string, value: string, path: string) {
-    warnOnce(textRunsDeprecationWarning);
+    warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
     if (!run) {
       console.warn(
@@ -4302,11 +4413,14 @@ export class Rive {
    */
   public on(type: EventType, callback: EventCallback) {
     if (type === EventType.RiveEvent) {
-      warnOnce(riveEventsDeprecationWarning);
+      warnOnce(DeprecationKeys.riveEvents, riveEventsDeprecationWarning);
     } else if (type === EventType.StateChange) {
-      warnOnce(stateChangeEventsDeprecationWarning);
+      warnOnce(
+        DeprecationKeys.stateChangeEvents,
+        stateChangeEventsDeprecationWarning,
+      );
     } else if (type === EventType.Loop) {
-      warnOnce(loopEventsDeprecationWarning);
+      warnOnce(DeprecationKeys.loopEvents, loopEventsDeprecationWarning);
     }
     this.eventManager.add({
       type: type,
@@ -4332,7 +4446,10 @@ export class Rive {
    * @param callback the callback to unsubscribe from
    */
   public unsubscribe(type: EventType, callback: EventCallback) {
-    console.warn("This function is deprecated: please use `off()` instead.");
+    warnOnce(
+      DeprecationKeys.legacyUnsubscribe,
+      "This function is deprecated: please use `off()` instead.",
+    );
     this.off(type, callback);
   }
 
@@ -4354,7 +4471,8 @@ export class Rive {
    * undefined
    */
   public unsubscribeAll(type?: EventType) {
-    console.warn(
+    warnOnce(
+      DeprecationKeys.legacyUnsubscribe,
       "This function is deprecated: please use `removeAllRiveEventListeners()` instead.",
     );
     this.removeAllRiveEventListeners(type);
