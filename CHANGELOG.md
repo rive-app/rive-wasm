@@ -5,7 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.42.2](https://github.com/rive-app/rive-wasm/compare/2.42.1...2.42.2)
+## [2.43.0](https://github.com/rive-app/rive-wasm/compare/2.42.2...2.43.0)
+
+### Commits
+
+- chore(unreal): Unreal target IOS (#14291) 10821b0399 [`b566bd0`](https://github.com/rive-app/rive-wasm/commit/b566bd08f52196776f3dff40c48960b439a490fa)
+- perf(scripting): build wamr without libc-wasi (#14305) 603235d269 [`360f298`](https://github.com/rive-app/rive-wasm/commit/360f298cb0da1f4ee97e74fc26fa2043fd271aa5)
+- perf(runtime): cheaper advance for rigs with many hidden shapes (#14255) 6dcbf68a58 [`eea6643`](https://github.com/rive-app/rive-wasm/commit/eea664301d5ad6394a10f55d1cd44efc6f82e4b7)
+- perf(runtime): measure intrinsic bounds without copying the path (#14304) f09c4e58ae [`90ab889`](https://github.com/rive-app/rive-wasm/commit/90ab889c54275345aad0370486876364582e4fe3)
+- fix(rml, runtime): text cursor, RML draw-rule export, collapsed data binds (#14299) 14b3ecbd92 [`7ffea41`](https://github.com/rive-app/rive-wasm/commit/7ffea411f6dfe87a4f62878bd804e71d5f0f38f4)
+- perf(runtime): measure shape bounds without copying the path (#14290) adbd04619a [`8ac01a7`](https://github.com/rive-app/rive-wasm/commit/8ac01a76503776090793024169eb8d3276b34962)
+- feat(layout): add option to hug leaf objects unbounded (#14174) ccb1b42f73 [`6286634`](https://github.com/rive-app/rive-wasm/commit/6286634f339fb991e347a1122dfc9c609fdc16c1)
+- fix(editor): release GPU memory when a file is closed (#14269) 4db1142ace [`094b085`](https://github.com/rive-app/rive-wasm/commit/094b085355c9157e1ef33463ff697b5ea3cb931d)
+- chore(player): add ios support for player (#14259) f42ec65903 [`c22def8`](https://github.com/rive-app/rive-wasm/commit/c22def8730d110b94808da7e994ca9e037f7c6fb)
+- fix(editor): fix scripted viewmodel wrapper cache (#14285) b66d9fd18b [`39cbd73`](https://github.com/rive-app/rive-wasm/commit/39cbd73b8d5a5e21f213d62d3ad7860e9d012054)
+- fix: blend IK from the pose on its chain, not the bones' authored angles (#14284) 5e74739083 [`f07684c`](https://github.com/rive-app/rive-wasm/commit/f07684c24a495f1db514f45d9ed62580067c9e09)
+- fix(ore): wait on prior reads before a vulkan pass clears its attachments (#14281) 1456fd234b [`f540c02`](https://github.com/rive-app/rive-wasm/commit/f540c027b372b04a1809a48ccb5ed7accdace92f)
+- fix(unit_tests): keep command queue text input literals as char on msvc (#14282) 322307ae27 [`85d5806`](https://github.com/rive-app/rive-wasm/commit/85d5806bb925c6991519b5360d6fac847d9ae058)
+- patch(js): Check focus state after focusNext/Previous() to see if Stop edge should continue to intercept tab navigation (#14272) 39618fb77a [`3661298`](https://github.com/rive-app/rive-wasm/commit/3661298f053964253aeb750e27c8201b094ae50e)
+- patch(js): Soften language on Rive Event depreaction messaging and add warning suppression API (#14200) 9088f8e435 [`985d5f0`](https://github.com/rive-app/rive-wasm/commit/985d5f0785572ddcac776760987e25950c11daa9)
+- chore(deps): clear the critical advisories in the tooling lockfiles (#14190) 08e8c3e446 [`6235f32`](https://github.com/rive-app/rive-wasm/commit/6235f32ef370b4b8f730dbef3819458a2dc2562e)
+- feat(Cmdq): Add command queue keyboard and text input (#14244) 9b3f12db4a [`7972397`](https://github.com/rive-app/rive-wasm/commit/7972397b6751772e3345e670fc4d7b83adefe105)
+- feat(scripting): tag drawables with custom properties and draw them modulated (#14267) 6997dee497 [`2e28735`](https://github.com/rive-app/rive-wasm/commit/2e28735f53fbfc85aaa9117e63c92a837bc7994e)
+- fix(runtime): clockwise fills on bone bound paths (#14253) 691c7bb92a [`baa3f85`](https://github.com/rive-app/rive-wasm/commit/baa3f85c4ea1189350421c9fab3129f815c40e63)
+- perf(scripting): pass assemblyscript strings to our host without encoding them first (#14266) 560c429cba [`bdac767`](https://github.com/rive-app/rive-wasm/commit/bdac76769f11844367c6ca16d1f03be16517a489)
+- perf(scripting): cheaper host to script callbacks in our wasm lane (#14264) 2ff8df0a88 [`b5507c5`](https://github.com/rive-app/rive-wasm/commit/b5507c533b1c14427b689be7e4aae4fe7c642e53)
+- fix(scripting): keep the return stack balanced in our aarch64 aot call stub (#14263) 29363baa3f [`7e03a14`](https://github.com/rive-app/rive-wasm/commit/7e03a14292c8a48ce8849cf2e86a61802b6fd367)
+- fix(editor, runtime): map the system emoji font instead of copying it (#14250) f6747d8c64 [`2322df3`](https://github.com/rive-app/rive-wasm/commit/2322df394d3abcc9902e0ea9e35ed9982e1ecc8c)
+- fix(deferred): hosts and sessions detach each other on death (#14258) c3430556ac [`4843e00`](https://github.com/rive-app/rive-wasm/commit/4843e0053db98844437df3962615393b0bb99d9a)
+- fix(renderer): compile non-comparison depth-texture samples on D3D11/D3D12 (#14229) 0003188d2a [`711c891`](https://github.com/rive-app/rive-wasm/commit/711c891d64abe0241539aff8ae86ab97a4f9bfc6)
+- feat(artemis): canvas content on artemis and the vulkan fixes it surfaced (#14213) 64a7992eb9 [`02a3872`](https://github.com/rive-app/rive-wasm/commit/02a387268b9b1ac8f71f0041ecb3cf3c6183ce09)
+- fix(ore): render into non-zero mip levels (#14231) 4ddc185641 [`c11a800`](https://github.com/rive-app/rive-wasm/commit/c11a800d748af62caf891ebe1cae9fc83ff4808b)
+- fix(runtime, editor): sentry crash fixes (#14246) 54c5b1a8b6 [`c0f5187`](https://github.com/rive-app/rive-wasm/commit/c0f51877ebda228ed443890ea3b45ddd684728b7)
+- feat(Command Queue): Runtime messaging (#12621) 8ba396fe91 [`db13bc2`](https://github.com/rive-app/rive-wasm/commit/db13bc2a430aefa028e53ccfb14147b4a828098b)
+- fix(editor, runtime): some sentry based crash fixes (#14228) 2a2d2132b0 [`7e6d031`](https://github.com/rive-app/rive-wasm/commit/7e6d0317074b0621865e6acde55d5f9b30267093)
+- fix(runtime): free the script inputs a scripted interpolator owns (#14234) df53427c11 [`753b4a3`](https://github.com/rive-app/rive-wasm/commit/753b4a36dd67b06567437b96d8c8d4e1cf5d7578)
+- chore(scripting): pin luau at rive_0_734_ice (#14225) 4939c6262f [`47a4c0c`](https://github.com/rive-app/rive-wasm/commit/47a4c0c8ade88bc1902158b09f937d1e96ee2c3e)
+- fix(editor): some crash fixes (#14211) de3b0d317e [`4fbdec7`](https://github.com/rive-app/rive-wasm/commit/4fbdec73143203c272820467b67b92431a3e59bc)
+- feat(text): select and copy across regular text objects (#14194) 737d347e26 [`069db04`](https://github.com/rive-app/rive-wasm/commit/069db04cfca78cb5c91c5f47c4fb58ed1bc222e4)
+- feat(renderer): add inner/outer strokes to the Rive renderer (#14117) c5292843b7 [`1e9c47a`](https://github.com/rive-app/rive-wasm/commit/1e9c47aadb8c00ef638dfc546670858943baa708)
+
+## [2.42.2](https://github.com/rive-app/rive-wasm/compare/2.42.1...2.42.2) - 2026-09-16
 
 ### Fixed
 
@@ -13,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.42.2 [`dc4d3a1`](https://github.com/rive-app/rive-wasm/commit/dc4d3a12a1927974f58a3a202bc6a7b47e8aa94c)
 - feat(runtime): add command queue font data binding (#13405) 880afe5687 [`a047758`](https://github.com/rive-app/rive-wasm/commit/a0477589f5d0a979c5d3990d405d6b388332d68e)
 - feat(editor,runtime): author-controlled word breaking on text (#14172) 1a54eafd1e [`501d2b2`](https://github.com/rive-app/rive-wasm/commit/501d2b24293dde300acf48a72782ece3077afe51)
 - fix(ore): apply bound vertex buffers under the current pipeline, guard wasm draws (#14163) a30921151e [`c286917`](https://github.com/rive-app/rive-wasm/commit/c286917406d095930c08c4d741bb6e5d8b7aa134)
