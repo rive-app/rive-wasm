@@ -26,6 +26,23 @@ target_enabled() {
     echo ",$TARGETS," | grep -q ",${1},"
 }
 
+# Both wasm binaries share one JS glue, so they must expose the same import and
+# export names and signatures. Verify this when building all wasm.
+# Executes on full builds only -- a -r build has no fallback. One call per
+# build: the base and _advanced packages are handed the same bytes.
+verify_fallback() {
+    if [ -n "$TARGETS" ]; then
+        return 0
+    fi
+    local pkg="../js/npm/$1"
+    if [ ! -f "$pkg/rive_fallback.wasm" ]; then
+        echo "ERROR: $1: rive_fallback.wasm was not staged by this full build." >&2
+        echo "       Publishing now would ship a package whose fallback URL 404s." >&2
+        return 1
+    fi
+    python3 ./verify_fallback_abi.py "$pkg/rive.wasm" "$pkg/rive_fallback.wasm"
+}
+
 source ./get_emcc.sh
 
 rm -f ../js/npm/canvas_advanced/*.mjs
@@ -46,6 +63,9 @@ rm -f ../js/npm/canvas_single/*.mjs
 
 rm -f ../js/npm/webgl2_advanced/*.mjs
 rm -f ../js/npm/webgl2_advanced/*.wasm
+
+rm -f ../js/npm/webgl2/*.mjs
+rm -f ../js/npm/webgl2/*.wasm
 
 mkdir -p ../js/npm/canvas
 mkdir -p ../js/npm/canvas_lite
@@ -81,6 +101,7 @@ if target_enabled "canvas"; then
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced/rive_advanced.mjs.d.ts
+    verify_fallback canvas
 fi
 
 if [ -z "$TARGETS" ]; then
@@ -101,6 +122,7 @@ if target_enabled "canvas-lite"; then
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced_lite/rive.wasm
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_lite/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_lite/rive_advanced.mjs.d.ts
+    verify_fallback canvas_lite
 fi
 
 if target_enabled "canvas-single"; then
@@ -130,4 +152,5 @@ if target_enabled "webgl2"; then
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
+    verify_fallback webgl2
 fi

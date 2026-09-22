@@ -65,6 +65,14 @@ do
             -- "-s EXPORT_ES6=1",
             '-s EXPORT_NAME="Rive"',
             '-s ENVIRONMENT="web,webview,worker"',
+            -- Pinned rather than derived. emcc defaults WASM_BIGINT from the
+            -- browser baseline, which the fallback lowers (MIN_SAFARI_VERSION
+            -- in the no-wasm-simd block of rive_build_config.lua), resolving to
+            -- 0 there and 1 here. WASM_BIGINT=0 implies LEGALIZE_JS_FFI, which
+            -- splits each i64 at the JS boundary into two i32s, so the two
+            -- builds would disagree on import signatures. They share one JS
+            -- glue and must match.
+            '-s WASM_BIGINT=0',
             '-s EXPORTED_RUNTIME_METHODS=' .. exported_runtime_methods,
             '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0',
             '-DSINGLE',
@@ -105,7 +113,15 @@ do
     filter('options:config=release')
     do
         -- Link-time -Os gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
-        linkoptions({ '-Os', '-s ASSERTIONS=0', '--closure 1' })
+        -- -lexports.js disables emcc's internal MINIFY_WASM_EXPORT_NAMES (see
+        -- the '-lexports.js' in linker_args check in link.py). Without it, -Os
+        -- renames imports/exports to per-build ordinals (a.a, a.b, ...) numbered
+        -- in each binary's own import order, which the primary and fallback do
+        -- not agree on. One JS glue serves both, so the names must stay literal.
+        -- DECLARE_ASM_MODULE_EXPORTS=0 reaches the same setting, but emcc
+        -- rejects it alongside MODULARIZE. TODO: revisit how to work with the
+        -- recommended flag alongside MODULARIZE
+        linkoptions({ '-Os', '-s ASSERTIONS=0', '-lexports.js', '--closure 1' })
     end
 
     filter({})
