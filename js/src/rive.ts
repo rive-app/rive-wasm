@@ -4021,7 +4021,7 @@ export class Rive {
       this._needsRedraw = true;
       this.resizeToCanvas();
 
-      if (this.layout.fit === Fit.Layout) {
+      if (this.layout.fit === Fit.Layout && this.artboard) {
         const scaleFactor = this._layout.layoutScaleFactor;
         this.artboard.width = width / scaleFactor;
         this.artboard.height = height / scaleFactor;

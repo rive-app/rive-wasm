@@ -184,4 +184,24 @@ test("devicePixelRatioUsed can be get/set", (done) => {
   });
 });
 
+test("resizeDrawingSurfaceToCanvas with Fit.Layout before onLoad does not throw", (done) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasInitialWidth;
+  canvas.height = canvasInitialHeight;
+  document.body.appendChild(canvas);
+
+  const r = new rive.Rive({
+    canvas: canvas,
+    artboard: "MyArtboard",
+    buffer: stateMachineFileBuffer,
+    layout: new rive.Layout({
+      fit: rive.Fit.Layout,
+    }),
+    onLoad: () => {
+      done();
+    },
+  });
+  expect(() => r.resizeDrawingSurfaceToCanvas(1)).not.toThrow();
+});
+
 // #endregion
