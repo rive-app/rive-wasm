@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.43.0](https://github.com/rive-app/rive-wasm/compare/2.42.2...2.43.0)
+## [2.43.1](https://github.com/rive-app/rive-wasm/compare/2.43.0...2.43.1)
 
 ### Commits
 
+- feat(blend): additive blend mode with a 0-100% amount (#14175) 2349364c71 [`6bfc35d`](https://github.com/rive-app/rive-wasm/commit/6bfc35d4c6d6aab340e580e3a5cc66e4fd3667cd)
+- feat(artemis): the pad reaches the state machine as a standard gamepad (#14338) 06b40c24e0 [`53a88a2`](https://github.com/rive-app/rive-wasm/commit/53a88a2f9e480a6d2e1a94b4ebaaf6dba69dc7d4)
+- fix(unity): stop images flickering on Vulkan when they have no gradient (#14335) a97a9b1142 [`bcd82c5`](https://github.com/rive-app/rive-wasm/commit/bcd82c5ebdd113541ddb7fe54e81f7fa3ac84ced)
+- fix(js): Add check for artboard presence before setting width/height for Fit.Layout in resizeDrawingSurfaceToCanvas (#14337) 9f7c18a03a [`1385a76`](https://github.com/rive-app/rive-wasm/commit/1385a76a6c0241c57a55b8258b6d68dd581dae7e)
+- perf(artemis): record ore into the frame command buffer and stop waiting on it (#14334) 322733ec8e [`d9ea08f`](https://github.com/rive-app/rive-wasm/commit/d9ea08f7ec9997c7f56a85a523e2be3afec48e42)
+- fix(tests): set `DeterministicTriangulationThresholds` in the deferred flush parity tests (#14224) 2116c7cfdc [`99d1a00`](https://github.com/rive-app/rive-wasm/commit/99d1a00ab6a9c7b90b01e9fbb4ff152ec871636f)
+- feat(command-queue): add synchronized focus traversal and key input (#14286) 2cf72d67e9 [`80c4fff`](https://github.com/rive-app/rive-wasm/commit/80c4fffcc90c8f4d7d6ce2aa98fa0e6f8f91db0c)
+- fix(text): don't charge the vertical trim band twice when fitting a font (#14327) 4f1b884dbe [`b1c0a51`](https://github.com/rive-app/rive-wasm/commit/b1c0a51d1124166c04fa25c52a6fe512f41f84ab)
+- fix(runtime): don't let hidden nested artboards and lists take pointe… (#14325) 4406a2542f [`c5df366`](https://github.com/rive-app/rive-wasm/commit/c5df366ca2c6038616c04842c7399d15d712650c)
+- minor(js): add focus and key/textInput APIs to StateMachineInstance and plumb into WASM bindings (#14319) 9f183d58ca [`b7048b1`](https://github.com/rive-app/rive-wasm/commit/b7048b1134ccaa6f2df4bada69dd2167416fdd95)
+- fix(scripting): keep libc-wasi in wamr, the luau blob's constructors spin without it (#14324) 018ff05e28 [`74a4073`](https://github.com/rive-app/rive-wasm/commit/74a40737fc241b2675bea9f08401dc3f49a01488)
+- Add Device Reset to PathFiddle (#11256) b2b9f12a39 [`873af68`](https://github.com/rive-app/rive-wasm/commit/873af68cf483092a17fe1fecd6761e4bc45d74cb)
+- fix(runtime): the wasm host serves the luau blob's remaining wasi imports (#14320) 9ba30dbad9 [`166c96c`](https://github.com/rive-app/rive-wasm/commit/166c96c4c5ab755a85c122a9237cfb80115bf45f)
+- perf(runtime, performance): preserve path geometry on rigid transform (#14315) 4c824e6f05 [`13ad28b`](https://github.com/rive-app/rive-wasm/commit/13ad28b502dad2809d05e5cca5a2722c69a5ffa8)
+
+## [2.43.0](https://github.com/rive-app/rive-wasm/compare/2.42.2...2.43.0) - 2026-09-22
+
+### Commits
+
+- chore: tag 2.43.0 [`130f6f9`](https://github.com/rive-app/rive-wasm/commit/130f6f9d4698d8d2080a1c590a26aea9f04f89fe)
 - chore(unreal): Unreal target IOS (#14291) 10821b0399 [`b566bd0`](https://github.com/rive-app/rive-wasm/commit/b566bd08f52196776f3dff40c48960b439a490fa)
 - perf(scripting): build wamr without libc-wasi (#14305) 603235d269 [`360f298`](https://github.com/rive-app/rive-wasm/commit/360f298cb0da1f4ee97e74fc26fa2043fd271aa5)
 - perf(runtime): cheaper advance for rigs with many hidden shapes (#14255) 6dcbf68a58 [`eea6643`](https://github.com/rive-app/rive-wasm/commit/eea664301d5ad6394a10f55d1cd44efc6f82e4b7)
