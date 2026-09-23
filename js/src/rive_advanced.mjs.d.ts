@@ -1037,6 +1037,30 @@ export declare class StateMachineInstance {
   focusPrevious(): boolean;
 
   /**
+   * Move focus to the nearest focusable node to the left of the current focus, by on-screen position.
+   * @returns false if nothing is focused or no node lies in that direction
+   */
+  focusLeft(): boolean;
+
+  /**
+   * Move focus to the nearest focusable node to the right of the current focus, by on-screen position.
+   * @returns false if nothing is focused or no node lies in that direction
+   */
+  focusRight(): boolean;
+
+  /**
+   * Move focus to the nearest focusable node to the up of the current focus, by on-screen position.
+   * @returns false if nothing is focused or no node lies in that direction
+   */
+  focusUp(): boolean;
+
+  /**
+   * Move focus to the nearest focusable node to the down of the current focus, by on-screen position.
+   * @returns false if nothing is focused or no node lies in that direction
+   */
+  focusDown(): boolean;
+
+  /**
    * Clear focus from the Rive focus tree.
    */
   clearFocus(): void;
@@ -1047,6 +1071,28 @@ export declare class StateMachineInstance {
    *   2. Whether the currently focused node expects keyboard input (i.e. keyboard/text input listener)
    */
   focusState(): FocusState;
+
+  /**
+   * Forward a key press/release to the focus tree via the state machine's focus manager.
+   * The event bubbles from the primary focus node up its ancestors until a handler consumes it.
+   * Standalone modifier keys must never be sent; fold held modifiers into the `modifiers` bitmask.
+   * @param key - GLFW-style key code (see js/src/utils/keyMap.ts)
+   * @param modifiers - KeyModifiers bitmask (shift=1, ctrl=2, alt=4, meta=8)
+   * @param isPressed - true for keydown, false for keyup
+   * @param isRepeat - true if this is an auto-repeat keydown
+   * @returns true if a node in the focus chain consumed the event
+   */
+  keyInput(key: number, modifiers: number, isPressed: boolean, isRepeat: boolean): boolean;
+
+  /**
+   * Forward committed text (a printable stroke, IME composition result, or paste) to the focus
+   * tree. This is the only way characters get inserted into a focused text field; `keyInput`
+   * never inserts text. For a printable stroke, hosts typically call both: `keyInput` so
+   * keyboard listeners on that key fire, then `textInput` for the characters.
+   * @param text - the committed text
+   * @returns true if a node in the focus chain consumed the text
+   */
+  textInput(text: string): boolean;
 
   /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance

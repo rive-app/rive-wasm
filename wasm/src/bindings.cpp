@@ -1249,6 +1249,18 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .function("focusPrevious", optional_override([](rive::StateMachineInstance& self) -> bool {
                       return self.focusPrevious();
                   }))
+        .function("focusLeft", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusLeft();
+                  }))
+        .function("focusRight", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusRight();
+                  }))
+        .function("focusUp", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusUp();
+                  }))
+        .function("focusDown", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.focusDown();
+                  }))
         .function("clearFocus", optional_override([](rive::StateMachineInstance& self) -> void {
                       return self.clearFocus();
                   }))
@@ -1259,6 +1271,21 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       obj.set("hasFocus", state.hasFocus);
                       obj.set("expectsKeyboardInput", state.expectsKeyboardInput);
                       return obj;
+                  }))
+        .function("keyInput",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       uint16_t key,
+                                       uint8_t modifiers,
+                                       bool isPressed,
+                                       bool isRepeat) -> bool {
+                      return self.keyInput((rive::Key)key,
+                                           (rive::KeyModifiers)modifiers,
+                                           isPressed,
+                                           isRepeat);
+                  }))
+        .function("textInput",
+                  optional_override([](rive::StateMachineInstance& self, std::string text) -> bool {
+                      return self.textInput(text);
                   }))
         .function("enableSemantics", optional_override([](rive::StateMachineInstance& self) {
                       self.enableSemantics();
