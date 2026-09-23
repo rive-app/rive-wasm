@@ -52,6 +52,7 @@ class AssetWrapper implements rc.FinalizableTarget {
 
 class ImageWrapper extends AssetWrapper {
   private _nativeImage: rc.Image;
+  private _released: boolean = false;
 
   constructor(image: rc.Image) {
     super();
@@ -63,9 +64,12 @@ class ImageWrapper extends AssetWrapper {
   }
 
   public unref() {
-    if (this.selfUnref) {
-      this._nativeImage.unref();
+    if (this._released) {
+      return;
     }
+    this._released = true;
+    finalizationRegistry.unregister(this);
+    this._nativeImage.unref();
   }
 }
 
@@ -241,6 +245,7 @@ declare const FinalizationRegistry: {
   register<T extends rc.FinalizableTarget>(
     object: T,
     description: Finalizable,
+    unregisterToken?: object,
   ): void;
 
   unregister<T>(object: T): void;
