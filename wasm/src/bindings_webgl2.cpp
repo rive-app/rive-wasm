@@ -448,12 +448,13 @@ public:
     void drawImage(const RenderImage* renderImage,
                    const ImageSampler imageSampler,
                    BlendMode blendMode,
-                   float opacity) override
+                   float opacity,
+                   float additiveness) override
     {
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
         if (m_target != nullptr)
         {
-            m_target->drawImage(renderImage, imageSampler, blendMode, opacity);
+            m_target->drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
             return;
         }
         // Canvas backed images from the deferred replay are not WebGL2
@@ -478,7 +479,7 @@ public:
             return;
         }
 #endif
-        RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity);
+        RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
     }
 
     void drawImageMesh(const RenderImage* renderImage,
@@ -489,7 +490,8 @@ public:
                        uint32_t vertexCount,
                        uint32_t indexCount,
                        BlendMode blendMode,
-                       float opacity) override
+                       float opacity,
+                       float additiveness) override
     {
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
         if (m_target != nullptr)
@@ -502,7 +504,8 @@ public:
                                     vertexCount,
                                     indexCount,
                                     blendMode,
-                                    opacity);
+                                    opacity,
+                                    additiveness);
             return;
         }
         // Canvas backed images from the deferred replay are not WebGL2
@@ -539,7 +542,8 @@ public:
                                         vertexCount,
                                         indexCount,
                                         blendMode,
-                                        opacity);
+                                        opacity,
+                                        additiveness);
         }
     }
 

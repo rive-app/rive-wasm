@@ -1400,6 +1400,7 @@ export enum StrokeJoin {
 
 export enum BlendMode {
   srcOver = 3,
+  additive = 12,
   screen = 14,
   overlay = 15,
   darken = 16,

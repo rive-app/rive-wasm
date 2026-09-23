@@ -597,6 +597,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
 
     enum_<rive::BlendMode>("BlendMode")
         .value("srcOver", rive::BlendMode::srcOver)
+        .value("additive", rive::BlendMode::additive)
         .value("screen", rive::BlendMode::screen)
         .value("overlay", rive::BlendMode::overlay)
         .value("darken", rive::BlendMode::darken)

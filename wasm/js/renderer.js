@@ -472,6 +472,8 @@ Module["onRuntimeInitialized"] = function () {
     switch (value) {
       case BlendMode.srcOver:
         return "source-over";
+      case BlendMode.additive:
+        return "plus-lighter";
       case BlendMode.screen:
         return "screen";
       case BlendMode.overlay:
