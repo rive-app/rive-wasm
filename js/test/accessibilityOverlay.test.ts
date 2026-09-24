@@ -101,6 +101,55 @@ describe("AccessibilityOverlay", () => {
     document.body.innerHTML = "";
   });
 
+  test("places the container at the canvas even when an ancestor between them is scrolled", () => {
+    const scroller = document.createElement("div");
+    const canvas = document.createElement("canvas");
+    scroller.appendChild(canvas);
+    document.body.appendChild(scroller);
+    Object.defineProperty(canvas, "offsetParent", { get: () => document.body });
+    Object.defineProperty(canvas, "offsetTop", { get: () => 500 });
+    Object.defineProperty(canvas, "offsetLeft", { get: () => 40 });
+    stubCanvasRect(canvas, { top: 0, left: 0, right: 300, bottom: 200 });
+    scroller.scrollTop = 300;
+    scroller.scrollLeft = 10;
+
+    const overlay = createOverlay(canvas);
+    const container = overlay.getSemanticOverlayContainer();
+    expect(container.style.top).toBe("200px");
+    expect(container.style.left).toBe("30px");
+
+    // A later layout sync follows the ancestor's new scroll position.
+    scroller.scrollTop = 100;
+    overlay.update(new SemanticTreeModel(), identityMat, 1, defaultArtboardBounds);
+    expect(container.style.top).toBe("400px");
+    expect(container.style.left).toBe("30px");
+  });
+
+  test("maps artboard coordinates onto the canvas's CSS box, not backing-store / dpr", () => {
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+    const tree = new SemanticTreeModel();
+    tree.applyDiff(diff({ added: [node(1, { role: SemanticRole.button, label: "Play" })] }));
+    const transformOf = () =>
+      (document.getElementById(semanticId(1))!.parentElement as HTMLElement).style.transform;
+
+    // Backing store matches CSS size × dpr: same as dividing by dpr.
+    canvas.width = 1000;
+    canvas.height = 800;
+    stubCanvasRect(canvas, { top: 0, left: 0, right: 500, bottom: 400 });
+    const overlay = createOverlay(canvas);
+    overlay.update(tree, identityMat, 2, defaultArtboardBounds);
+    expect(transformOf()).toBe("matrix(0.5,0,0,0.5,0,0)");
+
+    // CSS-stretched canvas (backing store not resized): follow the CSS box.
+    canvas.width = 560;
+    canvas.height = 480;
+    stubCanvasRect(canvas, { top: 0, left: 0, right: 1120, bottom: 720 });
+    overlay.update(tree, identityMat, 2, defaultArtboardBounds);
+    expect(transformOf()).toBe("matrix(2,0,0,1.5,0,0)");
+    overlay.destroy();
+  });
+
   test("keeps interactive semantic nodes out of sequential tab order", () => {
     const canvas = document.createElement("canvas");
     document.body.appendChild(canvas);

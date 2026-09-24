@@ -1049,13 +1049,13 @@ export declare class StateMachineInstance {
   focusRight(): boolean;
 
   /**
-   * Move focus to the nearest focusable node to the up of the current focus, by on-screen position.
+   * Move focus to the nearest focusable node above the current focus, by on-screen position.
    * @returns false if nothing is focused or no node lies in that direction
    */
   focusUp(): boolean;
 
   /**
-   * Move focus to the nearest focusable node to the down of the current focus, by on-screen position.
+   * Move focus to the nearest focusable node below the current focus, by on-screen position.
    * @returns false if nothing is focused or no node lies in that direction
    */
   focusDown(): boolean;
@@ -1075,7 +1075,7 @@ export declare class StateMachineInstance {
   /**
    * Forward a key press/release to the focus tree via the state machine's focus manager.
    * The event bubbles from the primary focus node up its ancestors until a handler consumes it.
-   * Standalone modifier keys must never be sent; fold held modifiers into the `modifiers` bitmask.
+   * Modifier keys are sent as keys too; held modifiers also go in the `modifiers` bitmask.
    * @param key - GLFW-style key code (see js/src/utils/keyMap.ts)
    * @param modifiers - KeyModifiers bitmask (shift=1, ctrl=2, alt=4, meta=8)
    * @param isPressed - true for keydown, false for keyup

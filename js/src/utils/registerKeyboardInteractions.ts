@@ -1,4 +1,20 @@
 import * as rc from "../rive_advanced.mjs";
+import { Key, keyboardEventToRiveKey, modifiersFromEvent } from "./keyMap";
+import { isKeyEventClaimed } from "../semantics/claimedKeyEvents";
+
+function isArrowKey(key: number): boolean {
+  return (
+    key === Key.left || key === Key.right || key === Key.up || key === Key.down
+  );
+}
+
+/**
+ * Alt/Ctrl/Meta arrows are browser/OS shortcuts (Alt+Left = back, Cmd+Arrow, etc.).
+ * Shift is allowed: it is the spatial-navigation chord in Vivaldi/Opera.
+ */
+function hasShortcutModifier(event: KeyboardEvent): boolean {
+  return event.altKey || event.ctrlKey || event.metaKey;
+}
 
 export interface KeyboardInteractionsParams {
   canvas: HTMLCanvasElement;
@@ -68,6 +84,8 @@ export class KeyboardInteractions {
   private currentOverlayElement: HTMLElement | null = null;
   /** Canvas parent (or document) watched for focusin to attach overlay listeners lazily. */
   private focusDomainHost: HTMLElement | Document;
+  /** Codes whose keydown an overlay widget took, so their keyup is skipped too. */
+  private claimedKeyCodes = new Set<string>();
 
   constructor({
     canvas,
@@ -84,6 +102,7 @@ export class KeyboardInteractions {
     canvas.addEventListener("focus", this.onCanvasFocus);
     canvas.addEventListener("blur", this.onCanvasBlur);
     canvas.addEventListener("keydown", this.onKeyDown);
+    canvas.addEventListener("keyup", this.onKeyUp);
     this.focusDomainHost.addEventListener("focusin", this.onFocusDomainHostFocusIn);
     this.syncOverlayListener();
   }
@@ -124,8 +143,13 @@ export class KeyboardInteractions {
     this.canvasHasFocus = true;
     this.focusDomainReleased = false;
 
-    if (!this.hasFocusNodes) return;
-    if (this.mainSm.focusState().hasFocus) return;
+    if (
+      this.isInFocusDomain(event.relatedTarget) ||
+      !this.hasFocusNodes ||
+      this.mainSm.focusState().hasFocus
+    ) {
+      return;
+    }
 
     this.focusSessionState = FocusSessionState.EntryPending;
 
@@ -180,15 +204,40 @@ export class KeyboardInteractions {
     this.onOverlayFocusIn(event);
   };
 
+  /**
+   * Handles keydown events in the Rive focus domain. We route certain keys to different functions, with the following
+   * fallback behavior:
+   * 1. Tab/Shift+Tab - focusNext/Previous traversal if there are focus nodes
+   * 2. Check - if a semantic overlay element's key handler claimed the event, don't intercept the key event further
+   * 3. Send key to `keyInput()` on Rive state machine if applicable.
+   * 4. If the keyInput returned false, and the key is directional arrow keys, call directional focus methods on state machine
+   * @param event KeyboardEvent
+   * @returns void
+   */
   public onKeyDown = (event: KeyboardEvent) => {
     this.syncOverlayListener();
+
+    // Keys that are part of an IME composition belong to the IME (candidate
+    // navigation, commit). Safari reports the first one as keyCode 229 with
+    // isComposing still false.
+    if (event.isComposing || event.keyCode === 229) return;
 
     // After Tab exits the last Rive node, ignore keys until focus re-enters the focus domain.
     if (this.focusDomainReleased) return;
 
     if (!this.shouldRiveHandleKeyEvent(event)) return;
 
-    if (event.code === "Tab" && this.hasFocusNodes) {
+    if (event.key === "Tab" && this.hasFocusNodes) {
+      // Tab listeners are matched per phase (down/repeat/up), as in the editor, so
+      // each event is offered on its own; one that isn't claimed traverses.
+      if (
+        this.mainSm.focusState().hasFocus &&
+        this.mainSm.keyInput(Key.tab, modifiersFromEvent(event), true, event.repeat)
+      ) {
+        event.preventDefault();
+        return;
+      }
+
       const forward = !event.shiftKey;
       const focusMoved = forward ? this.mainSm.focusNext() : this.mainSm.focusPrevious();
       const focusState = this.mainSm.focusState();
@@ -200,13 +249,82 @@ export class KeyboardInteractions {
         event.preventDefault();
       } else {
         // No more traversable nodes — release Tab to the page.
+        if (
+          document.activeElement !== this.canvas &&
+          this.isInFocusDomain(document.activeElement)
+        ) {
+          // The browser's default Tab starts from the focused element; from an overlay element,
+          // the nearest stop backward is the canvas itself. Start it from the
+          // canvas instead, so a Shift+Tab goes to the proper element before Rive.
+          this.canvas.focus({ preventScroll: true });
+        }
         this.focusSessionState = FocusSessionState.NotFocused;
         this.focusDomainReleased = true;
         this.canvasHasFocus = false;
       }
       this.syncOverlayListener();
+      return;
+    }
+
+    // A semantic overlay widget (roving radio/tab group, slider, Enter/Space activation)
+    // already acted on this key at its target, so don't act on it twice.
+    if (isKeyEventClaimed(event)) {
+      this.claimedKeyCodes.add(event.code);
+      return;
+    }
+    // A new unclaimed press: drop any claim whose keyup never arrived.
+    this.claimedKeyCodes.delete(event.code);
+
+    // The focused node gets first refusal (a TextInput's caret, or a keyboard listener
+    // on that key). Keys with no Rive equivalent map to null and aren't dispatched.
+    const key = keyboardEventToRiveKey(event);
+    if (key === null) return;
+    let consumed = this.mainSm.keyInput(
+      key,
+      modifiersFromEvent(event),
+      true,
+      event.repeat,
+    );
+
+    // An arrow key with no consumed key input moves focus spatially. While a Rive node holds focus,
+    // arrows never scroll the page
+    const isDirectional = isArrowKey(key) && !hasShortcutModifier(event);
+    if (!consumed && isDirectional) {
+      consumed =
+        this.focusInDirection(key) || this.mainSm.focusState().hasFocus;
+    }
+
+    // Rive still holds focus, prevent default behavior
+    if (consumed) {
+      event.preventDefault();
     }
   };
+
+  public onKeyUp = (event: KeyboardEvent) => {
+    if (event.isComposing || event.keyCode === 229) return;
+    if (this.claimedKeyCodes.delete(event.code)) return;
+    if (this.focusSessionState === FocusSessionState.NotFocused) return;
+
+    const key = keyboardEventToRiveKey(event);
+    if (key === null) return;
+    this.mainSm.keyInput(key, modifiersFromEvent(event), false, false);
+  };
+
+  /** Arrow keys map to directional focus; anything else is not a focus move. */
+  private focusInDirection(key: number): boolean {
+    switch (key) {
+      case Key.left:
+        return this.mainSm.focusLeft();
+      case Key.right:
+        return this.mainSm.focusRight();
+      case Key.up:
+        return this.mainSm.focusUp();
+      case Key.down:
+        return this.mainSm.focusDown();
+      default:
+        return false;
+    }
+  }
 
   /**
    * Determine if Rive should handle keyboard input. If session state is `NotFocused` - no.
@@ -251,21 +369,17 @@ export class KeyboardInteractions {
       "focusin",
       this.onOverlayFocusIn,
     );
-    this.currentOverlayElement?.removeEventListener(
-      "keydown",
-      this.onKeyDown,
-      true,
-    );
+    this.currentOverlayElement?.removeEventListener("keydown", this.onKeyDown);
+    this.currentOverlayElement?.removeEventListener("keyup", this.onKeyUp);
     this.currentOverlayElement = nextOverlayElement;
     this.currentOverlayElement?.addEventListener(
       "focusin",
       this.onOverlayFocusIn,
     );
-    this.currentOverlayElement?.addEventListener(
-      "keydown",
-      this.onKeyDown,
-      true,
-    );
+    // Bubble phase, so a semantic widget's own key handler runs first and can claim
+    // the key via claimKeyEvent (see onKeyDown).
+    this.currentOverlayElement?.addEventListener("keydown", this.onKeyDown);
+    this.currentOverlayElement?.addEventListener("keyup", this.onKeyUp);
   }
 
   /**
@@ -293,15 +407,14 @@ export class KeyboardInteractions {
     this.canvas.removeEventListener("focus", this.onCanvasFocus);
     this.canvas.removeEventListener("blur", this.onCanvasBlur);
     this.canvas.removeEventListener("keydown", this.onKeyDown);
+    this.canvas.removeEventListener("keyup", this.onKeyUp);
+    this.claimedKeyCodes.clear();
     this.focusDomainHost.removeEventListener("focusin", this.onFocusDomainHostFocusIn);
     this.currentOverlayElement?.removeEventListener(
       "focusin",
       this.onOverlayFocusIn,
     );
-    this.currentOverlayElement?.removeEventListener(
-      "keydown",
-      this.onKeyDown,
-      true,
-    );
+    this.currentOverlayElement?.removeEventListener("keydown", this.onKeyDown);
+    this.currentOverlayElement?.removeEventListener("keyup", this.onKeyUp);
   }
 }

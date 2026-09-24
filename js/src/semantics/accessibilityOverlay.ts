@@ -1,6 +1,7 @@
 import type * as rc from "../rive_advanced.mjs";
 import type { SemanticTreeModel } from "./semanticTreeModel";
 import type { SemanticNodeData } from "./types";
+import { claimKeyEvent } from "./claimedKeyEvents";
 import {
   SemanticRole,
   SemanticState,
@@ -212,16 +213,39 @@ export class AccessibilityOverlay {
     }, 500); // Throttle to avoid rapid style recalculations
   }
 
-  private syncContainerGeometry(): void {
+  /**
+   * The canvas's position in the box the container is absolutely positioned in.
+   * offsetTop/Left ignore the scroll of scrolling ancestors between the canvas and
+   * its offsetParent, which move the canvas but not the container, so subtract it.
+   */
+  private canvasOffset(): { top: number; left: number } {
+    let top = this.canvas.offsetTop;
+    let left = this.canvas.offsetLeft;
+    const offsetParent = this.canvas.offsetParent;
+    if (!offsetParent) return { top, left };
+    for (
+      let el = this.canvas.parentElement;
+      el && el !== offsetParent;
+      el = el.parentElement
+    ) {
+      top -= el.scrollTop;
+      left -= el.scrollLeft;
+    }
+    return { top, left };
+  }
+
+  /** Returns true when the container's size changed (node transforms need recomputing). */
+  private syncContainerGeometry(): boolean {
     const rect = this.canvas.getBoundingClientRect();
-    const top = this.canvas.offsetTop;
-    const left = this.canvas.offsetLeft;
+    const { top, left } = this.canvasOffset();
+    const sizeChanged =
+      rect.width !== this.lastCanvasPositioning.width ||
+      rect.height !== this.lastCanvasPositioning.height;
     if (
-      rect.width === this.lastCanvasPositioning.width &&
-      rect.height === this.lastCanvasPositioning.height &&
+      !sizeChanged &&
       top === this.lastCanvasPositioning.offsetTop &&
       left === this.lastCanvasPositioning.offsetLeft
-    ) return;
+    ) return false;
     this.container.style.top = top + "px";
     this.container.style.left = left + "px";
     this.container.style.width = rect.width + "px";
@@ -231,6 +255,16 @@ export class AccessibilityOverlay {
     this.lastCanvasPositioning.height = rect.height;
     this.lastCanvasPositioning.offsetTop = top;
     this.lastCanvasPositioning.offsetLeft = left;
+    return sizeChanged;
+  }
+
+  /**
+   * Re-align the container right before focusing one of its elements. The position
+   * observer re-syncs after scrolling on a throttle; focusing an element while the
+   * container is stale would make the browser scroll the page to where it sits.
+   */
+  private syncContainerBeforeFocus(): void {
+    if (this.syncContainerGeometry()) this._geometryDirty = true;
   }
 
   private createContainer(canvas: HTMLCanvasElement): HTMLDivElement {
@@ -240,10 +274,13 @@ export class AccessibilityOverlay {
     container.setAttribute("aria-label", this.semanticsOptions?.riveCanvasLabel ?? "Rive animation");
     // Size to the canvas's CSS layout box, not the parent container.
     const rect = canvas.getBoundingClientRect();
+    const { top, left } = this.canvasOffset();
     container.style.cssText = [
       "position:absolute",
-      `top:${canvas.offsetTop}px`,
-      `left:${canvas.offsetLeft}px`,
+      `top:${top}px`,
+      `left:${left}px`,
+      "line-height:normal",
+      "font-size:16px",
       `width:${rect.width}px`,
       `height:${rect.height}px`,
       "overflow:hidden",
@@ -470,6 +507,7 @@ export class AccessibilityOverlay {
           this.container.contains(focusedModal) &&
           !focusedModal.contains(el);
         if (active !== el && !trappedByModal && this.canMoveFocus()) {
+          this.syncContainerBeforeFocus();
           el.focus();
         }
       }
@@ -673,7 +711,7 @@ export class AccessibilityOverlay {
       else if (opts.includeHomeEnd && e.key === "End") target = "last";
       if (!target) return;
 
-      e.preventDefault();
+      claimKeyEvent(e);
       const members = opts.members();
       const idx = members.indexOf(el);
       if (idx < 0) return;
@@ -686,6 +724,7 @@ export class AccessibilityOverlay {
         : members[n - 1];
 
       if (next && next !== el) {
+        this.syncContainerBeforeFocus();
         next.focus();
         const nextId = this.nodeIdFromElement(next);
         if (nextId !== null) this.fireAction(nextId, SemanticActionType.tap);
@@ -707,7 +746,7 @@ export class AccessibilityOverlay {
         role === SemanticRole.link ? ["Enter"] : ["Enter", " "];
       el.addEventListener("keydown", (e) => {
         if (activationKeys.includes(e.key)) {
-          e.preventDefault();
+          claimKeyEvent(e);
           this.fireAction(nodeId, SemanticActionType.tap);
         }
       });
@@ -716,10 +755,10 @@ export class AccessibilityOverlay {
     if (role === SemanticRole.slider) {
       el.addEventListener("keydown", (e) => {
         if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-          e.preventDefault();
+          claimKeyEvent(e);
           this.fireAction(nodeId, SemanticActionType.increase);
         } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-          e.preventDefault();
+          claimKeyEvent(e);
           this.fireAction(nodeId, SemanticActionType.decrease);
         }
       });
@@ -1101,7 +1140,8 @@ export class AccessibilityOverlay {
    * Creates (on first call) and updates the artboard-space transform container.
    *
    * The container is sized to the artboard dimensions and carries a CSS
-   * `transform: matrix(...)` equivalent to `forwardMat / dpr`. All semantic
+   * `transform: matrix(...)` that maps artboard coordinates to the canvas's CSS box
+   * (forwardMat in backing-store pixels, scaled by CSS size / backing-store size). All semantic
    * node elements are children of this container and use raw artboard
    * coordinates as their CSS `left/top/width/height`, so the CSS compositor
    * applies the artboard→screen mapping in one pass.
@@ -1132,13 +1172,20 @@ export class AccessibilityOverlay {
     this.transformContainer.style.width  = Math.round(w) + "px";
     this.transformContainer.style.height = Math.round(h) + "px";
 
-    const s = 1 / (dpr || 1);
-    const a  = forwardMat.xx * s;
-    const b  = forwardMat.xy * s;
-    const c  = forwardMat.yx * s;
-    const d  = forwardMat.yy * s;
-    const tx = forwardMat.tx * s;
-    const ty = forwardMat.ty * s;
+    // Backing-store pixels → CSS pixels. Measured rather than 1/dpr: a canvas can be
+    // stretched by CSS, or have a stale backing store after a resize, and the drawn
+    // content follows the CSS box either way. Equal to 1/dpr when they match.
+    const cssWidth = this.lastCanvasPositioning.width;
+    const cssHeight = this.lastCanvasPositioning.height;
+    const fallback = 1 / (dpr || 1);
+    const sx = this.canvas.width > 0 && cssWidth > 0 ? cssWidth / this.canvas.width : fallback;
+    const sy = this.canvas.height > 0 && cssHeight > 0 ? cssHeight / this.canvas.height : fallback;
+    const a  = forwardMat.xx * sx;
+    const b  = forwardMat.xy * sy;
+    const c  = forwardMat.yx * sx;
+    const d  = forwardMat.yy * sy;
+    const tx = forwardMat.tx * sx;
+    const ty = forwardMat.ty * sy;
     this.transformContainer.style.transform =
       `matrix(${a},${b},${c},${d},${tx},${ty})`;
   }
