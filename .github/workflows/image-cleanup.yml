@@ -1,0 +1,38 @@
+name: WebGL2 image cleanup
+
+on:
+  pull_request:
+    paths:
+      - "js/**"
+      - ".github/workflows/image-cleanup.yml"
+  push:
+    paths:
+      - "js/**"
+      - ".github/workflows/image-cleanup.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  image-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: js
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: js/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:webgl2-image-cleanup
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webgl2-image-cleanup-screenshots
+          path: js/build/image-cleanup/screenshots/
+          retention-days: 14

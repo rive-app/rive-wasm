@@ -6034,7 +6034,7 @@ export const decodeImage = async (
   );
   const image: rc.Image = await decodedPromise;
   const imageWrapper = new ImageWrapper(image);
-  finalizationRegistry.register(imageWrapper, image);
+  finalizationRegistry.register(imageWrapper, image, imageWrapper);
   return imageWrapper;
 };
 
