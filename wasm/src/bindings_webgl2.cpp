@@ -950,6 +950,19 @@ public:
         HostFrameSink::endCanvasContent();
     }
 
+    // A WebGL2RenderImage is context free until prep() uploads it, and it is
+    // not a RiveRenderImage until then, so a bind group wanting its texture
+    // has to force the upload here. Null while the browser is still decoding,
+    // which drops the dependent make for this frame instead of binding null.
+    RenderImage* prepForeignImage(RenderImage* image) override
+    {
+        if (auto* webglImage = lite_rtti_cast<WebGL2RenderImage*>(image))
+        {
+            return webglImage->prep(m_renderer, m_renderer->contextGL());
+        }
+        return image;
+    }
+
 private:
     WebGL2Renderer* m_renderer;
 };
