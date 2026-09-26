@@ -1238,6 +1238,7 @@ export declare type ViewModelProperty = {
   name: string;
   type: DataType;
   enumName?: string;
+  viewModelName?: string;
 };
 
 export declare class ViewModelInstanceValue {
