@@ -457,28 +457,11 @@ public:
             m_target->drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
             return;
         }
-        // Canvas backed images from the deferred replay are not WebGL2
-        // images; they draw directly.
-        if (auto webglRenderImage = lite_rtti_cast<const WebGL2RenderImage*>(renderImage))
+#endif
+        if (!prepImage(renderImage))
         {
-            renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
-            if (renderImage == nullptr)
-            {
-                // Still decoding.
-                return;
-            }
-        }
-#else
-        // Without a deferred replay every image is a WebGL2 image; anything
-        // else is dropped.
-        LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
-        if (renderImage == nullptr)
-        {
-            // Still decoding.
             return;
         }
-#endif
         RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
     }
 
@@ -508,43 +491,64 @@ public:
                                     additiveness);
             return;
         }
-        // Canvas backed images from the deferred replay are not WebGL2
-        // images; they draw directly.
-        if (auto webglRenderImage = lite_rtti_cast<const WebGL2RenderImage*>(renderImage))
+#endif
+        if (!prepImage(renderImage))
         {
-            renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
-            if (renderImage == nullptr)
-            {
-                // Still decoding.
-                return;
-            }
+            return;
         }
-#else
-        // Without a deferred replay every image is a WebGL2 image; anything
-        // else is dropped.
-        LITE_RTTI_CAST_OR_RETURN(webglRenderImage, const WebGL2RenderImage*, renderImage);
-        renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
-        if (renderImage == nullptr)
+        LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
+        RiveRenderer::drawImageMesh(renderImage,
+                                    imageSampler,
+                                    refPLSBuffer(vertexBuffer),
+                                    refPLSBuffer(uvBuffer),
+                                    refPLSBuffer(indexBuffer),
+                                    vertexCount,
+                                    indexCount,
+                                    blendMode,
+                                    opacity,
+                                    additiveness);
+    }
+
+    void drawImageMeshInstanced(const RenderImage* renderImage,
+                                const ImageSampler imageSampler,
+                                rcp<RenderBuffer> vertices_f32,
+                                rcp<RenderBuffer> uvCoords_f32,
+                                rcp<RenderBuffer> indices_u16,
+                                uint32_t vertexCount,
+                                uint32_t indexCount,
+                                rcp<ImageMeshInstances> instances) override
+    {
+#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
+        if (m_target != nullptr)
         {
-            // Still decoding.
+            m_target->drawImageMeshInstanced(renderImage,
+                                             imageSampler,
+                                             vertices_f32,
+                                             uvCoords_f32,
+                                             indices_u16,
+                                             vertexCount,
+                                             indexCount,
+                                             std::move(instances));
             return;
         }
 #endif
+        if (!prepImage(renderImage))
         {
-            LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
-            LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
-            LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
-            RiveRenderer::drawImageMesh(renderImage,
-                                        imageSampler,
-                                        refPLSBuffer(vertexBuffer),
-                                        refPLSBuffer(uvBuffer),
-                                        refPLSBuffer(indexBuffer),
-                                        vertexCount,
-                                        indexCount,
-                                        blendMode,
-                                        opacity,
-                                        additiveness);
+            return;
         }
+        LITE_RTTI_CAST_OR_RETURN(vertexBuffer, WebGL2RenderBuffer*, vertices_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(uvBuffer, WebGL2RenderBuffer*, uvCoords_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(indexBuffer, WebGL2RenderBuffer*, indices_u16.get());
+        RiveRenderer::drawImageMeshInstanced(renderImage,
+                                             imageSampler,
+                                             refPLSBuffer(vertexBuffer),
+                                             refPLSBuffer(uvBuffer),
+                                             refPLSBuffer(indexBuffer),
+                                             vertexCount,
+                                             indexCount,
+                                             std::move(instances));
     }
 
     void flush()
@@ -772,6 +776,27 @@ private:
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
     void deferredFlush();
 #endif
+
+    // Resolves renderImage to something RiveRenderer can draw and returns
+    // whether it's ready to draw
+    bool prepImage(const RenderImage*& renderImage)
+    {
+        auto webglRenderImage = lite_rtti_cast<const WebGL2RenderImage*>(renderImage);
+        if (webglRenderImage == nullptr)
+        {
+#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
+            // Canvas backed images from the deferred replay are not WebGL2
+            // images; they draw directly.
+            return true;
+#else
+            // Without a deferred replay every image is a WebGL2 image;
+            // anything else is dropped.
+            return false;
+#endif
+        }
+        renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
+        return renderImage != nullptr;
+    }
 
     rcp<RenderBuffer> refPLSBuffer(WebGL2RenderBuffer* wglBuff)
     {

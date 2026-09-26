@@ -973,6 +973,7 @@ Module["onRuntimeInitialized"] = function () {
         out[j] = S[i + j];
       }
     },
+    // TODO(ben) add the instanced version once the C2D -> WebGL2 fallback change lands
     "_drawImageMesh": function (
       image,
       blend,
