@@ -701,6 +701,13 @@ public:
         return m_renderContext->makeRenderCanvas(width, height);
     }
 
+    // Answered from the context rather than left to the host default: a GL
+    // frame can land on atomics or depth-stencil, and neither applies the mask
+    // op, so an optimistic yes would have the artboard rasterize to the
+    // content-and-coverage intersection and then composite it unmasked -- the
+    // layer both unmasked and cropped.
+    bool supportsLayerMask() const override { return m_renderContext->supportsLayerMask(); }
+
     Renderer* beginCanvasContent(gpu::RenderCanvas* canvas, uint32_t clearColor) override
     {
         if (canvas == nullptr || canvas->renderTarget() == nullptr)
