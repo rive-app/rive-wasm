@@ -5,10 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.43.1](https://github.com/rive-app/rive-wasm/compare/2.43.0...2.43.1)
+## [2.44.0](https://github.com/rive-app/rive-wasm/compare/2.43.1...2.44.0)
 
 ### Commits
 
+- fix(text): stop fitFontSize hanging on an inf or huge font size (#14497) 6f7a868171 [`03586f0`](https://github.com/rive-app/rive-wasm/commit/03586f0e2adb991ba00b79807b7c645d519b1a48)
+- feat(js): add text input and key input support (#14470) ba0755c07b [`dfcb9ab`](https://github.com/rive-app/rive-wasm/commit/dfcb9ab35e5dfd652c9e444f1b754b28233e667a)
+- fix(runtime): keep coincident control points exact when trimming paths (#14474) dcd60ea7f5 [`30f2522`](https://github.com/rive-app/rive-wasm/commit/30f2522e6636861f349db82f15dad5781ed9422a)
+- fix(runtime): measure a skinned path's pose winding exactly (#14480) 0b5fd6293b [`42f493e`](https://github.com/rive-app/rive-wasm/commit/42f493e6088f40eb27ec6f82b2099d00f9fd2c94)
+- fix(evi): build and run the scripting player on ios and android devices (#14425) 961a2accfa [`b1ed807`](https://github.com/rive-app/rive-wasm/commit/b1ed8071b45585fab61bcf659833ec73e7820627)
+- fix(runtime): skinned winding follow ups for the bind pose (#14465) f848d2174f [`8f6f847`](https://github.com/rive-app/rive-wasm/commit/8f6f847e2d0bb1d48b96c003d5f3b7886cb1a9ba)
+- chore: pass pointer type and timestamp to scripted drawable handlers (#14472) e3c4939942 [`b267c9d`](https://github.com/rive-app/rive-wasm/commit/b267c9da5015694721b47192c60305dbe67379af)
+- fix(runtime): take a skinned path's winding from its bind pose (#14452) 89a770ce65 [`29638b0`](https://github.com/rive-app/rive-wasm/commit/29638b0917dcd021c787c26887b377b1510d0427)
+- fix(scripting): let aot memory grow on demand instead of pregrowing to the ceiling (#14450) e04516db64 [`64507e9`](https://github.com/rive-app/rive-wasm/commit/64507e9d2bd4f4d58d259018c553919af7161bb0)
+- perf(runtime): more performance improvements (#14443) 06eb2c8cc2 [`45624a9`](https://github.com/rive-app/rive-wasm/commit/45624a9bfbd549cfb6b5992da0c991e496901773)
+- fix(runtime): re-run a hidden paint's effects when it shows (#14445) 3980f99de5 [`eafb1ef`](https://github.com/rive-app/rive-wasm/commit/eafb1efd0b57eee0c580052989fccef15cf883fa)
+- feat(scripting): expose fonts and text shaping to Luau and AssemblyScript scripts (#14413) da672b77c1 [`3e44fc7`](https://github.com/rive-app/rive-wasm/commit/3e44fc7e49815676348f52c291c05b64d0ee50f9)
+- perf(runtime): several performance improvements (#14422) 9832676b43 [`66533f8`](https://github.com/rive-app/rive-wasm/commit/66533f8e337d05a6e586e0ea188142990c7fa0a2)
+- feat(editor, runtime): add masking support (#14369) c7dc382c34 [`6353858`](https://github.com/rive-app/rive-wasm/commit/6353858fb9f7ac12c7ee76ac6f5734610a26b40b)
+- feat(renderer): Convert depthStencil fills to repeating index patterns (#14382) 10a55a3ad0 [`2bdd4fe`](https://github.com/rive-app/rive-wasm/commit/2bdd4fe6fd614ac1c3e251631e6da44a7dfeb960)
+- perf(scripting): bring the AssemblyScript interpreter to Luau parity on the cli demos (#14399) 022bb5a920 [`edbb101`](https://github.com/rive-app/rive-wasm/commit/edbb1017ae026ee9186159d8a32d00a2a62b690e)
+- feat(runtime, editor): set view model properties from listener input … (#14410) b305b0e0ae [`3053a28`](https://github.com/rive-app/rive-wasm/commit/3053a28f04fdac5e5815acb6ce8f7123ac001566)
+- fix(scripting): bounds check the whole of element counted wasm buffers (#14412) d6413e7bb9 [`19043a0`](https://github.com/rive-app/rive-wasm/commit/19043a0c4c09eb5895a8b9d622ba55013ab2e2ef)
+- perf(runtime): several performance improvements at runtime (#14407) 3d72bf8611 [`95ab657`](https://github.com/rive-app/rive-wasm/commit/95ab657b78572f13d2868977766983bb991605cb)
+- fix(renderer): resolve foreign images in Image:view() under deferred … (#14395) 564840c19d [`20bf691`](https://github.com/rive-app/rive-wasm/commit/20bf69113c914b500816a8eaf9870330f8b599ca)
+- perf(renderer): Pack miterRatio from the tessellation shader (#14393) 075963d9a1 [`3be1d2d`](https://github.com/rive-app/rive-wasm/commit/3be1d2d2a5cad5be493b3ea83c3afd6f79ade019)
+- feat(renderer): Add support for instanced image meshes (#14381) f231dd41e6 [`7d60ea8`](https://github.com/rive-app/rive-wasm/commit/7d60ea8c689555501c18d838708593f78054bfba)
+- fix(renderer): deferred canvases take the host's interlock mode, Artemis kit gets a Vulkan 1.3 device (#14368) b2ba7ec758 [`c8e1d05`](https://github.com/rive-app/rive-wasm/commit/c8e1d0517c747bdb0a0c7923edbf9d708c68edb0)
+- feat(player): layout artboards fill the window (#14379) 7c31167223 [`b37b449`](https://github.com/rive-app/rive-wasm/commit/b37b449a5a789ff3195cb0219222b4af8820e07f)
+- chore(diff): Handle image size mismatch in diff script (#14366) f5e6021486 [`6bf90ff`](https://github.com/rive-app/rive-wasm/commit/6bf90ff82bd6674c470a037902973b4421143589)
+- feat(js): Add support for directional focus and foundation for keyInput (#14351) 53e5eeb542 [`b25a2d1`](https://github.com/rive-app/rive-wasm/commit/b25a2d16f0c3340d9c97edb0d11be3c076c85cda)
+- feat(renderer): Pack zIndex15:coverage8 in the depth buffer (#14236) 183579b29f [`91876e6`](https://github.com/rive-app/rive-wasm/commit/91876e664d67c4e71c2cd5c0f99c107f1f30bb9e)
+- Preserve spacing after GLSL macro calls in shader minifier (#12979) 85ba899663 [`fed07e4`](https://github.com/rive-app/rive-wasm/commit/fed07e4683d69a13ce70b15f1dca54e39d966a86)
+- fix(runtime): don't dereference a list row with no artboard (#14362) d237390642 [`3b8d3b7`](https://github.com/rive-app/rive-wasm/commit/3b8d3b7b3fe2e54bd24633c28210f7235a10d941)
+- feat(scripting): the luau translator follows gamepad and custom property scripts (#14344) e8623bca4b [`2e3060b`](https://github.com/rive-app/rive-wasm/commit/2e3060b2a88fac7b0cb28df50e8c4aede4da5dfc)
+- feat(player): threaded render option for deferred replay (#14336) 10509ba6f3 [`c1c92ab`](https://github.com/rive-app/rive-wasm/commit/c1c92ab427646fff2b8ee4d3589ee3c6dcaac4b4)
+- fix(scripting): gl fixup tables cover every entry point of a stage (#14339) c96cfa9962 [`f8586d2`](https://github.com/rive-app/rive-wasm/commit/f8586d2969eb61c8be4352b526748a3a3a7a35e6)
+
+## [2.43.1](https://github.com/rive-app/rive-wasm/compare/2.43.0...2.43.1) - 2026-09-23
+
+### Commits
+
+- chore: tag 2.43.1 [`7d7071e`](https://github.com/rive-app/rive-wasm/commit/7d7071ef263d864cecf408a0f9ca0dd623cc1cf1)
 - feat(blend): additive blend mode with a 0-100% amount (#14175) 2349364c71 [`6bfc35d`](https://github.com/rive-app/rive-wasm/commit/6bfc35d4c6d6aab340e580e3a5cc66e4fd3667cd)
 - feat(artemis): the pad reaches the state machine as a standard gamepad (#14338) 06b40c24e0 [`53a88a2`](https://github.com/rive-app/rive-wasm/commit/53a88a2f9e480a6d2e1a94b4ebaaf6dba69dc7d4)
 - fix(unity): stop images flickering on Vulkan when they have no gradient (#14335) a97a9b1142 [`bcd82c5`](https://github.com/rive-app/rive-wasm/commit/bcd82c5ebdd113541ddb7fe54e81f7fa3ac84ced)
