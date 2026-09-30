@@ -226,6 +226,62 @@ describe("AccessibilityOverlay", () => {
     overlay.destroy();
   });
 
+  test("does not move DOM focus onto the node the editing host stands in for", () => {
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+
+    const tree = new SemanticTreeModel();
+    tree.applyDiff(diff({
+      added: [node(1, { role: SemanticRole.textField, label: "Email", traitFlags: SemanticTrait.Focusable })],
+    }));
+
+    const overlay = createOverlay(canvas);
+    overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+    overlay.setEditingHostNode(1);
+    const container = overlay.getSemanticOverlayContainer();
+    container.focus();
+
+    tree.applyDiff(diff({
+      updatedSemantic: [node(1, {
+        role: SemanticRole.textField,
+        label: "Email",
+        traitFlags: SemanticTrait.Focusable,
+        stateFlags: SemanticState.Focused,
+      })],
+    }));
+    overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+
+    const el = document.getElementById(semanticId(1))!;
+    expect(el.getAttribute("aria-hidden")).toBe("true");
+    expect(document.activeElement).toBe(container);
+
+    overlay.destroy();
+  });
+
+  test("focusNodeElement hands DOM focus to a node's element from outside the overlay", () => {
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+    const outside = document.createElement("input");
+    document.body.appendChild(outside);
+
+    const tree = new SemanticTreeModel();
+    tree.applyDiff(diff({
+      added: [node(1, { role: SemanticRole.button, label: "After", traitFlags: SemanticTrait.Focusable })],
+    }));
+    const overlay = createOverlay(canvas);
+    overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+    outside.focus();
+
+    // Unknown node: no-op, focus stays put.
+    overlay.focusNodeElement(99);
+    expect(document.activeElement).toBe(outside);
+
+    overlay.focusNodeElement(1);
+    expect(document.activeElement).toBe(document.getElementById(semanticId(1)));
+
+    overlay.destroy();
+  });
+
   test("does not steal focus from the host page when focus is out of scope (default)", () => {
     const canvas = document.createElement("canvas");
     document.body.appendChild(canvas);
@@ -346,6 +402,28 @@ describe("AccessibilityOverlay", () => {
     expect(document.getElementById(semanticId(1))?.getAttribute("role")).toBe("list");
     expect(document.getElementById(semanticId(2))?.getAttribute("role")).toBe("listitem");
 
+    overlay.destroy();
+  });
+
+  test("an obscured (password) text field stays exposed but never exposes its value", () => {
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+    const tree = new SemanticTreeModel();
+    tree.applyDiff(diff({
+      added: [node(1, {
+        role: SemanticRole.textField,
+        label: "Password",
+        value: "hunter2",
+        stateFlags: SemanticState.Obscured,
+      })],
+    }));
+    const overlay = createOverlay(canvas);
+    overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+
+    const el = document.getElementById(semanticId(1))!;
+    expect(el.getAttribute("aria-hidden")).toBeNull();
+    expect(el.getAttribute("aria-label")).toBe("Password");
+    expect(el.textContent).toBe("");
     overlay.destroy();
   });
 
@@ -553,6 +631,36 @@ describe("AccessibilityOverlay", () => {
   // ---------------------------------------------------------------------------
   // Dialog auto-focus on appearance (autoFocusDialogOnAppear / routeDefaultFocusTarget)
   // ---------------------------------------------------------------------------
+
+  describe("releasing the editing host re-derives aria-hidden", () => {
+    const field = (stateFlags = 0) =>
+      node(1, { role: SemanticRole.textField, label: "Email", traitFlags: SemanticTrait.Focusable, stateFlags });
+
+    test.each([
+      ["stays hidden when the node became Hidden", SemanticState.Hidden, "true"],
+      ["is exposed again otherwise", 0, null],
+    ])("%s", (_name, stateFlags, expected) => {
+      const canvas = document.createElement("canvas");
+      document.body.appendChild(canvas);
+      const tree = new SemanticTreeModel();
+      tree.applyDiff(diff({ added: [field()] }));
+      const overlay = createOverlay(canvas);
+      overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+
+      overlay.setEditingHostNode(1);
+      const el = document.getElementById(semanticId(1))!;
+      expect(el.getAttribute("aria-hidden")).toBe("true");
+
+      tree.applyDiff(diff({ updatedSemantic: [field(stateFlags)] }));
+      overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+      expect(el.getAttribute("aria-hidden")).toBe("true");
+
+      overlay.releaseEditingHost(tree, null);
+      expect(el.getAttribute("aria-hidden")).toBe(expected);
+
+      overlay.destroy();
+    });
+  });
 
   describe("dialog auto-focus on appearance", () => {
     function setup(
@@ -1686,6 +1794,132 @@ describe("AccessibilityOverlay", () => {
       const io = intersectionObservers[0];
       overlay.destroy();
       expect(io.disconnect).toHaveBeenCalled();
+    });
+  });
+  // ---------------------------------------------------------------------------
+  // Overlay focus must not scroll the root (overlay sits outside the scroll chain)
+  // ---------------------------------------------------------------------------
+
+  describe("focus without scrolling the root", () => {
+    const inPlace = { block: "nearest", inline: "nearest", behavior: "instant" };
+    let focusSpy: jest.SpyInstance;
+    beforeEach(() => {
+      focusSpy = jest.spyOn(HTMLElement.prototype, "focus");
+    });
+    afterEach(() => {
+      focusSpy.mockRestore();
+    });
+
+    function setup(added: ReturnType<typeof node>[], childrenUpdated: ReturnType<typeof children>[] = []) {
+      const canvas = document.createElement("canvas");
+      document.body.appendChild(canvas);
+      const scrollIntoView = jest.fn();
+      (canvas as any).scrollIntoView = scrollIntoView;
+      const tree = new SemanticTreeModel();
+      tree.applyDiff(diff({ added, childrenUpdated }));
+      const overlay = createOverlay(canvas);
+      overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+      return { canvas, tree, overlay, scrollIntoView };
+    }
+
+    const focusable = () =>
+      node(1, { role: SemanticRole.button, label: "Play", traitFlags: SemanticTrait.Focusable });
+
+    test("focusNodeElement focuses with preventScroll and scrolls the canvas into view", () => {
+      const { overlay, scrollIntoView } = setup([focusable()]);
+      const el = document.getElementById(semanticId(1))!;
+      focusSpy.mockClear();
+
+      overlay.focusNodeElement(1);
+
+      expect(document.activeElement).toBe(el);
+      expect(focusSpy.mock.contexts.at(-1)).toBe(el);
+      expect(focusSpy).toHaveBeenLastCalledWith({ preventScroll: true });
+      expect(scrollIntoView).toHaveBeenCalledWith(inPlace);
+      overlay.destroy();
+    });
+
+    test("focusNodeElement does not throw when scrollIntoView is unavailable", () => {
+      const { overlay, canvas } = setup([focusable()]);
+      (canvas as any).scrollIntoView = undefined;
+      expect(() => overlay.focusNodeElement(1)).not.toThrow();
+      expect(document.activeElement).toBe(document.getElementById(semanticId(1)));
+      overlay.destroy();
+    });
+
+    test("focusNodeElement re-syncs the container after scrollIntoView moves the canvas", () => {
+      const scroller = document.createElement("div");
+      const canvas = document.createElement("canvas");
+      scroller.appendChild(canvas);
+      document.body.appendChild(scroller);
+      Object.defineProperty(canvas, "offsetParent", { get: () => document.body });
+      Object.defineProperty(canvas, "offsetTop", { get: () => 500 });
+      Object.defineProperty(canvas, "offsetLeft", { get: () => 40 });
+      stubCanvasRect(canvas, { top: 0, left: 0, right: 300, bottom: 200 });
+      scroller.scrollTop = 300;
+      const scrollIntoView = jest.fn(() => {
+        scroller.scrollTop = 100;
+      });
+      (canvas as any).scrollIntoView = scrollIntoView;
+      const tree = new SemanticTreeModel();
+      tree.applyDiff(diff({ added: [focusable()] }));
+      const overlay = createOverlay(canvas);
+      overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+      const container = overlay.getSemanticOverlayContainer();
+      expect(container.style.top).toBe("200px");
+      const armed = intersectionObservers.length;
+
+      overlay.focusNodeElement(1);
+
+      expect(scrollIntoView).toHaveBeenCalledWith(inPlace);
+      expect(container.style.top).toBe("400px");
+      // Position observer is re-armed at the new location.
+      expect(intersectionObservers.length).toBeGreaterThan(armed);
+      overlay.destroy();
+    });
+
+    test("update-time focus re-assert focuses without scrolling", () => {
+      const { overlay, tree, scrollIntoView } = setup([focusable()]);
+      const el = document.getElementById(semanticId(1))!;
+      overlay.getSemanticOverlayContainer().focus();
+      focusSpy.mockClear();
+      scrollIntoView.mockClear();
+
+      tree.applyDiff(diff({
+        updatedSemantic: [node(1, {
+          role: SemanticRole.button,
+          label: "Play",
+          traitFlags: SemanticTrait.Focusable,
+          stateFlags: SemanticState.Focused,
+        })],
+      }));
+      overlay.update(tree, identityMat, 1, defaultArtboardBounds);
+
+      expect(document.activeElement).toBe(el);
+      expect(focusSpy).toHaveBeenLastCalledWith({ preventScroll: true });
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      overlay.destroy();
+    });
+
+    test("group arrow-key navigation focuses in place", () => {
+      const { overlay, scrollIntoView } = setup(
+        [
+          node(1, { role: SemanticRole.tabList }),
+          node(2, { role: SemanticRole.tab, label: "Tab A", parentId: 1, siblingIndex: 0 }),
+          node(3, { role: SemanticRole.tab, label: "Tab B", parentId: 1, siblingIndex: 1 }),
+        ],
+        [children(1, [2, 3])]
+      );
+      const tab1 = document.getElementById(semanticId(2))!;
+      const tab2 = document.getElementById(semanticId(3))!;
+      focusSpy.mockClear();
+
+      tab1.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+
+      expect(document.activeElement).toBe(tab2);
+      expect(focusSpy).toHaveBeenLastCalledWith({ preventScroll: true });
+      expect(scrollIntoView).toHaveBeenCalledWith(inPlace);
+      overlay.destroy();
     });
   });
 });

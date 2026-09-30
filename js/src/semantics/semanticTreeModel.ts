@@ -3,7 +3,7 @@ import type {
   SemanticsDiffNode,
   SemanticNodeData,
 } from "./types";
-import { roleName, stateNames, traitNames } from "./types";
+import { hasState, roleName, SemanticState, stateNames, traitNames } from "./types";
 
 /**
  * Maintains an in-memory semantic tree built from incremental
@@ -58,6 +58,17 @@ export class SemanticTreeModel {
   /** Look up a node by its ID, or undefined if not in the tree. */
   nodeById(id: number): SemanticNodeData | undefined {
     return this._nodesById.get(id);
+  }
+
+  /** The node with SemanticState.Focused, or undefined. */
+  focusedNode(): SemanticNodeData | undefined {
+    // Manual iteration: runs every frame and must stop at the first hit (the
+    // TS target forbids for-of over Map iterators).
+    const it = this._nodesById.values();
+    for (let r = it.next(); !r.done; r = it.next()) {
+      if (hasState(r.value.stateFlags, SemanticState.Focused)) return r.value;
+    }
+    return;
   }
 
   /** Current index of a node among its siblings (or roots), or -1 if absent. */

@@ -1287,6 +1287,10 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self, std::string text) -> bool {
                       return self.textInput(text);
                   }))
+        .function("selectedText",
+                  optional_override([](rive::StateMachineInstance& self) -> std::string {
+                      return self.selectedText();
+                  }))
         .function("enableSemantics", optional_override([](rive::StateMachineInstance& self) {
                       self.enableSemantics();
                   }))

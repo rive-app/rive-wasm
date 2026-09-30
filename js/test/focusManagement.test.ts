@@ -86,6 +86,9 @@ function attachKeyboardInteractions(
       focusPrevious: jest.fn().mockReturnValue(true),
     } as any,
     hasFocusNodes: true,
+    // Same wiring as ensureKeyboardInteractions, so the overlay counts as in-scope.
+    getOverlayElement: () =>
+      (r as any)._accessibilityOverlay?.getSemanticOverlayContainer() ?? null,
   });
   (r as any)._keyboardInteractions = ki;
   return ki;
@@ -161,6 +164,7 @@ describe("Polling focus each frame", () => {
     expect(document.activeElement).toBe(semanticNode);
     (r as any)._accessibilityOverlay = {
       getSemanticOverlayContainer: () => container,
+      releaseEditingHost: jest.fn(),
       destroy: jest.fn(),
     };
 
@@ -186,6 +190,7 @@ describe("Polling focus each frame", () => {
     document.body.appendChild(container);
     (r as any)._accessibilityOverlay = {
       getSemanticOverlayContainer: () => container,
+      releaseEditingHost: jest.fn(),
       destroy: jest.fn(),
     };
 

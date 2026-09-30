@@ -64,7 +64,9 @@ const createCanvasAndRiveListeners = ({
   dispatchPointerExit,
   enableMultiTouch,
   stateMachineCount = 1,
+  isTextProxyFocused,
 }: {
+  isTextProxyFocused?: () => boolean;
   isTouchScrollEnabled?: boolean;
   dispatchPointerExit?: boolean;
   enableMultiTouch?: boolean;
@@ -100,6 +102,7 @@ const createCanvasAndRiveListeners = ({
     dispatchPointerExit,
     enableMultiTouch,
     advanceAndDrain: mockAdvanceAndDrain,
+    isTextProxyFocused,
   });
 };
 
@@ -278,7 +281,7 @@ test("mousedown triggers a synchronous advanceAndApply(0)", (): void => {
 
   expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
   expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
-  expect(mockAdvanceAndDrain).toBeCalledWith(0);
+  expect(mockAdvanceAndDrain).toBeCalledWith(0, { pointerDown: true });
   expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].advanceAndApply).toBeCalledWith(0);
 });
@@ -290,6 +293,7 @@ test("mouseup triggers a synchronous advanceAndApply(0)", (): void => {
 
   expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
   expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+  expect(mockAdvanceAndDrain).toBeCalledWith(0);
   expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].advanceAndApply).toBeCalledWith(0);
 });
@@ -517,6 +521,71 @@ test("touchcancel clears the primary touch ID so the next touchstart restores fu
   expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
   expect(mockStateMachines[0].pointerMove).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(200, 200, 1);
+});
+
+// #endregion
+
+// #region emulated mouse events after a touch tap
+
+const tapThenEmulatedMousedown = (): MouseEvent => {
+  canvas.dispatchEvent(
+    new TouchEvent("touchstart", {
+      touches: [mockTouchPoint],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  (mockStateMachines[0].pointerDown as jest.Mock).mockClear();
+  const mousedown = new MouseEvent("mousedown", {
+    clientX: 100,
+    clientY: 100,
+    cancelable: true,
+  });
+  canvas.dispatchEvent(mousedown);
+  return mousedown;
+};
+
+test("emulated mousedown is default-prevented while the text proxy is focused", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({
+    isTouchScrollEnabled: true,
+    isTextProxyFocused: () => true,
+  });
+  const mousedown = tapThenEmulatedMousedown();
+  expect(mousedown.defaultPrevented).toBe(true);
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+});
+
+test("emulated mousedown is not default-prevented when the text proxy is not focused", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({
+    isTouchScrollEnabled: true,
+    isTextProxyFocused: () => false,
+  });
+  const mousedown = tapThenEmulatedMousedown();
+  expect(mousedown.defaultPrevented).toBe(false);
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+});
+
+test("real mousedown is never default-prevented", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({
+    isTouchScrollEnabled: false,
+    isTextProxyFocused: () => true,
+  });
+  const mousedown = new MouseEvent("mousedown", {
+    clientX: 100,
+    clientY: 100,
+    cancelable: true,
+  });
+  canvas.dispatchEvent(mousedown);
+  expect(mousedown.defaultPrevented).toBe(false);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
 });
 
 // #endregion

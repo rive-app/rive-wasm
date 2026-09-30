@@ -1095,6 +1095,13 @@ export declare class StateMachineInstance {
   textInput(text: string): boolean;
 
   /**
+   * The selected text of the focused element, or an empty string when nothing with a
+   * selection is focused. Used to fill the clipboard on copy/cut. An obscured field 
+   * (i.e. a password) reports empty string.
+   */
+  selectedText(): string;
+
+  /**
    * Deletes the underlying instance created via the WASM. It's important to clean up this instance
    * when no longer in use
    */

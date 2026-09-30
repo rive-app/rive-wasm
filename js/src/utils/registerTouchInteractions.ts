@@ -13,7 +13,14 @@ export interface TouchInteractionsParams {
   enableMultiTouch?: boolean;
   layoutScaleFactor?: number;
   // Handles advancing the state machine and draining events/view model property callbacks, applicable to certain pointer interactions
-  advanceAndDrain: (elapsedTime: number) => void;
+  // pointerDown: the drain runs inside touchstart/mousedown
+  advanceAndDrain: (
+    elapsedTime: number,
+    options?: { pointerDown?: boolean },
+  ) => void;
+  summonKeyboard?: () => void;
+  // True while the text input proxy holds DOM focus
+  isTextProxyFocused?: () => boolean;
 }
 
 interface ClientCoordinates {
@@ -118,6 +125,8 @@ export const registerTouchInteractions = ({
   enableMultiTouch = false,
   layoutScaleFactor = 1.0,
   advanceAndDrain,
+  summonKeyboard,
+  isTextProxyFocused,
 }: TouchInteractionsParams) => {
   if (
     !canvas ||
@@ -140,8 +149,10 @@ export const registerTouchInteractions = ({
    * We're keeping track of the previous event to not send the synthetic mouse events if the
    * touch event was a click (touchstart -> touchend).
    *
-   * This is only needed when `isTouchScrollEnabled` is false
-   * When true, `preventDefault()` is called which prevents this behaviour.
+   * Emulated events only occur when `isTouchScrollEnabled` is true; when false,
+   * touchstart is default-prevented, which suppresses them.
+   * Emulated mousedown is prevented while the proxy is focused, or it would blur it and
+   * drop the keyboard.
    **/
   let _prevEventType: string | null = null;
   let _syntheticEventsActive = false;
@@ -159,6 +170,9 @@ export const registerTouchInteractions = ({
     // https://stackoverflow.com/questions/9656990/how-to-prevent-simulated-mouse-events-in-mobile-browsers
     // https://stackoverflow.com/questions/25572070/javascript-touchend-versus-click-dilemma
     if (_syntheticEventsActive && event instanceof MouseEvent) {
+      if (event.type === "mousedown" && isTextProxyFocused?.()) {
+        event.preventDefault();
+      }
       // Synthetic event finished
       if (event.type == "mouseup") {
         _syntheticEventsActive = false;
@@ -294,7 +308,7 @@ export const registerTouchInteractions = ({
           });
         }
         // Advance the state machine immediately so pointer down(s) takes effect synchronously
-        advanceAndDrain(0);
+        advanceAndDrain(0, { pointerDown: true });
         break;
       }
       // Pointer click released on the canvas
@@ -315,6 +329,9 @@ export const registerTouchInteractions = ({
         }
         // Advance the state machine immediately so pointer up(s) takes effect synchronously
         advanceAndDrain(0);
+        // Still inside the touch gesture — summon the keyboard if the tap focused a
+        // text input
+        summonKeyboard?.();
         // Release the primary touch lock once that finger lifts so the next
         // touchstart can claim a new primary finger.
         if (
@@ -337,6 +354,7 @@ export const registerTouchInteractions = ({
         }
         // Advance the state machine immediately so pointer up(s) takes effect synchronously
         advanceAndDrain(0);
+        summonKeyboard?.();
         break;
       }
       default:

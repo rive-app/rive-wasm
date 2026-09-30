@@ -2,6 +2,7 @@ import type * as rc from "../rive_advanced.mjs";
 import type { SemanticTreeModel } from "./semanticTreeModel";
 import type { SemanticNodeData } from "./types";
 import { claimKeyEvent } from "./claimedKeyEvents";
+import { canvasOffset } from "../utils/canvasOffset";
 import {
   SemanticRole,
   SemanticState,
@@ -13,6 +14,43 @@ import {
   hasState,
   hasTrait,
 } from "./types";
+
+let warnedUnpositionedWrapper = false;
+
+/**
+ * Warns once per page when no positioned element sits at or inside the canvas's
+ * nearest scroll container: the overlay then can't scroll with the canvas. Reads only.
+ */
+function warnIfWrapperUnpositioned(canvas: HTMLCanvasElement): void {
+  if (warnedUnpositionedWrapper) return;
+  // Null when detached (or display:none / fixed); nothing to judge yet.
+  const offsetParent = canvas.offsetParent;
+  if (!offsetParent) return;
+
+  const scrolls = (v: string): boolean => v === "auto" || v === "scroll" || v === "overlay";
+  let scroller: Element | null = null;
+  let el = canvas.parentElement;
+  // Bounds pathological nesting.
+  const MAX_ANCESTOR_WALK = 32;
+  for (
+    let i = 0;
+    el && el !== document.documentElement && i < MAX_ANCESTOR_WALK;
+    i++, el = el.parentElement
+  ) {
+    const style = getComputedStyle(el);
+    if (scrolls(style.overflowX) || scrolls(style.overflowY)) {
+      scroller = el;
+      break;
+    }
+  }
+  // Only the viewport scrolls: any offsetParent scrolls with the page.
+  if (!scroller || scroller.contains(offsetParent)) return;
+
+  warnedUnpositionedWrapper = true;
+  console.warn(
+    '[Rive] Semantics: give the element wrapping the <canvas> "position: relative" (or another positioned value) so the semantic overlay scrolls with the canvas. Without it, screen readers may scroll to stale positions when the canvas is inside a scrolling container.'
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Public interface
@@ -35,6 +73,11 @@ export interface AccessibilityOverlayOptions {
    * inside Rive (overlay or canvas); when true it may also pull focus from outside Rive.
    */
   allowFocusInterrupt?: boolean;
+  /**
+   * True while a text input session holds DOM focus on the hidden text-input proxy.
+   * Defaults to false when text input isn't wired.
+   */
+  isEditingHostFocused?: () => boolean;
 }
 
 /**
@@ -50,6 +93,19 @@ export interface OverlayChange {
   semanticChanged: boolean;
   nodeGeometryChanged: boolean;
   layoutChanged: boolean;
+}
+
+/**
+ * What the overlay needs from the element capturing text for a focused Rive text
+ * field (the hidden text-input proxy).
+ */
+export interface EditingHost {
+  /** Apply accessibility attributes; a null value removes that attribute. */
+  decorate(attrs: Record<string, string | null>): void;
+  resetDecoration(): void;
+  /** Capture as a secure (password) field while standing in for an obscured one. */
+  setSecure(secure: boolean): void;
+  hasDomFocus(): boolean;
 }
 
 /**
@@ -83,6 +139,8 @@ export class AccessibilityOverlay {
   private pendingTextGeometry: HTMLElement[] = [];
   /** Last measured box-size|text key per text element, to skip redundant re-measures. */
   private textGeometryKeys: WeakMap<HTMLElement, string> = new WeakMap();
+  /** Node data last passed to applyAttributes per element; see {@link setEditingHostNode}. */
+  private appliedNodes: WeakMap<HTMLElement, SemanticNodeData> = new WeakMap();
   private lastCanvasPositioning: { width: number; height: number; offsetTop: number; offsetLeft: number } = {
     width: -1, height: -1, offsetTop: -1, offsetLeft: -1,
   }
@@ -97,6 +155,12 @@ export class AccessibilityOverlay {
   private isUpdating = false;
   /** See {@link AccessibilityOverlayOptions.allowFocusInterrupt}. */
   private allowFocusInterrupt: boolean;
+  /** See {@link AccessibilityOverlayOptions.isEditingHostFocused}. */
+  private isEditingHostFocused: () => boolean;
+  /** Node whose element the editing host stands in for, or null. */
+  private editingHostNodeId: number | null = null;
+  /** Semantic version last folded into the editing host's decoration. */
+  private editingHostSemanticVersion = -1;
   /**
    * Single child div of the overlay container that carries the artboard→CSS
    * transform. All semantic node elements are children of this div and express
@@ -124,8 +188,114 @@ export class AccessibilityOverlay {
     this.canvas = options.canvas;
     this.semanticsOptions = options.semanticsOptions;
     this.allowFocusInterrupt = options.allowFocusInterrupt ?? false;
+    this.isEditingHostFocused = options.isEditingHostFocused ?? (() => false);
     this.container = this.createContainer(options.canvas);
     this.attachPositionObservers();
+    warnIfWrapperUnpositioned(options.canvas);
+  }
+
+  /**
+   * Hide the stood-in node's element (no duplicate textbox for AT); re-derive the previous
+   * one's aria-hidden.
+   */
+  setEditingHostNode(nodeId: number | null): void {
+    if (this.editingHostNodeId === nodeId) return;
+    const previous = this.editingHostNodeId;
+    this.editingHostNodeId = nodeId;
+    if (previous !== null) {
+      const previousEl = this.elements.get(previous);
+      // Re-derive rather than un-hide: the node may have become Hidden mid-session.
+      if (previousEl) {
+        const previousNode = this.appliedNodes.get(previousEl);
+        if (previousNode && this.isAriaHidden(previousNode)) {
+          setAttr(previousEl, "aria-hidden", "true");
+        } else {
+          removeAttr(previousEl, "aria-hidden");
+        }
+      }
+    }
+    if (nodeId !== null) {
+      const el = this.elements.get(nodeId);
+      if (el) setAttr(el, "aria-hidden", "true");
+    }
+  }
+
+  /**
+   * Describe the focused text field on the host and hide its element; no-op unless
+   * semantics changed.
+   * @param force - apply even if semantics are unchanged (session start).
+   */
+  syncEditingHost(tree: SemanticTreeModel, host: EditingHost, force: boolean): void {
+    if (!force && tree.semanticVersion === this.editingHostSemanticVersion) return;
+    this.editingHostSemanticVersion = tree.semanticVersion;
+
+    const node = tree.focusedNode();
+    if (node === undefined || node.role !== SemanticRole.textField) {
+      // Nothing to describe; drop the stale description rather than misname the host.
+      if (this.editingHostNodeId !== null) {
+        host.resetDecoration();
+        this.setEditingHostNode(null);
+      }
+      return;
+    }
+
+    // Every key is passed on every call, nulls included, so nothing survives from
+    // the previously described field.
+    host.setSecure(hasState(node.stateFlags, SemanticState.Obscured));
+    host.decorate({
+      "aria-label": node.label || null,
+      "aria-readonly": hasState(node.stateFlags, SemanticState.ReadOnly) ? "true" : null,
+      "aria-multiline": hasState(node.stateFlags, SemanticState.Multiline) ? "true" : null,
+      // Trait-gated to match applyAttributes.
+      "aria-required":
+        hasTrait(node.traitFlags, SemanticTrait.Requirable) &&
+        hasState(node.stateFlags, SemanticState.Required)
+          ? "true"
+          : null,
+      // The hint span applyAttributes maintains (update() runs earlier in the frame).
+      "aria-describedby": (node.hint && this.descElements.get(node.id)?.id) || null,
+    });
+    this.setEditingHostNode(node.id);
+  }
+
+  /** True while the editing host stands in for a node's element. */
+  hasEditingHost(): boolean {
+    return this.editingHostNodeId !== null;
+  }
+
+  /**
+   * Undo the stand-in; if the host still has DOM focus, move it to the focused node's
+   * element so AT announces it.
+   */
+  releaseEditingHost(tree: SemanticTreeModel | null, host: EditingHost | null): void {
+    host?.resetDecoration();
+    this.setEditingHostNode(null);
+    this.editingHostSemanticVersion = -1;
+    if (!host?.hasDomFocus()) return;
+    const focusedNodeId = tree?.focusedNode()?.id;
+    if (focusedNodeId !== undefined) this.focusNodeElement(focusedNodeId);
+  }
+
+  /** Move DOM focus onto a node's element. No-op for a node with no element. */
+  focusNodeElement(nodeId: number): void {
+    const el = this.elements.get(nodeId);
+    if (!el) return;
+    this.focusElementInPlace(el);
+  }
+
+  // The overlay is positioned outside the canvas's scroll chain, so a plain focus()
+  // would scroll the root instead; scroll the canvas into view through its real ancestors.
+  private focusElementInPlace(el: HTMLElement): void {
+    this.syncContainerBeforeFocus();
+    el.focus({ preventScroll: true });
+    this.canvas.scrollIntoView?.({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "instant" as ScrollBehavior,
+    });
+    // The scroll moved the canvas; re-align now rather than after the observer throttle.
+    this.syncContainerGeometry();
+    this.observePosition();
   }
 
   getSemanticOverlayContainer(): HTMLDivElement {
@@ -213,31 +383,10 @@ export class AccessibilityOverlay {
     }, 500); // Throttle to avoid rapid style recalculations
   }
 
-  /**
-   * The canvas's position in the box the container is absolutely positioned in.
-   * offsetTop/Left ignore the scroll of scrolling ancestors between the canvas and
-   * its offsetParent, which move the canvas but not the container, so subtract it.
-   */
-  private canvasOffset(): { top: number; left: number } {
-    let top = this.canvas.offsetTop;
-    let left = this.canvas.offsetLeft;
-    const offsetParent = this.canvas.offsetParent;
-    if (!offsetParent) return { top, left };
-    for (
-      let el = this.canvas.parentElement;
-      el && el !== offsetParent;
-      el = el.parentElement
-    ) {
-      top -= el.scrollTop;
-      left -= el.scrollLeft;
-    }
-    return { top, left };
-  }
-
   /** Returns true when the container's size changed (node transforms need recomputing). */
   private syncContainerGeometry(): boolean {
     const rect = this.canvas.getBoundingClientRect();
-    const { top, left } = this.canvasOffset();
+    const { top, left } = canvasOffset(this.canvas);
     const sizeChanged =
       rect.width !== this.lastCanvasPositioning.width ||
       rect.height !== this.lastCanvasPositioning.height;
@@ -274,7 +423,7 @@ export class AccessibilityOverlay {
     container.setAttribute("aria-label", this.semanticsOptions?.riveCanvasLabel ?? "Rive animation");
     // Size to the canvas's CSS layout box, not the parent container.
     const rect = canvas.getBoundingClientRect();
-    const { top, left } = this.canvasOffset();
+    const { top, left } = canvasOffset(this.canvas);
     container.style.cssText = [
       "position:absolute",
       `top:${top}px`,
@@ -506,9 +655,18 @@ export class AccessibilityOverlay {
           !!focusedModal &&
           this.container.contains(focusedModal) &&
           !focusedModal.contains(el);
-        if (active !== el && !trappedByModal && this.canMoveFocus()) {
+        // Not while the proxy has focus (would steal the caret, drop the keyboard) nor onto
+        // its aria-hidden stand-in.
+        if (
+          nodeId !== this.editingHostNodeId &&
+          active !== el &&
+          !trappedByModal &&
+          !this.isEditingHostFocused() &&
+          this.canMoveFocus()
+        ) {
+          // No scrollIntoView: this runs on semantic diffs and must not drag the page.
           this.syncContainerBeforeFocus();
-          el.focus();
+          el.focus({ preventScroll: true });
         }
       }
 
@@ -724,8 +882,7 @@ export class AccessibilityOverlay {
         : members[n - 1];
 
       if (next && next !== el) {
-        this.syncContainerBeforeFocus();
-        next.focus();
+        this.focusElementInPlace(next);
         const nextId = this.nodeIdFromElement(next);
         if (nextId !== null) this.fireAction(nextId, SemanticActionType.tap);
       }
@@ -802,7 +959,26 @@ export class AccessibilityOverlay {
 
   // ---- Attribute application ----
 
+  private isAriaHidden(node: SemanticNodeData): boolean {
+    const role = node.role;
+    const flags = node.stateFlags;
+    // Hide from AT when explicitly hidden, or when an image has no accessible
+    // name — a nameless role="img" is a WCAG 1.1.1 violation; treat it as
+    // decorative instead.
+    const isDecorativeImage = role === SemanticRole.image && !node.label;
+    // The <input> proxy is the accessible element for the node it stands in for.
+    const isEditingHostStandIn = node.id === this.editingHostNodeId;
+    return (
+      hasState(flags, SemanticState.Hidden) ||
+      // Obscured text fields stay reachable (value withheld, like a native password input).
+      (hasState(flags, SemanticState.Obscured) && role !== SemanticRole.textField) ||
+      isDecorativeImage ||
+      isEditingHostStandIn
+    );
+  }
+
   private applyAttributes(el: HTMLElement, node: SemanticNodeData): void {
+    this.appliedNodes.set(el, node);
     const role = node.role;
     const flags = node.stateFlags;
     const traits = node.traitFlags;
@@ -980,11 +1156,7 @@ export class AccessibilityOverlay {
 
     // ---- Non-trait states ----
 
-    // Hide from AT when explicitly hidden, or when an image has no accessible
-    // name — a nameless role="img" is a WCAG 1.1.1 violation; treat it as
-    // decorative instead.
-    const isDecorativeImage = role === SemanticRole.image && !node.label;
-    if (hasState(flags, SemanticState.Hidden) || hasState(flags, SemanticState.Obscured) || isDecorativeImage) {
+    if (this.isAriaHidden(node)) {
       setAttr(el, "aria-hidden", "true");
     } else {
       removeAttr(el, "aria-hidden");
@@ -1009,8 +1181,14 @@ export class AccessibilityOverlay {
       // announce it. Only safe when the node has no semantic children —
       // setting textContent would remove any child elements from the DOM.
       if (node.children.length === 0) {
-        const value = node.value ?? "";
+        const value = hasState(flags, SemanticState.Obscured) ? "" : (node.value ?? "");
         if (el.textContent !== value) el.textContent = value;
+      } else {
+        // A value rendered earlier (before the node had children) must not linger,
+        // least of all once the field turns Obscured.
+        for (const child of Array.from(el.childNodes)) {
+          if (child.nodeType === Node.TEXT_NODE) child.remove();
+        }
       }
     } else {
       removeAttr(el, "aria-multiline");

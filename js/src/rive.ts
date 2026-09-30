@@ -5,6 +5,7 @@ import {
   SemanticTreeModel,
   AccessibilityOverlay,
   SemanticMode,
+  SemanticRole,
   type RiveSemanticsOptions,
   type SemanticActionType,
 } from "./semantics";
@@ -2437,6 +2438,10 @@ export class Rive {
 
   private _tabIndex: number | null = null;
   private _prevHasFocus = false;
+  private _prevWantsTextInputSession = false;
+  // Pointer-down defers the proxy focus: mousedown's default would refocus the canvas and
+  // touchstart isn't user activation; pointer-up focuses it.
+  private _inPointerDownDrain = false;
   private _focusOptions: RiveFocusOptions = {
     allowFocusInterrupt: false,
   };
@@ -2806,11 +2811,21 @@ export class Rive {
         dispatchPointerExit: dispatchPointerExit,
         enableMultiTouch: enableMultiTouch,
         layoutScaleFactor: this._layout.layoutScaleFactor,
-        advanceAndDrain: this.advanceAndReportChanges.bind(this)
+        advanceAndDrain: this.advanceAndDrainForPointer.bind(this),
+        summonKeyboard: this.summonKeyboardForGesture.bind(this),
+        isTextProxyFocused: this.isEditingHostFocused,
       });
 
       this.ensureKeyboardInteractions();
     }
+  }
+
+  private isEditingHostFocused = (): boolean =>
+    this._keyboardInteractions?.isEditingHostFocused() ?? false;
+
+  // Assumes a single state machine drives focus.
+  private get focusStateMachine(): StateMachine | undefined {
+    return this.animator.stateMachines.find((sm) => sm.playing && sm.hasFocusNodes);
   }
 
   /**
@@ -2827,9 +2842,7 @@ export class Rive {
       return;
     }
 
-    const smWithFocusNodes = this.animator.stateMachines.find(
-      (sm) => sm.playing && sm.hasFocusNodes,
-    );
+    const smWithFocusNodes = this.focusStateMachine;
     if (!smWithFocusNodes) {
       return;
     }
@@ -2841,11 +2854,44 @@ export class Rive {
 
     this._keyboardInteractions = new KeyboardInteractions({
       canvas: this.canvas as HTMLCanvasElement,
-      stateMachine: smWithFocusNodes.instance, // work off assumption of single state machine
+      stateMachine: smWithFocusNodes.instance,
       hasFocusNodes: true,
       getOverlayElement: () =>
         this._accessibilityOverlay?.getSemanticOverlayContainer() ?? null,
     });
+  }
+
+  /** Runs inside touchend/mouseup so focusing the proxy raises the mobile keyboard. */
+  private summonKeyboardForGesture(): void {
+    if (!this._keyboardInteractions) return;
+    const activeSm = this.focusStateMachine;
+    if (!activeSm) return;
+    if (this.wantsTextInputSession(activeSm.focusState().expectsKeyboardInput)) {
+      this._keyboardInteractions.summonForPointer();
+    }
+  }
+
+  /** expectsKeyboardInput, and (with semantics on) the focused node is a textField. */
+  private wantsTextInputSession(expectsKeyboardInput: boolean): boolean {
+    if (!expectsKeyboardInput) return false;
+    const node = this._semanticTree?.focusedNode();
+    return node === undefined || node.role === SemanticRole.textField;
+  }
+
+  private advanceAndDrainForPointer(
+    elapsedTime: number,
+    options?: { pointerDown?: boolean },
+  ): void {
+    if (!options?.pointerDown) {
+      this.advanceAndReportChanges(elapsedTime);
+      return;
+    }
+    this._inPointerDownDrain = true;
+    try {
+      this.advanceAndReportChanges(elapsedTime);
+    } finally {
+      this._inPointerDownDrain = false;
+    }
   }
 
   private cleanupKeyboardInteractions(): void {
@@ -2853,6 +2899,8 @@ export class Rive {
       this._keyboardInteractions.cleanup();
       this._keyboardInteractions = null;
     }
+    this._prevWantsTextInputSession = false;
+    this._accessibilityOverlay?.releaseEditingHost(null, null);
   }
 
   /**
@@ -3212,62 +3260,76 @@ export class Rive {
     return this.riveFile?.deferredSession?.recordedThisFrame() ?? false;
   }
 
-  /**
-   * Poll focus state each frame to see if we should focus/blur the canvas in case
-   * Rive internally updated focus outside of user interaction (e.g., via listener action)
-   */
+  /** Rive can move focus on its own, so reconcile the text session and DOM focus each frame. */
   private pollFocusState() {
     this.ensureKeyboardInteractions();
-    if (!this._keyboardInteractions) {
+    const ki = this._keyboardInteractions;
+    const activeSm = ki ? this.focusStateMachine : undefined;
+    if (!ki || !activeSm || !(this.canvas instanceof HTMLCanvasElement)) {
       this._prevHasFocus = false;
+      this._prevWantsTextInputSession = false;
       return;
     }
 
-    const activeSm = this.animator.stateMachines.find(
-      (sm) => sm.playing && sm.hasFocusNodes,
-    ); // work off assumption of single state machine
-    if (!activeSm) {
-      this._prevHasFocus = false;
-      return;
-    }
+    const { hasFocus, expectsKeyboardInput } = activeSm.focusState();
+    this.syncTextInputSession(ki, this.wantsTextInputSession(expectsKeyboardInput));
+    this.syncRiveFocus(ki, this.canvas, hasFocus);
+  }
 
-    if (this.canvas instanceof HTMLCanvasElement) {
-      const { hasFocus } = activeSm.focusState();
-      if (hasFocus) {
-        // Rive has an active focus node. Mark the session RiveFocused so Tab stays
-        // trapped and a later internal release (hasFocus true → false) is detected.
-        this._keyboardInteractions.notifyRiveFocused();
-        // Only steal DOM focus on the false→true transition. Rive can hold focus across
-        // frames while DOM focus sits elsewhere — a window switch preserves runtime focus
-        // by design — and that must not re-focus the canvas again.
-        if (!this._prevHasFocus) {
-          // Steal DOM focus to the canvas only when focus isn't already held
-          // somewhere inside this instance's focus scope. When the accessibility
-          // overlay has driven focus onto a specific semantic node element (e.g.
-          // an appearing alert dialog), focus is already in-scope. The steal
-          // stays a fallback for runtime focus nodes that have no overlay element
-          // to hold DOM focus.
-          const scope = this._accessibilityOverlay?.getSemanticOverlayContainer();
-          const focusAlreadyInScope =
-            document.activeElement === this.canvas ||
-            (scope?.contains(document.activeElement) ?? false);
-          if (!focusAlreadyInScope && this._focusOptions.allowFocusInterrupt) {
-            this.canvas.focus();
-          }
-          this._prevHasFocus = true;
-        }
-        return;
+  /** Begin/end the text session on wantsSession edges; decorate the proxy while it has DOM focus. */
+  private syncTextInputSession(ki: KeyboardInteractions, wantsSession: boolean) {
+    const host = ki.editingHost;
+    const overlay = this._accessibilityOverlay;
+    if (wantsSession) {
+      const began = !this._prevWantsTextInputSession;
+      if (began) {
+        // In-domain or opted-in only; during pointer-down, pointer-up focuses instead.
+        const focusProxy =
+          !this._inPointerDownDrain &&
+          (ki.isInFocusDomain(document.activeElement) ||
+            !!this._focusOptions.allowFocusInterrupt);
+        ki.beginTextInputSession(focusProxy);
       }
+      // The <input> proxy stands in for the semantic DOM field only while it holds DOM focus.
+      if (overlay && this._semanticTree) {
+        if (host.hasDomFocus()) {
+          overlay.syncEditingHost(this._semanticTree, host, began || !overlay.hasEditingHost());
+        } else if (overlay.hasEditingHost()) {
+          overlay.releaseEditingHost(this._semanticTree, host);
+        }
+      }
+    } else if (this._prevWantsTextInputSession) {
+      // Overlay hand-off first, ahead of endTextInputSession's park-on-canvas fallback.
+      overlay?.releaseEditingHost(this._semanticTree, host);
+      ki.endTextInputSession();
+    }
+    this._prevWantsTextInputSession = wantsSession;
+  }
 
+  /** Mirror Rive's hasFocus into the keyboard session state and, on opt-in, canvas focus. */
+  private syncRiveFocus(
+    ki: KeyboardInteractions,
+    canvas: HTMLCanvasElement,
+    hasFocus: boolean,
+  ) {
+    if (hasFocus) {
+      ki.notifyRiveFocused();
+      // Pull focus from outside Rive only with allowFocusInterrupt.
+      if (!this._prevHasFocus) {
+        if (
+          !ki.isInFocusDomain(document.activeElement) &&
+          this._focusOptions.allowFocusInterrupt
+        ) {
+          canvas.focus();
+        }
+        this._prevHasFocus = true;
+      }
+    } else {
       this._prevHasFocus = false;
-
-      // hasFocus is false — only act when Rive previously held focus and released it internally
-      // (state change clears focus). Release the DOM Tab trap so the next Tab moves to the next
-      // page element. A DOM blur reaches here too now that onCanvasBlur clears Rive focus, but it
-      // has already set NotFocused, so this is a no-op. EntryPending and NotFocused are likewise
-      // intentional no-ops — EntryPending must stay put (a click awaiting its first Tab).
-      if (this._keyboardInteractions.focusSessionState === FocusSessionState.RiveFocused) {
-        this._keyboardInteractions.setFocusSessionState(FocusSessionState.NotFocused);
+      // Rive released focus internally (e.g. a state change): drop the Tab trap so the next
+      // Tab leaves the canvas.
+      if (ki.focusSessionState === FocusSessionState.RiveFocused) {
+        ki.setFocusSessionState(FocusSessionState.NotFocused);
       }
     }
   }
@@ -3384,6 +3446,7 @@ export class Rive {
           instanceId: this._instanceId,
           semanticsOptions: this.semanticsOptions,
           allowFocusInterrupt: this._focusOptions.allowFocusInterrupt,
+          isEditingHostFocused: this.isEditingHostFocused,
           fireAction: (nodeId, actionType) => {
             mainSm.fireSemanticAction(nodeId, actionType);
           },

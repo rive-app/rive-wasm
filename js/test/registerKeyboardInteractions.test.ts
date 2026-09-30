@@ -27,6 +27,8 @@ const makeMockSm = ({
     focusDown: jest.fn().mockReturnValue(true),
     clearFocus: jest.fn(),
     keyInput: jest.fn().mockReturnValue(true),
+    textInput: jest.fn().mockReturnValue(true),
+    selectedText: jest.fn().mockReturnValue(""),
     focusState: jest
       .fn()
       .mockReturnValue({ hasFocus, expectsKeyboardInput: false }),
@@ -769,4 +771,320 @@ test("releasing Shift+Tab from an overlay node hands DOM focus to the canvas fir
   expect(tabEvent.defaultPrevented).toBe(false);
   expect(document.activeElement).toBe(canvas);
   expect(ki.focusSessionState).toBe(FocusSessionState.NotFocused);
+});
+
+// text input proxy
+
+function beginSessionAndGetProxy(): HTMLInputElement {
+  ki.beginTextInputSession(true);
+  return document.activeElement as HTMLInputElement;
+}
+
+test("beginTextInputSession(false) activates the session without moving DOM focus", () => {
+  const pageInput = document.createElement("input");
+  document.body.appendChild(pageInput);
+  pageInput.focus();
+
+  ki.beginTextInputSession(false);
+
+  expect(ki.isTextInputSessionActive()).toBe(true);
+  expect(ki.focusSessionState).toBe(FocusSessionState.RiveFocused);
+  expect(document.activeElement).toBe(pageInput);
+  pageInput.remove();
+});
+
+test("summonForPointer with no session begins one and focuses the proxy", () => {
+  expect(ki.isTextInputSessionActive()).toBe(false);
+
+  ki.summonForPointer();
+
+  expect(ki.isTextInputSessionActive()).toBe(true);
+  expect(ki.editingHost!.hasDomFocus()).toBe(true);
+  expect((document.activeElement as HTMLElement).tagName).toBe("INPUT");
+});
+
+test("the proxy starts a text input session empty and never zooms iOS", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  expect(proxy.tagName).toBe("INPUT");
+  expect(proxy.value).toBe("");
+  expect(proxy.style.fontSize).toBe("16px");
+  expect(proxy.style.lineHeight).toBe("1");
+  expect(proxy.getAttribute("autocapitalize")).toBe("off");
+  expect(proxy.style.pointerEvents).toBe("none");
+});
+
+test("the proxy switches to a password field while secure, and back when decoration resets", () => {
+  const proxy = beginSessionAndGetProxy();
+  ki.editingHost!.setSecure(true);
+  expect(proxy.type).toBe("password");
+  ki.editingHost!.resetDecoration();
+  expect(proxy.type).toBe("text");
+});
+
+test("committed text is forwarded as textInput and clears the proxy", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  proxy.value = "hi";
+  proxy.dispatchEvent(new Event("input", { bubbles: true }));
+
+  expect(mockSm.textInput).toHaveBeenCalledWith("hi");
+  expect(proxy.value).toBe("");
+});
+
+test("text composed by an IME is only forwarded once composition ends", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  proxy.dispatchEvent(new Event("compositionstart", { bubbles: true }));
+  proxy.value = "に";
+  proxy.dispatchEvent(new Event("input", { bubbles: true }));
+  expect(mockSm.textInput).not.toBeCalled();
+
+  proxy.dispatchEvent(new Event("compositionend", { bubbles: true }));
+  expect(mockSm.textInput).toHaveBeenCalledWith("に");
+  expect(proxy.value).toBe("");
+});
+
+test("editing keys are applied by C++ and their browser default is swallowed", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  const keyDown = new KeyboardEvent("keydown", {
+    code: "Backspace",
+    key: "Backspace",
+    bubbles: true,
+    cancelable: true,
+  });
+  proxy.dispatchEvent(keyDown);
+
+  expect(mockSm.keyInput).toHaveBeenCalledWith(259, 0, true, false);
+  expect(keyDown.defaultPrevented).toBe(true);
+
+  proxy.dispatchEvent(
+    new KeyboardEvent("keyup", {
+      code: "Backspace",
+      key: "Backspace",
+      bubbles: true,
+    }),
+  );
+  expect(mockSm.keyInput).toHaveBeenLastCalledWith(259, 0, false, false);
+});
+
+test("printable strokes reach the proxy so its input event delivers the text", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  const keyDown = new KeyboardEvent("keydown", {
+    code: "KeyA",
+    key: "a",
+    bubbles: true,
+    cancelable: true,
+  });
+  proxy.dispatchEvent(keyDown);
+
+  expect(mockSm.keyInput).toHaveBeenCalledWith(65, 0, true, false);
+  expect(keyDown.defaultPrevented).toBe(false);
+});
+
+test("a printable typed on the canvas mid-session refocuses the proxy and keeps its default", () => {
+  // e.g. mouseup landed outside the canvas, so the pointer summon never ran.
+  focusCanvasFrom(null);
+  ki.beginTextInputSession(false);
+  (mockSm.keyInput as jest.Mock).mockReturnValue(false);
+  expect(document.activeElement).toBe(canvas);
+
+  const keyDown = new KeyboardEvent("keydown", {
+    code: "KeyA",
+    key: "a",
+    bubbles: true,
+    cancelable: true,
+  });
+  canvas.dispatchEvent(keyDown);
+
+  expect(ki.editingHost!.hasDomFocus()).toBe(true);
+  expect(keyDown.defaultPrevented).toBe(false);
+  expect(mockSm.textInput).not.toBeCalled();
+});
+
+test("cleanup() while the proxy holds DOM focus parks focus on the canvas and removes the proxy", () => {
+  const proxy = beginSessionAndGetProxy();
+  expect(proxy.isConnected).toBe(true);
+
+  ki.cleanup();
+
+  expect(document.activeElement).toBe(canvas);
+  expect(proxy.isConnected).toBe(false);
+});
+
+test("proxy blur into the accessibility overlay keeps Rive focus and the text input session", () => {
+  let overlayElement: HTMLElement | null = null;
+  setupKeyboardInteractions({ getOverlayElement: () => overlayElement });
+  overlayElement = document.createElement("div");
+  const semanticNode = document.createElement("div");
+  semanticNode.tabIndex = -1;
+  overlayElement.appendChild(semanticNode);
+  document.body.appendChild(overlayElement);
+
+  const proxy = beginSessionAndGetProxy();
+  proxy.dispatchEvent(new FocusEvent("blur", { relatedTarget: semanticNode }));
+
+  expect(mockSm.clearFocus).not.toBeCalled();
+  expect(ki.isTextInputSessionActive()).toBe(true);
+  overlayElement.remove();
+});
+
+test("proxy blur because the whole document lost focus keeps Rive focus and the text input session", () => {
+  const proxy = beginSessionAndGetProxy();
+  jest.spyOn(document, "hasFocus").mockReturnValue(false);
+
+  proxy.dispatchEvent(new FocusEvent("blur"));
+
+  expect(mockSm.clearFocus).not.toBeCalled();
+  expect(ki.isTextInputSessionActive()).toBe(true);
+});
+
+test("proxy blur to another page element clears Rive focus and ends the text input session", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  proxy.dispatchEvent(new FocusEvent("blur", { relatedTarget: after }));
+
+  expect(mockSm.clearFocus).toHaveBeenCalledTimes(1);
+  expect(ki.isTextInputSessionActive()).toBe(false);
+  expect(ki.focusSessionState).toBe(FocusSessionState.NotFocused);
+});
+
+test("an arrow the focused node doesn't claim still moves focus during a proxy session", () => {
+  // Nodes with keyboard listeners (not just text fields) start a session too.
+  setupKeyboardInteractions({ hasFocus: true });
+  (mockSm.keyInput as jest.Mock).mockReturnValue(false);
+  const proxy = beginSessionAndGetProxy();
+
+  const keyDown = new KeyboardEvent("keydown", {
+    code: "ArrowRight",
+    key: "ArrowRight",
+    bubbles: true,
+    cancelable: true,
+  });
+  proxy.dispatchEvent(keyDown);
+
+  expect(mockSm.focusRight).toHaveBeenCalledTimes(1);
+  expect(keyDown.defaultPrevented).toBe(true);
+});
+
+test("releasing Shift+Tab from the proxy hands DOM focus to the canvas first", () => {
+  setupKeyboardInteractions({ focusPreviousResult: false });
+  const proxy = beginSessionAndGetProxy();
+
+  const tabEvent = new KeyboardEvent("keydown", { code: "Tab", key: "Tab", shiftKey: true, bubbles: true, cancelable: true });
+  proxy.dispatchEvent(tabEvent);
+
+  expect(mockSm.focusPrevious).toHaveBeenCalledTimes(1);
+  expect(tabEvent.defaultPrevented).toBe(false);
+  expect(document.activeElement).toBe(canvas);
+  expect(mockSm.clearFocus).not.toBeCalled();
+});
+
+// Clipboard (the proxy is always empty, so copy is served from C++)
+
+// jsdom has no ClipboardEvent constructor, so fake the one field we read.
+function clipboardEvent(type: "copy") {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  const setData = jest.fn();
+  Object.defineProperty(event, "clipboardData", { value: { setData } });
+  return { event, setData };
+}
+
+test("copy fills the clipboard from the focused element's selection", () => {
+  (mockSm.selectedText as jest.Mock).mockReturnValue("hello world");
+  const proxy = beginSessionAndGetProxy();
+
+  const { event, setData } = clipboardEvent("copy");
+  proxy.dispatchEvent(event);
+
+  expect(setData).toHaveBeenCalledWith("text/plain", "hello world");
+  expect(event.defaultPrevented).toBe(true);
+  expect(mockSm.keyInput).not.toBeCalled();
+});
+
+test("paste forwards clipboard text with line breaks intact, bypassing the field value", () => {
+  const proxy = beginSessionAndGetProxy();
+
+  const event = new Event("paste", { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "clipboardData", { value: { getData: () => "a\r\nb\nc" } });
+  proxy.dispatchEvent(event);
+
+  expect(mockSm.textInput).toHaveBeenCalledTimes(1);
+  expect(mockSm.textInput).toHaveBeenCalledWith("a\nb\nc");
+  expect(event.defaultPrevented).toBe(true);
+  expect(proxy.value).toBe("");
+});
+
+test("copy with an empty selection (e.g. an obscured field) copies nothing", () => {
+  (mockSm.selectedText as jest.Mock).mockReturnValue("");
+  const proxy = beginSessionAndGetProxy();
+
+  const { event, setData } = clipboardEvent("copy");
+  proxy.dispatchEvent(event);
+
+  expect(setData).not.toBeCalled();
+  expect(event.defaultPrevented).toBe(true);
+  expect(mockSm.keyInput).not.toBeCalled();
+});
+
+
+describe("proxy viewport clamp", () => {
+  const VIEW_W = 1000;
+  const VIEW_H = 800;
+  let rect: { top: number; left: number };
+  let savedW: number;
+  let savedH: number;
+
+  beforeEach(() => {
+    savedW = window.innerWidth;
+    savedH = window.innerHeight;
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: VIEW_W });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: VIEW_H });
+    Object.defineProperty(canvas, "offsetTop", { configurable: true, value: 400 });
+    Object.defineProperty(canvas, "offsetLeft", { configurable: true, value: 30 });
+    rect = { top: 100, left: 50 };
+    jest
+      .spyOn(canvas, "getBoundingClientRect")
+      .mockImplementation(
+        () => ({ ...rect, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }) as DOMRect,
+      );
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: savedW });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: savedH });
+  });
+
+  test("a canvas on screen leaves the proxy at the canvas offset", () => {
+    const proxy = beginSessionAndGetProxy();
+    expect(proxy.style.top).toBe("400px");
+    expect(proxy.style.left).toBe("30px");
+  });
+
+  test("a canvas below the fold / right of the viewport pulls the proxy onto its edge", () => {
+    rect = { top: VIEW_H + 200, left: VIEW_W + 70 };
+    const proxy = beginSessionAndGetProxy();
+    expect(proxy.style.top).toBe(`${400 - 216}px`); // clamped to innerHeight - 16 (the caret box)
+    expect(proxy.style.left).toBe(`${30 - 86}px`);
+  });
+
+  test("a canvas above / left of the viewport pushes the proxy down onto its edge", () => {
+    rect = { top: -300, left: -20 };
+    const proxy = beginSessionAndGetProxy();
+    expect(proxy.style.top).toBe("700px");
+    expect(proxy.style.left).toBe("50px");
+  });
+
+  test("keydown re-clamps against the current canvas rect", () => {
+    const proxy = beginSessionAndGetProxy();
+    expect(proxy.style.top).toBe("400px");
+
+    rect = { top: VIEW_H + 200, left: 50 };
+    proxy.dispatchEvent(new KeyboardEvent("keydown", { key: "a", code: "KeyA", bubbles: true }));
+
+    expect(proxy.style.top).toBe(`${400 - 216}px`); // clamped to innerHeight - 16 (the caret box)
+    expect(proxy.style.left).toBe("30px");
+  });
 });
