@@ -86,6 +86,9 @@ const createCanvasAndRiveListeners = ({
         pointerMove: jest.fn(),
         pointerUp: jest.fn(),
         pointerExit: jest.fn(),
+        pointerScroll: jest.fn(() => 1),
+        hasScrollLatch: jest.fn(() => false),
+        cancelScroll: jest.fn(),
         advanceAndApply: jest.fn(),
       }) as unknown as rc.StateMachineInstance,
   );
@@ -586,6 +589,197 @@ test("real mousedown is never default-prevented", (): void => {
   canvas.dispatchEvent(mousedown);
   expect(mousedown.defaultPrevented).toBe(false);
   expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+});
+
+// #endregion
+
+// #region wheel and trackpad scrolling
+
+const wheel = (init: WheelEventInit): WheelEvent => {
+  const event = new WheelEvent("wheel", {
+    clientX: 100,
+    clientY: 100,
+    cancelable: true,
+    ...init,
+  });
+  canvas.dispatchEvent(event);
+  return event;
+};
+
+const scrollMock = (index: number) =>
+  mockStateMachines[index].pointerScroll as jest.Mock;
+
+test("a pixel wheel scrolls as precise content travel and keeps the page still", (): void => {
+  const event = wheel({ deltaY: 30, deltaMode: WheelEvent.DOM_DELTA_PIXEL });
+
+  expect(mockStateMachines[0].pointerScroll).toBeCalledWith(
+    100,
+    100,
+    0,
+    -30,
+    1,
+    true,
+    expect.any(Number),
+    0,
+  );
+  expect(event.defaultPrevented).toBe(true);
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+  expect(mockAdvanceAndDrain).toBeCalledWith(0);
+});
+
+test("a line wheel converts to pixels and is not precise", (): void => {
+  wheel({ deltaX: 3, deltaMode: WheelEvent.DOM_DELTA_LINE });
+
+  expect(mockStateMachines[0].pointerScroll).toBeCalledWith(
+    100,
+    100,
+    -48,
+    0,
+    1,
+    false,
+    expect.any(Number),
+    0,
+  );
+});
+
+test("a page wheel moves by the canvas's visible size on each axis", (): void => {
+  jest.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 300,
+    height: 200,
+  } as DOMRect);
+
+  wheel({ deltaX: 1, deltaY: -1, deltaMode: WheelEvent.DOM_DELTA_PAGE });
+
+  expect(scrollMock(0).mock.calls[0][2]).toBe(-300);
+  expect(scrollMock(0).mock.calls[0][3]).toBe(200);
+});
+
+test("a shift+wheel reported on y scrolls sideways", (): void => {
+  wheel({ deltaY: 30, shiftKey: true });
+
+  expect(mockStateMachines[0].pointerScroll).toBeCalledWith(
+    100,
+    100,
+    -30,
+    0,
+    1,
+    true,
+    expect.any(Number),
+    0,
+  );
+});
+
+test("a shift+wheel the browser already moved to x is left alone", (): void => {
+  wheel({ deltaX: 30, shiftKey: true });
+
+  expect(scrollMock(0).mock.calls[0][2]).toBe(-30);
+  expect(scrollMock(0).mock.calls[0][3]).toBe(0);
+});
+
+test("registering cancels scroll gestures latched before the last teardown", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({ stateMachineCount: 2 });
+
+  expect(mockStateMachines[0].cancelScroll).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[1].cancelScroll).toHaveBeenCalledTimes(1);
+});
+
+test("cleanup does not touch the state machines, which may already be deleted", (): void => {
+  cleanupRiveListenersFunction?.();
+  cleanupRiveListenersFunction = null;
+
+  expect(mockStateMachines[0].cancelScroll).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+});
+
+test("the wheel delta takes the fit's scale but not its offset", (): void => {
+  const identity = mockRive.mapXY.getMockImplementation();
+  mockRive.mapXY.mockImplementation((mat, vec) => {
+    const x = vec.x() * 0.5 + 10;
+    const y = vec.y() * 0.5 + 20;
+    return { x: () => x, y: () => y, delete: jest.fn() };
+  });
+  try {
+    wheel({ deltaY: 30 });
+  } finally {
+    mockRive.mapXY.mockImplementation(identity);
+  }
+
+  expect(mockStateMachines[0].pointerScroll).toBeCalledWith(
+    60,
+    70,
+    0,
+    -15,
+    1,
+    true,
+    expect.any(Number),
+    0,
+  );
+});
+
+test("a wheel nothing scrolls goes to the page", (): void => {
+  scrollMock(0).mockReturnValue(0);
+  const event = wheel({ deltaY: 30 });
+
+  expect(mockStateMachines[0].pointerScroll).toHaveBeenCalledTimes(1);
+  expect(event.defaultPrevented).toBe(false);
+  expect(mockAdvanceAndDrain).not.toBeCalled();
+});
+
+test("a ctrl+wheel is left to the page for zooming", (): void => {
+  const event = wheel({ deltaY: 30, ctrlKey: true });
+
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+  expect(event.defaultPrevented).toBe(false);
+});
+
+test("a wheel that can't be cancelled is left to the page", (): void => {
+  wheel({ deltaY: 30, cancelable: false });
+
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+  expect(mockAdvanceAndDrain).not.toBeCalled();
+});
+
+test("a wheel with no delta is ignored", (): void => {
+  const event = wheel({ deltaX: 0, deltaY: 0 });
+
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+  expect(event.defaultPrevented).toBe(false);
+});
+
+test("a latched state machine takes the wheel before the others", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({ stateMachineCount: 2 });
+  (mockStateMachines[1].hasScrollLatch as jest.Mock).mockReturnValue(true);
+
+  wheel({ deltaY: 30 });
+
+  expect(mockStateMachines[1].pointerScroll).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+});
+
+test("a wheel falls through to the next state machine when one declines", (): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners({ stateMachineCount: 2 });
+  scrollMock(0).mockReturnValue(0);
+
+  const event = wheel({ deltaY: 30 });
+
+  expect(mockStateMachines[0].pointerScroll).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[1].pointerScroll).toHaveBeenCalledTimes(1);
+  expect(event.defaultPrevented).toBe(true);
+});
+
+test("cleanup stops forwarding the wheel", (): void => {
+  cleanupRiveListenersFunction?.();
+  cleanupRiveListenersFunction = null;
+
+  const event = wheel({ deltaY: 30 });
+
+  expect(mockStateMachines[0].pointerScroll).not.toBeCalled();
+  expect(event.defaultPrevented).toBe(false);
 });
 
 // #endregion

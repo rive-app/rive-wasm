@@ -12,6 +12,13 @@ const StringRive = new URL("./string.riv", import.meta.url);
 const RatingAnimation = new URL("./rating_animation.riv", import.meta.url);
 const TextAnimation = new URL("./text_test_2.riv", import.meta.url);
 const FocusAnimation = new URL("./focus.riv", import.meta.url);
+const ScrollVertical = new URL("./layout_scroll_vertical.riv", import.meta.url);
+const ScrollHorizontal = new URL(
+  "./layout_scroll_horizontal.riv",
+  import.meta.url,
+);
+const ScrollNested = new URL("./scroll_nested.riv", import.meta.url);
+const ScrollTall = new URL("./scroll_tall.riv", import.meta.url);
 
 const RIVE_EXAMPLES = {
   0: {
@@ -66,7 +73,29 @@ const RIVE_EXAMPLES = {
     hasStateMachine: true,
     stateMachine: "State Machine 1",
     artboard: "EdgeStop",
-  }
+  },
+  // Mouse wheel / trackpad scrolling
+  11: {
+    riveFile: ScrollVertical,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  },
+  12: {
+    riveFile: ScrollHorizontal,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  },
+  13: {
+    riveFile: ScrollNested,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  },
+  // 40 rows in a 500px viewport, with two nested horizontal strips
+  14: {
+    riveFile: ScrollTall,
+    hasStateMachine: true,
+    stateMachine: "State Machine 1",
+  },
 };
 
 async function loadFile(num) {
@@ -102,6 +131,6 @@ async function main(num) {
   r.on(EventType.RiveEvent, onRiveEventReceived);
 }
 
-for (let i = 0; i < 11; i++) {
+for (let i = 0; i < Object.keys(RIVE_EXAMPLES).length; i++) {
   main(i);
 }

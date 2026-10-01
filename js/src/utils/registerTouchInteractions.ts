@@ -1,5 +1,11 @@
 import * as rc from "../rive_advanced.mjs";
 
+// A detented wheel reports lines; the runtime wants pixels.
+const PIXELS_PER_LINE = 16;
+// ScrollPhase.update. The DOM reports no gesture phase, so every wheel event
+// is an update and the runtime closes the gesture once it goes quiet.
+const SCROLL_PHASE_UPDATE = 1;
+
 export interface TouchInteractionsParams {
   canvas: HTMLCanvasElement | OffscreenCanvas;
   artboard: rc.Artboard;
@@ -109,8 +115,9 @@ const getClientCoordinates = (
 };
 
 /**
- * Registers mouse move/up/down callback handlers on the canvas to send meaningful coordinates to
- * the state machine pointer move/up/down functions based on cursor interaction
+ * Registers mouse move/up/down and wheel callback handlers on the canvas to send meaningful
+ * coordinates to the state machine pointer move/up/down/scroll functions based on cursor
+ * interaction
  */
 export const registerTouchInteractions = ({
   canvas,
@@ -138,6 +145,12 @@ export const registerTouchInteractions = ({
   ) {
     return null;
   }
+  // A gesture latched before the previous listeners came down (a pause, say)
+  // never reached its idle timeout, and would take the next wheel wherever
+  // it lands. These instances are live here; at teardown they may not be.
+  for (const stateMachine of stateMachines) {
+    stateMachine.cancelScroll();
+  }
   /**
    * After a touchend event, some browsers may fire synthetic mouse events
    * (mouseover, mousedown, mousemove, mouseup) if the touch interaction did not cause
@@ -164,6 +177,48 @@ export const registerTouchInteractions = ({
    * Reset to null when the primary finger lifts (or touchcancel is called)
    */
   let _primaryTouchId: number | null = null;
+
+  /**
+   * Maps client-space points into Artboard space through the fit and alignment
+   * of the canvas.
+   */
+  const mapToArtboard = (
+    boundingRect: DOMRect,
+    points: { clientX: number; clientY: number }[],
+  ): { x: number; y: number }[] => {
+    const forwardMatrix = rive.computeAlignment(
+      fit,
+      alignment,
+      {
+        minX: 0,
+        minY: 0,
+        maxX: boundingRect.width,
+        maxY: boundingRect.height,
+      },
+      artboard.bounds,
+      layoutScaleFactor,
+    );
+    const invertedMatrix = new rive.Mat2D();
+    forwardMatrix.invert(invertedMatrix);
+
+    const mapped = points.map(({ clientX, clientY }) => {
+      const canvasX = clientX - boundingRect.left;
+      const canvasY = clientY - boundingRect.top;
+      const canvasCoordinatesVector = new rive.Vec2D(canvasX, canvasY);
+      const transformedVector = rive.mapXY(
+        invertedMatrix,
+        canvasCoordinatesVector,
+      );
+      const point = { x: transformedVector.x(), y: transformedVector.y() };
+      transformedVector.delete();
+      canvasCoordinatesVector.delete();
+      return point;
+    });
+
+    invertedMatrix.delete();
+    forwardMatrix.delete();
+    return mapped;
+  };
 
   const processEventCallback = (event: MouseEvent | TouchEvent) => {
     // Exit early out of all synthetic mouse events
@@ -209,44 +264,13 @@ export const registerTouchInteractions = ({
       enableMultiTouch,
       enableMultiTouch ? null : _primaryTouchId,
     );
-    const forwardMatrix = rive.computeAlignment(
-      fit,
-      alignment,
-      {
-        minX: 0,
-        minY: 0,
-        maxX: boundingRect.width,
-        maxY: boundingRect.height,
-      },
-      artboard.bounds,
-      layoutScaleFactor,
+    const positionedSets = coordinateSets.filter(
+      (coordinateSet) => coordinateSet.clientX || coordinateSet.clientY,
     );
-    const invertedMatrix = new rive.Mat2D();
-    forwardMatrix.invert(invertedMatrix);
-
-    coordinateSets.forEach((coordinateSet) => {
-      const clientX = coordinateSet.clientX;
-      const clientY = coordinateSet.clientY;
-      if (!clientX && !clientY) {
-        return;
-      }
-      const canvasX = clientX - boundingRect.left;
-      const canvasY = clientY - boundingRect.top;
-      const canvasCoordinatesVector = new rive.Vec2D(canvasX, canvasY);
-      const transformedVector = rive.mapXY(
-        invertedMatrix,
-        canvasCoordinatesVector,
-      );
-      const transformedX = transformedVector.x();
-      const transformedY = transformedVector.y();
-      coordinateSet.transformedX = transformedX;
-      coordinateSet.transformedY = transformedY;
-      transformedVector.delete();
-      canvasCoordinatesVector.delete();
+    mapToArtboard(boundingRect, positionedSets).forEach((point, i) => {
+      positionedSets[i].transformedX = point.x;
+      positionedSets[i].transformedY = point.y;
     });
-
-    invertedMatrix.delete();
-    forwardMatrix.delete();
 
     switch (event.type) {
       /**
@@ -365,6 +389,91 @@ export const registerTouchInteractions = ({
     _primaryTouchId = null;
   };
 
+  /**
+   * Forwards wheel and trackpad scrolling to the state machines. The page keeps
+   * the wheel unless a scroll view actually moves, so it still scrolls when
+   * Rive has nothing to scroll or a view sits at its edge.
+   */
+  const wheelCallback = (event: WheelEvent) => {
+    // Pinch zoom arrives as a ctrl+wheel and belongs to the page. A wheel that
+    // can't be cancelled is part of a sequence the page is already scrolling;
+    // taking it too would move both.
+    if (event.ctrlKey || !event.cancelable) {
+      return;
+    }
+    // Read before the deltas: Firefox reports pixels once a delta has been
+    // read first.
+    const deltaMode = event.deltaMode;
+    let deltaX = event.deltaX;
+    let deltaY = event.deltaY;
+    // Shift+wheel scrolls sideways. Most browsers already report it on the x
+    // axis; a vertical-only view would decline it on y.
+    if (event.shiftKey && !deltaX) {
+      deltaX = deltaY;
+      deltaY = 0;
+    }
+
+    const boundingRect = (
+      event.currentTarget as HTMLCanvasElement
+    ).getBoundingClientRect();
+    // A page is the canvas's visible size, the nearest the host can get to the
+    // scroll view's own.
+    const toPixelsX =
+      deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? PIXELS_PER_LINE
+        : deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? boundingRect.width
+          : 1;
+    const toPixelsY =
+      deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? PIXELS_PER_LINE
+        : deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? boundingRect.height
+          : 1;
+    // The DOM reports how far to scroll; the runtime wants how far content
+    // travels.
+    const scrollX = -deltaX * toPixelsX;
+    const scrollY = -deltaY * toPixelsY;
+    if (!scrollX && !scrollY) {
+      return;
+    }
+
+    // Mapping both ends of the delta keeps only the scale of the fit.
+    const [position, moved] = mapToArtboard(boundingRect, [
+      { clientX: event.clientX, clientY: event.clientY },
+      { clientX: event.clientX + scrollX, clientY: event.clientY + scrollY },
+    ]);
+    // The DOM never says whether a pixel delta came from a trackpad, so it
+    // counts as precise either way, as it does in the browser's own scrolling.
+    const precise = deltaMode === WheelEvent.DOM_DELTA_PIXEL;
+    const timeStamp = event.timeStamp / 1000;
+
+    // A latched state machine owns the rest of its gesture, even past its edge.
+    const latched = stateMachines.filter((sm) => sm.hasScrollLatch());
+    const ordered = latched.concat(
+      stateMachines.filter((sm) => latched.indexOf(sm) === -1),
+    );
+    const consumed = ordered.some(
+      (stateMachine) =>
+        stateMachine.pointerScroll(
+          position.x,
+          position.y,
+          moved.x - position.x,
+          moved.y - position.y,
+          SCROLL_PHASE_UPDATE,
+          precise,
+          timeStamp,
+          0,
+        ) !== 0,
+    );
+    if (!consumed) {
+      return;
+    }
+    event.preventDefault();
+    // Advance now so the scroll lands on the next frame drawn.
+    advanceAndDrain(0);
+  };
+
   const callback = processEventCallback.bind(this);
   canvas.addEventListener("mouseover", callback);
   canvas.addEventListener("mouseout", callback);
@@ -379,6 +488,8 @@ export const registerTouchInteractions = ({
   });
   canvas.addEventListener("touchend", callback);
   canvas.addEventListener("touchcancel", touchCancelCallback);
+  // Not passive, or preventDefault could not keep the page from scrolling.
+  canvas.addEventListener("wheel", wheelCallback, { passive: false });
   return () => {
     canvas.removeEventListener("mouseover", callback);
     canvas.removeEventListener("mouseout", callback);
@@ -389,5 +500,6 @@ export const registerTouchInteractions = ({
     canvas.removeEventListener("touchstart", callback);
     canvas.removeEventListener("touchend", callback);
     canvas.removeEventListener("touchcancel", touchCancelCallback);
+    canvas.removeEventListener("wheel", wheelCallback);
   };
 };

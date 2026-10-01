@@ -165,6 +165,20 @@ bool hasListeners(rive::StateMachineInstance* smi)
     return false;
 }
 
+// JS hands the phase over as a plain number; anything out of range is read as
+// a phaseless update rather than cast into an invalid enum.
+rive::ScrollEvent makeScrollEvent(double dx, double dy, int phase, bool precise)
+{
+    rive::ScrollEvent event;
+    event.delta = rive::Vec2D((float)dx, (float)dy);
+    event.phase =
+        phase >= (int)rive::ScrollPhase::begin && phase <= (int)rive::ScrollPhase::inertiaCancel
+            ? (rive::ScrollPhase)phase
+            : rive::ScrollPhase::update;
+    event.precise = precise;
+    return event;
+}
+
 emscripten::val semanticsDiffNodeToVal(const rive::SemanticsDiffNode& node)
 {
     emscripten::val obj = emscripten::val::object();
@@ -1172,6 +1186,42 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {
                 self.pointerExit(rive::Vec2D((float)x, (float)y), id);
             }))
+        .function("pointerScroll",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       double x,
+                                       double y,
+                                       double dx,
+                                       double dy,
+                                       int phase,
+                                       bool precise,
+                                       double timeStamp,
+                                       int id) -> int {
+                      return (int)self.pointerScroll(rive::Vec2D((float)x, (float)y),
+                                                     makeScrollEvent(dx, dy, phase, precise),
+                                                     (float)timeStamp,
+                                                     id);
+                  }))
+        .function("wantsScroll",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       double x,
+                                       double y,
+                                       double dx,
+                                       double dy,
+                                       int phase,
+                                       bool precise) -> bool {
+                      return self.wantsScroll(rive::Vec2D((float)x, (float)y),
+                                              makeScrollEvent(dx, dy, phase, precise));
+                  }))
+        .function(
+            "hasScrollTargetAt",
+            optional_override([](rive::StateMachineInstance& self, double x, double y) -> bool {
+                return self.hasScrollTargetAt(rive::Vec2D((float)x, (float)y));
+            }))
+        .function("hasScrollLatch", optional_override([](rive::StateMachineInstance& self) -> bool {
+                      return self.hasScrollLatch();
+                  }))
+        .function("cancelScroll",
+                  optional_override([](rive::StateMachineInstance& self) { self.cancelScroll(); }))
         .function("reportedEventCount", &rive::StateMachineInstance::reportedEventCount)
         .function("reportedEventAt",
                   optional_override(

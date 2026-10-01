@@ -1018,6 +1018,70 @@ export declare class StateMachineInstance {
    * @param y - Y coordinate
    */
   pointerExit(x: number, y: number, id: number): void;
+  /**
+   * Notifies the state machine of indirect scroll input (a mouse wheel, or a trackpad gesture the
+   * platform already classified as a scroll) at the given coordinate in Artboard space. Direct
+   * touch scrolling stays on the pointer path.
+   *
+   * A gesture latches to the scroll view that takes its first event and stays there, even past
+   * that view's edge, until the gesture ends. A gesture with no end phase (a wheel) ends once the
+   * state machine advances 0.1s without another scroll event.
+   *
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param dx - Horizontal distance the content moves, in Artboard pixels. Revealing content to
+   * the right is negative, so a DOM wheel delta must be negated.
+   * @param dy - Vertical distance the content moves, in Artboard pixels. Revealing content below
+   * is negative.
+   * @param phase - Where the event sits within its gesture: 0 begin, 1 update, 2 end,
+   * 3 momentum, 4 inertiaCancel. A phaseless wheel only ever sends 1 (update).
+   * @param precise - True for a pixel-precise source such as a trackpad, false for a detented
+   * wheel.
+   * @param timeStamp - Event time in seconds.
+   * @param id - Pointer id
+   * @returns 0 when nothing took the event, 1 when a scroll view did, 2 when an opaque scroll
+   * view did.
+   */
+  pointerScroll(
+    x: number,
+    y: number,
+    dx: number,
+    dy: number,
+    phase: number,
+    precise: boolean,
+    timeStamp: number,
+    id: number,
+  ): number;
+  /**
+   * Returns true if anything under the given Artboard coordinate would move for this scroll
+   * event, without applying it. Always true while a gesture is latched.
+   * See {@link pointerScroll} for the parameters.
+   */
+  wantsScroll(
+    x: number,
+    y: number,
+    dx: number,
+    dy: number,
+    phase: number,
+    precise: boolean,
+  ): boolean;
+  /**
+   * Returns true if a wheel-enabled scroll view sits under the given Artboard coordinate, even
+   * one that cannot move right now.
+   *
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   */
+  hasScrollTargetAt(x: number, y: number): boolean;
+  /**
+   * Returns true while a scroll gesture is latched to a scroll view in this state machine or a
+   * nested one.
+   */
+  hasScrollLatch(): boolean;
+  /**
+   * Ends any scroll gesture in flight, latch included.
+   */
+  cancelScroll(): void;
 
   /**
    * Returns true if this state machine has any focus nodes registered in its focus tree.

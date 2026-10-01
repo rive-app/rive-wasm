@@ -5,7 +5,7 @@ import eventsBuffer from "./test-rive-buffers/eventsFile.json";
 import * as rive from "../src/rive";
 import listenerBuffer from "./test-rive-buffers/listenerFile.js";
 import { pingPongRiveFileBuffer, loopRiveFileBuffer, oneShotRiveFileBuffer, stateMachineFileBuffer } from "./assets/bytes";
-import { arrayToArrayBuffer } from "./helpers";
+import { arrayToArrayBuffer, loadFile } from "./helpers";
 
 // #region event
 
@@ -67,6 +67,36 @@ test("Statemachines have pointer events", (done) => {
     smi.delete();
     ab.delete();
     //  file.delete();  // todo: need to expose delete() on file
+    done();
+  });
+});
+
+test("Statemachines take wheel scrolling", (done) => {
+  rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
+    const file = await runtime.load(
+      new Uint8Array(loadFile("assets/layout_scroll_vertical.riv")),
+    );
+    const ab = file.artboardByIndex(0);
+    const sm = ab.stateMachineByName("State Machine 1");
+    const smi = new runtime.StateMachineInstance(sm, ab);
+    smi.advanceAndApply(0);
+
+    expect(smi.hasScrollTargetAt(50, 250)).toBe(true);
+    // Already at the top, so a wheel up has nothing to move and would go to
+    // the page.
+    expect(smi.wantsScroll(50, 250, 0, 50, 1, false)).toBe(false);
+    expect(smi.pointerScroll(50, 250, 0, 50, 1, false, 0, 0)).toBe(0);
+    expect(smi.hasScrollLatch()).toBe(false);
+
+    expect(smi.wantsScroll(50, 250, 0, -50, 1, false)).toBe(true);
+    expect(smi.pointerScroll(50, 250, 0, -50, 1, false, 0, 0)).not.toBe(0);
+    expect(smi.hasScrollLatch()).toBe(true);
+
+    smi.cancelScroll();
+    expect(smi.hasScrollLatch()).toBe(false);
+
+    smi.delete();
+    ab.delete();
     done();
   });
 });
