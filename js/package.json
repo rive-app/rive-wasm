@@ -22,6 +22,7 @@
     "publish:all": "./publish_all.sh --access public",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
     "test": "jest",
+    "test:webgl2-image-cleanup": "node test/browser/image-cleanup.cjs",
     "check:types": "./check_types.sh"
   },
   "keywords": [
@@ -61,6 +62,7 @@
     "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-typescript": "^7.27.1",
+    "@rive-app/webgl2-advanced": "2.42.2",
     "@types/jest": "^29.5.14",
     "@types/offscreencanvas": "^2019.7.3",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
@@ -75,6 +77,7 @@
     "jest": "^29.7.0",
     "jest-canvas-mock": "^2.5.2",
     "jest-environment-jsdom": "^29.7.0",
+    "playwright": "1.62.1",
     "prettier-eslint": "^16.3.0",
     "release-it": "^19.0.3",
     "ts-jest": "^29.2.5",
