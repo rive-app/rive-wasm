@@ -1073,10 +1073,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
     class_<rive::Factory>("Factory")
         .function("decodeAudio", &rive::Factory::decodeAudio, allow_raw_pointers())
         .function("decodeImage", &rive::Factory::decodeImage, allow_raw_pointers())
-        .function("decodeFont",
-                  select_overload<rive::rcp<rive::Font>(rive::Span<const uint8_t>)>(
-                      &rive::Factory::decodeFont),
-                  allow_raw_pointers());
+        .function("decodeFont", &rive::Factory::decodeFont, allow_raw_pointers());
     class_<rive::Span<const uint8_t>>("Span");
 
     class_<rive::FileAsset>("FileAsset")
