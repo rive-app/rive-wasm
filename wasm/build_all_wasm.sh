@@ -108,19 +108,19 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/canvas_advanced_lite fallback"
     echo
-    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -c -l ${WASM_CONFIG}
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced_lite/rive_fallback.wasm
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_lite/rive_fallback.wasm
+    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -c -l -r c2d_only ${WASM_CONFIG}
+    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive_fallback.wasm
+    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive_fallback.wasm
 fi
 
 if target_enabled "canvas-lite"; then
     echo
     echo "::::: building @rive-app/canvas_advanced_lite"
     echo
-    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -l ${WASM_CONFIG}
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.mjs ../js/npm/canvas_advanced_lite/canvas_advanced.mjs
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced_lite/rive.wasm
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_lite/rive.wasm
+    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -l -r c2d_only ${WASM_CONFIG}
+    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.mjs ../js/npm/canvas_advanced_lite/canvas_advanced.mjs
+    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive.wasm
+    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_lite/rive_advanced.mjs.d.ts
     verify_fallback canvas_lite
 fi

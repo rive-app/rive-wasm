@@ -5,7 +5,7 @@ function MaxRecentSize(milliseconds, bitShift) {
     console.assert(milliseconds > 0);
     const _map = new Map();
     let _maxSize = -Infinity;
-    this.push = function(size) {
+    this.push = function (size) {
         // Store values in right-shifted form. We will shift left before returning back to the user.
         // Also add 2^(bitShift - 1) before shifting, to ensure we only round upward.
         size = (size + ((1 << bitShift) - 1)) >> bitShift;
@@ -14,7 +14,7 @@ function MaxRecentSize(milliseconds, bitShift) {
             clearTimeout(_map.get(size));
         }
         // Set an eviction timer for the value 'size'.
-        _map.set(size, setTimeout(function() {
+        _map.set(size, setTimeout(function () {
             _map.delete(size);
             if (_map.length == 0) {
                 _maxSize = -Infinity;

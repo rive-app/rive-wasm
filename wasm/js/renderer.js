@@ -14,9 +14,6 @@ function makeMatrix(xx, xy, yx, yy, tx, ty) {
   return m;
 }
 
-const VTX_ARRAY = 0;
-const UV_ARRAY = 1;
-
 // We'll allow calling methods on the c2d context via the Proxy returned by `.makeRenderer()`. This is a list of methods that are allowed.
 const c2dMethodBlockList = [
   "createConicGradient",
@@ -33,377 +30,6 @@ const c2dMethodBlockList = [
   "isPointInStroke",
   "measureText",
 ];
-
-// Used for rendering meshes.
-const offscreenWebGL = new (function () {
-  let _gl = null;
-  let _webglVersion = 0;
-  let _maxRTSize = 0;
-  let _matUniform = null;
-  let _translateUniform = null;
-  let _vertexBufferLength = 0;
-  let _indexBufferLength = 0;
-  let _hasLoggedContextLostError = false;
-
-  const initGL = function () {
-    if (!_gl) {
-      const canvas = document.createElement("canvas");
-      const contextAttribs = {
-        "alpha": 1,
-        "depth": 0,
-        "stencil": 0,
-        "antialias": 0,
-        "premultipliedAlpha": 1,
-        "preserveDrawingBuffer": 0,
-        "powerPreference": "high-performance",
-        "failIfMajorPerformanceCaveat": 0,
-        "enableExtensionsByDefault": 1,
-        "explicitSwapControl": 1,
-        "renderViaOffscreenBackBuffer": 1,
-      };
-      const _isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      let gl;
-      // Check for iOS as we've encountered context lost and crash issues
-      // with WebGL2 contexts and iOS Safari (16 and 17)
-      if (_isiOS) {
-        gl = canvas.getContext("webgl", contextAttribs);
-        _webglVersion = 1;
-        if (!gl) {
-          console.log("No WebGL support. Image mesh will not be drawn.");
-          return false;
-        }
-      } else {
-        // Prefer webgl2 so we can use mipmaps on now-power-2 mesh textures.
-        gl = canvas.getContext("webgl2", contextAttribs);
-        if (gl) {
-          _webglVersion = 2;
-        } else {
-          gl = canvas.getContext("webgl", contextAttribs);
-          if (gl) {
-            _webglVersion = 1;
-          } else {
-            console.log("No WebGL support. Image mesh will not be drawn.");
-            return false;
-          }
-        }
-      }
-
-      gl = new Proxy(gl, {
-        get(target, property) {
-          if (target.isContextLost()) {
-            // rAf may still take place, so just want to prevent logging constantly
-            if (!_hasLoggedContextLostError) {
-              console.error(
-                "Cannot render the mesh because the GL Context was lost. Tried to invoke ",
-                property
-              );
-              _hasLoggedContextLostError = true;
-            }
-            if (typeof target[property] === "function") {
-              return function () { };
-            }
-            return;
-          } else {
-            if (typeof target[property] === "function") {
-              return function (...args) {
-                return target[property].apply(target, args);
-              };
-            }
-            return target[property];
-          }
-        },
-        set(target, property, value) {
-          if (target.isContextLost()) {
-            // rAf may still take place, so just want to prevent logging constantly
-            if (!_hasLoggedContextLostError) {
-              console.error(
-                "Cannot render the mesh because the GL Context was lost. Tried to set property " +
-                property
-              );
-              _hasLoggedContextLostError = true;
-            }
-            return;
-          } else {
-            target[property] = value;
-            return true;
-          }
-        },
-      });
-
-      _maxRTSize = Math.min(
-        gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
-        gl.getParameter(gl.MAX_TEXTURE_SIZE)
-      );
-
-      function compileAndAttachShader(program, shaderType, sourceCode) {
-        const shader = gl.createShader(shaderType);
-        gl.shaderSource(shader, sourceCode);
-        gl.compileShader(shader);
-        const log = gl.getShaderInfoLog(shader);
-        if ((log || "").length > 0) {
-          throw log;
-        }
-        gl.attachShader(program, shader);
-      }
-      const program = gl.createProgram();
-      compileAndAttachShader(
-        program,
-        gl.VERTEX_SHADER,
-        `attribute vec2 vertex;
-                attribute vec2 uv;
-                uniform vec4 mat;
-                uniform vec2 translate;
-                varying vec2 st;
-                void main() {
-                    st = uv;
-                    gl_Position = vec4(mat2(mat) * vertex + translate, 0, 1);
-                }`
-      );
-      compileAndAttachShader(
-        program,
-        gl.FRAGMENT_SHADER,
-        `precision highp float;
-                uniform sampler2D image;
-                varying vec2 st;
-                void main() {
-                    gl_FragColor = texture2D(image, st);
-                }`
-      );
-      gl.bindAttribLocation(program, VTX_ARRAY, "vertex");
-      gl.bindAttribLocation(program, UV_ARRAY, "uv");
-      gl.linkProgram(program);
-      const log = gl.getProgramInfoLog(program);
-      if ((log || "").trim().length > 0) {
-        throw log;
-      }
-      _matUniform = gl.getUniformLocation(program, "mat");
-      _translateUniform = gl.getUniformLocation(program, "translate");
-      gl.useProgram(program);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-      gl.enableVertexAttribArray(VTX_ARRAY);
-      gl.enableVertexAttribArray(UV_ARRAY);
-
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
-
-      gl.uniform1i(gl.getUniformLocation(program, "image"), 0);
-
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-
-      _gl = gl;
-    }
-    return true;
-  };
-  // TODO: Might mask the issue of GL context lost, but initializing GL early to help mitigate
-  initGL();
-
-  this.maxRTSize = function () {
-    initGL();
-    return _maxRTSize;
-  };
-  this.deleteImageTexture = function (texture) {
-    // _gl is only assigned once initGL() succeeds, so guard the object too.
-    if (!_gl || !_gl.deleteTexture) {
-      return;
-    }
-    _gl.deleteTexture(texture);
-  };
-  this.createImageTexture = function (image) {
-    if (!initGL()) {
-      return null;
-    }
-    const texture = _gl.createTexture();
-    if (!texture) {
-      return null;
-    }
-    _gl.bindTexture(_gl.TEXTURE_2D, texture);
-    _gl.texImage2D(
-      _gl.TEXTURE_2D,
-      0,
-      _gl.RGBA,
-      _gl.RGBA,
-      _gl.UNSIGNED_BYTE,
-      image
-    );
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_S, _gl.CLAMP_TO_EDGE);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_WRAP_T, _gl.CLAMP_TO_EDGE);
-    _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.LINEAR);
-    if (_webglVersion == 2) {
-      _gl.texParameteri(
-        _gl.TEXTURE_2D,
-        _gl.TEXTURE_MIN_FILTER,
-        _gl.LINEAR_MIPMAP_LINEAR
-      );
-      _gl.generateMipmap(_gl.TEXTURE_2D);
-    } else {
-      _gl.texParameteri(_gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.LINEAR);
-    }
-    return texture;
-  };
-
-  const _maxRecentAtlasWidth = new MaxRecentSize(
-    1000 /*ms*/,
-    8 /*aligned to multiples of 256*/
-  );
-  const _maxRecentAtlasHeight = new MaxRecentSize(
-    1000 /*ms*/,
-    8 /*aligned to multiples of 256*/
-  );
-  const _maxRecentVertexLength = new MaxRecentSize(
-    1000 /*ms*/,
-    10 /*aligned to multiples of 1024*/
-  );
-  const _maxRecentIndexLength = new MaxRecentSize(
-    1000 /*ms*/,
-    10 /*aligned to multiples of 1024*/
-  );
-
-  this.drawMeshAtlas = function (
-    atlasWidth,
-    atlasHeight,
-    meshes,
-    numTotalVertexFloats,
-    numTotalIndices
-  ) {
-    if (!initGL()) {
-      return;
-    }
-
-    const canvasWidth = _maxRecentAtlasWidth.push(atlasWidth);
-    const canvasHeight = _maxRecentAtlasHeight.push(atlasHeight);
-
-    // Early out if the proxy doesn't return the canvas due to lost context
-    if (!_gl.canvas) {
-      return;
-    }
-    if (_gl.canvas.width != canvasWidth || _gl.canvas.height != canvasHeight) {
-      _gl.canvas.width = canvasWidth;
-      _gl.canvas.height = canvasHeight;
-    }
-    _gl.viewport(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
-    _gl.disable(_gl.SCISSOR_TEST);
-    _gl.clearColor(0, 0, 0, 0);
-    _gl.clear(_gl.COLOR_BUFFER_BIT);
-    _gl.enable(_gl.SCISSOR_TEST);
-
-    // Sort the meshes into a draw order that minimizes the cost of GL state changes.
-    meshes.sort((a, b) => b.sortKey - a.sortKey);
-
-    const SIZE_OF_FLOAT = 4;
-    const SIZE_OF_U16 = 2;
-
-    // Upload all vertices.
-    const vertexBufferLength =
-      _maxRecentVertexLength.push(numTotalVertexFloats);
-    if (_vertexBufferLength != vertexBufferLength) {
-      _gl.bufferData(
-        _gl.ARRAY_BUFFER,
-        vertexBufferLength * 2 /*count uv as well*/ * SIZE_OF_FLOAT,
-        _gl.DYNAMIC_DRAW
-      );
-      _vertexBufferLength = vertexBufferLength;
-    }
-    let vOffset = 0;
-    for (const m of meshes) {
-      _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.vtx);
-      vOffset += m.vtx.length * SIZE_OF_FLOAT;
-    }
-    console.assert(vOffset == numTotalVertexFloats * SIZE_OF_FLOAT);
-
-    // Upload all uv.
-    for (const m of meshes) {
-      _gl.bufferSubData(_gl.ARRAY_BUFFER, vOffset, m.uv);
-      vOffset += m.uv.length * SIZE_OF_FLOAT;
-    }
-    console.assert(
-      vOffset == numTotalVertexFloats * 2 /*count uv as well*/ * SIZE_OF_FLOAT
-    );
-
-    // Upload all indices.
-    const indexBufferLength = _maxRecentIndexLength.push(numTotalIndices);
-    if (_indexBufferLength != indexBufferLength) {
-      _gl.bufferData(
-        _gl.ELEMENT_ARRAY_BUFFER,
-        indexBufferLength * SIZE_OF_U16,
-        _gl.DYNAMIC_DRAW
-      );
-      _indexBufferLength = indexBufferLength;
-    }
-    let iOffset = 0;
-    for (const m of meshes) {
-      _gl.bufferSubData(_gl.ELEMENT_ARRAY_BUFFER, iOffset, m.indices);
-      iOffset += m.indices.length * SIZE_OF_U16;
-    }
-    console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
-
-    // Draw all meshes.
-    let boundTextureID = 0;
-    let hasScissor = true;
-    vOffset = iOffset = 0;
-    for (const m of meshes) {
-      if (m.image._uniqueID != boundTextureID) {
-        _gl.bindTexture(_gl.TEXTURE_2D, m.image._texture || null);
-        boundTextureID = m.image._uniqueID;
-      }
-
-      if (m.needsScissor) {
-        _gl.scissor(
-          m.atlasX,
-          canvasHeight - m.atlasY - m.heightInAtlas,
-          m.widthInAtlas,
-          m.heightInAtlas
-        );
-        hasScissor = true;
-      } else if (hasScissor) {
-        _gl.scissor(0, canvasHeight - atlasHeight, atlasWidth, atlasHeight);
-        hasScissor = false;
-      }
-
-      // Draw the top-left corner of the mesh at location (atlasX, atlasY) in the WebGL
-      // canvas, scaled by (scaleX, scaleY).
-      // Post-transform the canvas2d's matrix into normalized OpenGL clip space (-1..1).
-      const iw = 2 / atlasWidth;
-      const ih = -2 / atlasHeight;
-      _gl.uniform4f(
-        _matUniform,
-        m.mat[0] * iw * m.scaleX,
-        m.mat[1] * ih * m.scaleY,
-        m.mat[2] * iw * m.scaleX,
-        m.mat[3] * ih * m.scaleY
-      );
-      _gl.uniform2f(
-        _translateUniform,
-        m.mat[4] * iw * m.scaleX + iw * (m.atlasX - m.meshX * m.scaleX) - 1,
-        m.mat[5] * ih * m.scaleY + ih * (m.atlasY - m.meshY * m.scaleY) + 1
-      );
-
-      _gl.vertexAttribPointer(VTX_ARRAY, 2, _gl.FLOAT, false, 0, vOffset);
-      _gl.vertexAttribPointer(
-        UV_ARRAY,
-        2,
-        _gl.FLOAT,
-        false,
-        0,
-        vOffset + numTotalVertexFloats * SIZE_OF_FLOAT
-      );
-      _gl.drawElements(
-        _gl.TRIANGLES,
-        m.indices.length,
-        _gl.UNSIGNED_SHORT,
-        iOffset
-      );
-
-      vOffset += m.vtx.length * SIZE_OF_FLOAT;
-      iOffset += m.indices.length * SIZE_OF_U16;
-    }
-    console.assert(vOffset == numTotalVertexFloats * SIZE_OF_FLOAT);
-    console.assert(iOffset == numTotalIndices * SIZE_OF_U16);
-  };
-
-  this.canvas = function () {
-    return initGL() && _gl.canvas;
-  };
-})();
 
 const rendererOnRuntimeInitialized = Module["onRuntimeInitialized"];
 Module["onRuntimeInitialized"] = function () {
@@ -427,6 +53,15 @@ Module["onRuntimeInitialized"] = function () {
   const stroke = RenderPaintStyle.stroke;
 
   const evenOdd = FillRule.evenOdd;
+  const nonZero = FillRule.nonZero;
+
+  // Mirrors RIVE_MITER_LIMIT in the renderer's constants.glsl.
+  const RIVE_MITER_LIMIT = 4;
+
+  // Draws what canvas 2D can't. Every canvas 2D build has one, though only the WebGL2
+  // backend can draw paths.
+  const _offscreenRenderer = canvasOffscreenRenderer;
+  const _offscreenBackend = _offscreenRenderer.backend;
 
   let _nextImageUniqueID = 1;
 
@@ -437,10 +72,15 @@ Module["onRuntimeInitialized"] = function () {
       _nextImageUniqueID = (_nextImageUniqueID + 1) & 0x7fffffff || 1;
       this.onComplete = onComplete;
       this.onDecode = onDecode;
+      this._image = null;
+      this._newObjectUrl = null;
+      // Only one of these is set, depending on which backend is hooked up.
+      this._webGL2Image = null;
+      this._meshTexture = null;
     },
     "__destruct": function () {
-      if (this._texture) {
-        offscreenWebGL.deleteImageTexture(this._texture);
+      _offscreenBackend.releaseImage(this);
+      if (this._newObjectUrl) {
         // Recommended to release this when it's safe to do so
         // Source: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static#memory_management
         URL.revokeObjectURL(this._newObjectUrl);
@@ -457,9 +97,11 @@ Module["onRuntimeInitialized"] = function () {
           type: "image/png",
         })
       );
+      // TODO: there is no onerror handler, so an image that fails to load never fires
+      // onComplete, and the promise from Module.load() never settles.
       image.onload = function () {
         cri._image = image;
-        cri._texture = offscreenWebGL.createImageTexture(image);
+        _offscreenBackend.attachImage(cri, image);
         cri["size"](image.width, image.height);
 
         cri.onComplete && cri.onComplete(cri);
@@ -467,6 +109,28 @@ Module["onRuntimeInitialized"] = function () {
       image.src = cri._newObjectUrl;
     },
   });
+
+  function _canvasCap(value) {
+    switch (value) {
+      case StrokeCap.butt:
+        return "butt";
+      case StrokeCap.round:
+        return "round";
+      case StrokeCap.square:
+        return "square";
+    }
+  }
+
+  function _canvasJoin(value) {
+    switch (value) {
+      case StrokeJoin.miter:
+        return "miter";
+      case StrokeJoin.round:
+        return "round";
+      case StrokeJoin.bevel:
+        return "bevel";
+    }
+  }
 
   function _canvasBlend(value) {
     switch (value) {
@@ -507,46 +171,178 @@ Module["onRuntimeInitialized"] = function () {
     }
   }
 
-  class RefCountedPath2D {
-    constructor() {
-      this._refCount = 0;
+  // Builds Path2D instances from the set of instructions with a few modifications to
+  // the default Path2D behavior to conform to the Rive renderer.
+  // Possible perf note: transformPoint is called a lot here, and creates a temporary
+  // point object for both the input and the output. We may want to revisit this if it
+  // shows up as a bottleneck.
+  class Path2DBuilder {
+    constructor(pointTransform) {
+      this._pointTransform = pointTransform;
+      this.path = new Path2D();
+      // The last moveTo, until a verb continues its subpath
+      this._pendingMove = null;
+      this._finalized = false;
+    }
+
+    _capPendingMove() {
+      if (this._pendingMove !== null) {
+        // Match the Rive renderer's behavior by adding a cap for an isolated moveTo.
+        this.path["lineTo"](this._pendingMove.x, this._pendingMove.y);
+        this._pendingMove = null;
+      }
+    }
+
+    moveTo(x, y) {
+      // Cap the subpath this moveTo is about to leave behind, before it is forgotten.
+      this._capPendingMove();
+      let px = x, py = y;
+      if (this._pointTransform !== null) {
+        const p = this._pointTransform.transformPoint({ x, y });
+        px = p.x;
+        py = p.y;
+      }
+      this.path["moveTo"](px, py);
+      this._pendingMove = { x: px, y: py };
+    }
+
+    lineTo(x, y) {
+      this._pendingMove = null;
+      if (this._pointTransform !== null) {
+        const p = this._pointTransform.transformPoint({ x, y });
+        this.path["lineTo"](p.x, p.y);
+      } else {
+        this.path["lineTo"](x, y);
+      }
+    }
+
+    cubicTo(ox, oy, ix, iy, x, y) {
+      this._pendingMove = null;
+      if (this._pointTransform !== null) {
+        const o = this._pointTransform.transformPoint({ x: ox, y: oy });
+        const i = this._pointTransform.transformPoint({ x: ix, y: iy });
+        const p = this._pointTransform.transformPoint({ x, y });
+        this.path["bezierCurveTo"](o.x, o.y, i.x, i.y, p.x, p.y);
+      } else {
+        this.path["bezierCurveTo"](ox, oy, ix, iy, x, y);
+      }
+    }
+
+    close() {
+      this._pendingMove = null;
+      this.path["closePath"]();
+    }
+
+    addPath(instructions, xx, xy, yx, yy, tx, ty) {
+      this._capPendingMove();
+      const subPath = new Path2DBuilder(null);
+      for (const instruction of instructions) {
+        instruction(subPath);
+      }
+      subPath.finalizePath();
+      let transform = makeMatrix(xx, xy, yx, yy, tx, ty);
+      if (this._pointTransform !== null) {
+        transform = this._pointTransform.multiply(transform);
+      }
+      this.path["addPath"](subPath.path, transform);
+    }
+
+    finalizePath() {
+      if (this._pendingMove !== null && !this._finalized) {
+        this._capPendingMove();
+        // Only the trailing cap makes the path unsafe to extend, since a later verb would
+        // continue the subpath it stood in for.
+        this._finalized = true;
+      }
+    }
+
+    wasFinalized() {
+      return this._finalized;
+    }
+
+    dispose() { }
+  }
+
+  // Rive paths require explicit ref-counting but Path2D does not. These functions handle
+  // both cases.
+  function _refPath(path) {
+    if (path["ref"]) {
+      path["ref"]();
+    }
+  }
+
+  function _unrefPath(path) {
+    if (path["unref"]) {
+      path["unref"]();
+    }
+  }
+
+  // A path built from some prefix of a CanvasRenderPath's instructions. `makeBuilder`
+  // decides which kind of path it produces.
+  class RefCountedPath {
+    constructor(makeBuilder) {
+      this._makeBuilder = makeBuilder;
+      this._borrowCount = 0;
       this._executedInstructionCount = 0;
-      this._path2D = new Path2D();
+      this._pointTransform = null;
+      this._builder = makeBuilder(null);
     }
 
     clear() {
-      this._refCount = 0;
-      this._executedInstructionCount = 0;
-      this._path2D = new Path2D();
+      this._reset(null);
     }
 
-    // Returns a copy of the path that is up to date with the given instructions. The
-    // caller is responsible for releasing the path when done, or calling `clear()` to
-    // discard all references.
-    acquire(instructions) {
-      if (this._refCount > 0 && this._executedInstructionCount < instructions.length) {
-        // If new instructions have been added, we need to bring the path up to date
-        // before returning it. However, if the path is being actively referenced, we
-        // cannot directly modify it. Instead, we will create a new path by replaying all
-        // instructions.
-        this.clear();
+    // Returns a path that is up to date with the given instructions and transform.
+    acquire(instructions, pointTransform) {
+      let transformChanged;
+      if (pointTransform === null) {
+        transformChanged = this._pointTransform !== null;
+      } else {
+        transformChanged = this._pointTransform === null
+          || this._pointTransform.a !== pointTransform.a
+          || this._pointTransform.b !== pointTransform.b
+          || this._pointTransform.c !== pointTransform.c
+          || this._pointTransform.d !== pointTransform.d
+          || this._pointTransform.e !== pointTransform.e
+          || this._pointTransform.f !== pointTransform.f;
+      }
+
+      if (transformChanged
+        || (this._executedInstructionCount < instructions.length
+          && (this._borrowCount > 0 || this._builder.wasFinalized()))) {
+        // The transform changed, the path is being actively borrowed, or finalizePath()
+        // has added an instruction, then we can't append to the path in-place. Instead,
+        // start another path and replay everything into it.
+        this._reset(pointTransform);
       }
 
       while (this._executedInstructionCount < instructions.length) {
-        instructions[this._executedInstructionCount++](this._path2D);
+        instructions[this._executedInstructionCount++](this._builder);
       }
+      this._builder.finalizePath();
 
-      this._refCount++;
-      return this._path2D;
+      this._borrowCount++;
+      return this._builder.path;
     }
 
-    release(path2D) {
-      // Only decrement the ref count if the path being released is the same as the one
-      // we are tracking. This excludes the case where we've created a new path since the
-      // last acquire.
-      if (path2D === this._path2D) {
-        this._refCount--;
+    // If the path being released is no longer being tracked, this is a no-op.
+    releaseBorrow(path) {
+      if (this._builder !== null && path === this._builder.path) {
+        this._borrowCount--;
       }
+    }
+
+    dispose() {
+      this._builder.dispose();
+      this._builder = null;
+    }
+
+    _reset(pointTransform) {
+      this._builder.dispose();
+      this._borrowCount = 0;
+      this._executedInstructionCount = 0;
+      this._pointTransform = pointTransform;
+      this._builder = this._makeBuilder(pointTransform);
     }
   }
 
@@ -559,98 +355,100 @@ Module["onRuntimeInitialized"] = function () {
       // We may need to replay the path from scratch if there is already an outstanding
       // draw call holding a reference to the current Path2D object.
       this._pathInstructions = [];
-      this._path2D = new RefCountedPath2D();
+
+      // Keep several separate caches to handle the case where a path is redrawn using a
+      // few different techniques (e.g. filled and stroked). This is to prevent cache
+      // churn.
+      this._path2D = new RefCountedPath((t) => new Path2DBuilder(t));
+      this._transformedPath2D = new RefCountedPath((t) => new Path2DBuilder(t));
+      this._rivePaths = new Map(); // One per fill rule.
+
+      this._fillRule = nonZero;
 
       // See _ensureSubpath().
       this._hasSubpath = false;
-
-      // See _continueSubpath().
-      this._pendingMove = null;
+    },
+    "__destruct": function () {
+      this._path2D.dispose();
+      this._transformedPath2D.dispose();
+      for (const rivePath of this._rivePaths.values()) {
+        rivePath.dispose();
+      }
+      this._rivePaths.clear();
+      this["__parent"]["__destruct"].call(this);
     },
     "rewind": function () {
       this._pathInstructions.length = 0;
       this._path2D.clear();
+      this._transformedPath2D.clear();
+      for (const rivePath of this._rivePaths.values()) {
+        rivePath.clear();
+      }
       this._hasSubpath = false;
-      this._pendingMove = null;
     },
     "addPath": function (path, xx, xy, yx, yy, tx, ty) {
-      const path2DToAdd = path._copyPath();
-      this._addPathInstruction((path2D) => {
-        let transform = makeMatrix(xx, xy, yx, yy, tx, ty);
-        path2D["addPath"](path2DToAdd, transform);
-      });
+      const instructionsToAdd = path._pathInstructions.slice();
+      this._addPathInstruction(
+        (builder) => builder.addPath(instructionsToAdd, xx, xy, yx, yy, tx, ty));
     },
     "fillRule": function (fillRule) {
       this._fillRule = fillRule;
     },
     "moveTo": function (x, y) {
       this._hasSubpath = true;
-      const subpath = { degenerate: true };
-      this._pendingMove = subpath;
-      this._addPathInstruction((path2D) => {
-        path2D["moveTo"](x, y);
-        if (subpath.degenerate) {
-          path2D["lineTo"](x, y);
-        }
-      });
+      this._addPathInstruction((builder) => builder.moveTo(x, y));
     },
     "lineTo": function (x, y) {
       this._ensureSubpath();
-      this._continueSubpath();
-      this._addPathInstruction((path2D) => {
-        path2D["lineTo"](x, y);
-      });
+      this._addPathInstruction((builder) => builder.lineTo(x, y));
     },
     "cubicTo": function (ox, oy, ix, iy, x, y) {
       this._ensureSubpath();
-      this._continueSubpath();
-      this._addPathInstruction((path2D) => {
-        path2D["bezierCurveTo"](ox, oy, ix, iy, x, y);
-      });
+      this._addPathInstruction((builder) => builder.cubicTo(ox, oy, ix, iy, x, y));
     },
     "close": function () {
-      this._continueSubpath();
-      this._addPathInstruction((path2D) => {
-        path2D["closePath"]();
-      });
+      this._addPathInstruction((builder) => builder.close());
     },
-    // If we haven't yet started a path, issue a moveTo(0, 0) command to match the
-    // behavior of the Rive renderer (see RawPath::injectImplicitMoveIfNeeded). Canvas2D
-    // instead begins it at the verb's own first point (e.g. moveTo(cp1x, cp1y) for
-    // bezierCurveTo).
+    // Canvas2D begins a subpath at the verb's own first point (moveTo(cp1x, cp1y) for a
+    // bezierCurveTo), where Rive begins an empty path at the origin (see
+    // RawPath::injectImplicitMoveIfNeeded). Handle this case here to match Rive's
+    // behavior (note that this doesn't need to happen after a close() call).
     _ensureSubpath: function () {
       if (!this._hasSubpath) {
         this["moveTo"](0, 0);
       }
     },
-    // Canvas2D strokes nothing for a subpath that is only a moveTo, whereas Rive
-    // caps it. moveTo() therefore records a zero-length line, which Canvas2D does
-    // cap, and any verb that continues the subpath takes it back off again. The
-    // instructions read the flag when they replay, so it is always up to date by
-    // the time it matters.
-    _continueSubpath: function () {
-      if (this._pendingMove !== null) {
-        this._pendingMove.degenerate = false;
-        this._pendingMove = null;
-      }
-    },
     _addPathInstruction: function (lambda) {
       this._pathInstructions.push(lambda);
     },
-    _acquirePath: function () {
-      return this._path2D.acquire(this._pathInstructions);
+
+    _acquirePath: function (pathPointTransform) {
+      const path = pathPointTransform === null
+        ? this._path2D.acquire(this._pathInstructions, null)
+        : this._transformedPath2D.acquire(this._pathInstructions, pathPointTransform);
+      _refPath(path);
+      return path;
     },
-    _releasePath: function (path2D) {
-      // We can safely call release() because the release() call gates on whether the
-      // path being released is the same as the one being tracked.
-      this._path2D.release(path2D);
+    _acquireRivePath: function (fillRule) {
+      let rivePath = this._rivePaths.get(fillRule);
+      if (rivePath === undefined) {
+        rivePath = new RefCountedPath(
+          () => _offscreenBackend.makeRivePathBuilder(fillRule));
+        this._rivePaths.set(fillRule, rivePath);
+      }
+      const path = rivePath.acquire(this._pathInstructions, null);
+      _refPath(path);
+      return path;
     },
-    _copyPath: function () {
-      // Acquire the path and immediately stop tracking it. This creates a copy that 
-      // doesn't need to be released.
-      const path2D = this._acquirePath();
-      this._path2D.clear();
-      return path2D;
+    _releasePath: function (path) {
+      // The borrow goes back to whichever one still recognises the path. Calling all of
+      // them is safe because each gates on that, so the reference is released only once.
+      this._path2D.releaseBorrow(path);
+      this._transformedPath2D.releaseBorrow(path);
+      for (const rivePath of this._rivePaths.values()) {
+        rivePath.releaseBorrow(path);
+      }
+      _unrefPath(path);
     }
   });
 
@@ -667,206 +465,324 @@ Module["onRuntimeInitialized"] = function () {
       ")"
     );
   }
+
+  // Stops are added later using addStop(). canvasGradient is used to memoize the
+  // resulting gradient+stops for reuse by multiple draw calls as long as no stops
+  // were later added.
+  function _makeGradient(sx, sy, ex, ey, isRadial) {
+    return { sx, sy, ex, ey, isRadial, stops: [], canvasGradient: null };
+  }
+
+  // Stands in for the gradient of a paint that has none, so that _acquireWebGL2Paint() has
+  // something to read the arguments the other side ignores from.
+  const _noGradient = _makeGradient(0, 0, 0, 0, false);
+
+  function _canvasGradient(ctx, gradient) {
+    if (gradient.canvasGradient === null) {
+      const sx = gradient.sx;
+      const sy = gradient.sy;
+      const ex = gradient.ex;
+      const ey = gradient.ey;
+      if (gradient.isRadial) {
+        const dx = ex - sx;
+        const dy = ey - sy;
+        const radius = Math.sqrt(dx * dx + dy * dy);
+        gradient.canvasGradient = ctx["createRadialGradient"](sx, sy, 0, sx, sy, radius);
+      } else {
+        gradient.canvasGradient = ctx["createLinearGradient"](sx, sy, ex, ey);
+      }
+      const stops = gradient.stops;
+      for (let i = 0, l = stops.length; i < l; i++) {
+        gradient.canvasGradient["addColorStop"](stops[i].stop, _colorStyle(stops[i].color));
+      }
+    }
+    return gradient.canvasGradient;
+  }
+
   var CanvasRenderPaint = RenderPaint.extend("CanvasRenderPaint", {
     "__construct": function () {
       this["__parent"]["__construct"].call(this);
-      // Because draw calls are deferred and a paint object may be used across multiple
-      // draw calls, we don't immediately apply modifications. Instead, we record a list
-      // of modifications and apply them when a draw call is executed.
-      this._modifications = [];
-      this._executedModificationCount = 0;
-
       // Match the defaults of other renderers.
       this._style = fill;
-      this._value = _colorStyle(0xff000000);
+      this._color = 0xff000000;
       this._thickness = 1;
-      this._join = "miter";
-      this._cap = "butt";
+      this._join = StrokeJoin.miter;
+      this._cap = StrokeCap.butt;
+      this._feather = 0;
       this._blend = _canvasBlend(BlendMode.srcOver);
       this._gradient = null;
+      this._gradientTransform = null;
+      this._inverseGradientTransform = null;
+      this._strokeThicknessScale = 1;
+
+      // This gets bumped each time the paint is modified and is used to control caching
+      this._version = 0;
+      this._webGL2Paint = null;
+      this._webGL2PaintVersion = -1;
+    },
+    "__destruct": function () {
+      if (this._webGL2Paint !== null) {
+        Module["unrefWebGL2Paint"](this._webGL2Paint);
+        this._webGL2Paint = null;
+      }
+      this["__parent"]["__destruct"].call(this);
     },
     "color": function (value) {
-      this._modifications.push(() => { this._value = _colorStyle(value); });
+      this._color = value;
+      this._gradient = null;
+      this._version++;
     },
     "thickness": function (value) {
-      this._modifications.push(() => { this._thickness = Math.abs(value); });
+      this._thickness = Math.abs(value);
+      this._version++;
     },
     "join": function (value) {
-      this._modifications.push(() => {
-        switch (value) {
-          case StrokeJoin.miter:
-            this._join = "miter";
-            break;
-          case StrokeJoin.round:
-            this._join = "round";
-            break;
-          case StrokeJoin.bevel:
-            this._join = "bevel";
-            break;
-        }
-      })
+      this._join = value;
+      this._version++;
     },
     "cap": function (value) {
-      this._modifications.push(() => {
-        switch (value) {
-          case StrokeCap.butt:
-            this._cap = "butt";
-            break;
-          case StrokeCap.round:
-            this._cap = "round";
-            break;
-          case StrokeCap.square:
-            this._cap = "square";
-            break;
-        }
-      });
+      this._cap = value;
+      this._version++;
+    },
+    "feather": function (value) {
+      this._feather = Math.abs(value);
+      this._version++;
     },
     "style": function (value) {
-      this._modifications.push(() => { this._style = value; });
+      this._style = value;
+      this._version++;
     },
     "blendMode": function (value) {
-      this._modifications.push(() => { this._blend = _canvasBlend(value); });
+      this._blend = _canvasBlend(value);
+      this._version++;
     },
     "clearGradient": function () {
-      this._modifications.push(() => { this._gradient = null; });
+      this._gradient = null;
+      this._version++;
     },
     "linearGradient": function (sx, sy, ex, ey) {
-      this._modifications.push(() => {
-        this._gradient = {
-          sx,
-          sy,
-          ex,
-          ey,
-          stops: [],
-        };
-      });
+      this._gradient = _makeGradient(sx, sy, ex, ey, false);
+      this._version++;
     },
     "radialGradient": function (sx, sy, ex, ey) {
-      this._modifications.push(() => {
-        this._gradient = {
-          sx,
-          sy,
-          ex,
-          ey,
-          stops: [],
-          isRadial: true,
-        };
-      });
+      this._gradient = _makeGradient(sx, sy, ex, ey, true);
+      this._version++;
     },
     "addStop": function (color, stop) {
-      this._modifications.push(() => {
-        this._gradient.stops.push({
-          color,
-          stop,
-        });
-      });
+      this._gradient.stops.push({ color, stop });
+      this._gradient.canvasGradient = null;
+      this._version++;
     },
 
     "completeGradient": function () { },
 
-    // https://github.com/rive-app/rive/issues/3816: The fill rule (and only the fill rule) on a
-    // path object can mutate before flush(). To work around this, we capture the fill rule at
-    // draw time. It's a little awkward having a fill rule here even though we might be a
-    // stroke, so we probably want to rework this.
-    _draw: function (ctx, path2D, fillRule, modulatedOpacity) {
-      // Skip the draw if invalid thickness has been set (this includes NaN).
-      if (this._style === stroke && !(this._thickness > 0)) {
-        return;
+    "_setGradientTransform": function (xx, xy, yx, yy, tx, ty, ixx, ixy, iyx, iyy, itx, ity, thicknessScale) {
+      if (xx === 1 && xy === 0 && yx === 0 && yy === 1 && tx === 0 && ty === 0) {
+        // Identity - clear the matrices to skip unnecessary work.
+        this._gradientTransform = null;
+        this._inverseGradientTransform = null;
+      } else {
+        this._gradientTransform = makeMatrix(xx, xy, yx, yy, tx, ty);
+        this._inverseGradientTransform = makeMatrix(ixx, ixy, iyx, iyy, itx, ity);
       }
-
-      let _style = this._style;
-      let _value = this._value;
-      let _gradient = this._gradient;
-      let _blend = this._blend;
-
-      // Save context state we're about to modify
-      const prevBlend = ctx["globalCompositeOperation"];
-      const prevAlpha = ctx["globalAlpha"];
-
-      ctx["globalCompositeOperation"] = _blend;
-      ctx["globalAlpha"] = modulatedOpacity;
-
-      if (_gradient != null) {
-        const sx = _gradient.sx;
-        const sy = _gradient.sy;
-        const ex = _gradient.ex;
-        const ey = _gradient.ey;
-        const stops = _gradient.stops;
-
-        if (_gradient.isRadial) {
-          var dx = ex - sx;
-          var dy = ey - sy;
-          var radius = Math.sqrt(dx * dx + dy * dy);
-          _value = ctx["createRadialGradient"](sx, sy, 0, sx, sy, radius);
-        } else {
-          _value = ctx["createLinearGradient"](sx, sy, ex, ey);
-        }
-
-        for (let i = 0, l = stops["length"]; i < l; i++) {
-          const value = stops[i];
-          const stop = value.stop;
-          const color = value.color;
-          _value["addColorStop"](stop, _colorStyle(color));
-        }
-        this._value = _value;
-        this._gradient = null;
-      }
-
-      switch (_style) {
-        case stroke:
-          ctx["strokeStyle"] = _value;
-          ctx["lineWidth"] = this._thickness;
-          ctx["lineCap"] = this._cap;
-          ctx["lineJoin"] = this._join;
-          ctx["stroke"](path2D);
-          break;
-        case fill:
-          ctx["fillStyle"] = _value;
-          ctx["fill"](path2D, fillRule);
-          break;
-      }
-
-      // Restore context state
-      ctx["globalCompositeOperation"] = prevBlend;
-      ctx["globalAlpha"] = prevAlpha;
+      this._strokeThicknessScale = thicknessScale;
+      this._version++;
     },
-    _getModificationCount: function () {
-      return this._executedModificationCount + this._modifications.length;
-    },
-    _executeModifications: function (modificationCount) {
-      const count = modificationCount - this._executedModificationCount;
-      for (let i = 0; i < count; i++) {
-        this._modifications[i]();
+
+    // Turns this JS-side paint into a Rive paint that can be used with the WebGL2
+    // renderer. The resulting paint is cached so repeated calls are no-ops, as
+    // long as no further changes have been made.
+    _acquireWebGL2Paint: function () {
+      if (this._webGL2PaintVersion !== this._version) {
+        if (this._webGL2Paint !== null) {
+          // Any draw still holding this one has its own reference.
+          Module["unrefWebGL2Paint"](this._webGL2Paint);
+        }
+        const gradient = this._gradient !== null ? this._gradient : _noGradient;
+        let colors = null;
+        let stops = null;
+        if (this._gradient !== null) {
+          const gradientStops = gradient.stops;
+          colors = new Uint32Array(gradientStops.length);
+          stops = new Float32Array(gradientStops.length);
+          for (let i = 0, l = gradientStops.length; i < l; i++) {
+            colors[i] = gradientStops[i].color;
+            stops[i] = gradientStops[i].stop;
+          }
+        }
+        // A null gradient transform is the identity; see _setGradientTransform().
+        let xx = 1;
+        let xy = 0;
+        let yx = 0;
+        let yy = 1;
+        let tx = 0;
+        let ty = 0;
+        const m = this._gradientTransform;
+        if (m !== null) {
+          xx = m.a;
+          xy = m.b;
+          yx = m.c;
+          yy = m.d;
+          tx = m.e;
+          ty = m.f;
+        }
+        // This paint is used to draw onto the atlas, so we keep blend mode unset and
+        // apply it when copying back from the atlas to canvas 2D.
+        this._webGL2Paint = Module["makeWebGL2Paint"](
+          this._style,
+          this._color,
+          this._thickness,
+          this._join,
+          this._cap,
+          this._feather,
+          colors,
+          stops,
+          gradient.isRadial,
+          gradient.sx,
+          gradient.sy,
+          gradient.ex,
+          gradient.ey,
+          xx,
+          xy,
+          yx,
+          yy,
+          tx,
+          ty,
+        );
+        this._webGL2PaintVersion = this._version;
       }
-      this._modifications.splice(0, count);
-      this._executedModificationCount = modificationCount;
+      Module["refWebGL2Paint"](this._webGL2Paint);
+      return this._webGL2Paint;
     }
   });
+
+  // Draw with Canvas2D directly.
+  const DRAW_MODE_NATIVE = 0;
+  // Apply the inverse of the gradient transform to the raw path points, then transform
+  // the path (including its gradient) by the gradient transform.
+  const DRAW_MODE_GRADIENT_TRANSFORM = 1;
+  // Canvas2D cannot make this draw at all, so the WebGL renderer draws it into the atlas.
+  const DRAW_MODE_DELEGATE = 2;
+
+  function _drawMode(paint) {
+    // Feathering always goes through the WebGL renderer (canvas 2D's blur cannot
+    // reproduce it accurately)
+    if (paint._feather !== 0) {
+      return _offscreenBackend.supportsPaths ? DRAW_MODE_DELEGATE : DRAW_MODE_NATIVE;
+    }
+    if (paint._gradient === null || paint._gradientTransform === null) {
+      return DRAW_MODE_NATIVE;
+    }
+    // When drawing using a stroke, we scale the stroke thickness by the inverse of the
+    // gradient transform's scale, if it is uniform. Otherwise, we cannot draw the stroke
+    // correctly using canvas 2D, so we delegate to the WebGL renderer.
+    // _strokeThicknessScale will be 0 to indicate this case.
+    if (paint._style !== stroke || paint._strokeThicknessScale > 0) {
+      return DRAW_MODE_GRADIENT_TRANSFORM;
+    }
+    // Without a backend that draws paths there is nothing to delegate to, so drop the
+    // transform.
+    return _offscreenBackend.supportsPaths ? DRAW_MODE_DELEGATE : DRAW_MODE_NATIVE;
+  }
+
+  // Used to skip the draw if invalid thickness has been set (this includes NaN).
+  function _isNoOpDraw(paint) {
+    return paint._style === stroke && !(paint._thickness > 0);
+  }
+
+  // Snapshots everything a deferred draw of `path` with `paint` needs, both of which are
+  // free to mutate afterwards. Returns null if the draw would be a no-op. The returned
+  // state holds a reference to the path, which must be released once the draw is done.
+  function _captureDrawState(path, paint, mode, opacity) {
+    if (_isNoOpDraw(paint)) {
+      return null;
+    }
+    const withGradientTransform = mode === DRAW_MODE_GRADIENT_TRANSFORM;
+    return {
+      path2D: path._acquirePath(withGradientTransform ? paint._inverseGradientTransform : null),
+      gradientTransform: withGradientTransform ? paint._gradientTransform : null,
+      thickness: withGradientTransform ? paint._thickness * paint._strokeThicknessScale
+        : paint._thickness,
+      fillRule: path._fillRule === evenOdd ? "evenodd" : "nonzero",
+      opacity,
+      style: paint._style,
+      color: paint._color,
+      gradient: paint._gradient,
+      cap: paint._cap,
+      join: paint._join,
+      blend: paint._blend,
+    };
+  }
+
+  function _captureWebGL2DrawState(path, paint) {
+    if (_isNoOpDraw(paint)) {
+      return null;
+    }
+    return {
+      path: path._acquireRivePath(path._fillRule),
+      paint: paint._acquireWebGL2Paint(),
+    };
+  }
+
+  function _releaseWebGL2DrawState(path, state) {
+    path._releasePath(state.path);
+    Module["unrefWebGL2Paint"](state.paint);
+  }
+
+  function _paintPath(ctx, state) {
+    // Save context state we're about to modify
+    const prevBlend = ctx["globalCompositeOperation"];
+    const prevAlpha = ctx["globalAlpha"];
+
+    ctx["globalCompositeOperation"] = state.blend;
+    ctx["globalAlpha"] = state.opacity;
+
+    const paintStyle = state.gradient !== null
+      ? _canvasGradient(ctx, state.gradient)
+      : _colorStyle(state.color);
+
+    if (state.gradientTransform !== null) {
+      ctx["save"]();
+      ctx["transform"](
+        state.gradientTransform.a,
+        state.gradientTransform.b,
+        state.gradientTransform.c,
+        state.gradientTransform.d,
+        state.gradientTransform.e,
+        state.gradientTransform.f
+      );
+    }
+
+    switch (state.style) {
+      case stroke:
+        ctx["strokeStyle"] = paintStyle;
+        ctx["lineWidth"] = state.thickness;
+        ctx["lineCap"] = _canvasCap(state.cap);
+        ctx["lineJoin"] = _canvasJoin(state.join);
+        ctx["miterLimit"] = RIVE_MITER_LIMIT;
+        ctx["stroke"](state.path2D);
+        break;
+      case fill:
+        ctx["fillStyle"] = paintStyle;
+        ctx["fill"](state.path2D, state.fillRule);
+        break;
+    }
+
+    if (state.gradientTransform !== null) {
+      ctx["restore"]();
+    }
+
+    // Restore context state
+    ctx["globalCompositeOperation"] = prevBlend;
+    ctx["globalAlpha"] = prevAlpha;
+  }
 
   const _pendingCanvasRenderers = new Set();
 
   const _hasOwn = Object.prototype.hasOwnProperty;
-  const INITIAL_ATLAS_SIZE = 512;
-  let _rectanizer = null;
-  let _atlasMeshList = [];
-  let _atlasNumTotalVertexFloats = 0;
-  let _atlasNumTotalIndices = 0;
 
   function flushCanvasRenderers() {
-    // Draw the mesh atlas before flushing the queued up draws to canvases.
-    if (_atlasMeshList.length > 0) {
-      offscreenWebGL.drawMeshAtlas(
-        _rectanizer["drawWidth"](),
-        _rectanizer["drawHeight"](),
-        _atlasMeshList,
-        _atlasNumTotalVertexFloats,
-        _atlasNumTotalIndices
-      );
-      _atlasMeshList = [];
-      _atlasNumTotalVertexFloats = 0;
-      _atlasNumTotalIndices = 0;
-      _rectanizer["reset"](INITIAL_ATLAS_SIZE, INITIAL_ATLAS_SIZE);
-    }
+    _offscreenRenderer.renderAtlas();
     // Now that the atlas is rendered, make the pending draws to canvases, some of which may
     // reference the atlas.
     for (const renderer of _pendingCanvasRenderers) {
@@ -876,6 +792,7 @@ Module["onRuntimeInitialized"] = function () {
       renderer._drawList = [];
     }
     _pendingCanvasRenderers.clear();
+    _offscreenRenderer.clearAtlas();
   }
 
   /**
@@ -941,15 +858,52 @@ Module["onRuntimeInitialized"] = function () {
       this._opacityStack[this._opacityStack.length - 1] *= opacity;
     },
     "_drawPath": function (path, paint) {
-      const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
-      const modulatedOpacity = Math.max(0, this._opacityStack[this._opacityStack.length - 1]);
-      const path2D = path._acquirePath();
-      const modificationCount = paint._getModificationCount();
+      const opacity = Math.max(0, this._opacityStack[this._opacityStack.length - 1]);
+      const mode = _drawMode(paint);
+      if (mode === DRAW_MODE_DELEGATE) {
+        this._delegateDrawPath(path, paint, opacity);
+        return;
+      }
+      const state = _captureDrawState(path, paint, mode, opacity);
+      if (state === null) {
+        return;
+      }
       this._drawList.push(() => {
-        paint._executeModifications(modificationCount);
-        paint._draw(this._ctx, path2D, fillRule, modulatedOpacity);
-        path._releasePath(path2D);
+        _paintPath(this._ctx, state);
+        path._releasePath(state.path2D);
       });
+    },
+    _delegateDrawPath: function (path, paint, opacity) {
+      const state = _captureWebGL2DrawState(path, paint);
+      if (state === null) {
+        return;
+      }
+      const matrix = this._matrixStack.slice(this._matrixStack.length - 6);
+      const blit = _offscreenRenderer.appendDraw(
+        this._ctx,
+        this._ctx["canvas"]["width"],
+        this._ctx["canvas"]["height"],
+        matrix,
+        paint._blend,
+        opacity,
+        (sx, sy, outBounds) => Module["webGL2PathPixelBounds"](
+          state.path,
+          state.paint,
+          sx * matrix[0],
+          sy * matrix[1],
+          sx * matrix[2],
+          sy * matrix[3],
+          sx * matrix[4],
+          sy * matrix[5],
+          outBounds,
+        ),
+        (renderer) => renderer["drawPath"](state.path, state.paint),
+        () => _releaseWebGL2DrawState(path, state),
+        flushCanvasRenderers
+      );
+      // appendDraw() may have flushed, which empties the pending set.
+      _pendingCanvasRenderers.add(this);
+      this._drawList.push(blit);
     },
     "_drawRiveImage": function (image, blend, opacity) {
       var img = image._image;
@@ -976,6 +930,33 @@ Module["onRuntimeInitialized"] = function () {
     // TODO(ben) add the instanced version once the C2D -> WebGL2 fallback change lands
     "_drawImageMesh": function (
       image,
+      mesh,
+      blend,
+      opacity,
+      meshMinX,
+      meshMinY,
+      meshMaxX,
+      meshMaxY
+    ) {
+      const webGL2Image = image._webGL2Image;
+      if (!webGL2Image) {
+        // Still decoding. Skip it, as _drawRiveImage does, rather than draw a blank mesh.
+        mesh["unref"]();
+        return;
+      }
+      this._appendImageMesh(
+        blend,
+        opacity,
+        meshMinX,
+        meshMinY,
+        meshMaxX,
+        meshMaxY,
+        (renderer) => Module["drawWebGL2PendingMesh"](renderer, mesh, webGL2Image),
+        () => mesh["unref"]()
+      );
+    },
+    "_drawImageMeshFromHeap": function (
+      image,
       blend,
       opacity,
       vtxByteOffset, vtxCount,
@@ -986,10 +967,11 @@ Module["onRuntimeInitialized"] = function () {
       meshMaxX,
       meshMaxY
     ) {
-      // Grab the vtx, uv, and indices from WASM heap with given byte offset for those data points
-      // and slice them into JS-heap array copies. We don't use any typed_memory_view here because
-      // the view could be potentially detached by WASM memory growth.
-      // Catching here is a safeguard to skip rendering the mesh for one frame rather than crashing
+      if (!image._meshTexture) {
+        // Skip rendering if the image is still decoding or failed
+        return;
+      }
+      // Copy the vertices/UVs/indices from the WASM heap into JS arrays.
       let vtxCopy, uvCopy, indicesCopy;
       try {
         vtxCopy = Module["HEAPF32"].slice(vtxByteOffset >> 2, (vtxByteOffset >> 2) + vtxCount);
@@ -1000,112 +982,53 @@ Module["onRuntimeInitialized"] = function () {
         return;
       }
 
-      const canvasWidth = this._ctx["canvas"]["width"];
-      const canvasHeight = this._ctx["canvas"]["height"];
-      const meshWidth = meshMaxX - meshMinX;
-      const meshHeight = meshMaxY - meshMinY;
-
-      // Clip the mesh's bounding box to its canvas.
-      meshMinX = Math.max(meshMinX, 0);
-      meshMinY = Math.max(meshMinY, 0);
-      meshMaxX = Math.min(meshMaxX, canvasWidth);
-      meshMaxY = Math.min(meshMaxY, canvasHeight);
-      const meshClippedWidth = meshMaxX - meshMinX;
-      const meshClippedHeight = meshMaxY - meshMinY;
-      console.assert(meshClippedWidth <= Math.min(meshWidth, canvasWidth));
-      console.assert(meshClippedHeight <= Math.min(meshHeight, canvasHeight));
-      // Bail if the bounding box was out of view.
-      if (meshClippedWidth <= 0 || meshClippedHeight <= 0) {
-        return;
-      }
-      const needsScissor =
-        meshClippedWidth < meshWidth || meshClippedHeight < meshHeight;
-
-      // TODO: downscale the mesh in the atlas when it is larger than the underlying texture.
-      let scaleX = 1;
-      let scaleY = 1;
-      let widthInAtlas = Math.ceil(meshClippedWidth * scaleX);
-      let heightInAtlas = Math.ceil(meshClippedHeight * scaleY);
-
-      // Don't draw larger than the max render target size.
-      const maxRTSize = offscreenWebGL.maxRTSize();
-      if (widthInAtlas > maxRTSize) {
-        scaleX *= maxRTSize / widthInAtlas;
-        widthInAtlas = maxRTSize;
-      }
-      if (heightInAtlas > maxRTSize) {
-        scaleY *= maxRTSize / heightInAtlas;
-        heightInAtlas = maxRTSize;
-      }
-
-      // Find a slot for our mesh in the atlas.
-      if (!_rectanizer) {
-        _rectanizer = new Module["DynamicRectanizer"](maxRTSize);
-        _rectanizer["reset"](INITIAL_ATLAS_SIZE, INITIAL_ATLAS_SIZE);
-      }
-      let pos = _rectanizer["addRect"](widthInAtlas, heightInAtlas);
-      if (pos < 0) {
-        // The atlas ran out of room. Flush and try again.
-        flushCanvasRenderers();
-        _pendingCanvasRenderers.add(this);
-        pos = _rectanizer["addRect"](widthInAtlas, heightInAtlas);
-        // The atlas should always be big enough to fit at least one canvas.
-        console.assert(pos >= 0);
-      }
-      const atlasX = pos & 0xffff;
-      const atlasY = pos >> 16;
-
-      _atlasMeshList.push({
-        mat: this._matrixStack.slice(this._matrixStack.length - 6),
-        image: image,
-        atlasX: atlasX,
-        atlasY: atlasY,
-        meshX: meshMinX,
-        meshY: meshMinY,
-        widthInAtlas: widthInAtlas,
-        heightInAtlas: heightInAtlas,
-        scaleX: scaleX,
-        scaleY: scaleY,
-        vtx: vtxCopy,
-        uv: uvCopy,
-        indices: indicesCopy,
-        needsScissor: needsScissor,
-        // Create a sortKey with more expensive state in higher order bits.
-        // This will produce an ordering that minimizes the cost of GL
-        // state changes.
-        sortKey: (image._uniqueID << 1) | (needsScissor ? 1 : 0),
-      });
-      _atlasNumTotalVertexFloats += vtxCount;
-      _atlasNumTotalIndices += indicesCount;
-
-      const ctx = this._ctx;
-      const canvasBlend = _canvasBlend(blend);
-      const finalOpacity = Math.max(0, opacity * this._opacityStack[this._opacityStack.length - 1]);
-      this._drawList.push(function () {
-        ctx["save"]();
-        ctx["resetTransform"]();
-        ctx["globalCompositeOperation"] = canvasBlend;
-        ctx["globalAlpha"] = finalOpacity;
-        const offscreenCanvas = offscreenWebGL.canvas();
-        if (offscreenCanvas) {
-          ctx["drawImage"](
-            offscreenCanvas,
-            atlasX,
-            atlasY,
-            widthInAtlas,
-            heightInAtlas,
-            meshMinX,
-            meshMinY,
-            meshClippedWidth,
-            meshClippedHeight
-          );
-        }
-        ctx["restore"]();
-      });
+      this._appendImageMesh(
+        blend,
+        opacity,
+        meshMinX,
+        meshMinY,
+        meshMaxX,
+        meshMaxY,
+        { image: image, vtx: vtxCopy, uv: uvCopy, indices: indicesCopy },
+        () => { }
+      );
     },
+    _appendImageMesh: function (
+      blend,
+      opacity,
+      meshMinX,
+      meshMinY,
+      meshMaxX,
+      meshMaxY,
+      contents,
+      releaseContents
+    ) {
+      const blit = _offscreenRenderer.appendDraw(
+        this._ctx,
+        this._ctx["canvas"]["width"],
+        this._ctx["canvas"]["height"],
+        this._matrixStack.slice(this._matrixStack.length - 6),
+        _canvasBlend(blend),
+        Math.max(0, opacity * this._opacityStack[this._opacityStack.length - 1]),
+        // A mesh has no outset to resize, so its bounds just scale.
+        (sx, sy, outBounds) => {
+          outBounds[0] = Math.floor(meshMinX * sx);
+          outBounds[1] = Math.floor(meshMinY * sy);
+          outBounds[2] = Math.ceil(meshMaxX * sx);
+          outBounds[3] = Math.ceil(meshMaxY * sy);
+        },
+        contents,
+        releaseContents,
+        flushCanvasRenderers
+      );
+      // appendDraw() may have flushed, which empties the pending set.
+      _pendingCanvasRenderers.add(this);
+      this._drawList.push(blit);
+    },
+
     "_clipPath": function (path) {
       const fillRule = path._fillRule === evenOdd ? "evenodd" : "nonzero";
-      const path2D = path._acquirePath();
+      const path2D = path._acquirePath(null);
       this._drawList.push(() => {
         this._ctx["clip"](path2D, fillRule)
         path._releasePath(path2D);
@@ -1399,8 +1322,6 @@ Module["onRuntimeInitialized"] = function () {
   Module["resolveAnimationFrame"] = flushCanvasRenderers;
 
   Module["cleanup"] = function () {
-    if (_rectanizer) {
-      _rectanizer.delete();
-    }
+    _offscreenRenderer.cleanup();
   };
 };

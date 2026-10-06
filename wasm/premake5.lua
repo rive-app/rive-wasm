@@ -9,7 +9,12 @@ dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 
 RIVE_PLS_DIR = os.isdir('../../runtime/renderer') and '../../runtime/renderer'
     or './submodules/rive-runtime/renderer'
-if _OPTIONS['renderer'] == 'webgl2' then
+
+local rendererOption = _OPTIONS['renderer'] or 'c2d'
+RIVE_WITH_CANVAS_2D = rendererOption == 'c2d' or rendererOption == 'c2d_only'
+RIVE_WITH_WEBGL2 = rendererOption == 'webgl2' or rendererOption == 'c2d'
+
+if RIVE_WITH_WEBGL2 then
     dofile(RIVE_PLS_DIR .. '/premake5_pls_renderer.lua')
 end
 
@@ -47,7 +52,7 @@ do
 
         -- The pre-js glue reads these off Module; they are not exported by default.
         local exported_runtime_methods = 'HEAP8,HEAPU8,HEAP32,HEAPU32,HEAPF32,HEAPU16'
-        if WITH_RIVE_TOOLS then
+        if _OPTIONS['with_rive_tools'] then
             exported_runtime_methods = exported_runtime_methods .. ',flushPendingDeletes'
         end
 
@@ -188,49 +193,67 @@ do
         })
     end
 
-    filter({ 'options:renderer=c2d' })
-    do
+    filter({})
+
+    if RIVE_WITH_CANVAS_2D then
         defines({ 'RIVE_CANVAS_2D_RENDERER' })
         -- The pure 2D deferred layer needs only the cmd headers and sources,
         -- no ore backend. gpu_resource carries the GPUResource vtable,
         -- ore_binding_map the blob codec and ore_bind_group_layout the layout
         -- queries the ore cmd headers reference.
         includedirs({ RIVE_PLS_DIR .. '/include' })
-        files({
-            RIVE_PLS_DIR .. '/src/deferred_cmd.cpp',
-            RIVE_PLS_DIR .. '/src/gpu_resource.cpp',
-            RIVE_PLS_DIR .. '/src/ore/ore_binding_map.cpp',
-            RIVE_PLS_DIR .. '/src/ore/ore_bind_group_layout.cpp',
-        })
+        if not RIVE_WITH_WEBGL2 then
+            -- rive_pls_renderer already compiles these, so the c2d build,
+            -- which links it, would define them twice.
+            files({
+                RIVE_PLS_DIR .. '/src/deferred_cmd.cpp',
+                RIVE_PLS_DIR .. '/src/gpu_resource.cpp',
+                RIVE_PLS_DIR .. '/src/ore/ore_binding_map.cpp',
+                RIVE_PLS_DIR .. '/src/ore/ore_bind_group_layout.cpp',
+            })
+        end
         linkoptions({
             -- Classic-script wrapper: currentScript-based, no import.meta.
             -- finalize_glue.py converts it to the published ESM shape we
             -- ship in v2.x
             '--oformat=js',
+        })
+
+        linkoptions({
+            '--pre-js ' .. path.getabsolute('./js/canvas_offscreen_renderer.js'),
+        })
+        if RIVE_WITH_WEBGL2 then
+            linkoptions({
+                '--pre-js ' .. path.getabsolute('./js/canvas_offscreen_webgl2.js'),
+            })
+        else
+            -- Without the WebGL2 renderer, a standalone WebGL context draws image meshes
+            -- and nothing else is delegated.
+            linkoptions({
+                '--pre-js ' .. path.getabsolute('./js/canvas_offscreen_mesh.js'),
+            })
+        end
+
+        linkoptions({
             '--pre-js ' .. path.getabsolute('./js/renderer.js'),
         })
-    end
 
-    filter({ 'options:renderer=c2d', 'options:not wasm_single' })
-    do
+        local moduleName = RIVE_WITH_WEBGL2 and 'canvas_advanced'
+            or 'canvas_advanced_c2d_only'
+        if _OPTIONS['wasm_single'] then
+            moduleName = moduleName .. '_single'
+            linkoptions({
+                -- Embed the wasm as base64; raw binary-in-UTF-8 gzips worse.
+                '-s SINGLE_FILE_BINARY_ENCODE=0',
+            })
+        end
         linkoptions({
-            '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/canvas_advanced.mjs',
+            '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/' .. moduleName .. '.mjs',
         })
-        finalizeGlue('canvas_advanced.mjs')
+        finalizeGlue(moduleName .. '.mjs')
     end
 
-    filter({ 'options:renderer=c2d', 'options:wasm_single' })
-    do
-        linkoptions({
-            -- Embed the wasm as base64; raw binary-in-UTF-8 gzips worse.
-            '-s SINGLE_FILE_BINARY_ENCODE=0',
-            '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/canvas_advanced_single.mjs',
-        })
-        finalizeGlue('canvas_advanced_single.mjs')
-    end
-
-    filter({ 'options:renderer=webgl2' })
-    do
+    if RIVE_WITH_WEBGL2 then
         defines({ 'RIVE_WEBGL2_RENDERER' })
         includedirs({ RIVE_PLS_DIR .. '/include' })
         links({
@@ -241,19 +264,29 @@ do
             '-s USE_WEBGL2=1',
             '-s MIN_WEBGL_VERSION=2',
             '-s MAX_WEBGL_VERSION=2',
-            -- See the c2d filter.
-            '--oformat=js',
-            '--pre-js ' .. path.getabsolute('./js/webgl2_renderer.js'),
-            '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
         })
-        finalizeGlue('webgl2_advanced.mjs')
-    end
 
-    filter({ 'options:renderer=webgl2', 'system:not emscripten' })
-    do
-        -- For generating the compilation database.
-        includedirs({ RIVE_PLS_DIR .. '/glad' })
-        externalincludedirs({ RIVE_PLS_DIR .. 'glad/include' })
+        -- The WebGL renderer is either standalone or used by the canvas 2D renderer for
+        -- features that canvas 2D can't implement itself.
+        if RIVE_WITH_CANVAS_2D then
+            defines({ 'RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS' })
+        else
+            defines({ 'RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS' })
+            linkoptions({
+                -- See the Canvas2D branch.
+                '--oformat=js',
+                '--pre-js ' .. path.getabsolute('./js/webgl2_renderer.js'),
+                '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
+            })
+            finalizeGlue('webgl2_advanced.mjs')
+        end
+
+        filter({ 'system:not emscripten' })
+        do
+            -- For generating the compilation database.
+            includedirs({ RIVE_PLS_DIR .. '/glad' })
+            externalincludedirs({ RIVE_PLS_DIR .. 'glad/include' })
+        end
     end
 
     filter({})
@@ -263,8 +296,9 @@ newoption({
     trigger = 'renderer',
     description = 'Which renderer to use.',
     allowed = {
-        { 'c2d' },
-        { 'webgl2' },
+        { 'c2d', 'Canvas2D, delegating what it cannot draw to an internal WebGL2' },
+        { 'c2d_only', 'Canvas2D alone, some features unsupported' },
+        { 'webgl2', 'WebGL2' },
     },
     default = 'c2d',
 })

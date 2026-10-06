@@ -2,11 +2,14 @@
 
 #ifdef RIVE_WEBGL2_RENDERER
 
+#include "rive/renderer/draw.hpp"
+#include "rive/renderer/rive_render_factory.hpp"
 #include "rive/renderer/rive_render_image.hpp"
 #include "rive/renderer/gl/render_context_gl_impl.hpp"
 #include "rive/renderer/rive_renderer.hpp"
 #include "rive/renderer/gl/render_target_gl.hpp"
 #include "js_alignment.hpp"
+#include "webgl2_bridge.hpp"
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
 #include "rive/renderer/cmd/deferred_host.hpp"
@@ -28,6 +31,7 @@
 #include <emscripten/html5.h>
 using namespace emscripten;
 
+#include <algorithm>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -219,10 +223,18 @@ public:
         m_Width = 0;
         m_Height = 0;
 
+        // Balanced by the unref() in the exported setWebImage(), which decode_image() calls
+        // back asynchronously.
         ref();
         decode_image(reinterpret_cast<uintptr_t>(this),
                      reinterpret_cast<uintptr_t>(encodedBytes.data()),
                      encodedBytes.size());
+    }
+
+    WebGL2RenderImage()
+    {
+        m_Width = 0;
+        m_Height = 0;
     }
 
     ~WebGL2RenderImage()
@@ -346,10 +358,12 @@ public:
         RiveRenderer(renderContext.get()), m_renderContext(std::move(renderContext))
     {
         resize(width, height);
+        WebGL2Factory::Instance()->registerContext(this);
     }
 
     ~WebGL2Renderer()
     {
+        WebGL2Factory::Instance()->unregisterContext(this);
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
         // The session outlives us and references the ore context the render
@@ -411,6 +425,12 @@ public:
             .loadAction = loadAction,
             .clearColor = clearColor,
         };
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+        // We need to disable dithering because in the Rive renderer, we dither after blending, but
+        // in the canvas 2D -> WebGL2 path, the Rive renderer dithers first, and this can cause
+        // artifacts with certain blend modes (e.g. colorBurn).
+        frameDescriptor.ditherMode = gpu::DitherMode::none;
+#endif
         if (m_renderTarget->sampleCount() > 1)
         {
             // Use MSAA if we were given a canvas with 'antialias: true'.
@@ -1088,12 +1108,212 @@ void WebGL2Factory::onWebGL2BufferDeleted(WebGL2RenderBuffer* webglRenderBuffer)
 }
 
 // JS Hooks.
+#ifdef RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS
+// Only the standalone build gets its factory from here. bindings_c2d.cpp defines jsFactory()
+// whenever canvas 2D is present, including the combined build where WebGL2 covers only the
+// draws canvas 2D can't express.
 Factory* jsFactory() { return WebGL2Factory::Instance(); }
+#endif
 
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+EM_JS(void, ensure_images_map, (), {
+    if (!Module["images"])
+    {
+        Module["images"] = new Map();
+    }
+});
+
+WebGL2RenderImage* adoptWebGL2Image(emscripten::val htmlImage, int width, int height)
+{
+    // The canvas 2D renderer has already decoded htmlImage, so it can go straight into the images
+    // map and be marked ready to upload.
+    auto* renderImage = new WebGL2RenderImage();
+    ensure_images_map();
+    emscripten::val::module_property("images").call<void>(
+        "set",
+        static_cast<unsigned>(reinterpret_cast<uintptr_t>(renderImage)),
+        htmlImage);
+    renderImage->setWebImage(width, height);
+    return renderImage;
+}
+
+rive::rcp<rive::RenderBuffer> makeWebGL2RenderBuffer(RenderBufferType type,
+                                                     RenderBufferFlags flags,
+                                                     size_t sizeInBytes)
+{
+    return make_rcp<WebGL2RenderBuffer>(type, flags, sizeInBytes);
+}
+
+// Holds a path the canvas 2D renderer delegates to the WebGL2 renderer.
+class WebGL2Path : public RefCnt<WebGL2Path>
+{
+public:
+    WebGL2Path() : m_path(WebGL2Factory::Instance()->makeEmptyRenderPath()) {}
+
+    RenderPath* get() const { return m_path.get(); }
+
+private:
+    const rcp<RenderPath> m_path;
+};
+
+// Holds an image mesh's buffers until the WebGL2 renderer draws it into the atlas.
+class WebGL2PendingMesh : public RefCnt<WebGL2PendingMesh>
+{
+public:
+    WebGL2PendingMesh(rcp<RenderBuffer> vertices_f32,
+                      rcp<RenderBuffer> uvCoords_f32,
+                      rcp<RenderBuffer> indices_u16,
+                      uint32_t vertexCount,
+                      uint32_t indexCount,
+                      ImageSampler imageSampler) :
+        m_vertices(std::move(vertices_f32)),
+        m_uvCoords(std::move(uvCoords_f32)),
+        m_indices(std::move(indices_u16)),
+        m_vertexCount(vertexCount),
+        m_indexCount(indexCount),
+        m_imageSampler(imageSampler)
+    {}
+
+    const float* vertices() const
+    {
+        return reinterpret_cast<const float*>(
+            static_cast<WebGL2RenderBuffer*>(m_vertices.get())->bufferData()->contents());
+    }
+
+    void draw(WebGL2Renderer& renderer, WebGL2RenderImage* image)
+    {
+        renderer.drawImageMesh(image,
+                               m_imageSampler,
+                               m_vertices,
+                               m_uvCoords,
+                               m_indices,
+                               m_vertexCount,
+                               m_indexCount,
+                               // Blend, opacity and additiveness are applied when the atlas
+                               // is composited back to canvas 2D.
+                               BlendMode::srcOver,
+                               1.0f,
+                               0.0f);
+    }
+
+private:
+    const rcp<RenderBuffer> m_vertices;
+    const rcp<RenderBuffer> m_uvCoords;
+    const rcp<RenderBuffer> m_indices;
+    const uint32_t m_vertexCount;
+    const uint32_t m_indexCount;
+    const ImageSampler m_imageSampler;
+};
+
+WebGL2Path* makeWebGL2Path() { return new WebGL2Path(); }
+
+template <typename T> static std::vector<T> readTypedArray(const val& source)
+{
+    std::vector<T> values(source["length"].as<size_t>());
+    if (!values.empty())
+    {
+        val{typed_memory_view(values.size(), values.data())}.call<void>("set", source);
+    }
+    return values;
+}
+
+RenderPaint* makeWebGL2Paint(RenderPaintStyle style,
+                             ColorInt color,
+                             float thickness,
+                             StrokeJoin join,
+                             StrokeCap cap,
+                             float feather,
+                             // Null when the paint has no gradient. The arguments after it are
+                             // then ignored.
+                             const val& gradientColors,
+                             const val& gradientStops,
+                             bool gradientIsRadial,
+                             float sx,
+                             float sy,
+                             float ex,
+                             float ey,
+                             float xx,
+                             float xy,
+                             float yx,
+                             float yy,
+                             float tx,
+                             float ty)
+{
+    WebGL2Factory* factory = WebGL2Factory::Instance();
+    rcp<RenderPaint> paint = factory->makeRenderPaint();
+    paint->style(style);
+    paint->color(color);
+    paint->thickness(thickness);
+    paint->join(join);
+    paint->cap(cap);
+    paint->feather(feather);
+    // This paint draws onto the atlas. The blend mode is applied when the atlas is composited back
+    // to canvas 2D.
+    if (!gradientColors.isNull())
+    {
+        std::vector<ColorInt> colors = readTypedArray<ColorInt>(gradientColors);
+        std::vector<float> stops = readTypedArray<float>(gradientStops);
+        const size_t count = std::min(colors.size(), stops.size());
+        if (gradientIsRadial)
+        {
+            // renderer.js gives the radius as a point on the circle.
+            float radius = Vec2D(ex - sx, ey - sy).length();
+            paint->shader(
+                factory->makeRadialGradient(sx, sy, radius, colors.data(), stops.data(), count));
+        }
+        else
+        {
+            paint->shader(
+                factory->makeLinearGradient(sx, sy, ex, ey, colors.data(), stops.data(), count));
+        }
+        paint->shaderTransform(Mat2D(xx, xy, yx, yy, tx, ty));
+    }
+    return paint.release();
+}
+
+// outBounds should be an Int32Array to hold the resulting bounds
+void webGL2PathPixelBounds(WebGL2Path* path,
+                           RenderPaint* paint,
+                           float xx,
+                           float xy,
+                           float yx,
+                           float yy,
+                           float tx,
+                           float ty,
+                           val outBounds)
+{
+    const IAABB bounds = gpu::PathDraw::calculatePixelBounds(Mat2D(xx, xy, yx, yy, tx, ty),
+                                                             asRiveRenderPath(path->get()),
+                                                             asRiveRenderPaint(paint));
+    const int32_t values[4] = {bounds.left, bounds.top, bounds.right, bounds.bottom};
+    outBounds.call<void>("set", val{typed_memory_view(4, values)});
+}
+
+WebGL2PendingMesh* makeWebGL2PendingMesh(rcp<RenderBuffer> vertices_f32,
+                                         rcp<RenderBuffer> uvCoords_f32,
+                                         rcp<RenderBuffer> indices_u16,
+                                         uint32_t vertexCount,
+                                         uint32_t indexCount,
+                                         ImageSampler imageSampler)
+{
+    return new WebGL2PendingMesh(std::move(vertices_f32),
+                                 std::move(uvCoords_f32),
+                                 std::move(indices_u16),
+                                 vertexCount,
+                                 indexCount,
+                                 imageSampler);
+}
+
+const float* webGL2PendingMeshVertices(const WebGL2PendingMesh* mesh) { return mesh->vertices(); }
+#endif // RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+
+#ifdef RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS
 // Resolves the optional deferred session argument the import and decode entry
 // points take. Resources for a deferred file must come from the session that
 // imported it; everything else, including every other instance on the page,
 // stays on the immediate factory.
+//
+// Like with jsFactory(), this only gets defined if the c2d version is not defined.
 Factory* jsSessionFactory(const emscripten::val& session)
 {
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
@@ -1106,6 +1326,7 @@ Factory* jsSessionFactory(const emscripten::val& session)
     // no session to pass.
     return WebGL2Factory::Instance();
 }
+#endif // RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
 // JS owns the returned session and deletes it with the file that imported
@@ -1133,16 +1354,17 @@ WebGL2Renderer* makeWebGL2Renderer(int width, int height)
     return nullptr;
 }
 
-class RenderImageWrapper : public wrapper<RenderImage>
+#ifdef RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS
+class WebGL2RenderImageWrapper : public wrapper<RenderImage>
 {
 public:
-    EMSCRIPTEN_WRAPPER(RenderImageWrapper);
+    EMSCRIPTEN_WRAPPER(WebGL2RenderImageWrapper);
     void unref() { RenderImage::unref(); }
 };
 
 // Optional trailing session: an image bound into a deferred file has to be
 // created through that file's session, the rest go to the immediate factory.
-RenderImageWrapper* decodeWebGL2Image(emscripten::val byteArray, emscripten::val session)
+WebGL2RenderImageWrapper* decodeWebGL2Image(emscripten::val byteArray, emscripten::val session)
 {
     std::vector<unsigned char> vector;
 
@@ -1154,11 +1376,16 @@ RenderImageWrapper* decodeWebGL2Image(emscripten::val byteArray, emscripten::val
     rcp rcpImage = jsSessionFactory(session)->decodeImage(vector);
     // NOTE: ref so the image does not get disposed after the scope of this function.
     rcpImage->ref();
-    return (RenderImageWrapper*)(rcpImage.get());
+    return (WebGL2RenderImageWrapper*)(rcpImage.get());
 }
+#endif
 
 EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
 {
+#if defined(RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS) &&                                           \
+    defined(RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS)
+#error RIVE_WEBGL2_RENDERER cannot have both _STANDALONE_BINDINGS and _CANVAS_BINDINGS enabled
+#elif defined(RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS)
     class_<Renderer>("Renderer")
         .function("save", &Renderer::save)
         .function("restore", &Renderer::restore)
@@ -1166,15 +1393,17 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
         .function("modulateOpacity", &Renderer::modulateOpacity)
         .function("drawPath", &Renderer::drawPath, allow_raw_pointers())
         .function("clipPath", &Renderer::clipPath, allow_raw_pointers())
-        .function("align",
-                  optional_override([](Renderer& self,
-                                       Fit fit,
-                                       JsAlignment alignment,
-                                       const AABB& frame,
-                                       const AABB& content,
-                                       const float scaleFactor = 1.0f) {
-                      self.align(fit, convertAlignment(alignment), frame, content, scaleFactor);
-                  }));
+        .function(
+            "align",
+            select_overload<void(Renderer&, Fit, JsAlignment, const AABB&, const AABB&, float)>(
+                [](Renderer& self,
+                   Fit fit,
+                   JsAlignment alignment,
+                   const AABB& frame,
+                   const AABB& content,
+                   float scaleFactor) {
+                    self.align(fit, convertAlignment(alignment), frame, content, scaleFactor);
+                }));
     class_<WebGL2Renderer, base<Renderer>>("WebGL2Renderer")
         .function("clear", &WebGL2Renderer::clear)
         .function("flush", &WebGL2Renderer::flush)
@@ -1187,8 +1416,8 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
 #endif
         .function("restoreClipRect", &WebGL2Renderer::restoreClipRect);
     class_<RenderImage>("RenderImage")
-        .function("unref", &RenderImageWrapper::unref)
-        .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
+        .function("unref", &WebGL2RenderImageWrapper::unref)
+        .allow_subclass<WebGL2RenderImageWrapper>("RenderImageWrapper");
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
     // Deferred resources are Factory resources, so JS can hand the session
@@ -1199,6 +1428,106 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
 #endif
     function("makeRenderer", &makeWebGL2Renderer, allow_raw_pointers());
     function("decodeWebGL2Image", &decodeWebGL2Image, allow_raw_pointers());
+#elif defined(RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS)
+#if !defined(RIVE_CANVAS_2D_RENDERER)
+#error RIVE_WEBGL2_RENDERER uses _CANVAS_BINDINGS but RIVE_CANVAS_2D_RENDERER is not enabled
+#endif
+
+    // bindings_c2d.cpp registers class_<rive::Renderer>, so the inherited methods are bound onto
+    // WebGL2Renderer itself here.
+    class_<WebGL2Renderer>("WebGL2Renderer")
+        .function("save",
+                  select_overload<void(WebGL2Renderer&)>([](WebGL2Renderer& self) { self.save(); }))
+        .function("restore", select_overload<void(WebGL2Renderer&)>([](WebGL2Renderer& self) {
+                      self.restore();
+                  }))
+        .function(
+            "transform",
+            select_overload<void(WebGL2Renderer&, const Mat2D&)>(
+                [](WebGL2Renderer& self, const Mat2D& transform) { self.transform(transform); }))
+        .function("modulateOpacity",
+                  select_overload<void(WebGL2Renderer&, float)>(
+                      [](WebGL2Renderer& self, float opacity) { self.modulateOpacity(opacity); }))
+        .function("drawPath",
+                  select_overload<void(WebGL2Renderer&, WebGL2Path*, RenderPaint*)>(
+                      [](WebGL2Renderer& self, WebGL2Path* path, RenderPaint* paint) {
+                          self.drawPath(path->get(), paint);
+                      }),
+                  allow_raw_pointers())
+        .function("clipPath",
+                  select_overload<void(WebGL2Renderer&, RenderPath*)>(
+                      [](WebGL2Renderer& self, RenderPath* path) { self.clipPath(path); }),
+                  allow_raw_pointers())
+        .function("clear", &WebGL2Renderer::clear)
+        .function("flush", &WebGL2Renderer::flush)
+        .function("resize", &WebGL2Renderer::resize)
+        .function("saveClipRect", &WebGL2Renderer::saveClipRect)
+        .function("restoreClipRect", &WebGL2Renderer::restoreClipRect);
+
+    class_<WebGL2RenderImage>("WebGL2RenderImage")
+        .function("unref", select_overload<void(WebGL2RenderImage&)>([](WebGL2RenderImage& self) {
+                      self.unref();
+                  }));
+
+    class_<WebGL2PendingMesh>("WebGL2PendingMesh")
+        .function("unref", select_overload<void(WebGL2PendingMesh&)>([](WebGL2PendingMesh& self) {
+                      self.unref();
+                  }));
+
+    class_<WebGL2Path>("WebGL2Path")
+        .function("fillRule",
+                  select_overload<void(WebGL2Path&, FillRule)>(
+                      [](WebGL2Path& self, FillRule rule) { self.get()->fillRule(rule); }))
+        .function("moveTo",
+                  select_overload<void(WebGL2Path&, float, float)>(
+                      [](WebGL2Path& self, float x, float y) { self.get()->moveTo(x, y); }))
+        .function("lineTo",
+                  select_overload<void(WebGL2Path&, float, float)>(
+                      [](WebGL2Path& self, float x, float y) { self.get()->lineTo(x, y); }))
+        .function(
+            "cubicTo",
+            select_overload<void(WebGL2Path&, float, float, float, float, float, float)>(
+                [](WebGL2Path& self, float ox, float oy, float ix, float iy, float x, float y) {
+                    self.get()->cubicTo(ox, oy, ix, iy, x, y);
+                }))
+        .function("close",
+                  select_overload<void(WebGL2Path&)>([](WebGL2Path& self) { self.get()->close(); }))
+        .function(
+            "addPath",
+            select_overload<
+                void(WebGL2Path&, WebGL2Path*, float, float, float, float, float, float)>(
+                [](WebGL2Path& self,
+                   WebGL2Path* other,
+                   float xx,
+                   float xy,
+                   float yx,
+                   float yy,
+                   float tx,
+                   float ty) { self.get()->addPath(other->get(), Mat2D(xx, xy, yx, yy, tx, ty)); }),
+            allow_raw_pointers())
+        .function("ref", select_overload<void(WebGL2Path&)>([](WebGL2Path& self) { self.ref(); }))
+        .function("unref",
+                  select_overload<void(WebGL2Path&)>([](WebGL2Path& self) { self.unref(); }));
+
+    function("makeWebGL2Path", &makeWebGL2Path, allow_raw_pointers());
+    function("webGL2PathPixelBounds", &webGL2PathPixelBounds, allow_raw_pointers());
+    function("makeWebGL2Paint", &makeWebGL2Paint, allow_raw_pointers());
+    function("refWebGL2Paint",
+             optional_override([](RenderPaint* paint) { paint->ref(); }),
+             allow_raw_pointers());
+    function("unrefWebGL2Paint",
+             optional_override([](RenderPaint* paint) { paint->unref(); }),
+             allow_raw_pointers());
+    function("makeWebGL2Renderer", &makeWebGL2Renderer, allow_raw_pointers());
+    function("adoptWebGL2Image", &adoptWebGL2Image, allow_raw_pointers());
+    function("drawWebGL2PendingMesh",
+             optional_override([](WebGL2Renderer& renderer,
+                                  WebGL2PendingMesh* mesh,
+                                  WebGL2RenderImage* image) { mesh->draw(renderer, image); }),
+             allow_raw_pointers());
+#else
+#error RIVE_WEBGL2_RENDERER must have either _STANDALONE_BINDINGS or _CANVAS_BINDINGS enabled
+#endif
 }
 
 #endif // RIVE_WEBGL2_RENDERER

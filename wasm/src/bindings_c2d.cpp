@@ -14,7 +14,9 @@
 
 #include "skia_imports/include/private/SkVx.h"
 #include "js_alignment.hpp"
+#include "webgl2_bridge.hpp"
 
+#include <cmath>
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -27,7 +29,7 @@
 using namespace emscripten;
 
 #ifdef WITH_RIVE_TOOLS
-// Defined at the bottom of this file, once gC2DFactory exists.
+// Defined at the bottom of this file.
 extern rive::Factory* jsFactory();
 #endif
 
@@ -83,10 +85,10 @@ static std::array<float, 4> bbox(const float m[6], const float* vertexData, int 
     return {topLeft.x(), topLeft.y(), botRight.x(), botRight.y()};
 }
 
-class RendererWrapper : public wrapper<rive::Renderer>
+class Canvas2DRendererWrapper : public wrapper<rive::Renderer>
 {
 public:
-    EMSCRIPTEN_WRAPPER(RendererWrapper);
+    EMSCRIPTEN_WRAPPER(Canvas2DRendererWrapper);
 
     void save() override { call<void>("save"); }
 
@@ -142,52 +144,65 @@ public:
                        rive::BlendMode value,
                        float opacity) override
     {
-        LITE_RTTI_CAST_OR_RETURN(vtx, rive::DataRenderBuffer*, vertices_f32.get());
-        LITE_RTTI_CAST_OR_RETURN(uv, rive::DataRenderBuffer*, uvCoords_f32.get());
-        LITE_RTTI_CAST_OR_RETURN(indices, rive::DataRenderBuffer*, indices_u16.get());
-
         uint32_t f32Count = vertexCount * 2;
-        assert(vtx->sizeInBytes() == f32Count * sizeof(float));
-        assert(uv->sizeInBytes() == f32Count * sizeof(float));
-        assert(indices->sizeInBytes() == indexCount * sizeof(uint16_t));
+        assert(vertices_f32->sizeInBytes() == f32Count * sizeof(float));
+        assert(uvCoords_f32->sizeInBytes() == f32Count * sizeof(float));
+        assert(indices_u16->sizeInBytes() == indexCount * sizeof(uint16_t));
 
         if (f32Count == 0 || indexCount == 0)
         {
             return;
         }
 
-        intptr_t uvByteOffset = reinterpret_cast<intptr_t>(uv->f32s());
-        intptr_t vtxByteOffset = reinterpret_cast<intptr_t>(vtx->f32s());
-        intptr_t indicesByteOffset = reinterpret_cast<intptr_t>(indices->u16s());
-
-        // Compute the mesh's bounding box.
         float m[6];
         emscripten::val mJS{emscripten::typed_memory_view(6, m)};
         call<void>("_getMatrix", mJS);
+
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+        // The atlas draw happens after this call returns, so the buffers have to outlive it.
+        // WebGL2PendingMesh holds them.
+        WebGL2PendingMesh* mesh = makeWebGL2PendingMesh(std::move(vertices_f32),
+                                                        std::move(uvCoords_f32),
+                                                        std::move(indices_u16),
+                                                        vertexCount,
+                                                        indexCount,
+                                                        options);
+
+        auto [l, t, r, b] = bbox(m, webGL2PendingMeshVertices(mesh), f32Count);
+
+        call<void>("_drawImageMesh", image, mesh, value, opacity, l, t, r, b, allow_raw_pointers());
+#else
+        LITE_RTTI_CAST_OR_RETURN(vtx, rive::DataRenderBuffer*, vertices_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(uv, rive::DataRenderBuffer*, uvCoords_f32.get());
+        LITE_RTTI_CAST_OR_RETURN(indices, rive::DataRenderBuffer*, indices_u16.get());
+
         auto [l, t, r, b] = bbox(m, vtx->f32s(), f32Count);
 
-        call<void>("_drawImageMesh",
+        // JS copies the buffers out of the heap before this call returns, so passing their
+        // offsets is enough.
+        call<void>("_drawImageMeshFromHeap",
                    image,
                    value,
                    opacity,
-                   vtxByteOffset,
+                   reinterpret_cast<intptr_t>(vtx->f32s()),
                    static_cast<int>(f32Count),
-                   uvByteOffset,
+                   reinterpret_cast<intptr_t>(uv->f32s()),
                    static_cast<int>(f32Count),
-                   indicesByteOffset,
+                   reinterpret_cast<intptr_t>(indices->u16s()),
                    static_cast<int>(indexCount),
                    l,
                    t,
                    r,
                    b,
                    allow_raw_pointers());
+#endif
     }
 };
 
-class RenderPathWrapper : public wrapper<rive::RenderPath>
+class Canvas2DRenderPathWrapper : public wrapper<rive::RenderPath>
 {
 public:
-    EMSCRIPTEN_WRAPPER(RenderPathWrapper);
+    EMSCRIPTEN_WRAPPER(Canvas2DRenderPathWrapper);
 
     void rewind() override { call<void>("rewind"); }
 
@@ -242,24 +257,24 @@ public:
     void close() override { call<void>("close"); }
 };
 
-class RenderPaintWrapper;
-class GradientShader : public rive::RenderShader
+class Canvas2DRenderPaintWrapper;
+class Canvas2DGradientShader : public rive::RenderShader
 {
 private:
     std::vector<float> m_Stops;
     std::vector<rive::ColorInt> m_Colors;
 
 public:
-    GradientShader(const rive::ColorInt colors[], const float stops[], int count) :
+    Canvas2DGradientShader(const rive::ColorInt colors[], const float stops[], int count) :
         m_Stops(stops, stops + count), m_Colors(colors, colors + count)
     {}
 
-    void passStopsToJS(const RenderPaintWrapper& wrapper);
+    void passStopsToJS(const Canvas2DRenderPaintWrapper& wrapper);
 
-    virtual void passToJS(const RenderPaintWrapper& wrapper) = 0;
+    virtual void passToJS(const Canvas2DRenderPaintWrapper& wrapper) = 0;
 };
 
-class LinearGradientShader : public GradientShader
+class Canvas2DLinearGradientShader : public Canvas2DGradientShader
 {
 private:
     float m_StartX;
@@ -268,20 +283,24 @@ private:
     float m_EndY;
 
 public:
-    LinearGradientShader(const rive::ColorInt colors[],
-                         const float stops[],
-                         int count,
-                         float sx,
-                         float sy,
-                         float ex,
-                         float ey) :
-        GradientShader(colors, stops, count), m_StartX(sx), m_StartY(sy), m_EndX(ex), m_EndY(ey)
+    Canvas2DLinearGradientShader(const rive::ColorInt colors[],
+                                 const float stops[],
+                                 int count,
+                                 float sx,
+                                 float sy,
+                                 float ex,
+                                 float ey) :
+        Canvas2DGradientShader(colors, stops, count),
+        m_StartX(sx),
+        m_StartY(sy),
+        m_EndX(ex),
+        m_EndY(ey)
     {}
 
-    void passToJS(const RenderPaintWrapper& wrapper) override;
+    void passToJS(const Canvas2DRenderPaintWrapper& wrapper) override;
 };
 
-class RadialGradientShader : public GradientShader
+class Canvas2DRadialGradientShader : public Canvas2DGradientShader
 {
 private:
     float m_CenterX;
@@ -289,27 +308,28 @@ private:
     float m_Radius;
 
 public:
-    RadialGradientShader(const rive::ColorInt colors[],
-                         const float stops[],
-                         int count,
-                         float cx,
-                         float cy,
-                         float r) :
-        GradientShader(colors, stops, count), m_CenterX(cx), m_CenterY(cy), m_Radius(r)
+    Canvas2DRadialGradientShader(const rive::ColorInt colors[],
+                                 const float stops[],
+                                 int count,
+                                 float cx,
+                                 float cy,
+                                 float r) :
+        Canvas2DGradientShader(colors, stops, count), m_CenterX(cx), m_CenterY(cy), m_Radius(r)
     {}
 
-    void passToJS(const RenderPaintWrapper& wrapper) override;
+    void passToJS(const Canvas2DRenderPaintWrapper& wrapper) override;
 };
 
-class RenderPaintWrapper : public wrapper<rive::RenderPaint>
+class Canvas2DRenderPaintWrapper : public wrapper<rive::RenderPaint>
 {
 public:
-    EMSCRIPTEN_WRAPPER(RenderPaintWrapper);
+    EMSCRIPTEN_WRAPPER(Canvas2DRenderPaintWrapper);
 
     void color(unsigned int value) override { call<void>("color", value); }
     void thickness(float value) override { call<void>("thickness", value); }
     void join(rive::StrokeJoin value) override { call<void>("join", value); }
     void cap(rive::StrokeCap value) override { call<void>("cap", value); }
+    void feather(float value) override { call<void>("feather", value); }
     void blendMode(rive::BlendMode value) override { call<void>("blendMode", value); }
 
     void style(rive::RenderPaintStyle value) override { call<void>("style", value); }
@@ -321,13 +341,62 @@ public:
             call<void>("clearGradient");
             return;
         }
-        static_cast<GradientShader*>(shader.get())->passToJS(*this);
+        static_cast<Canvas2DGradientShader*>(shader.get())->passToJS(*this);
+    }
+
+    void shaderTransform(const rive::Mat2D& transform) override
+    {
+        rive::Mat2D gradientTransform = transform;
+        rive::Mat2D inverseGradientTransform = transform;
+        if (!gradientTransform.invert(&inverseGradientTransform))
+        {
+            // Ignore a transform that isn't invertible. TODO(ben): some degenerate transforms are
+            // still renderable; a vertical scale of 0 leaves a horizontal gradient unchanged.
+            gradientTransform = rive::Mat2D();
+            inverseGradientTransform = rive::Mat2D();
+        }
+
+        // Canvas 2D applies the gradient transform to the whole path, which also scales a stroke's
+        // thickness. Under uniform scale renderer.js cancels that by multiplying thickness by
+        // thicknessScale. A thicknessScale of 0 means the scale is non-uniform, and renderer.js
+        // delegates the stroke to the WebGL2 renderer.
+        float thicknessScale = 0;
+        if (gradientTransform.hasUniformScale())
+        {
+            float maxScale = gradientTransform.findMaxScale();
+            if (maxScale > 0)
+            {
+                thicknessScale = 1 / maxScale;
+            }
+        }
+
+        call<void>("_setGradientTransform",
+                   gradientTransform.xx(),
+                   gradientTransform.xy(),
+                   gradientTransform.yx(),
+                   gradientTransform.yy(),
+                   gradientTransform.tx(),
+                   gradientTransform.ty(),
+                   inverseGradientTransform.xx(),
+                   inverseGradientTransform.xy(),
+                   inverseGradientTransform.yx(),
+                   inverseGradientTransform.yy(),
+                   inverseGradientTransform.tx(),
+                   inverseGradientTransform.ty(),
+                   thicknessScale);
+    }
+
+    // Bound to JS as `gradientTransform` (rive_advanced.mjs.d.ts), which passes the matrix as six
+    // floats.
+    void jsGradientTransform(float xx, float xy, float yx, float yy, float tx, float ty)
+    {
+        shaderTransform(rive::Mat2D(xx, xy, yx, yy, tx, ty));
     }
 
     void invalidateStroke() override {}
 };
 
-void GradientShader::passStopsToJS(const RenderPaintWrapper& wrapper)
+void Canvas2DGradientShader::passStopsToJS(const Canvas2DRenderPaintWrapper& wrapper)
 {
     // Consider passing in a bulk op encoding into a single array.
     for (std::size_t i = 0; i < m_Stops.size(); i++)
@@ -336,22 +405,22 @@ void GradientShader::passStopsToJS(const RenderPaintWrapper& wrapper)
     }
 }
 
-void LinearGradientShader::passToJS(const RenderPaintWrapper& wrapper)
+void Canvas2DLinearGradientShader::passToJS(const Canvas2DRenderPaintWrapper& wrapper)
 {
     wrapper.call<void>("linearGradient", m_StartX, m_StartY, m_EndX, m_EndY);
     passStopsToJS(wrapper);
 }
 
-void RadialGradientShader::passToJS(const RenderPaintWrapper& wrapper)
+void Canvas2DRadialGradientShader::passToJS(const Canvas2DRenderPaintWrapper& wrapper)
 {
     wrapper.call<void>("radialGradient", m_CenterX, m_CenterY, m_CenterX + m_Radius, m_CenterY);
     passStopsToJS(wrapper);
 }
 
-class RenderImageWrapper : public wrapper<rive::RenderImage>
+class Canvas2DRenderImageWrapper : public wrapper<rive::RenderImage>
 {
 public:
-    EMSCRIPTEN_WRAPPER(RenderImageWrapper);
+    EMSCRIPTEN_WRAPPER(Canvas2DRenderImageWrapper);
 
     bool decode(rive::Span<const uint8_t> bytes)
     {
@@ -372,13 +441,18 @@ public:
 namespace rive
 {
 
-class C2DFactory : public Factory
+class Canvas2DFactory : public Factory
 {
     rcp<RenderBuffer> makeRenderBuffer(RenderBufferType type,
                                        RenderBufferFlags flags,
                                        size_t sizeInBytes) override
     {
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+        // The WebGL2 renderer draws the meshes, and it needs its own RenderBuffer implementation.
+        return makeWebGL2RenderBuffer(type, flags, sizeInBytes);
+#else
         return make_rcp<DataRenderBuffer>(type, flags, sizeInBytes);
+#endif
     }
 
     rcp<RenderShader> makeLinearGradient(float sx,
@@ -389,7 +463,8 @@ class C2DFactory : public Factory
                                          const float stops[],     // [count]
                                          size_t count) override
     {
-        return rcp<RenderShader>(new LinearGradientShader(colors, stops, count, sx, sy, ex, ey));
+        return rcp<RenderShader>(
+            new Canvas2DLinearGradientShader(colors, stops, count, sx, sy, ex, ey));
     }
     rcp<RenderShader> makeRadialGradient(float cx,
                                          float cy,
@@ -398,7 +473,8 @@ class C2DFactory : public Factory
                                          const float stops[],     // [count]
                                          size_t count) override
     {
-        return rcp<RenderShader>(new RadialGradientShader(colors, stops, count, cx, cy, radius));
+        return rcp<RenderShader>(
+            new Canvas2DRadialGradientShader(colors, stops, count, cx, cy, radius));
     }
 
     rcp<RenderPath> makeRenderPath(RawPath& path, FillRule fr) override
@@ -437,12 +513,12 @@ class C2DFactory : public Factory
         //       be passed the byteArray, and have it decode (or fail) right
         //       away. It could just return null to us for its object if it
         //       failed.
-        //   ... that would avoid that tricky cast to RenderImageWrapper*
+        //   ... that would avoid that tricky cast to Canvas2DRenderImageWrapper*
 
         val renderImage = val::module_property("renderFactory").call<val>("makeRenderImage");
 
-        rcp<RenderImageWrapper> ptr =
-            rcp(renderImage.as<RenderImageWrapper*>(allow_raw_pointers()));
+        rcp<Canvas2DRenderImageWrapper> ptr =
+            rcp(renderImage.as<Canvas2DRenderImageWrapper*>(allow_raw_pointers()));
         if (!ptr->decode(bytes))
         {
             // Question, what do we do when we end up here?
@@ -455,25 +531,27 @@ class C2DFactory : public Factory
 };
 
 #ifdef WITH_RIVE_TOOLS
-// The test harness (testing_window_canvas2d.cpp) lives in a separate wasm
-// module, so it cannot hold pointers into our heap, and thus cannot directly
-// invoke the functions defined above. However, most of this functionality is
-// just making simple calls into JS via `call`, so the test harness can just
-// make these same calls directly. However, a few functions in this file are
-// more complex, and we want to avoid duplicating their logic in the test
-// harness. Therefore, Canvas2DTestUtilities implements wrappers for these
-// more complex functions. These wrappers have emscripten bindings (see below)
-// which can be invoked from the test harness.
+EM_JS(void, setMaxCanvasAtlasSize, (uint32_t size), {
+    canvasOffscreenRenderer.setMaxAtlasSize(size);
+});
+
+EM_JS(int, pendingAtlasReleaseCount, (), { return canvasOffscreenRenderer.pendingReleaseCount(); });
+
+// Wrappers that let the test harness run the more involved functions in this file. The harness is a
+// separately linked wasm module, so it cannot hold pointers into our heap and reaches us only
+// through JS values and these bindings; see
+// packages/runtime/tests/common/testing_window_canvas2d.cpp.
 class Canvas2DTestUtilities
 {
 public:
-    // Copies `elementCount` elements out of a JS TypedArray into a fresh
-    // DataRenderBuffer on *our* heap. The source typically views a different
-    // wasm module's memory, which is fine: a TypedArray is an ordinary JS
-    // object, so it reads correctly from here regardless of which ArrayBuffer
-    // it wraps. Matching the element type keeps TypedArray.set() a straight
-    // copy -- setting a Uint8Array from a Float32Array would silently convert
-    // each element instead.
+    static void testSetMaxCanvasAtlasSize(uint32_t size) { setMaxCanvasAtlasSize(size); }
+
+    static int testPendingAtlasReleaseCount() { return pendingAtlasReleaseCount(); }
+
+    // Copies `elementCount` elements out of a JS TypedArray into a render buffer on our heap. The
+    // source typically views another wasm module's memory, which works because a TypedArray is an
+    // ordinary JS object. T must match the source's element type, since TypedArray.set() converts
+    // between differing types.
     template <typename T>
     static rive::rcp<rive::RenderBuffer> uploadRenderBuffer(rive::RenderBufferType type,
                                                             const emscripten::val& source,
@@ -489,11 +567,8 @@ public:
         return buffer;
     }
 
-    // This exists so the harness can drive the real
-    // RendererWrapper::drawImageMesh() rather than reimplementing its
-    // bounding-box and buffer handling on its own side.
-    static void testDrawImageMesh(RendererWrapper* rendererWrapper,
-                                  RenderImageWrapper* imageWrapper,
+    static void testDrawImageMesh(Canvas2DRendererWrapper* rendererWrapper,
+                                  Canvas2DRenderImageWrapper* imageWrapper,
                                   const emscripten::val& vertices_f32,
                                   const emscripten::val& uvCoords_f32,
                                   const emscripten::val& indices_u16,
@@ -520,36 +595,22 @@ public:
                 opacity);
     }
 
-    // The harness needs the decoded dimensions to populate its own
-    // rive::RenderImage. It could read them off the <img> element that
-    // renderer.js stashes on the CanvasRenderImage, but that field is private
-    // to renderer.js and only ever accessed there with dot notation, so closure
-    // renames it in release builds. These go through the values renderer.js
-    // sets via size(), which is what the runtime itself draws with.
-    static int testImageWidth(RenderImageWrapper* imageWrapper) { return imageWrapper->width(); }
+    static int testImageWidth(Canvas2DRenderImageWrapper* imageWrapper)
+    {
+        return imageWrapper->width();
+    }
 
-    static int testImageHeight(RenderImageWrapper* imageWrapper) { return imageWrapper->height(); }
+    static int testImageHeight(Canvas2DRenderImageWrapper* imageWrapper)
+    {
+        return imageWrapper->height();
+    }
 };
 #endif // WITH_RIVE_TOOLS
 } // namespace rive
 
-// Placeholder for a method that only exists in JS.
-//
-// pure_virtual() is what makes embind reject a .extend() subclass that forgot a
-// method, but it registers against the class that *declares* the bound member
-// -- .function() deduces that from the pointer and ignores the class_<>.
-// Neither obvious choice works here. The wrapper's override declares its own
-// member, so it registers against RendererWrapper and the check silently never
-// runs. The real base method often isn't declared where you'd expect either:
-// RenderPath's verbs come from CommandPath, which has no class_<>, so the
-// registration waits forever on an unresolved type and the method never appears
-// at all. (The signature is a fiction regardless -- these JS classes are not
-// the same shape as the C++ ones; they take loose floats where C++ takes a
-// Mat2D.)
-//
-// A null pointer-to-member pins the class explicitly, sidestepping both. Only
-// valid alongside pure_virtual(), which guarantees the JS override shadows this
-// binding so the null is never invoked.
+// Placeholder for a method that JS implements. Only valid alongside pure_virtual(), which
+// guarantees the JS override shadows this binding, so the null is never invoked and its declared
+// signature never matters.
 template <typename T> constexpr void (T::* pureVirtualMethod())() { return nullptr; }
 
 EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
@@ -559,13 +620,12 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("restore", pureVirtualMethod<rive::Renderer>(), pure_virtual())
         .function("transform", pureVirtualMethod<rive::Renderer>(), pure_virtual())
         .function("modulateOpacity", pureVirtualMethod<rive::Renderer>(), pure_virtual())
-        // These three are not pure_virtual(): drawPath and clipPath are
-        // implemented in JS under different names (_drawPath / _clipPath), and
-        // align is a C++ helper that JS calls rather than implements.
-        .function("drawPath", &RendererWrapper::drawPath, allow_raw_pointers())
-        .function("clipPath", &RendererWrapper::clipPath, allow_raw_pointers())
-        .function("align", &RendererWrapper::align, allow_raw_pointers())
-        .allow_subclass<RendererWrapper>("RendererWrapper");
+        // drawPath and clipPath forward to JS under the names _drawPath and _clipPath. align
+        // computes the alignment matrix here in C++.
+        .function("drawPath", &Canvas2DRendererWrapper::drawPath, allow_raw_pointers())
+        .function("clipPath", &Canvas2DRendererWrapper::clipPath, allow_raw_pointers())
+        .function("align", &Canvas2DRendererWrapper::align, allow_raw_pointers())
+        .allow_subclass<Canvas2DRendererWrapper>("RendererWrapper");
 
     class_<rive::RenderPath>("RenderPath")
         .function("rewind", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
@@ -575,7 +635,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("lineTo", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
         .function("cubicTo", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
         .function("close", pureVirtualMethod<rive::RenderPath>(), pure_virtual())
-        .allow_subclass<RenderPathWrapper>("RenderPathWrapper");
+        .allow_subclass<Canvas2DRenderPathWrapper>("RenderPathWrapper");
     enum_<rive::RenderPaintStyle>("RenderPaintStyle")
         .value("fill", rive::RenderPaintStyle::fill)
         .value("stroke", rive::RenderPaintStyle::stroke);
@@ -632,16 +692,18 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .function("thickness", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
         .function("join", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
         .function("cap", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
+        .function("feather", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
         .function("blendMode", pureVirtualMethod<rive::RenderPaint>(), pure_virtual())
-        // Not pure_virtual(): implemented in C++, which decomposes it into the
-        // linearGradient / radialGradient / addStop calls that JS does provide.
-        .function("shader", &RenderPaintWrapper::shader, allow_raw_pointers())
-        .allow_subclass<RenderPaintWrapper>("RenderPaintWrapper");
+        // Implemented in C++, which decomposes the shader into the linearGradient,
+        // radialGradient and addStop calls that JS provides.
+        .function("shader", &Canvas2DRenderPaintWrapper::shader, allow_raw_pointers())
+        .function("gradientTransform", &Canvas2DRenderPaintWrapper::jsGradientTransform)
+        .allow_subclass<Canvas2DRenderPaintWrapper>("RenderPaintWrapper");
 
     class_<rive::RenderImage>("RenderImage")
-        .function("size", &RenderImageWrapper::size)
-        .function("unref", &RenderImageWrapper::unref)
-        .allow_subclass<RenderImageWrapper>("RenderImageWrapper");
+        .function("size", &Canvas2DRenderImageWrapper::size)
+        .function("unref", &Canvas2DRenderImageWrapper::unref)
+        .allow_subclass<Canvas2DRenderImageWrapper>("RenderImageWrapper");
 
 #ifdef WITH_RIVE_TOOLS
     class_<rive::Canvas2DTestUtilities>("Canvas2DTestUtilities")
@@ -653,11 +715,15 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
                         allow_raw_pointers())
         .class_function("imageHeight",
                         &rive::Canvas2DTestUtilities::testImageHeight,
-                        allow_raw_pointers());
+                        allow_raw_pointers())
+        .class_function("setMaxCanvasAtlasSize",
+                        &rive::Canvas2DTestUtilities::testSetMaxCanvasAtlasSize)
+        .class_function("pendingAtlasReleaseCount",
+                        &rive::Canvas2DTestUtilities::testPendingAtlasReleaseCount);
 #endif
 }
 
-static rive::C2DFactory gC2DFactory;
+static rive::Canvas2DFactory gCanvas2DFactory;
 
 namespace
 {
@@ -687,7 +753,7 @@ public:
     // foreign image through the registry.
     rive::rcp<rive::RenderImage> decodeImage(rive::Span<const uint8_t> bytes) override
     {
-        return static_cast<rive::Factory&>(gC2DFactory).decodeImage(bytes);
+        return static_cast<rive::Factory&>(gCanvas2DFactory).decodeImage(bytes);
     }
 
     // A claim is for the session's whole life, not just the attachment:
@@ -717,7 +783,7 @@ public:
     C2DFrameSink(rive::Renderer* target, uint64_t screenTarget) :
         m_target(target), m_screenTarget(screenTarget)
     {}
-    rive::Factory* factory() override { return &gC2DFactory; }
+    rive::Factory* factory() override { return &gCanvas2DFactory; }
     // Content no screen segment claimed still belongs to this canvas.
     uint64_t defaultScreenTarget() override { return m_screenTarget; }
     rive::Renderer* beginScreenFrame(uint64_t target) override
@@ -808,7 +874,7 @@ static void c2dDeferredDetach(C2DDeferredSession* session)
     session->replayer().reset();
 }
 
-rive::Factory* jsFactory() { return &gC2DFactory; }
+rive::Factory* jsFactory() { return &gCanvas2DFactory; }
 
 // Resolves the optional deferred session that import and decode entry points
 // accept. Routing is per call and never global, so a deferred file leaves
@@ -817,7 +883,7 @@ rive::Factory* jsSessionFactory(const emscripten::val& session)
 {
     if (session.isUndefined() || session.isNull())
     {
-        return &gC2DFactory;
+        return &gCanvas2DFactory;
     }
     return session.as<C2DDeferredSession*>(allow_raw_pointers());
 }

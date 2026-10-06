@@ -139,7 +139,7 @@ Module["onRuntimeInitialized"] = function () {
         }
 
         _offscreenGL._hasPixelLocalStorage =
-              Boolean(_offscreenGL._gl.getExtension("WEBGL_shader_pixel_local_storage"));
+          Boolean(_offscreenGL._gl.getExtension("WEBGL_shader_pixel_local_storage"));
 
         _offscreenGL._maxRTSize = Math.min(
           _offscreenGL._gl.getParameter(_offscreenGL._gl.MAX_RENDERBUFFER_SIZE),

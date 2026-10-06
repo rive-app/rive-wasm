@@ -286,6 +286,14 @@ export declare class RenderPaintWrapper {
   radialGradient(sx: number, sy: number, ex: number, ey: number): void;
   addStop(color: number, stop: number): void;
   completeGradient(): void;
+  gradientTransform(
+    xx: number,
+    xy: number,
+    yx: number,
+    yy: number,
+    tx: number,
+    ty: number,
+  ): void;
 }
 
 /**
