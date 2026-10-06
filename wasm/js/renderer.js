@@ -1280,10 +1280,16 @@ Module["onRuntimeInitialized"] = function () {
         },
       };
       result = load(bytes, loader, session ?? null);
+      // Script modules compile while the assets load; the prepare that
+      // startFileScripts awaits joins this one.
+      const scripting = Module["riveScripting"];
+      if (scripting) {
+        scripting["prepare"]();
+      }
       if (loadContext.total == 0) {
         resolve(result);
       }
-    });
+    }).then(Module["startFileScripts"]);
   };
 
   const wasmDraw = Module["Artboard"]["prototype"]["draw"];

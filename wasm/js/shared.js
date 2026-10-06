@@ -3,6 +3,21 @@ Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.
   sharedOnRuntimeInitialized && sharedOnRuntimeInitialized();
 
+  // The second step of loading a file: import left its wasm script modules
+  // registered with the page, which instantiates them asynchronously before
+  // the file starts its scripts. Builds without the wasm script backend have
+  // neither piece.
+  Module["startFileScripts"] = function (file) {
+    const scripting = Module["riveScripting"];
+    if (!file || !scripting || !file["startScripts"]) {
+      return Promise.resolve(file);
+    }
+    return scripting["prepare"]().then(function () {
+      file["startScripts"]();
+      return file;
+    });
+  };
+
   // The optional session belongs to the deferred file this asset is bound
   // into; anything decoded against another factory is dropped when that file
   // draws. Null (never omitted) keeps the arity the bindings assert on.

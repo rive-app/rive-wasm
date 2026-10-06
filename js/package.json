@@ -22,6 +22,7 @@
     "publish:all": "./publish_all.sh --access public",
     "minify": "npx terser --compress --mangle -o ./dist/rive.js -- ./src/rive.js",
     "test": "jest",
+    "test:scripting": "jest -c jest.scripting.config.js",
     "check:types": "./check_types.sh"
   },
   "keywords": [

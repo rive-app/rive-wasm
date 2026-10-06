@@ -703,6 +703,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                                         -> void { result = rive::Mat2D::multiply(self, other); }));
 
     class_<rive::File>("File")
+#ifdef WITH_RIVE_SCRIPTING_WASM
+        .function("startScripts", &rive::File::startScripts)
+#endif
         .function("defaultArtboard",
                   optional_override([](rive::File& self) -> rive::ArtboardInstance* {
                       return self.artboardAt(0).release();

@@ -182,6 +182,18 @@ do
         })
     end
 
+    filter({})
+    if _OPTIONS['scripting_vm'] == 'wasm' or _OPTIONS['scripting_vm'] == 'both'
+    then
+        -- Script modules run on the browser's wasm engine; this is the page
+        -- side of that, generated in the runtime.
+        linkoptions({
+            '--pre-js ' .. path.getabsolute(
+                '../../runtime/src/wasm/web/rive_scripting_pre.js'
+            ),
+        })
+    end
+
     filter({ 'options:with_rive_scripting' })
     do
         includedirs({
@@ -251,6 +263,9 @@ do
             '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/' .. moduleName .. '.mjs',
         })
         finalizeGlue(moduleName .. '.mjs')
+        -- The make target is the glue, so a link that is up to date is skipped.
+        targetname(moduleName)
+        targetextension('.mjs')
     end
 
     if RIVE_WITH_WEBGL2 then
@@ -279,6 +294,8 @@ do
                 '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
             })
             finalizeGlue('webgl2_advanced.mjs')
+            targetname('webgl2_advanced')
+            targetextension('.mjs')
         end
 
         filter({ 'system:not emscripten' })

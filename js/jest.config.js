@@ -13,5 +13,7 @@ module.exports = {
     "/node_modules/(?!rive-canvas).+\\.m?js$",
   ],
   "testEnvironment": "jsdom",
+  // Needs its own build, see jest.scripting.config.js.
+  "testPathIgnorePatterns": ["/node_modules/", "<rootDir>/test/scripting/"],
   setupFiles: ["jest-canvas-mock", "./test/setup.ts"],
 };

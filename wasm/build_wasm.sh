@@ -58,7 +58,7 @@ RENDERER_FLAGS="--renderer=c2d --no-rive-decoders --no-lto "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
-while getopts "clsr:" flag; do
+while getopts "clswtr:" flag; do
     case "${flag}" in
     c)
         # compatibility mode, disable simd
@@ -72,6 +72,16 @@ while getopts "clsr:" flag; do
     s)
         OPTIONS=$((OPTIONS + 1))
         PREMAKE_FLAGS+="--wasm_single "
+        ;;
+    w)
+        # wasm script modules, run on the browser's engine beside Luau
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--scripting_vm=both "
+        ;;
+    t)
+        # Runs unsigned script modules, for test builds of locally baked files
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--with_rive_tools "
         ;;
     r)
         OPTIONS=$((OPTIONS + 2))
@@ -106,6 +116,17 @@ if [[ ! -d "../../runtime" ]]; then
     PREMAKE_FLAGS+="--scripts=./submodules/rive-runtime/build "
 else
     PREMAKE_FLAGS+="--scripts=../../runtime/build "
+fi
+
+# The link does not track its --pre-js input, so a changed bundle would
+# otherwise be silently left out.
+BUNDLE=../../runtime/src/wasm/web/rive_scripting_pre.js
+if [[ "$PREMAKE_FLAGS" == *scripting_vm=both* ]]; then
+    for glue in "$OUT_DIR"/*.mjs; do
+        if [[ $BUNDLE -nt $glue ]]; then
+            rm -f "$glue" "${glue%.mjs}.wasm"
+        fi
+    done
 fi
 
 if [ "$OPTION" = 'help' ]; then

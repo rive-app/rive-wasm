@@ -1,0 +1,12 @@
+{
+  "name": "rive-scripting-browser-lane",
+  "private": true,
+  "description": "Runs baked AnimaScript stress files through the webgl2 JS runtime in a real browser.",
+  "type": "module",
+  "scripts": {
+    "lane": "node lane.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

@@ -409,7 +409,7 @@ Module["onRuntimeInitialized"] = function () {
       loader.addLoader(cdnLoader);
     }
 
-    return Promise.resolve(load(bytes, loader, session ?? null));
+    return Module["startFileScripts"](load(bytes, loader, session ?? null));
   };
 
   const cppClear = Module["WebGL2Renderer"]["prototype"]["clear"];
