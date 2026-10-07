@@ -326,8 +326,9 @@ for (const name of fixtures) {
     if (wamr && !(result.mismatchFraction <= kMismatchBudget)) {
         problems.push(`frame ${kFrame} differs from WAMR on ${(result.mismatchFraction * 100).toFixed(2)}% of pixels`);
     }
-    const tiers = (lane) => wamrResults[name]?.[lane]?.tier.split(', ') ?? [];
-    if (wamr && !tiers('interp').every((tier) => tier === 'interp')) {
+    // One entry per VM; the interpreter appends why it runs.
+    const tiers = (lane) => wamrResults[name]?.[lane]?.tier.split('; ') ?? [];
+    if (wamr && !tiers('interp').every((tier) => tier.startsWith('interp'))) {
         problems.push(`the interp bench ran on ${wamrResults[name].interp.tier}`);
     }
     if (aot && !tiers('aot').every((tier) => tier.startsWith('aot'))) {

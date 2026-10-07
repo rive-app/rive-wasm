@@ -92,7 +92,7 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/canvas_advanced fallback"
     echo
-    OUT_DIR=build/canvas_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c ${WASM_CONFIG}
+    OUT_DIR=build/canvas_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -w -c ${WASM_CONFIG}
     cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive_fallback.wasm
     cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive_fallback.wasm
 fi
@@ -101,7 +101,7 @@ if target_enabled "canvas"; then
     echo
     echo "::::: building @rive-app/canvas_advanced"
     echo
-    OUT_DIR=build/canvas_advanced/bin/${WASM_CONFIG} ./build_wasm.sh ${WASM_CONFIG}
+    OUT_DIR=build/canvas_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -w ${WASM_CONFIG}
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
@@ -134,7 +134,7 @@ if target_enabled "canvas-single"; then
     echo
     echo "::::: building @rive-app/canvas_advanced_single"
     echo
-    OUT_DIR=build/canvas_advanced_single/bin/${WASM_CONFIG} ./build_wasm.sh -c -s ${WASM_CONFIG}
+    OUT_DIR=build/canvas_advanced_single/bin/${WASM_CONFIG} ./build_wasm.sh -w -c -s ${WASM_CONFIG}
     cp build/canvas_advanced_single/bin/${WASM_CONFIG}/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_single/rive_advanced.mjs.d.ts
 fi
@@ -143,7 +143,7 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/webgl2_advanced fallback"
     echo
-    OUT_DIR=build/webgl2_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c -r webgl2 ${WASM_CONFIG}
+    OUT_DIR=build/webgl2_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -w -c -r webgl2 ${WASM_CONFIG}
     cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive_fallback.wasm
     cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive_fallback.wasm
 fi
@@ -152,7 +152,7 @@ if target_enabled "webgl2"; then
     echo
     echo "::::: building @rive-app/webgl2_advanced"
     echo
-    OUT_DIR=build/webgl2_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -r webgl2 ${WASM_CONFIG}
+    OUT_DIR=build/webgl2_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -w -r webgl2 ${WASM_CONFIG}
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
