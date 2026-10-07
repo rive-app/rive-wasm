@@ -706,6 +706,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
 #ifdef WITH_RIVE_SCRIPTING_WASM
         .function("startScripts", &rive::File::startScripts)
 #endif
+        .function("displayScale", &rive::File::displayScale)
         .function("defaultArtboard",
                   optional_override([](rive::File& self) -> rive::ArtboardInstance* {
                       return self.artboardAt(0).release();

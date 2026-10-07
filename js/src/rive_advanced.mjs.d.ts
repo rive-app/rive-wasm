@@ -469,6 +469,11 @@ export declare class File {
    */
   viewModelCount(): number;
   /**
+   * Reports device pixels per layout point to scripts in this file
+   * @param scale - Device pixels per layout point
+   */
+  displayScale(scale: number): void;
+  /**
    * Returns a view model by the index in which it is located in the file
    * @returns ViewModel
    */

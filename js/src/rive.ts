@@ -2993,6 +2993,7 @@ export class Rive {
         }
       }
       this.file = this.riveFile.getInstance();
+      this.reportDisplayScale();
       // Initialize and draw frame
       this.initArtboard(
         artboardName,
@@ -4028,6 +4029,7 @@ export class Rive {
   // Sets a new layout
   public set layout(layout: Layout) {
     this._layout = layout;
+    this.reportDisplayScale();
     // Fit/alignment/bounds feed the overlay transform.
     this._overlayTransformDirty = true;
     // If the maxX or maxY are 0, then set them to the canvas width and height
@@ -4762,6 +4764,15 @@ export class Rive {
       this._overlayTransformDirty = true;
     }
     this._devicePixelRatioUsed = value;
+    this.reportDisplayScale();
+  }
+
+  // Not per frame: the scale is per file, and instances sharing one would trade
+  // it every frame.
+  private reportDisplayScale(): void {
+    this.file?.displayScale(
+      this._devicePixelRatioUsed * this._layout.layoutScaleFactor,
+    );
   }
 
   /**
