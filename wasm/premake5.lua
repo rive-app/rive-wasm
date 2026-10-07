@@ -1,5 +1,11 @@
 dofile('rive_build_config.lua')
 
+-- Canvas 2D replay drops ore work, so its sessions record none. Workspace scope,
+-- as it changes the session layout; tools builds that embed this have ore backends.
+if not _OPTIONS['with-canvas-2d'] and (_OPTIONS['renderer'] or 'c2d') ~= 'webgl2' then
+    defines({ 'RIVE_DEFERRED_NO_ORE' })
+end
+
 newoption({
     trigger = 'profiling-funcs',
     description = 'Build with --profiling-funcs for named WASM symbols in DevTools (uses -O2 instead of -Oz)',
@@ -62,7 +68,8 @@ do
             -- '-O3',
             -- '-s ASYNCIFY',
             '-s STACK_SIZE=256kb',
-            '-s FORCE_FILESYSTEM=0',
+            -- Nothing opens files, so the filesystem glue would ship unused.
+            '-s FILESYSTEM=0',
             '-s MODULARIZE=1',
             '-s NO_EXIT_RUNTIME=1',
             '-s DISABLE_EXCEPTION_CATCHING=1',
@@ -117,16 +124,25 @@ do
 
     filter('options:config=release')
     do
-        -- Link-time -Os gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
+        -- Link-time -Oz gates emcc's wasm-opt pass; without it the wasm ships unoptimized.
         -- -lexports.js disables emcc's internal MINIFY_WASM_EXPORT_NAMES (see
-        -- the '-lexports.js' in linker_args check in link.py). Without it, -Os
+        -- the '-lexports.js' in linker_args check in link.py). Without it, -Oz
         -- renames imports/exports to per-build ordinals (a.a, a.b, ...) numbered
         -- in each binary's own import order, which the primary and fallback do
         -- not agree on. One JS glue serves both, so the names must stay literal.
         -- DECLARE_ASM_MODULE_EXPORTS=0 reaches the same setting, but emcc
         -- rejects it alongside MODULARIZE. TODO: revisit how to work with the
         -- recommended flag alongside MODULARIZE
-        linkoptions({ '-Os', '-s ASSERTIONS=0', '-lexports.js', '--closure 1' })
+        -- -Oz would otherwise assume TextDecoder, which jsdom does not have.
+        linkoptions({
+            '-Oz',
+            '-s TEXTDECODER=1',
+            -- Whole program flow analysis still finds code -Oz alone keeps.
+            '-s BINARYEN_EXTRA_PASSES=--gufa,-Oz',
+            '-s ASSERTIONS=0',
+            '-lexports.js',
+            '--closure 1',
+        })
     end
 
     filter({})

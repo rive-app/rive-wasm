@@ -52,9 +52,10 @@ fi
 # fi
 
 OPTIONS=1
-PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR "
+# LTO grows the binary in every configuration here.
+PREMAKE_FLAGS="--arch=wasm --out=$OUT_DIR --no-lto "
 PREMAKE_HEAVY_FLAGS="--with_rive_text --with_rive_audio=system --with_rive_layout --with_rive_scripting "
-RENDERER_FLAGS="--renderer=c2d --no-rive-decoders --no-lto "
+RENDERER_FLAGS="--renderer=c2d --no-rive-decoders "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
@@ -85,18 +86,15 @@ while getopts "clswtr:" flag; do
         ;;
     r)
         OPTIONS=$((OPTIONS + 2))
-        # Emscripten has a bug when building PLS with LTO, so every configuration
-        # that links it passes --no-lto.
         if [ "${OPTARG}" = "webgl2" ]; then
             # with_rive_canvas brings in the ore GL backend and the deferred
             # host layer for the synchronous deferred renderer.
-            RENDERER_FLAGS="--renderer=webgl2 --no-rive-decoders --no-lto --with_rive_canvas "
+            RENDERER_FLAGS="--renderer=webgl2 --no-rive-decoders --with_rive_canvas "
         elif [ "${OPTARG}" = "c2d" ]; then
             # Images decode in JS, so the renderer's built-in decoding is
             # unreachable here and its symbols would go unresolved.
-            RENDERER_FLAGS="--renderer=c2d --no-rive-decoders --no-lto "
+            RENDERER_FLAGS="--renderer=c2d --no-rive-decoders "
         elif [ "${OPTARG}" = "c2d_only" ]; then
-            # Doesn't link the PLS renderer, so nothing to trip the LTO bug.
             RENDERER_FLAGS="--renderer=c2d_only "
         else
             echo Unknown renderer "${OPTARG}"

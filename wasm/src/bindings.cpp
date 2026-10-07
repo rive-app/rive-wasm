@@ -75,8 +75,6 @@
 #include <emscripten/val.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <iomanip>
-#include <sstream>
 #include <string>
 #include <vector>
 #include <sanitizer/lsan_interface.h>
@@ -1100,26 +1098,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
         .property("isFont", optional_override([](const rive::FileAsset& self) -> bool {
                       return self.is<rive::FontAsset>();
                   }))
-        .property(
-            "cdnUuid",
-            optional_override([](const rive::FileAsset& self) -> std::string {
-                if (self.cdnUuid().size() != 16)
-                {
-                    return "";
-                }
-                std::vector<int> indices = {3, 2, 1, 0, 5, 4, 7, 6, 9, 8, 15, 14, 13, 12, 11, 10};
-
-                std::stringstream ss;
-                ss << std::hex << std::setfill('0');
-                for (int i : indices)
-                {
-                    ss << std::setw(2) << static_cast<int>(self.cdnUuid()[i]);
-                    if (i == 0 || i == 4 || i == 6 || i == 8)
-                        ss << '-';
-                }
-
-                return ss.str();
-            }))
+        .property("cdnUuid", &rive::FileAsset::cdnUuidStr)
         // The session belongs to the file this asset was imported from; an
         // out of band asset decoded against a different factory would be
         // dropped at draw.
