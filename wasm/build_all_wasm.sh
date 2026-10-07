@@ -40,6 +40,11 @@ verify_fallback() {
         echo "       Publishing now would ship a package whose fallback URL 404s." >&2
         return 1
     fi
+    if cmp -s "$pkg/rive.wasm" "$pkg/rive_fallback.wasm"; then
+        echo "ERROR: $1: rive.wasm is the same binary as its fallback." >&2
+        echo "       Every browser would get the build without SIMD." >&2
+        return 1
+    fi
     python3 ./verify_fallback_abi.py "$pkg/rive.wasm" "$pkg/rive_fallback.wasm"
 }
 
@@ -87,9 +92,9 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/canvas_advanced fallback"
     echo
-    OUT_DIR=build/canvas_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -c ${WASM_CONFIG}
-    cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive_fallback.wasm
-    cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive_fallback.wasm
+    OUT_DIR=build/canvas_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c ${WASM_CONFIG}
+    cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive_fallback.wasm
+    cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive_fallback.wasm
 fi
 
 if target_enabled "canvas"; then
@@ -108,9 +113,9 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/canvas_advanced_lite fallback"
     echo
-    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -c -l -r c2d_only ${WASM_CONFIG}
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive_fallback.wasm
-    cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive_fallback.wasm
+    OUT_DIR=build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c -l -r c2d_only ${WASM_CONFIG}
+    cp build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive_fallback.wasm
+    cp build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive_fallback.wasm
 fi
 
 if target_enabled "canvas-lite"; then
@@ -138,9 +143,9 @@ if [ -z "$TARGETS" ]; then
     echo
     echo "::::: building @rive-app/webgl2_advanced fallback"
     echo
-    OUT_DIR=build/webgl2_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -c -r webgl2 ${WASM_CONFIG}
-    cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive_fallback.wasm
-    cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive_fallback.wasm
+    OUT_DIR=build/webgl2_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c -r webgl2 ${WASM_CONFIG}
+    cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive_fallback.wasm
+    cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive_fallback.wasm
 fi
 
 if target_enabled "webgl2"; then
