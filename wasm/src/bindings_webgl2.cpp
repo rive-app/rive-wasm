@@ -59,7 +59,11 @@ class WebGL2DeferredSession : public cmd::DeferredSession
 public:
     // Device free: the attaching renderer holds the first ore context that
     // exists, so its replay caps late bind in attachSession.
-    WebGL2DeferredSession() : cmd::DeferredSession(ore::ReplayCaps{}) {}
+    WebGL2DeferredSession() : cmd::DeferredSession(ore::ReplayCaps{})
+    {
+        // We draw into the canvas's default framebuffer, which Ore cannot wrap.
+        oreContext().setExposesTarget(false);
+    }
     ~WebGL2DeferredSession();
 
     void bindRenderer(WebGL2Renderer* renderer)
