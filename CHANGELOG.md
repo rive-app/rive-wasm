@@ -5,10 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.44.0](https://github.com/rive-app/rive-wasm/compare/2.43.1...2.44.0)
+## [2.44.1](https://github.com/rive-app/rive-wasm/compare/2.44.0...2.44.1)
+
+### Merged
+
+- Revert the mirror of stale stack commit 3067d371 that undid later master changes [`#433`](https://github.com/rive-app/rive-wasm/pull/433)
 
 ### Commits
 
+- fix(wasm): build and test our js runtime from the rive-wasm layout (#14729) 22b4ff1222 [`81ab447`](https://github.com/rive-app/rive-wasm/commit/81ab447b6e9c4bb4a1e3720d51924cf461f62cba)
+- feat(scripting): unsigned animascript modules with simd on by default (#14679) f728be53f5 [`0d2f829`](https://github.com/rive-app/rive-wasm/commit/0d2f829f801770f7d16092c471a35a0e75f695f6)
+- fix(runtime): bounce when trackpad momentum reaches the end of a scroll view (#14720) 6294c9d4d0 [`ca72906`](https://github.com/rive-app/rive-wasm/commit/ca72906e7d65851ed4a4dc4fb5815a1666bc2167)
+- feat(wgpu): Implement pseudo dynamic state (#14702) c8cd8128a2 [`8220175`](https://github.com/rive-app/rive-wasm/commit/8220175e119eea835f9783cdc91d5cc83a757e62)
+- fix(text input): mark the artboard changed when the caret blinks (#14701) 1f0e0b588f [`4a06a3d`](https://github.com/rive-app/rive-wasm/commit/4a06a3d071c54f3944a6d2cb4fe16c733e6c2370)
+- feat(renderer): Implement inkbleed for clockwise fills (#14675) 6a20ea77c3 [`d6acc6c`](https://github.com/rive-app/rive-wasm/commit/d6acc6c4540aee7622de3541ae0d100be79cee52)
+- fix(runtime, editor): scripts no longer advance freed artboards after a splice, and new list rows take a pending trigger (#14680) 3049b90d57 [`43e710e`](https://github.com/rive-app/rive-wasm/commit/43e710e6e568cb486f4afb5144925bd0ebaf9ba7)
+- fix(runtime): play audio from list items and later bound artboards with external audio engines (#14581) 6ecdb95e09 [`6c47a26`](https://github.com/rive-app/rive-wasm/commit/6c47a26d679b59da5e19bc3f0d8d27cb5e65f4f6)
+- fix(web): webgl gpu script uniforms and layout script display scale (#14676) 190c9a07b0 [`192ed8d`](https://github.com/rive-app/rive-wasm/commit/192ed8ded3f34cac4a59009df94729f1f76010b9)
+- feat: `coop_file` service (#14603) a4a43aa65c [`7d7260f`](https://github.com/rive-app/rive-wasm/commit/7d7260fc7f58b4e581e7f0b4b08fbebf8748c48d)
+- feat(js): run animascript files in our npm scripting packages (#14665) d94274b472 [`ba01455`](https://github.com/rive-app/rive-wasm/commit/ba014556c73c5ea3a6fb2b6ad43f297565ac00b0)
+- feat(renderer): Implement inkbleed strokes (#14574) 1d87855d29 [`248528c`](https://github.com/rive-app/rive-wasm/commit/248528c5c528f46a9c83d1b35cf07f611ac70328)
+- fix(wasm): keep simd in our main wasm builds (#14664) 963306b0aa [`5bc7b3a`](https://github.com/rive-app/rive-wasm/commit/5bc7b3ae6191c7e0e88d20174b17323ddf15faf3)
+- fix(text input): take presses across the whole scroll viewport (#14657) 19d9f54cc5 [`70064d2`](https://github.com/rive-app/rive-wasm/commit/70064d266f985e3f35687f9a56ffa02c8e75a952)
+- fix(artemis): kit lanes build again (#14658) 0fa377b3e2 [`196f442`](https://github.com/rive-app/rive-wasm/commit/196f442639417141d7e10cc49a9f2ae1d00f254c)
+- fix(runtime): hold rotation constraint limits across the half turn (#14555) fe473795bf [`5fcf9e8`](https://github.com/rive-app/rive-wasm/commit/5fcf9e8af266b921e027f0fa04e49ef2a5db17de)
+- fix(runtime): keep finished animations going while script async work is out (#14649) ac160369ea [`f92d562`](https://github.com/rive-app/rive-wasm/commit/f92d562585f77517914b425e7ea9450d9831d3b9)
+- feat(scripting): boot animascript straight onto aot -O3 (#14613) 6c7fb86204 [`4c333fe`](https://github.com/rive-app/rive-wasm/commit/4c333fe04641c9d3ac0a6d508e278bd5f6714659)
+- feat(scripting): run animascript modules on the browser's wasm engine (#14271) 0bce9e7ba6 [`58adfa4`](https://github.com/rive-app/rive-wasm/commit/58adfa43fee8ec17b3a49007add0662a5dc28344)
+- feat(editor): wasm scripting flavor of the flutter editor (#14202) 0ece9f60a4 [`f844460`](https://github.com/rive-app/rive-wasm/commit/f8444606640220a6cfc2debb2244de359ae7cae8)
+- fix(runtime): resolve script decodeImage promises on state machine ho… (#14628) 90d53d1f60 [`ef6438f`](https://github.com/rive-app/rive-wasm/commit/ef6438fa35eb952f5bab14c0f7393d569f595ed0)
+- feat(scripting): deliver scroll input to scripts (#14607) 1e518c5da6 [`e89de11`](https://github.com/rive-app/rive-wasm/commit/e89de11299d36d945d83bcad0dd74ce4a7bb1807)
+- fix(runtime, core, editor, native): stop resetting triggers every frame (#13575) 12cd5090d1 [`6249379`](https://github.com/rive-app/rive-wasm/commit/6249379e8baa0f670eb4da820304d834474090bc)
+- feat(runtime): let layout size virtualized grid tracks from every item (#14592) 383784096c [`270631e`](https://github.com/rive-app/rive-wasm/commit/270631ed3241cb6622936aef096cb0fbd53ff82c)
+- feat(runtime): virtualize scrolling in wrapping and grid layouts, in one or two directions (#14586) e787d9c895 [`e3e5d88`](https://github.com/rive-app/rive-wasm/commit/e3e5d88c2ea3e52003de51b72b91eedaf49e004e)
+- fix(runtime): include cstddef for size_t in write attribution (#14593) 9705667f92 [`b0442dc`](https://github.com/rive-app/rive-wasm/commit/b0442dc2f70a0a10e56228e98b977a02336b0ffd)
+- feat(cli): break when a view model value changes (#14588) 20323ff75e [`f39fbab`](https://github.com/rive-app/rive-wasm/commit/f39fbabee14549c98a404a12184474ce78695e7f)
+- perf(scripting): tune AnimaScript AOT codegen, std and the guard page tier (#14587) a5263457f3 [`ed802c7`](https://github.com/rive-app/rive-wasm/commit/ed802c7b4534a4f4b33143a6e02a5d662fecc669)
+- fix(ore): dynamic uniform offset checks, D3D11 buffer fixes and bench tier reporting (#14585) bc8ef7cdc7 [`e7df026`](https://github.com/rive-app/rive-wasm/commit/e7df0267faf5f3be32e53f490877db496e6ea2c3)
+- fix(runtime): commit Luau MeshInstances writes once per draw (#14577) d38bc656f1 [`c57aa03`](https://github.com/rive-app/rive-wasm/commit/c57aa03d095e2501bb6779258989d0f22a328428)
+- perf(scripting): advance detached view models without scanning every handle (#14582) eee0f4b21c [`fdc2b3f`](https://github.com/rive-app/rive-wasm/commit/fdc2b3f384b53f71c03931e775a545f6365d1a72)
+- fix(scripting): 2D script vectors always have z = 0 (#14575) 173c62a681 [`7b587fc`](https://github.com/rive-app/rive-wasm/commit/7b587fc60acc2b801de7b51fd1f44cbbd35213c4)
+- feat(cli): device tooling, emulators and simulators, ios aot, rive build (#14489) fc63b889c1 [`6470d9c`](https://github.com/rive-app/rive-wasm/commit/6470d9c5ca1de928805bf9ccaf441ea52c391b3a)
+- feat(ore): opt in per pass gpu profiler (#14364) 441de4a86c [`d5bd3d0`](https://github.com/rive-app/rive-wasm/commit/d5bd3d03e497bcb8fc497bf657a5957d12752ae8)
+- feat(cli): compile scripts ahead of time for linked android devices with --aot (#14488) 28fb0ac022 [`8c0ad79`](https://github.com/rive-app/rive-wasm/commit/8c0ad79cc07c099879258cf52e2ddf314f7769b2)
+- print's argument separator is not a console span (#14566) 9e498e651b [`76fec03`](https://github.com/rive-app/rive-wasm/commit/76fec0302d66f755202a40d9cc3a9c0232a1266f)
+- fix: Probe system font coverage before initializing Rive fonts 020ea5de4e [`ec689ad`](https://github.com/rive-app/rive-wasm/commit/ec689adc74876e98ffc0d955fbe1a05cc9545ddc)
+- feat(editor): stroke position (#14437) fa1cd145d3 [`a5a6313`](https://github.com/rive-app/rive-wasm/commit/a5a631377e61956e2738ef52425092fc11cb9446)
+- fix(runtime): don't blur into deleted components when destroying an artboard on an adopted focus manager (#14504) ac3546564e [`5e58b89`](https://github.com/rive-app/rive-wasm/commit/5e58b89668f59384a9bbf7493e1c2ff4b1bcf17d)
+- feat(unreal): Support specific button input (#14547) 9323bb804f [`e845924`](https://github.com/rive-app/rive-wasm/commit/e845924bf9b01078327092aaa0513d1ffbf41eb1)
+- feat(artemis): native test lane at 120 Hz and VRR (#14523) 37aef8611c [`4bacdf7`](https://github.com/rive-app/rive-wasm/commit/4bacdf7dfad664766c022af4f25d69e571a06fe7)
+- feat(rasc): errors test cases and thrown messages in script errors (#14532) bd0142048b [`791100d`](https://github.com/rive-app/rive-wasm/commit/791100d055124f89f0c226cfd6b48f13faadd4c4)
+- feat(rasc): document the AnimaScript std and close its gaps with the Luau API (#14524) b80a7fc662 [`4256c7e`](https://github.com/rive-app/rive-wasm/commit/4256c7e13ba74bc2407dff79aefcce51a20bfaa1)
+- refactor(unreal): NEEDS_GAMMA_CORRECTION  removal (#14516) 1462fc31e1 [`89b9a7a`](https://github.com/rive-app/rive-wasm/commit/89b9a7a968b709c313ba6c0f9851b527898c2da0)
+- feat(core): mouse button options (#14518) 60eb10b83d [`d3c6f12`](https://github.com/rive-app/rive-wasm/commit/d3c6f12be03e3f1022ee4d5eb610f862a05279bc)
+- perf(runtime): Idle state machines stop redoing work that can't change anything (#14508) 30c30acec9 [`3adbb93`](https://github.com/rive-app/rive-wasm/commit/3adbb931442579e0dc9737d90c02a1ed71889179)
+- fix(renderer): vulkan rotation, mali triangle padding and wgsl bounds for script gpu passes (#14485) 4c2d79894f [`bf8302f`](https://github.com/rive-app/rive-wasm/commit/bf8302ff2695f6512ad8d5ca68a5330068b5fda3)
+- refactor(rasc): rename AssemblyScript to AnimaScript (#14510) 4057f908b2 [`ebf82ac`](https://github.com/rive-app/rive-wasm/commit/ebf82acfb069d9f9e8c6dd5087318907237fb475)
+- feat(ore): scripts render GPU passes into our render target (#14436) cf39effc4d [`8aa6102`](https://github.com/rive-app/rive-wasm/commit/8aa6102e01566334f83c63738e1cdccd4fcef405)
+- feat(core runtime): Scroll wheel and trackpad support for ScrollConstraint (#14321) f42f02a06d [`a63ff8c`](https://github.com/rive-app/rive-wasm/commit/a63ff8ce9d28e7447e90fff2b0d6cce2f576eb77)
+- fix(editor, runtime): guard bindable enums against out-of-range numbers (#14484) 8d951c92f3 [`fe26bbc`](https://github.com/rive-app/rive-wasm/commit/fe26bbcd5738c9d7e6b384cc326222af1dd98c5f)
+
+## [2.44.0](https://github.com/rive-app/rive-wasm/compare/2.43.1...2.44.0) - 2026-09-30
+
+### Commits
+
+- chore: tag 2.44.0 [`b62850e`](https://github.com/rive-app/rive-wasm/commit/b62850efe54fc0f1efe897141be96009d9e99027)
 - fix(text): stop fitFontSize hanging on an inf or huge font size (#14497) 6f7a868171 [`03586f0`](https://github.com/rive-app/rive-wasm/commit/03586f0e2adb991ba00b79807b7c645d519b1a48)
 - feat(js): add text input and key input support (#14470) ba0755c07b [`dfcb9ab`](https://github.com/rive-app/rive-wasm/commit/dfcb9ab35e5dfd652c9e444f1b754b28233e667a)
 - fix(runtime): keep coincident control points exact when trimming paths (#14474) dcd60ea7f5 [`30f2522`](https://github.com/rive-app/rive-wasm/commit/30f2522e6636861f349db82f15dad5781ed9422a)
