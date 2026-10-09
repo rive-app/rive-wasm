@@ -111,14 +111,15 @@ OPTION=${!OPTIONS}
 PREMAKE_FLAGS+=$RENDERER_FLAGS
 PREMAKE_FLAGS+=$PREMAKE_HEAVY_FLAGS
 if [[ ! -d "../../runtime" ]]; then
-    PREMAKE_FLAGS+="--scripts=./submodules/rive-runtime/build "
+    RUNTIME_DIR=./submodules/rive-runtime
 else
-    PREMAKE_FLAGS+="--scripts=../../runtime/build "
+    RUNTIME_DIR=../../runtime
 fi
+PREMAKE_FLAGS+="--scripts=$RUNTIME_DIR/build "
 
 # The link does not track its --pre-js input, so a changed bundle would
 # otherwise be silently left out.
-BUNDLE=../../runtime/src/wasm/web/rive_scripting_pre.js
+BUNDLE=$RUNTIME_DIR/src/wasm/web/rive_scripting_pre.js
 if [[ "$PREMAKE_FLAGS" == *scripting_vm=both* ]]; then
     for glue in "$OUT_DIR"/*.mjs; do
         if [[ $BUNDLE -nt $glue ]]; then

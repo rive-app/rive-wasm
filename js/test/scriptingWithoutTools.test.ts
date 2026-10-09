@@ -1,7 +1,6 @@
 // This suite's build has no tools, unlike test/scripting's.
-import fs from "fs";
-import path from "path";
 import * as rive from "../src/rive";
+import { webScriptingFixture } from "./helpers";
 
 // The runtime binds console when it loads, so collect lines from the start.
 const lines: string[] = [];
@@ -11,15 +10,7 @@ for (const level of ["log", "warn", "error"] as const) {
   };
 }
 
-const fixture = (name: string): ArrayBuffer => {
-  const bytes = fs.readFileSync(
-    path.join(__dirname, "../../../runtime/tests/web_scripting/fixture", name),
-  );
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-};
+const fixture = webScriptingFixture;
 
 const frames = (count: number): Promise<void> =>
   new Promise((resolve) => {

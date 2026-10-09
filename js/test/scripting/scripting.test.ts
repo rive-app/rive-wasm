@@ -2,25 +2,12 @@
 // rive-cli baked from packages/runtime/tests/web_scripting/fixture through
 // the public API, the way an app does, and watch what the scripts log and
 // draw.
-import fs from "fs";
-import path from "path";
 import * as rive from "../../src/rive";
+import { webScriptingFixture } from "../helpers";
 
 const lines: string[] = (globalThis as any).riveConsoleLines;
 
-const fixture = (name: string): ArrayBuffer => {
-  const bytes = fs.readFileSync(
-    path.join(
-      __dirname,
-      "../../../../runtime/tests/web_scripting/fixture",
-      name,
-    ),
-  );
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-};
+const fixture = webScriptingFixture;
 
 const newCanvas = (): HTMLCanvasElement => {
   const canvas = document.createElement("canvas");

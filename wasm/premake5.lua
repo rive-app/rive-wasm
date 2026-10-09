@@ -205,7 +205,7 @@ do
         -- side of that, generated in the runtime.
         linkoptions({
             '--pre-js ' .. path.getabsolute(
-                '../../runtime/src/wasm/web/rive_scripting_pre.js'
+                RIVE_RUNTIME_DIR .. '/src/wasm/web/rive_scripting_pre.js'
             ),
         })
     end

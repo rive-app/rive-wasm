@@ -1,6 +1,22 @@
 import fs from "fs";
 import path from "path";
 
+// The runtime sits beside us in our monorepo and in a submodule in rive-wasm.
+const runtimeDir = [
+  path.join(__dirname, "../../../runtime"),
+  path.join(__dirname, "../../wasm/submodules/rive-runtime"),
+].find((dir) => fs.existsSync(dir))!;
+
+export const webScriptingFixture = (name: string): ArrayBuffer => {
+  const bytes = fs.readFileSync(
+    path.join(runtimeDir, "tests/web_scripting/fixture", name),
+  );
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+};
+
 /**
  * Convert string to array buffer.
  *
