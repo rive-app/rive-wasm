@@ -784,6 +784,8 @@ public:
         m_target(target), m_screenTarget(screenTarget)
     {}
     rive::Factory* factory() override { return &gCanvas2DFactory; }
+    // Canvas2D has no GPU device, so scripted canvas content drops.
+    rive::gpu::RenderContext* renderContext() override { return nullptr; }
     // Content no screen segment claimed still belongs to this canvas.
     uint64_t defaultScreenTarget() override { return m_screenTarget; }
     rive::Renderer* beginScreenFrame(uint64_t target) override
