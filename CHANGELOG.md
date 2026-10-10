@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.44.1](https://github.com/rive-app/rive-wasm/compare/2.44.0...2.44.1)
+## [2.44.2](https://github.com/rive-app/rive-wasm/compare/2.44.1...2.44.2)
+
+### Commits
+
+- fix(runtime): release a file's wasm VMs before its artboards (#14759) bca625aa5a [`b30780f`](https://github.com/rive-app/rive-wasm/commit/b30780fda5b16665cd2b1b491403ab3e5c1f40dc)
+- fix(deferred): require sinks to supply a render context for canvas backings (#14758) bbc8191cb0 [`793163b`](https://github.com/rive-app/rive-wasm/commit/793163b93f63a2fc27e8d1b59e13530fa52f865f)
+- Mesh and N-Slice on Node-mode Components (#14571) 8dbe045630 [`9acccd9`](https://github.com/rive-app/rive-wasm/commit/9acccd915599919090b34fae0dddbd9faa6a9398)
+- fix(runtime, agent): deform a skinned cubic vertex that has no weight (#14753) 9300fb8927 [`04d998a`](https://github.com/rive-app/rive-wasm/commit/04d998a0becdf00d053e24ac25e8b811bc9ddee3)
+- fix(runtime): stop an Artboard input that leads back to its own artbo… (#14749) ad62acb5ce [`ab6d286`](https://github.com/rive-app/rive-wasm/commit/ab6d286c12990a9df6cb0bdf87950ec8f9884cc4)
+- fix(editor, runtime): some sentry fixes (#14746) 21dcd685a9 [`6e9c470`](https://github.com/rive-app/rive-wasm/commit/6e9c470edac3fac97dd0379eb67b927c1a1efb67)
+- perf(ore): stop stalling WebGL frames on per pass GL syncs (#14727) 46121aeea9 [`4042307`](https://github.com/rive-app/rive-wasm/commit/4042307a1c8508b4bacbe85126822e019151beed)
+- fix(wgpu): Don't reallocate the render target every frame in player (#14733) 68cf35a934 [`dfcfe10`](https://github.com/rive-app/rive-wasm/commit/dfcfe108f6204d0653f04018fed7a80a0bd5d795)
+- fix(runtime): a script draw that traps closes the saves it left open (#14731) 5ba6c23627 [`3345f6f`](https://github.com/rive-app/rive-wasm/commit/3345f6ffc3ece7ee6deaf110f3ff07a275555916)
+
+## [2.44.1](https://github.com/rive-app/rive-wasm/compare/2.44.0...2.44.1) - 2026-10-09
 
 ### Merged
 
@@ -13,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.44.1 [`3d1c84d`](https://github.com/rive-app/rive-wasm/commit/3d1c84d66192dfa2d8f763a7d2db7f9535d49174)
 - fix(wasm): build and test our js runtime from the rive-wasm layout (#14729) 22b4ff1222 [`81ab447`](https://github.com/rive-app/rive-wasm/commit/81ab447b6e9c4bb4a1e3720d51924cf461f62cba)
 - feat(scripting): unsigned animascript modules with simd on by default (#14679) f728be53f5 [`0d2f829`](https://github.com/rive-app/rive-wasm/commit/0d2f829f801770f7d16092c471a35a0e75f695f6)
 - fix(runtime): bounce when trackpad momentum reaches the end of a scroll view (#14720) 6294c9d4d0 [`ca72906`](https://github.com/rive-app/rive-wasm/commit/ca72906e7d65851ed4a4dc4fb5815a1666bc2167)
