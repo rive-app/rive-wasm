@@ -697,6 +697,8 @@ public:
     // vector draw does not constrain the composite, so a cached artboard under
     // a clipping shape can paint outside it on WebGL. Fixing it needs the clip
     // stack captured and replayed onto the resumed renderer.
+    bool compositeDropsClips() const override { return true; }
+
     Renderer* compositeRenderer() override
     {
         // Retained rather than replaced: a cached artboard nested inside
@@ -704,7 +706,7 @@ public:
         // enclosing artboard asks for its own would pull the ground out from
         // under a draw that is still in progress. The whole set is dropped
         // when the screen frame flushes.
-        m_compositeRenderers.push_back(std::make_unique<RiveRenderer>(m_renderContext.get()));
+        m_compositeRenderers.push_back(std::make_unique<ConvertingRenderer>(this));
         return m_compositeRenderers.back().get();
     }
 
@@ -769,7 +771,7 @@ public:
         m_canvasPasses.push_back({
             .frame = canvasFrame,
             .target = ref_rcp(canvas->renderTarget()),
-            .renderer = std::make_unique<RiveRenderer>(m_renderContext.get()),
+            .renderer = std::make_unique<ConvertingRenderer>(this),
             .outerFrame = outerFrame,
             .outerTarget = outerTarget,
         });
@@ -815,9 +817,9 @@ private:
         auto webglRenderImage = lite_rtti_cast<const WebGL2RenderImage*>(renderImage);
         if (webglRenderImage == nullptr)
         {
-#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
-            // Canvas backed images from the deferred replay are not WebGL2
-            // images; they draw directly.
+#ifdef RIVE_CANVAS
+            // Canvas backed images (the deferred replay's, or a cached
+            // artboard's raster) are not WebGL2 images; they draw directly.
             return true;
 #else
             // Without a deferred replay every image is a WebGL2 image;
@@ -827,6 +829,16 @@ private:
         }
         renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
         return renderImage != nullptr;
+    }
+
+    // A WebGL2 buffer becomes its synchronized GL buffer; anything else passes.
+    rcp<RenderBuffer> toPLSBuffer(rcp<RenderBuffer> buffer)
+    {
+        if (auto* wgl = lite_rtti_cast<WebGL2RenderBuffer*>(buffer.get()))
+        {
+            return refPLSBuffer(wgl);
+        }
+        return buffer;
     }
 
     rcp<RenderBuffer> refPLSBuffer(WebGL2RenderBuffer* wglBuff)
@@ -857,6 +869,82 @@ private:
         gpu::RenderTarget* outerTarget;
     };
     std::vector<CanvasPass> m_canvasPasses;
+    // A clean renderer (no inherited transform or clip) that still converts
+    // WebGL2 images and buffers, as the draws above do: the GL backend drops
+    // anything that isn't its own. Used for canvas content and composites.
+    class ConvertingRenderer : public RiveRenderer
+    {
+    public:
+        explicit ConvertingRenderer(WebGL2Renderer* owner) :
+            RiveRenderer(owner->m_renderContext.get()), m_owner(owner)
+        {}
+
+        void drawImage(const RenderImage* renderImage,
+                       const ImageSampler imageSampler,
+                       BlendMode blendMode,
+                       float opacity,
+                       float additiveness) override
+        {
+            if (!m_owner->prepImage(renderImage))
+            {
+                return;
+            }
+            RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
+        }
+
+        void drawImageMesh(const RenderImage* renderImage,
+                           const ImageSampler imageSampler,
+                           rcp<RenderBuffer> vertices_f32,
+                           rcp<RenderBuffer> uvCoords_f32,
+                           rcp<RenderBuffer> indices_u16,
+                           uint32_t vertexCount,
+                           uint32_t indexCount,
+                           BlendMode blendMode,
+                           float opacity,
+                           float additiveness) override
+        {
+            if (!m_owner->prepImage(renderImage))
+            {
+                return;
+            }
+            RiveRenderer::drawImageMesh(renderImage,
+                                        imageSampler,
+                                        m_owner->toPLSBuffer(std::move(vertices_f32)),
+                                        m_owner->toPLSBuffer(std::move(uvCoords_f32)),
+                                        m_owner->toPLSBuffer(std::move(indices_u16)),
+                                        vertexCount,
+                                        indexCount,
+                                        blendMode,
+                                        opacity,
+                                        additiveness);
+        }
+
+        void drawImageMeshInstanced(const RenderImage* renderImage,
+                                    const ImageSampler imageSampler,
+                                    rcp<RenderBuffer> vertices_f32,
+                                    rcp<RenderBuffer> uvCoords_f32,
+                                    rcp<RenderBuffer> indices_u16,
+                                    uint32_t vertexCount,
+                                    uint32_t indexCount,
+                                    rcp<ImageMeshInstances> instances) override
+        {
+            if (!m_owner->prepImage(renderImage))
+            {
+                return;
+            }
+            RiveRenderer::drawImageMeshInstanced(renderImage,
+                                                 imageSampler,
+                                                 m_owner->toPLSBuffer(std::move(vertices_f32)),
+                                                 m_owner->toPLSBuffer(std::move(uvCoords_f32)),
+                                                 m_owner->toPLSBuffer(std::move(indices_u16)),
+                                                 vertexCount,
+                                                 indexCount,
+                                                 std::move(instances));
+        }
+
+    private:
+        WebGL2Renderer* m_owner;
+    };
     std::vector<std::unique_ptr<RiveRenderer>> m_compositeRenderers;
 #endif
 
