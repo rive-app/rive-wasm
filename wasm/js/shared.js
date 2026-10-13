@@ -1,3 +1,17 @@
+// Both renderers end each frame here; script modules collect their heaps
+// only once everything advanced, drew and flushed.
+function frameEnd(flushRenderers) {
+  return function () {
+    flushRenderers();
+    const scripting = Module["riveScripting"];
+    if (scripting) {
+      for (const warning of scripting["frameBoundary"]()) {
+        console.warn(warning);
+      }
+    }
+  };
+}
+
 const sharedOnRuntimeInitialized = Module["onRuntimeInitialized"];
 Module["onRuntimeInitialized"] = function () {
   // If an initialize function is already configured, execute that first.

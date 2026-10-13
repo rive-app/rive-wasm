@@ -1323,9 +1323,10 @@ Module["onRuntimeInitialized"] = function () {
     _animationCallbackHandler
   );
   Module["disableFPSCounter"] = _animationCallbackHandler.disableFPSCounter;
-  _animationCallbackHandler.onAfterCallbacks = flushCanvasRenderers;
+  const endFrame = frameEnd(flushCanvasRenderers);
+  _animationCallbackHandler.onAfterCallbacks = endFrame;
 
-  Module["resolveAnimationFrame"] = flushCanvasRenderers;
+  Module["resolveAnimationFrame"] = endFrame;
 
   Module["cleanup"] = function () {
     _offscreenRenderer.cleanup();

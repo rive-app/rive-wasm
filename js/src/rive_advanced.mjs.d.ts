@@ -129,6 +129,7 @@ export interface RiveCanvas {
   cancelAnimationFrame(requestID: number): void;
   /**
    * A Rive-specific function to "flush" queued up draw calls from using the renderer.
+   * It also ends the frame for scripts, which collect their memory then.
    *
    * This should only be invoked once at the end of a loop in a regular JS
    * requestAnimationFrame loop, and should not be used with the Rive-wrapped

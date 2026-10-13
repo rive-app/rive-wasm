@@ -386,9 +386,10 @@ Module["onRuntimeInitialized"] = function () {
   Module["enableFPSCounter"] = _animationCallbackHandler.enableFPSCounter.bind(
     _animationCallbackHandler
   );
-  _animationCallbackHandler.onAfterCallbacks = flushOffscreenRenderers;
+  const endFrame = frameEnd(flushOffscreenRenderers);
+  _animationCallbackHandler.onAfterCallbacks = endFrame;
 
-  Module["resolveAnimationFrame"] = flushOffscreenRenderers;
+  Module["resolveAnimationFrame"] = endFrame;
 
   let load = Module["load"];
   // The session fixes the file's mode at import: every resource it creates is

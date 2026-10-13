@@ -132,6 +132,37 @@ describe("AnimaScript on the web", () => {
     expect(scripting.hostCallCounts().hostCalls).toBe(0);
   });
 
+  test("scripts collect their heaps at the end of every frame", async () => {
+    await play({ buffer: fixture("churn.riv") });
+    await awaitLogged("heap grew");
+    // Uncollected, its garbage would grow the heap 32 pages a frame.
+    const grew = lines.find((line) => line.startsWith("heap grew")) ?? "";
+    expect(Number(grew.split(" ")[2])).toBeLessThan(32);
+    // The collector's one-time notice is no warning, so pages leave it out.
+    expect(lines).not.toContain("script frame gc: scavenging per frame");
+  });
+
+  test("a leaking script warns on the page console", async () => {
+    const warn = console.warn;
+    const warned: string[] = [];
+    console.warn = (...args: unknown[]) => {
+      warned.push(args.map(String).join(" "));
+      warn(...args);
+    };
+    try {
+      await play({ buffer: fixture("leak.riv") });
+      // The leak watch waits for two seconds of frames.
+      for (let i = 0; i < 60 && warned.length === 0; i++) {
+        await frames(10);
+      }
+      expect(warned[0]).toMatch(/^script heap grew \d+MB over \d+ frames/);
+      // A page cannot set the environment variable that silences it.
+      expect(warned[0]).not.toContain("RIVE_WASM_LEAK_WARN");
+    } finally {
+      console.warn = warn;
+    }
+  }, 20000);
+
   test("a script trap is reported and the page keeps drawing", async () => {
     // A trapped advance asks for no more frames, so draw regardless.
     const { r, canvas } = await play({
