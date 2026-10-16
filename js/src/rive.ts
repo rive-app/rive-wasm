@@ -1554,6 +1554,13 @@ export interface RiveParameters {
   autoplay?: boolean;
   useOffscreenRenderer?: boolean;
   /**
+   * @experimental (WebGL2 only) Renders with inkbleed antialiasing instead of MSAA, which
+   * disables the canvas's native MSAA. Fills that don't use the clockwise fill rule are
+   * converted to clockwise on a best-effort basis. Toggle it later
+   * with `rive.inkbleed`, which only works if enabled here.
+   */
+  enableInkbleed?: boolean;
+  /**
    * Optional tab index to set for the canvas element if there are any Focus nodes within the graphic
    */
   tabIndex?: number;
@@ -2311,6 +2318,12 @@ export class Rive {
   // has the final say, since a file's mode is fixed at import.
   private deferredRenderer: boolean = false;
 
+  // Decides the context attributes on every init(); cleared if the renderer can't inkbleed.
+  private _inkbleedCapable = false;
+  private _inkbleed = false;
+  private static inkbleedUnsupportedWarned = false;
+  private static inkbleedNotCapableWarned = false;
+
   // Whether this instance imported the file in `riveFile` (true) or the caller
   // supplied it (false). Only a file we imported may be released without a
   // matching getInstance(): a caller's file is theirs however this init ends.
@@ -2515,6 +2528,8 @@ export class Rive {
     this._focusOptions = params.focusOptions ?? this._focusOptions;
     this._tabIndex = params.tabIndex ?? null;
     this.deferredRenderer = !!params.enableGPUCanvas;
+    this._inkbleedCapable = !!params.enableInkbleed;
+    this._inkbleed = this._inkbleedCapable;
 
     // New event management system
     this.eventManager = new EventManager();
@@ -2729,6 +2744,7 @@ export class Rive {
           this.renderer = this.runtime.makeRenderer(
             this.canvas,
             useOffscreenRenderer,
+            { inkbleed: this._inkbleedCapable },
           );
           if (!this.renderer) {
             throw new Error("Renderer is null, cannot render Rive on the canvas.");
@@ -2736,6 +2752,9 @@ export class Rive {
         } catch (e) {
           console.error(e);
           throw new RiveError("Unable to create the renderer, your environment may not support WebGL. Try the @rive-app/canvas runtime as an alternative.");
+        }
+        if (this._inkbleedCapable) {
+          this.applyInkbleed();
         }
         if (this.enablePerfMarks) {
           performance.mark('rive:make-renderer:end');
@@ -4765,6 +4784,50 @@ export class Rive {
     }
     this._devicePixelRatioUsed = value;
     this.reportDisplayScale();
+  }
+
+  /**
+   * @experimental (WebGL2 only) Whether inkbleed antialiasing is in effect. Can only be
+   * turned on if `enableInkbleed: true` was passed at construction.
+   */
+  public get inkbleed(): boolean {
+    return this._inkbleedCapable && this._inkbleed;
+  }
+
+  public set inkbleed(value: boolean) {
+    if (!this._inkbleedCapable) {
+      if (value && !Rive.inkbleedNotCapableWarned) {
+        Rive.inkbleedNotCapableWarned = true;
+        console.warn(
+          "Rive: `inkbleed` can't be enabled on this instance. It needs `enableInkbleed: true` at construction, on @rive-app/webgl2 without `useOffscreenRenderer`.",
+        );
+      }
+      return;
+    }
+    this._inkbleed = value;
+    if (this.renderer) {
+      this.applyInkbleed();
+    }
+    this._needsRedraw = true;
+    this.drawFrame();
+  }
+
+  private applyInkbleed(): void {
+    const enabled = this._inkbleed;
+    const setInkbleed = this.renderer.setInkbleed;
+    const supported =
+      typeof setInkbleed === "function"
+        ? setInkbleed.call(this.renderer, enabled)
+        : !enabled;
+    if (!supported) {
+      this._inkbleedCapable = false;
+      if (!Rive.inkbleedUnsupportedWarned) {
+        Rive.inkbleedUnsupportedWarned = true;
+        console.warn(
+          "Rive: `inkbleed` is not supported by this renderer (it needs @rive-app/webgl2 without `useOffscreenRenderer`, and a canvas context with depth and stencil). Rendering without it.",
+        );
+      }
+    }
   }
 
   // Not per frame: the scale is per file, and instances sharing one would trade

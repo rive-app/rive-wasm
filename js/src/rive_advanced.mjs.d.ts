@@ -88,11 +88,13 @@ export interface RiveCanvas {
    * This uses an offscreen renderer to draw on the canvas, allowing for multiple Rives/canvases on
    * a given screen. It is highly recommended to set this to `true` when using with the
    * `@rive-app/webgl` package
+   * @param options - Renderer creation options
    * @returns A Rive CanvasRenderer (Canvas2D) or Renderer (WebGL) class
    */
   makeRenderer(
     canvas: HTMLCanvasElement | OffscreenCanvas,
     useOffscreenRenderer?: boolean,
+    options?: RendererOptions,
   ): WrappedRenderer;
 
   /**
@@ -184,6 +186,15 @@ export declare class DeferredSession {
   recordedThisFrame(): boolean;
 }
 
+export interface RendererOptions {
+  /**
+   * @experimental (WebGL2 only) Renders with inkbleed antialiasing instead of MSAA, which
+   * disables the canvas's native MSAA. Fills that don't use the clockwise fill rule are
+   * converted to clockwise on a best-effort basis
+   */
+  inkbleed?: boolean;
+}
+
 /**
  * Rive wrapper around a rendering context for a canvas element, implementing a subset of the APIs
  * from the rendering context interface
@@ -249,6 +260,13 @@ export declare class RendererWrapper {
    * @experimental Whether a deferred session is currently attached.
    */
   deferredActive?(): boolean;
+  /**
+   * @experimental (WebGL2 only) Toggles inkbleed antialiasing. Absent on renderers that
+   * cannot inkbleed (an offscreen renderer, or a non-WebGL2 build).
+   *
+   * @returns false if inkbleed was requested but the canvas context does not support it
+   */
+  setInkbleed?(enabled: boolean): boolean;
 }
 
 export declare class RenderPathWrapper {

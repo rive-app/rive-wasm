@@ -78,12 +78,12 @@ Module["onRuntimeInitialized"] = function () {
     };
   }
 
-  function makeGLRenderer(canvas, enableMSAA = false) {
+  function makeGLRenderer(canvas, enableMSAA = false, inkbleed = false) {
     var contextAttributes = {
       "alpha": true,
-      "depth": enableMSAA,
-      "stencil": enableMSAA,
-      "antialias": enableMSAA,
+      "depth": enableMSAA || inkbleed,
+      "stencil": enableMSAA || inkbleed,
+      "antialias": enableMSAA && !inkbleed,
       "premultipliedAlpha": true,
       "preserveDrawingBuffer": 0,
       "powerPreference": "high-performance",
@@ -123,11 +123,15 @@ Module["onRuntimeInitialized"] = function () {
       GL.deleteContext(this._handle);
       this._handle = this._canvas = this._width = this._height = this._gl = null;
     };
+    if (inkbleed) {
+      renderer["setInkbleed"](true);
+    }
     return renderer;
   }
 
   const makeRenderer = Module.makeRenderer;
-  Module.makeRenderer = function (canvas, useOffScreenRenderer) {
+  Module.makeRenderer = function (canvas, useOffScreenRenderer, options) {
+    const inkbleed = !!(options && options["inkbleed"]);
     if (!_offscreenGL) {
       function MakeOffscreenGL(enableMSAA) {
         const offscreenCanvas = document.createElement("canvas");
@@ -180,7 +184,8 @@ Module["onRuntimeInitialized"] = function () {
     }
     return makeGLRenderer(
       canvas,
-      /*enableMSAA =*/ _offscreenGL._enableAntialiasCanvas
+      /*enableMSAA =*/ _offscreenGL._enableAntialiasCanvas,
+      inkbleed
     );
   };
 

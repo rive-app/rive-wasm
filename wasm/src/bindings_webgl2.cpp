@@ -398,8 +398,32 @@ public:
         GLint sampleCount;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glGetIntegerv(GL_SAMPLES, &sampleCount);
+        auto attachmentBitSize = [](GLenum attachment, GLenum sizeParam) {
+            GLint objectType = GL_NONE;
+            glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER,
+                                                  attachment,
+                                                  GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE,
+                                                  &objectType);
+            GLint size = 0;
+            if (objectType != GL_NONE)
+            {
+                glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, attachment, sizeParam, &size);
+            }
+            return size;
+        };
+        GLint depthBits = attachmentBitSize(GL_DEPTH, GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE);
+        GLint stencilBits = attachmentBitSize(GL_STENCIL, GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE);
+        m_canInkbleed = sampleCount <= 1 && depthBits >= 24 && stencilBits >= 8;
         m_renderTarget = make_rcp<FramebufferRenderTargetGL>(width, height, 0, sampleCount);
     }
+
+    bool setInkbleed(bool enabled)
+    {
+        m_inkbleed = enabled;
+        return !enabled || m_canInkbleed;
+    }
+
+    bool inkbleedActive() const { return m_inkbleed && m_canInkbleed; }
 
     // "clear()" is our hook for the beginning of a frame.
     // TODO: Give this a better name!!
@@ -435,7 +459,13 @@ public:
         // artifacts with certain blend modes (e.g. colorBurn).
         frameDescriptor.ditherMode = gpu::DitherMode::none;
 #endif
-        if (m_renderTarget->sampleCount() > 1)
+        if (inkbleedActive())
+        {
+            frameDescriptor.msaaSampleCount = 1;
+            frameDescriptor.inkbleedOverride = true;
+            frameDescriptor.clockwiseFillOverride = true;
+        }
+        else if (m_renderTarget->sampleCount() > 1)
         {
             // Use MSAA if we were given a canvas with 'antialias: true'.
             frameDescriptor.msaaSampleCount = m_renderTarget->sampleCount();
@@ -760,11 +790,17 @@ public:
             .loadAction = gpu::LoadAction::clear,
             .clearColor = clearColor,
         };
-        // Mirror the screen's fallback: without pixel local storage or
-        // atomics there is no way to render correctly except MSAA.
-        if (!m_renderContext->platformFeatures().supportsRasterOrderingMode &&
-            !m_renderContext->platformFeatures().supportsAtomicMode)
+        if (m_screenFrame.inkbleedOverride)
         {
+            canvasFrame.msaaSampleCount = 1;
+            canvasFrame.inkbleedOverride = true;
+            canvasFrame.clockwiseFillOverride = true;
+        }
+        else if (!m_renderContext->platformFeatures().supportsRasterOrderingMode &&
+                 !m_renderContext->platformFeatures().supportsAtomicMode)
+        {
+            // Mirror the screen's fallback: without pixel local storage or
+            // atomics there is no way to render correctly except MSAA.
             canvasFrame.msaaSampleCount = 4;
         }
 
@@ -853,6 +889,8 @@ private:
     std::unique_ptr<RenderContext> m_renderContext;
     rcp<FramebufferRenderTargetGL> m_renderTarget;
     RenderContext::FrameDescriptor m_screenFrame;
+    bool m_inkbleed = false;
+    bool m_canInkbleed = false;
 #ifdef RIVE_CANVAS
     // One entry per canvas pass that is currently open, outermost first. A
     // single slot would do for one cached artboard, but they nest: the inner
@@ -1052,6 +1090,12 @@ public:
             .loadAction = gpu::LoadAction::clear,
             .clearColor = clearColor,
         };
+        if (m_renderer->inkbleedActive())
+        {
+            frameDescriptor.msaaSampleCount = 1;
+            frameDescriptor.inkbleedOverride = true;
+            frameDescriptor.clockwiseFillOverride = true;
+        }
         m_renderer->gpuRenderContext()->beginFrame(std::move(frameDescriptor));
         // Draws go through the renderer so async decoded images get prepped.
         // save isolates the canvas content renderer state.
@@ -1501,6 +1545,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
         .function("flush", &WebGL2Renderer::flush)
         .function("resize", &WebGL2Renderer::resize)
         .function("saveClipRect", &WebGL2Renderer::saveClipRect)
+        .function("setInkbleed", &WebGL2Renderer::setInkbleed)
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
         .function("attachSession", &WebGL2Renderer::attachSession, allow_raw_pointers())
         .function("detachSession", &WebGL2Renderer::detachSession)

@@ -72,6 +72,7 @@ var Rive = {
   },
   onRuntimeInitialized: function () {},
   makeRenderer: function () {},
+  setInkbleed: function () {},
   // Deferred rendering: the session is created by the module, handed to
   // load()/decode*() and attached to one renderer, so every one of these
   // names crosses the boundary into the published JS runtime.

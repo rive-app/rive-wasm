@@ -439,6 +439,24 @@ test("Layout is set to canvas dimensions if not specified", (done) => {
   });
 });
 
+test("enableInkbleed loads normally and reports inkbleed off on a renderer without inkbleed", (done) => {
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+  const canvas = document.createElement("canvas");
+  const r = new rive.Rive({
+    canvas: canvas,
+    buffer: pingPongRiveFileBuffer,
+    enableInkbleed: true,
+    onLoad: () => {
+      expect(r.inkbleed).toBe(false);
+      r.inkbleed = true;
+      // Tests currently use canvas-single variant, which doesn't support inkbleed so we expect false here
+      expect(r.inkbleed).toBe(false);
+      done();
+    },
+    onLoadError: () => expect(false).toBeTruthy(),
+  });
+});
+
 // #endregion
 
 // #region Rive properties
