@@ -70,11 +70,16 @@ jobs:
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Registry propagation can lag well past the retry window for some
+      # packages, so only the core packages fail the job; the rest warn.
       - name: Verify packages are available on npm
         working-directory: ./js
+        env:
+          REQUIRED_PACKAGES: "@rive-app/canvas @rive-app/webgl2 @rive-app/canvas-lite"
         run: |
+          missing=()
           for i in $(seq 1 10); do
-            missing=0
+            missing=()
             for pkg_json in npm/*/package.json; do
               PKG=$(node -p "require('./${pkg_json}').name")
               VERSION=$(node -p "require('./${pkg_json}').version")
@@ -82,18 +87,29 @@ jobs:
                 echo "$PKG@$VERSION is live on npm"
               else
                 echo "$PKG@$VERSION not visible on npm yet"
-                missing=1
+                missing+=("$PKG@$VERSION")
               fi
             done
-            if [ "$missing" -eq 0 ]; then
+            if [ "${#missing[@]}" -eq 0 ]; then
               echo "All packages are live on npm"
               exit 0
             fi
-            echo "Retrying in 30s ($i/10)"
-            sleep 30
+            if [ "$i" -lt 10 ]; then
+              echo "Retrying in 60s ($i/10)"
+              sleep 60
+            fi
           done
-          echo "One or more packages did not appear on npm"
-          exit 1
+          required_missing=0
+          for entry in "${missing[@]}"; do
+            PKG="${entry%@*}"
+            if [[ " $REQUIRED_PACKAGES " == *" $PKG "* ]]; then
+              echo "::error::$entry did not appear on npm"
+              required_missing=1
+            else
+              echo "::warning::$entry not visible on npm yet; likely registry propagation delay"
+            fi
+          done
+          exit "$required_missing"
 
       - name: File issue on publish failure
         if: failure()
