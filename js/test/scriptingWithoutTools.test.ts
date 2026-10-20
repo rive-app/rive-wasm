@@ -42,7 +42,7 @@ test("a module importing the raw shader op starts, and calling it traps", async 
   expect(logged("init reaches the raw shader op")).toBe(true);
   expect(
     logged(
-      "failed to call unlinked import function rive_gpu_v1.shader_module_new",
+      "failed to call unlinked import function rive_gpu_v1.shader_module_from_rstb",
     ),
   ).toBe(true);
   expect(logged("raw shader op returned")).toBe(false);
