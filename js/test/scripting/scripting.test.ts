@@ -183,6 +183,19 @@ describe("AnimaScript on the web", () => {
     expect(later[later.length - 1]).toBeGreaterThan(0);
   });
 
+  test("a release bake with wasmFuel stops its own runaway loop", async () => {
+    const { r } = await play({
+      buffer: fixture("release_fuel.riv"),
+      drawingOptions: rive.DrawOptimizationOptions.AlwaysDraw,
+    });
+    await awaitLogged(
+      "metered release init",
+      "wasm call trapped in host_obj_user_init: execution exceeded timeout",
+    );
+    await frames(3);
+    expect(r.isPlaying).toBe(true);
+  });
+
   test("a module importing an op the host lacks still starts", async () => {
     await play({ buffer: fixture("unlinked.riv") });
     await frames(4);
