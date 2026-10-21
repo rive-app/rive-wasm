@@ -273,15 +273,22 @@ Module["onRuntimeInitialized"] = function () {
       }
     }
     atlasInitialWidth = Math.min(atlasInitialWidth, maxRTSize);
-    atlasInitialWidth = Math.min(atlasInitialHeight, maxRTSize);
+    atlasInitialHeight = Math.min(atlasInitialHeight, maxRTSize);
 
     // Sort the renders, largest canvases first. This yields more efficient atlas packing.
     flushingRenderers.sort((a, b) => {
       return b._backingArea - a._backingArea;
     });
 
+    // Embind objects aren't freed by GC, so allocate these once and reuse them every flush.
+    if (!_offscreenGL._rectanizer) {
+      _offscreenGL._rectanizer = new Module["DynamicRectanizer"](maxRTSize);
+      _offscreenGL._atlasTransform = new Module["Mat2D"]();
+    }
+    const rectanizer = _offscreenGL._rectanizer;
+    const mat = _offscreenGL._atlasTransform;
+
     // Render the canvasas in as few atlases as possible.
-    const rectanizer = new Module["DynamicRectanizer"](maxRTSize);
     let flushStartIdx = 0;
     while (flushStartIdx < flushingRenderers.length) {
       rectanizer.reset(atlasInitialWidth, atlasInitialHeight);
@@ -339,7 +346,6 @@ Module["onRuntimeInitialized"] = function () {
         );
 
         // Transform to the artboard's location in the atlas.
-        let mat = new Module["Mat2D"]();
         mat["xx"] = renderer._backingWidth / renderer._canvas.width;
         mat["yy"] = renderer._backingHeight / renderer._canvas.height;
         mat["xy"] = mat["yx"] = 0;
