@@ -381,6 +381,10 @@ emscripten::val buildProperties(std::vector<rive::PropertyData>& properties)
                 break;
             case rive::DataType::viewModel:
                 val = "viewModel";
+                if (!prop.viewModelName.empty())
+                {
+                    jsProp.set("viewModelName", prop.viewModelName);
+                }
                 break;
             case rive::DataType::integer:
                 val = "integer";
