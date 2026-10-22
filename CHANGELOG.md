@@ -5,10 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.45.0](https://github.com/rive-app/rive-wasm/compare/2.44.2...2.45.0)
+## [2.45.1](https://github.com/rive-app/rive-wasm/compare/2.45.0...2.45.1)
 
 ### Commits
 
+- fix(runtime, editor): angular gradient transforms animate in nested artboards; gradient rotation binds in degrees (#15001) c8a386f870 [`7da2865`](https://github.com/rive-app/rive-wasm/commit/7da28658bdb46153637c662e17034268f1ad01a0)
+- perf(renderer): Restructure initForMidpointFan to be more SIMD-compatible (#14902) 7bbd2f397e [`2c76662`](https://github.com/rive-app/rive-wasm/commit/2c766621e60fa64b0c2585ca06bc629d03afc9ef)
+- feat(js): end cancelled touches in the scene (#14847) e0d39a0201 [`0d0151b`](https://github.com/rive-app/rive-wasm/commit/0d0151bd684421658e0dce956ff5d41d9cec25a0)
+- chore(runtime): artboard memory sizeof (#15007) fcb5780ac1 [`920c782`](https://github.com/rive-app/rive-wasm/commit/920c7821e9dcd7dd814af695f5b1f12a47093c05)
+- fix(Android): Exclude invalid Vulkan shader warmup permutations (#15013) c4031da867 [`98ffa92`](https://github.com/rive-app/rive-wasm/commit/98ffa92603359b2eeaaf05603bd15b4591ffa5a1)
+- fix(ore): build vulkan pipelines from single entry spir-v modules (#14998) 670ca2ccc7 [`5aa9d07`](https://github.com/rive-app/rive-wasm/commit/5aa9d07474c224f0da031fc9c858c0d7ebd9935a)
+- feat(runtime, editor): global text style support (#14660) d5a254a548 [`6617733`](https://github.com/rive-app/rive-wasm/commit/661773359e65e335c411450f0062b6939460fb3c)
+- perf(runtime): stop artboard instances copying and recopying shared l… (#15000) 5bb99d58c5 [`a826c5f`](https://github.com/rive-app/rive-wasm/commit/a826c5fba853340d83ea5442475dd7eac9fbb76e)
+- fix(rasc): deep review follow ups across typing, frame gc, hosts and the editor (#14954) 131893a9ca [`9049b75`](https://github.com/rive-app/rive-wasm/commit/9049b755355136e2fa682b855d20794ed594f166)
+- feat(cli): preview images and random numbers the way the web does (#14834) 7fefb25731 [`e1efc14`](https://github.com/rive-app/rive-wasm/commit/e1efc14e7d77e2bf0d8a2b35902a94226dd5d538)
+- fix(js): Reuse rectanizer and atlasTransform objects each frame to prevent memory leak. Fix atlasInitialHeight initialization too (#14991) 5eed7372aa [`fa8f3b1`](https://github.com/rive-app/rive-wasm/commit/fa8f3b1a6db8952a6de45f68190fadc67e2d07e4)
+- fix(renderer): fix WebGL blit feedback loop after the first PLS flush (#14944) 90175f40f2 [`3a13214`](https://github.com/rive-app/rive-wasm/commit/3a132146bf3dd603a0504c78db41a73c14bc802f)
+- fix(deploy_tests): fix minor error with previous change (#14984) 297f8d2efc [`f1164e9`](https://github.com/rive-app/rive-wasm/commit/f1164e990bd5800d4a28aef40657026d24fa8955)
+- fix(runtime): stop data converter interpolators holding a frame on re… (#14982) a2da115b3e [`749c8b2`](https://github.com/rive-app/rive-wasm/commit/749c8b2c680be67167ef827fba486cf6aed17f59)
+- fix(deploy_tests): Fix a few minor issues with deploy_tests (#14973) 4cfff50106 [`d34c091`](https://github.com/rive-app/rive-wasm/commit/d34c091e033a18cdcba0c9f0d707b5e686b0586f)
+- chore(runtime): remove two core graphics renderers that aren't needed (#14951) e2b1fd9333 [`343beb9`](https://github.com/rive-app/rive-wasm/commit/343beb928c27f1733292249f8ce253f304631bc3)
+- fix(ore): judge sampling per entry point and build fromRstb shaders on the host (#14972) 26e77e6f7d [`e194bb2`](https://github.com/rive-app/rive-wasm/commit/e194bb2683cc6b4a569ae785d17be21b1e675be5)
+- fix(renderer): Flip the angular gradients upside-down (#14971) 2317858b7b [`747894b`](https://github.com/rive-app/rive-wasm/commit/747894b4fd06f21f6009c581195d415d9ca438c4)
+- fix(masking): apply layer masks in the web editor (WebGL2 / depthSten… (#14950) 310ceef29d [`19cfaff`](https://github.com/rive-app/rive-wasm/commit/19cfaff176f5f3cce1b095604128621618f0da49)
+- chore(js): check main JS runtimes for publish failure before logging issue and only warn for other variants (#14952) 989589287f [`981e9e7`](https://github.com/rive-app/rive-wasm/commit/981e9e7eadba14452aa410d675bc3016f6c42273)
+- perf(runtime): skip redundant layout dirt (#14945) 71dc1f61cb [`f806007`](https://github.com/rive-app/rive-wasm/commit/f806007e3f0101a10e8f1dd87caddcb8fef1608b)
+- fix(unreal): clang format unreal shader fix (#14949) cda0a3d366 [`366f39a`](https://github.com/rive-app/rive-wasm/commit/366f39aad5211105467a4f361a945a58fad869fc)
+- feat(text_input): max characters and max lines limits (#14926) 9125edcd6c [`d502282`](https://github.com/rive-app/rive-wasm/commit/d502282b75832834d3815e502bd349de3bedd6f6)
+- fix(runtime): rebuild inner feather path when inner changes (#14948) 36b38ae3d6 [`2ecc336`](https://github.com/rive-app/rive-wasm/commit/2ecc336cc5ae1412f23753731ffc1f5231a4c692)
+
+## [2.45.0](https://github.com/rive-app/rive-wasm/compare/2.44.2...2.45.0) - 2026-10-17
+
+### Commits
+
+- chore: tag 2.45.0 [`8e3484b`](https://github.com/rive-app/rive-wasm/commit/8e3484b8d90a73bf51c8ff505d6977e547703177)
 - fix(ore): run animascript in the web test player and take anisotropic samplers on webgpu (#14924) fb3c617552 [`c3de725`](https://github.com/rive-app/rive-wasm/commit/c3de725d0d836da18dbb1c7202302e8b01c6c016)
 - fix(housekeeping): Reformat with clang-format 19.1.7 (#14927) 49c42f3a86 [`fabeea4`](https://github.com/rive-app/rive-wasm/commit/fabeea4f3c88bc036b248cc473bc7f9378986fd9)
 - perf(renderer): Make a ShaderFeature for angular gradients (#14826) 2fc1a52418 [`b2a926a`](https://github.com/rive-app/rive-wasm/commit/b2a926abf46b57512ce007bfd0fb716222912a6b)
