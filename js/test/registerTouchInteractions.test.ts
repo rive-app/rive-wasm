@@ -59,19 +59,43 @@ const mockAdvanceAndDrain = jest.fn((elapsedTime: number) => {
   mockStateMachines.forEach((sm) => sm.advanceAndApply(elapsedTime));
 });
 
-const createCanvasAndRiveListeners = ({
-  isTouchScrollEnabled,
-  dispatchPointerExit,
-  enableMultiTouch,
-  stateMachineCount = 1,
-  isTextProxyFocused,
-}: {
+interface ListenerOptions {
+  summonKeyboard?: () => void;
   isTextProxyFocused?: () => boolean;
   isTouchScrollEnabled?: boolean;
   dispatchPointerExit?: boolean;
   enableMultiTouch?: boolean;
   stateMachineCount?: number;
-} = {}) => {
+}
+
+// Registers listeners on the current canvas and state machines, as Rive does
+// again on play() and pause()
+const registerRiveListeners = ({
+  isTouchScrollEnabled,
+  dispatchPointerExit,
+  enableMultiTouch,
+  isTextProxyFocused,
+  summonKeyboard,
+}: ListenerOptions = {}) => {
+  cleanupRiveListenersFunction = registerTouchInteractions({
+    canvas,
+    artboard: mockArtboard as rc.Artboard,
+    stateMachines: mockStateMachines as unknown as rc.StateMachineInstance[],
+    renderer: renderer as rc.Renderer,
+    rive: mockRive as unknown as rc.RiveCanvas,
+    fit: mockFit as rc.Fit,
+    alignment: mockAlignment as rc.Alignment,
+    isTouchScrollEnabled,
+    dispatchPointerExit,
+    enableMultiTouch,
+    advanceAndDrain: mockAdvanceAndDrain,
+    summonKeyboard,
+    isTextProxyFocused,
+  });
+};
+
+const createCanvasAndRiveListeners = (options: ListenerOptions = {}) => {
+  const { stateMachineCount = 1 } = options;
   canvas = document.createElement("canvas") as HTMLCanvasElement;
   canvas.width = 500;
   canvas.height = 500;
@@ -93,20 +117,7 @@ const createCanvasAndRiveListeners = ({
       }) as unknown as rc.StateMachineInstance,
   );
 
-  cleanupRiveListenersFunction = registerTouchInteractions({
-    canvas,
-    artboard: mockArtboard as rc.Artboard,
-    stateMachines: mockStateMachines as unknown as rc.StateMachineInstance[],
-    renderer: renderer as rc.Renderer,
-    rive: mockRive as unknown as rc.RiveCanvas,
-    fit: mockFit as rc.Fit,
-    alignment: mockAlignment as rc.Alignment,
-    isTouchScrollEnabled,
-    dispatchPointerExit,
-    enableMultiTouch,
-    advanceAndDrain: mockAdvanceAndDrain,
-    isTextProxyFocused,
-  });
+  registerRiveListeners(options);
 };
 
 beforeEach(() => {
@@ -524,6 +535,318 @@ test("touchcancel clears the primary touch ID so the next touchstart restores fu
   expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
   expect(mockStateMachines[0].pointerMove).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(200, 200, 1);
+});
+
+// #endregion
+
+// #region touchcancel ends the gesture in the scene
+
+const touchStart = (touch: Touch, touches: Touch[] = [touch]): void => {
+  canvas.dispatchEvent(
+    new TouchEvent("touchstart", { touches, changedTouches: [touch] }),
+  );
+};
+
+const touchCancel = (changedTouches: Touch[], touches: Touch[] = []): void => {
+  canvas.dispatchEvent(
+    new TouchEvent("touchcancel", { touches, changedTouches }),
+  );
+};
+
+const recreateListeners = (options: ListenerOptions): void => {
+  cleanupRiveListenersFunction?.();
+  createCanvasAndRiveListeners(options);
+};
+
+test("touchcancel sends pointerUp then pointerExit and advances once", (): void => {
+  touchStart(mockTouchPoint);
+  const moved = { clientX: 300, clientY: 290, identifier: 0 } as Touch;
+  canvas.dispatchEvent(
+    new TouchEvent("touchmove", { touches: [moved], changedTouches: [moved] }),
+  );
+  jest.clearAllMocks();
+
+  touchCancel([moved]);
+
+  const sm = mockStateMachines[0];
+  expect(sm.pointerUp).toHaveBeenCalledTimes(1);
+  expect(sm.pointerUp).toBeCalledWith(300, 290, 0);
+  expect(sm.pointerExit).toHaveBeenCalledTimes(1);
+  expect(sm.pointerExit).toBeCalledWith(300, 290, 0);
+  expect((sm.pointerUp as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+    (sm.pointerExit as jest.Mock).mock.invocationCallOrder[0],
+  );
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+  expect(mockAdvanceAndDrain).toBeCalledWith(0);
+});
+
+test("touchcancel reaches every state machine", (): void => {
+  recreateListeners({ stateMachineCount: 2 });
+  touchStart(mockTouchPoint);
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint]);
+
+  mockStateMachines.forEach((sm) => {
+    expect(sm.pointerUp).toBeCalledWith(100, 100, 0);
+    expect(sm.pointerExit).toBeCalledWith(100, 100, 0);
+  });
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+});
+
+test("touchcancel does not summon the keyboard", (): void => {
+  const summonKeyboard = jest.fn();
+  recreateListeners({ summonKeyboard });
+  touchStart(mockTouchPoint);
+
+  touchCancel([mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(summonKeyboard).not.toHaveBeenCalled();
+});
+
+test("with touch scrolling enabled, touchcancel still sends pointerUp and pointerExit", (): void => {
+  recreateListeners({ isTouchScrollEnabled: true });
+  touchStart(mockTouchPoint);
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+});
+
+test("in single-touch mode, cancelling a non-primary finger sends nothing and keeps the lock", (): void => {
+  touchStart(mockTouchPoint);
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint2], [mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+  expect(mockStateMachines[0].pointerExit).not.toBeCalled();
+  expect(mockAdvanceAndDrain).not.toHaveBeenCalled();
+
+  // The primary finger still owns the pointer
+  canvas.dispatchEvent(
+    new TouchEvent("touchmove", {
+      touches: [mockTouchPoint],
+      changedTouches: [mockTouchPoint2],
+    }),
+  );
+  expect(mockStateMachines[0].pointerMove).not.toBeCalled();
+});
+
+test("in single-touch mode, cancelling the primary finger ends it and releases the lock", (): void => {
+  touchStart(mockTouchPoint);
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+
+  jest.clearAllMocks();
+  touchStart(mockTouchPoint2);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
+});
+
+test("with multi-touch, cancelling one of two fingers ends only that finger", (): void => {
+  recreateListeners({ enableMultiTouch: true });
+  touchStart(mockTouchPoint);
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint2], [mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(200, 200, 1);
+});
+
+test("a cancel with no changedTouches ends every tracked touch at its last known position", (): void => {
+  recreateListeners({ enableMultiTouch: true });
+  touchStart(mockTouchPoint);
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  jest.clearAllMocks();
+
+  canvas.dispatchEvent(new TouchEvent("touchcancel"));
+
+  const sm = mockStateMachines[0];
+  expect(sm.pointerUp).toHaveBeenCalledTimes(2);
+  expect(sm.pointerUp).toBeCalledWith(100, 100, 0);
+  expect(sm.pointerUp).toBeCalledWith(200, 200, 1);
+  expect(sm.pointerExit).toHaveBeenCalledTimes(2);
+  expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
+});
+
+test("a cancel that names no touches ends the tracked touches no longer down, even with another finger down", (): void => {
+  createCanvasAndRiveListeners({ enableMultiTouch: true });
+  touchStart(mockTouchPoint);
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  jest.clearAllMocks();
+
+  // The first finger is cancelled but not listed; the second is still down
+  touchCancel([], [mockTouchPoint2]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+});
+
+test("a cancel reporting zero coordinates uses the last known position", (): void => {
+  touchStart(mockTouchPoint);
+  jest.clearAllMocks();
+
+  touchCancel([{ clientX: 0, clientY: 0, identifier: 0 } as Touch]);
+
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+});
+
+test("in single-touch mode, a cancel never ends a finger the scene ignored", (): void => {
+  const touchC = { clientX: 300, clientY: 300, identifier: 2 } as Touch;
+  // A is primary; B lands while A is held and is ignored
+  touchStart(mockTouchPoint);
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  // A lifts, B moves while no finger is primary, then C becomes primary
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [mockTouchPoint2],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  canvas.dispatchEvent(
+    new TouchEvent("touchmove", {
+      touches: [mockTouchPoint2],
+      changedTouches: [mockTouchPoint2],
+    }),
+  );
+  touchStart(touchC, [mockTouchPoint2, touchC]);
+  // B lifts while C is primary, so its touchend never reaches the scene
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [touchC],
+      changedTouches: [mockTouchPoint2],
+    }),
+  );
+  jest.clearAllMocks();
+
+  touchCancel([touchC]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(300, 300, 2);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(300, 300, 2);
+});
+
+test("a touch started before the listeners are re-registered is still ended by a cancel", (): void => {
+  touchStart(mockTouchPoint);
+
+  // Rive.play() and pause() tear the listeners down and register them again
+  // on the same canvas while the finger is still down
+  cleanupRiveListenersFunction?.();
+  registerRiveListeners();
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+});
+
+test("a finger that lifted while no listeners were registered is not ended by a later cancel", (): void => {
+  touchStart(mockTouchPoint);
+
+  // stop() removes the listeners, so the finger's touchend goes unseen
+  cleanupRiveListenersFunction?.();
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  registerRiveListeners({ enableMultiTouch: true });
+
+  // A new finger: the browser no longer lists the first one as down
+  touchStart(mockTouchPoint2);
+  jest.clearAllMocks();
+
+  touchCancel([]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerExit).toHaveBeenCalledTimes(1);
+});
+
+test("in single-touch mode, the primary finger keeps its lock across re-registered listeners", (): void => {
+  touchStart(mockTouchPoint);
+  cleanupRiveListenersFunction?.();
+  registerRiveListeners();
+  jest.clearAllMocks();
+
+  // A second finger while the first is still down stays ignored
+  touchStart(mockTouchPoint2, [mockTouchPoint, mockTouchPoint2]);
+  expect(mockStateMachines[0].pointerDown).not.toBeCalled();
+
+  // The first finger lifting still ends its gesture
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [mockTouchPoint2],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerExit).toBeCalledWith(100, 100, 0);
+
+  // The ignored finger never reached the scene, so its cancel sends nothing
+  jest.clearAllMocks();
+  touchCancel([mockTouchPoint2]);
+  expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+});
+
+test("a cancel on one canvas leaves another canvas's touches alone", (): void => {
+  touchStart(mockTouchPoint);
+  const firstCanvas = canvas;
+  const firstStateMachine = mockStateMachines[0];
+  const cleanupFirst = cleanupRiveListenersFunction;
+
+  createCanvasAndRiveListeners({ enableMultiTouch: true });
+  touchStart(mockTouchPoint2);
+  jest.clearAllMocks();
+
+  // The second canvas has no fingers left, so it ends everything it tracks
+  touchCancel([]);
+
+  expect(mockStateMachines[0].pointerUp).toHaveBeenCalledTimes(1);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(200, 200, 1);
+  expect(firstStateMachine.pointerUp).not.toBeCalled();
+
+  firstCanvas.dispatchEvent(
+    new TouchEvent("touchcancel", { touches: [], changedTouches: [] }),
+  );
+  expect(firstStateMachine.pointerUp).toBeCalledWith(100, 100, 0);
+  cleanupFirst?.();
+});
+
+test("a cancel after the touch already ended sends nothing", (): void => {
+  touchStart(mockTouchPoint);
+  canvas.dispatchEvent(
+    new TouchEvent("touchend", {
+      touches: [],
+      changedTouches: [mockTouchPoint],
+    }),
+  );
+  jest.clearAllMocks();
+
+  touchCancel([mockTouchPoint]);
+
+  expect(mockStateMachines[0].pointerUp).not.toBeCalled();
+  expect(mockStateMachines[0].pointerExit).not.toBeCalled();
+  expect(mockAdvanceAndDrain).not.toHaveBeenCalled();
 });
 
 // #endregion

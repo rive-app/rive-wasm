@@ -29,6 +29,28 @@ export interface TouchInteractionsParams {
   isTextProxyFocused?: () => boolean;
 }
 
+/**
+ * Last known client position of each touch that reached the scene, by
+ * identifier.
+ */
+type TrackedTouches = Map<number, { clientX: number; clientY: number }>;
+
+interface CanvasTouchState {
+  touches: TrackedTouches;
+  // The finger single-touch mode follows; null when none is down
+  primaryTouchId: number | null;
+}
+
+/**
+ * Touch state per canvas. It outlives a single registration, because Rive
+ * re-registers the listeners (on play and pause) while a finger can still be
+ * down.
+ */
+const touchStateByCanvas = new WeakMap<
+  HTMLCanvasElement | OffscreenCanvas,
+  CanvasTouchState
+>();
+
 interface ClientCoordinates {
   clientX: number;
   clientY: number;
@@ -171,12 +193,50 @@ export const registerTouchInteractions = ({
   let _syntheticEventsActive = false;
 
   /**
-   * When enableMultiTouch is false ("single-touch mode"), we track the identifier of the first finger that touched down.
-   * All subsequent touch events are filtered to this identifier so that a second finger
-   * moving cannot displace the tracked pointer position.
-   * Reset to null when the primary finger lifts (or touchcancel is called)
+   * primaryTouchId: when enableMultiTouch is false ("single-touch mode"),
+   * we track the identifier of the first finger that touched down. All
+   * subsequent touch events are filtered to this identifier so that a second
+   * finger moving cannot displace the tracked pointer position. Reset to null
+   * when the primary finger lifts (or touchcancel is called).
+   *
+   * touches: a cancel may report no position, or none at all for some
+   * touches, so it ends them where they were last seen.
    */
-  let _primaryTouchId: number | null = null;
+  const _touchState: CanvasTouchState = touchStateByCanvas.get(canvas) ?? {
+    touches: new Map(),
+    primaryTouchId: null,
+  };
+  touchStateByCanvas.set(canvas, _touchState);
+  const _activeTouches = _touchState.touches;
+
+  /**
+   * A finger can lift while no listeners are registered (after stop(), say),
+   * so its touchend never arrives. A touchstart or touchmove lists every
+   * finger still down in `touches`; forget the rest.
+   */
+  const forgetLiftedTouches = ({ touches, changedTouches }: TouchEvent) => {
+    if (!touches) {
+      return;
+    }
+    const down = new Set<number>();
+    for (let i = 0; i < touches.length; i++) {
+      down.add(touches[i].identifier);
+    }
+    for (let i = 0; i < (changedTouches?.length ?? 0); i++) {
+      down.add(changedTouches[i].identifier);
+    }
+    _activeTouches.forEach((_, identifier) => {
+      if (!down.has(identifier)) {
+        _activeTouches.delete(identifier);
+      }
+    });
+    if (
+      _touchState.primaryTouchId !== null &&
+      !down.has(_touchState.primaryTouchId)
+    ) {
+      _touchState.primaryTouchId = null;
+    }
+  };
 
   /**
    * Maps client-space points into Artboard space through the fit and alignment
@@ -249,12 +309,16 @@ export const registerTouchInteractions = ({
       event.currentTarget as HTMLCanvasElement
     ).getBoundingClientRect();
 
+    if (event.type === "touchstart" || event.type === "touchmove") {
+      forgetLiftedTouches(event as TouchEvent);
+    }
+
     // On touchstart in single-touch mode, record the first new finger as the primary
     // touch if we aren't already tracking one.
-    if (!enableMultiTouch && event.type === "touchstart" && _primaryTouchId === null) {
+    if (!enableMultiTouch && event.type === "touchstart" && _touchState.primaryTouchId === null) {
       const firstTouch = (event as TouchEvent).changedTouches?.[0];
       if (firstTouch) {
-        _primaryTouchId = firstTouch.identifier;
+        _touchState.primaryTouchId = firstTouch.identifier;
       }
     }
 
@@ -262,7 +326,7 @@ export const registerTouchInteractions = ({
       event,
       isTouchScrollEnabled,
       enableMultiTouch,
-      enableMultiTouch ? null : _primaryTouchId,
+      enableMultiTouch ? null : _touchState.primaryTouchId,
     );
     const positionedSets = coordinateSets.filter(
       (coordinateSet) => coordinateSet.clientX || coordinateSet.clientY,
@@ -271,6 +335,26 @@ export const registerTouchInteractions = ({
       positionedSets[i].transformedX = point.x;
       positionedSets[i].transformedY = point.y;
     });
+
+    // Only a touchstart the scene saw starts tracking a touch, so a finger
+    // that single-touch mode ignored can never be ended by a cancel. Any
+    // finger that lifts stops being tracked, whether or not the scene saw it.
+    if (event.type === "touchend") {
+      const lifted: ArrayLike<Touch> =
+        (event as TouchEvent).changedTouches ?? [];
+      for (let i = 0; i < lifted.length; i++) {
+        _activeTouches.delete(lifted[i].identifier);
+      }
+    } else if (event.type === "touchstart" || event.type === "touchmove") {
+      coordinateSets.forEach(({ clientX, clientY, identifier }) => {
+        const tracked = _activeTouches.has(identifier);
+        if (event.type === "touchstart" && !tracked) {
+          _activeTouches.set(identifier, { clientX, clientY });
+        } else if (tracked && (clientX || clientY)) {
+          _activeTouches.set(identifier, { clientX, clientY });
+        }
+      });
+    }
 
     switch (event.type) {
       /**
@@ -360,9 +444,11 @@ export const registerTouchInteractions = ({
         // touchstart can claim a new primary finger.
         if (
           !enableMultiTouch &&
-          coordinateSets.some((c) => c.identifier === _primaryTouchId)
+          coordinateSets.some(
+            (c) => c.identifier === _touchState.primaryTouchId,
+          )
         ) {
-          _primaryTouchId = null;
+          _touchState.primaryTouchId = null;
         }
         break;
       }
@@ -385,8 +471,67 @@ export const registerTouchInteractions = ({
     }
   };
 
-  const touchCancelCallback = () => {
-    _primaryTouchId = null;
+  /**
+   * The browser cancels a touch when the system takes the gesture: a home
+   * indicator or edge swipe, an app switch, an alert. Each cancelled touch
+   * gets pointerUp then pointerExit, like a lifted finger, so anything
+   * waiting for the release doesn't stay pressed. It skips the tap-only side
+   * effects (keyboard, emulated mouse events). A page scroll does not cancel
+   * the touch in iOS Safari or Android Chrome (it ends with a touchend), so
+   * this holds with touch scrolling enabled too.
+   */
+  const touchCancelCallback = (event: TouchEvent) => {
+    const cancelled = new Set<number>();
+    const changedTouches: ArrayLike<Touch> = event.changedTouches ?? [];
+    for (let i = 0; i < changedTouches.length; i++) {
+      const { identifier, clientX, clientY } = changedTouches[i];
+      // Touches the scene never saw (a secondary finger in single-touch
+      // mode, or one that already ended) are not tracked.
+      if (!_activeTouches.has(identifier)) {
+        continue;
+      }
+      cancelled.add(identifier);
+      if (clientX || clientY) {
+        _activeTouches.set(identifier, { clientX, clientY });
+      }
+    }
+    // A cancel can name only some of the touches, or none. `touches` lists
+    // every finger still down, so end any tracked touch missing from it.
+    const down = new Set<number>();
+    const touches: ArrayLike<Touch> = event.touches ?? [];
+    for (let i = 0; i < touches.length; i++) {
+      down.add(touches[i].identifier);
+    }
+    _activeTouches.forEach((_, identifier) => {
+      if (!down.has(identifier)) {
+        cancelled.add(identifier);
+      }
+    });
+    if (
+      _touchState.primaryTouchId === null ||
+      cancelled.has(_touchState.primaryTouchId)
+    ) {
+      _touchState.primaryTouchId = null;
+    }
+    if (!cancelled.size) {
+      return;
+    }
+
+    const identifiers = Array.from(cancelled);
+    const points = mapToArtboard(
+      (event.currentTarget as HTMLCanvasElement).getBoundingClientRect(),
+      identifiers.map((identifier) => _activeTouches.get(identifier)!),
+    );
+    identifiers.forEach((identifier) => _activeTouches.delete(identifier));
+    for (const stateMachine of stateMachines) {
+      identifiers.forEach((identifier, i) => {
+        const { x, y } = points[i];
+        stateMachine.pointerUp(x, y, identifier);
+        stateMachine.pointerExit(x, y, identifier);
+      });
+    }
+    // Advance immediately so the release takes effect synchronously
+    advanceAndDrain(0);
   };
 
   /**
