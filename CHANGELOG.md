@@ -5,10 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.45.1](https://github.com/rive-app/rive-wasm/compare/2.45.0...2.45.1)
+## [2.46.0](https://github.com/rive-app/rive-wasm/compare/2.45.1...2.46.0)
+
+### Merged
+
+- feat(scripting): add a std barrier for workers that split one computation [`#14937`](https://github.com/rive-app/rive-wasm/pull/14937)
+- chore(runtime): update lite RTTI to handle casting to intermediate classes [`#15058`](https://github.com/rive-app/rive-wasm/pull/15058)
+- fix(js): ship the advanced packages' fallback wasm and self-contained typings [`#15061`](https://github.com/rive-app/rive-wasm/pull/15061)
+- feat(scripting): run scripts across threads with jobs, workers, shared memory and audio processors [`#14689`](https://github.com/rive-app/rive-wasm/pull/14689)
+- chore(editor_native): regenerate C++ core and check it in CI [`#15021`](https://github.com/rive-app/rive-wasm/pull/15021)
+- fix(ore): bind D3D11 groups at the pipeline's registers [`#15039`](https://github.com/rive-app/rive-wasm/pull/15039)
+- fix(ore): bind layouts reused across shaders at the pipeline's slots [`#15034`](https://github.com/rive-app/rive-wasm/pull/15034)
+- feat(runtime): queue script fetches past their limits instead of rejecting them [`#15033`](https://github.com/rive-app/rive-wasm/pull/15033)
+- feat(text): word breaking for Korean, Thai, Lao, Khmer and Burmese [`#14980`](https://github.com/rive-app/rive-wasm/pull/14980)
 
 ### Commits
 
+- chore(downstream): advance submodule/refs [`ab5f4e2`](https://github.com/rive-app/rive-wasm/commit/ab5f4e2a83c5e5b725983753d1b34dc83a6c9f13)
+- chore(downstream): advance submodule/refs [`560d3ce`](https://github.com/rive-app/rive-wasm/commit/560d3ce2a2890880babd52a2caa97ea0615d4147)
+- chore(downstream): advance submodule/refs [`d75ffe1`](https://github.com/rive-app/rive-wasm/commit/d75ffe109583df2abdcf11ed4179a18c1045538d)
+- chore(downstream): advance submodule/refs [`7dcfdff`](https://github.com/rive-app/rive-wasm/commit/7dcfdffee167068d3c4566a7b39143e2df347b68)
+- chore(downstream): advance submodule/refs [`335dc5e`](https://github.com/rive-app/rive-wasm/commit/335dc5efc029eed4095cde3c3fd9538499413922)
+- chore(downstream): advance submodule/refs [`0cdd839`](https://github.com/rive-app/rive-wasm/commit/0cdd8396db530ebfbe4b071b6e2b6d043a244c0a)
+- chore(downstream): advance submodule/refs [`2516fbf`](https://github.com/rive-app/rive-wasm/commit/2516fbfa58e67fd082cd87b8385a35df185fc3a7)
+- chore(downstream): advance submodule/refs [`366a2f6`](https://github.com/rive-app/rive-wasm/commit/366a2f6bf281b22b55861c7124ac6bda0a7e002d)
+- chore(downstream): advance submodule/refs [`929b3f1`](https://github.com/rive-app/rive-wasm/commit/929b3f1eb2185ed125885620b53af2828d7dcd88)
+- fix(wgpu): Define USE_WEBGPU_SAMPLERS when compiling glsl (#15030) 523433dd12 [`ec17df7`](https://github.com/rive-app/rive-wasm/commit/ec17df7f2ae431a6281f8ad6b17d7262ce89de44)
+- fix(rive-cli): draw layout backgrounds, clips and button state in REV (#15019) b5a4149aad [`4e22b3e`](https://github.com/rive-app/rive-wasm/commit/4e22b3e9ec8c17d34cd6ccbf6d299c0b18029b2b)
+- fix(ore): delete gl textures ore creates (#15026) 9ad2c07208 [`c7a90eb`](https://github.com/rive-app/rive-wasm/commit/c7a90ebe838856d44ef889072acd945685c11bb5)
+- refactor(renderer): Insert dstBlend barriers before building batches (#14992) 822d4a08d5 [`5bcac24`](https://github.com/rive-app/rive-wasm/commit/5bcac242b50a45a6446a2b35fb1b47f6741485e7)
+
+## [2.45.1](https://github.com/rive-app/rive-wasm/compare/2.45.0...2.45.1) - 2026-10-22
+
+### Commits
+
+- chore: tag 2.45.1 [`dc6c233`](https://github.com/rive-app/rive-wasm/commit/dc6c23329b5395591aad6fb9cc29c30fa75e87cc)
 - fix(runtime, editor): angular gradient transforms animate in nested artboards; gradient rotation binds in degrees (#15001) c8a386f870 [`7da2865`](https://github.com/rive-app/rive-wasm/commit/7da28658bdb46153637c662e17034268f1ad01a0)
 - perf(renderer): Restructure initForMidpointFan to be more SIMD-compatible (#14902) 7bbd2f397e [`2c76662`](https://github.com/rive-app/rive-wasm/commit/2c766621e60fa64b0c2585ca06bc629d03afc9ef)
 - feat(js): end cancelled touches in the scene (#14847) e0d39a0201 [`0d0151b`](https://github.com/rive-app/rive-wasm/commit/0d0151bd684421658e0dce956ff5d41d9cec25a0)
