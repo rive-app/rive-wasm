@@ -27,7 +27,7 @@
     "rive_fallback.wasm",
     "rive_advanced.mjs.d.ts"
   ],
-  "typings": "rive_advanced.d.ts",
+  "typings": "rive_advanced.mjs.d.ts",
   "dependencies": {},
   "browser": {
     "fs": false,

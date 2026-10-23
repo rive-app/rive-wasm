@@ -1,8 +1,18 @@
-import type {
-  ImageWrapper,
-  AudioWrapper,
-  FontWrapper,
-} from "./utils/finalizationRegistry";
+// The high level wrappers by shape, since the advanced packages ship no utils.
+interface ImageWrapper {
+  readonly nativeImage: ImageInternal;
+  unref(): void;
+}
+
+interface AudioWrapper {
+  readonly nativeAudio: AudioInternal;
+  unref(): void;
+}
+
+interface FontWrapper {
+  readonly nativeFont: FontInternal;
+  unref(): void;
+}
 
 interface RiveOptions {
   locateFile(file: string): string;
