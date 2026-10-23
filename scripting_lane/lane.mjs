@@ -23,6 +23,8 @@ const build = join(packages, 'runtime_wasm/wasm/build/webgl2_scripting/bin/relea
 const stress = join(packages, 'runtime/tests/web_scripting/stress');
 // A debug rive-cli runs librive and WAMR unoptimized, which skews the timings.
 const cli = process.env.RIVE_CLI ?? join(packages, 'rive-cli/out/release/rive');
+// rive-cli rebakes on every run, so every run takes the std the bake does.
+const std = resolve(process.env.RIVE_RASC_STD ?? join(packages, 'rasc/animascript/std'));
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -67,7 +69,7 @@ if (aot && !process.env.RIVE_WAMRC) {
 const projects = join(out, 'projects');
 function bake() {
     const run = spawnSync(join(stress, 'bake.sh'), fixtures, {
-        env: { ...process.env, RIVE_BAKE_OUT: projects, RIVE_CLI: cli },
+        env: { ...process.env, RIVE_BAKE_OUT: projects, RIVE_CLI: cli, RIVE_RASC_STD: std },
         encoding: 'utf8',
     });
     if (run.status !== 0) {
@@ -77,7 +79,7 @@ function bake() {
 
 // RIVE_WAMRC alone turns the AOT ladder on, so only the AOT bench gets it.
 function riveCli(dir, extra, aotTier = false) {
-    const env = { ...process.env, RIVE_DEV_SKIP_AUTH: '1', RIVE_WASM_AOT_SYNC: 'interp' };
+    const env = { ...process.env, RIVE_DEV_SKIP_AUTH: '1', RIVE_WASM_AOT_SYNC: 'interp', RIVE_RASC_STD: std };
     delete env.RIVE_WAMRC;
     if (aotTier) {
         env.RIVE_WAMRC = process.env.RIVE_WAMRC;

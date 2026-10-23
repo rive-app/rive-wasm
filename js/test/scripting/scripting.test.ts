@@ -55,14 +55,24 @@ const expectLogged = (...texts: string[]) => {
   expect({ missing, lines }).toEqual({ missing: [], lines });
 };
 
-const awaitLogged = async (...texts: string[]): Promise<void> => {
-  const deadline = Date.now() + 4000;
+const awaitLoggedWithin = async (
+  ms: number,
+  ...texts: string[]
+): Promise<void> => {
+  const deadline = Date.now() + ms;
   while (!texts.every(logged) && Date.now() < deadline) {
     await frames(1);
     await new Promise((done) => setTimeout(done, 10));
   }
   expectLogged(...texts);
 };
+
+const awaitLogged = (...texts: string[]): Promise<void> =>
+  awaitLoggedWithin(4000, ...texts);
+
+// Lanes run on wall time, so only a stuck one misses this, as in the web
+// suite's run.mjs.
+const lanePatienceMs = 30000;
 
 type CanvasEvent = { type: string; props: { value?: string } };
 
@@ -195,6 +205,46 @@ describe("AnimaScript on the web", () => {
     await frames(3);
     expect(r.isPlaying).toBe(true);
   });
+
+  // Without threads the runtime's own advance runs jobs and steps workers.
+  // These are the lines the web suite's JOBS and WORKERS lists expect.
+  test(
+    "jobs run at a later advance and hand back their results",
+    async () => {
+      await play({ buffer: fixture("jobs.riv") });
+      await awaitLoggedWithin(
+        lanePatienceMs,
+        "job threads 0",
+        "job square 9.0",
+        "job tile munich 4 1.5 munich/inner",
+        "job error bad code 3",
+        "job says 42",
+        "job matches 24",
+        "unjoined job done 144.0",
+        "job says 7",
+      );
+    },
+    lanePatienceMs + 10000,
+  );
+
+  test(
+    "workers step between frames on the page's thread",
+    async () => {
+      await play({ buffer: fixture("workers.riv") });
+      await awaitLoggedWithin(
+        lanePatienceMs,
+        "worker echo 10 last 20.0 count 10",
+        "worker echo stopped finished",
+        "worker sleep completed",
+        "worker threw failed with code",
+        "worker thrower failed: worker code 7",
+        "worker adders agree yes",
+        "worker snapshot 5",
+        "workers done",
+      );
+    },
+    lanePatienceMs + 10000,
+  );
 
   test("a module importing an op the host lacks still starts", async () => {
     await play({ buffer: fixture("unlinked.riv") });
