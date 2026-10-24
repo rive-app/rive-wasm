@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.46.0](https://github.com/rive-app/rive-wasm/compare/2.45.1...2.46.0)
+## [2.47.0](https://github.com/rive-app/rive-wasm/compare/2.46.0...2.47.0)
+
+### Merged
+
+- feat(runtime_wasm): add @rive-app/webgl2-threads [`#15076`](https://github.com/rive-app/rive-wasm/pull/15076)
+- fix(runtime): host opacity reaches a nested artboard in the same advance [`#15040`](https://github.com/rive-app/rive-wasm/pull/15040)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`e97ac3f`](https://github.com/rive-app/rive-wasm/commit/e97ac3f01122fcde72ff3555334263071feb684f)
+- chore(downstream): advance submodule/refs [`cac4fe8`](https://github.com/rive-app/rive-wasm/commit/cac4fe8cef25e8761ab7da0014934f6a71b72311)
+
+## [2.46.0](https://github.com/rive-app/rive-wasm/compare/2.45.1...2.46.0) - 2026-10-23
 
 ### Merged
 
@@ -21,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.46.0 [`b9f44b4`](https://github.com/rive-app/rive-wasm/commit/b9f44b46f9c3df77863d8b07797742da1affbceb)
 - chore(downstream): advance submodule/refs [`ab5f4e2`](https://github.com/rive-app/rive-wasm/commit/ab5f4e2a83c5e5b725983753d1b34dc83a6c9f13)
 - chore(downstream): advance submodule/refs [`560d3ce`](https://github.com/rive-app/rive-wasm/commit/560d3ce2a2890880babd52a2caa97ea0615d4147)
 - chore(downstream): advance submodule/refs [`d75ffe1`](https://github.com/rive-app/rive-wasm/commit/d75ffe109583df2abdcf11ed4179a18c1045538d)
