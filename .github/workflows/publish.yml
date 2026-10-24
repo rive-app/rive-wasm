@@ -10,15 +10,85 @@ on:
         description: "Minor"
         type: boolean
         default: false
-
-permissions:
-  id-token: write # Required for OIDC
-  contents: write # allows release-it to create the GitHub Release via GITHUB_TOKEN
-  issues: write
+      dry_run:
+        description: "Dry run: build, test and pack, but publish, push and tag nothing"
+        type: boolean
+        default: false
 
 jobs:
-  publish_job:
+  # The wasm does not depend on the version, so it builds before release-it
+  # bumps anything and a failed build publishes nothing.
+  build_wasm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        flavor:
+          - canvas_advanced_fallback
+          - canvas_advanced
+          - canvas_advanced_lite_fallback
+          - canvas_advanced_lite
+          - canvas_advanced_single
+          - webgl2_advanced_fallback
+          - webgl2_advanced
+          - webgl2_threads
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.PAT_GITHUB }}
+      - name: Checkout Rive Renderer Repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          repository: rive-app/rive-renderer
+          token: ${{ secrets.PAT_GITHUB }}
+          path: ./wasm/submodules/rive-renderer
+          ref: main
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install ccache
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ccache
+      - name: Cache emsdk
+        uses: actions/cache@v4
+        with:
+          path: wasm/bin/emsdk_*
+          key: emsdk-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('wasm/get_emcc.sh') }}
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ matrix.flavor }}-${{ hashFiles('wasm/get_emcc.sh') }}-${{ github.run_id }}
+          restore-keys: ccache-${{ matrix.flavor }}-${{ hashFiles('wasm/get_emcc.sh') }}-
+      - name: Build
+        working-directory: ./wasm
+        env:
+          EM_COMPILER_WRAPPER: ccache
+          # Keys each object on the compiler binary and the preprocessed source,
+          # since direct mode can miss a new header shadowing an old one.
+          CCACHE_COMPILERCHECK: content
+          CCACHE_NODIRECT: 1
+          CCACHE_MAXSIZE: 200M
+        run: |
+          ccache -z
+          ./build_flavor.sh ${{ matrix.flavor }}
+          ccache -s
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasm-${{ matrix.flavor }}
+          path: |
+            wasm/build/*/bin/release/*.mjs
+            wasm/build/*/bin/release/*.wasm
+          if-no-files-found: error
+
+  publish_job:
+    needs: build_wasm
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for OIDC
+      contents: write # allows release-it to create the GitHub Release via GITHUB_TOKEN
+      issues: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,29 +113,18 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Install modules
         run: cd js && npm install
-      - name: Setup Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
-      - if: ${{ inputs.major == true }}
-        name: Major Release - Bump version number, update changelog, push and tag
-        run: npm run release:major
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wasm-*
+          path: wasm/build
+          merge-multiple: true
+      - name: Bump version number, update changelog, publish, push and tag
+        run: npm run release:$INCREMENT -- $RELEASE_FLAGS
         working-directory: ./js
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{inputs.major == false && inputs.minor == true}}
-        name: Minor release - Bump version number, update changelog, push and tag
-        run: npm run release:minor
-        working-directory: ./js
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{inputs.major == false && inputs.minor == false}}
-        name: Patch release - Bump version number, update changelog, push and tag
-        run: npm run release:patch
-        working-directory: ./js
-        env:
+          INCREMENT: ${{ inputs.major && 'major' || inputs.minor && 'minor' || 'patch' }}
+          RELEASE_FLAGS: ${{ inputs.dry_run && '--no-git.push --no-git.tag --no-github.release' || '' }}
+          PUBLISH_FLAGS: ${{ inputs.dry_run && '--dry-run' || '' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -73,6 +132,7 @@ jobs:
       # Registry propagation can lag well past the retry window for some
       # packages, so only the core packages fail the job; the rest warn.
       - name: Verify packages are available on npm
+        if: ${{ !inputs.dry_run }}
         working-directory: ./js
         env:
           REQUIRED_PACKAGES: "@rive-app/canvas @rive-app/webgl2 @rive-app/canvas-lite"
@@ -112,7 +172,7 @@ jobs:
           exit "$required_missing"
 
       - name: File issue on publish failure
-        if: failure()
+        if: ${{ failure() && !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

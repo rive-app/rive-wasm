@@ -18,13 +18,18 @@ set -e
 #               Available targets: canvas, canvas-lite, canvas-single, webgl2,
 #               webgl2-threads (which needs webgl2 built as well)
 #               Usage: ./build.sh -r canvas,webgl2
+#
+#   -s          Packs WASM already built by wasm/build_flavor.sh instead of
+#               building it.
+#               Usage: ./build.sh -s
 
 WASM_FLAGS=""
 TARGETS=""
-while getopts "pir:" flag; do
+while getopts "pir:s" flag; do
     case "${flag}" in
     p) WASM_FLAGS="$WASM_FLAGS -p" ;;
     i) WASM_FLAGS="$WASM_FLAGS -i" ;;
+    s) WASM_FLAGS="$WASM_FLAGS -s" ;;
     r) TARGETS="${OPTARG}" ;;
     *) echo "Unknown flag: $flag" ;;
     esac

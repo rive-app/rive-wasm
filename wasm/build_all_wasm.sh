@@ -9,14 +9,22 @@ set -e
 #             Skips all fallback WASM builds and only compiles the specified targets.
 #             Available: canvas, canvas-lite, canvas-single, webgl2,
 #             webgl2-threads (which needs webgl2 built as well)
+# -s          Stage flavors already built by build_flavor.sh instead of
+#             building them.
 WASM_CONFIG=release
+FLAVOR_FLAGS=""
 TARGETS=""
 INCREMENTAL=0
-while getopts "pir:" flag; do
+PREBUILT=0
+while getopts "pir:s" flag; do
     case "${flag}" in
-    p) WASM_CONFIG=profiling ;;
+    p)
+        WASM_CONFIG=profiling
+        FLAVOR_FLAGS=-p
+        ;;
     i) INCREMENTAL=1 ;;
     r) TARGETS="${OPTARG}" ;;
+    s) PREBUILT=1 ;;
     *) echo "Unknown flag: $flag" ;;
     esac
 done
@@ -25,6 +33,12 @@ done
 target_enabled() {
     [ -z "$TARGETS" ] && return 0
     echo ",$TARGETS," | grep -q ",${1},"
+}
+
+build() {
+    if [ "$PREBUILT" -eq 0 ]; then
+        ./build_flavor.sh $FLAVOR_FLAGS "$1"
+    fi
 }
 
 # Both wasm binaries share one JS glue, so they must expose the same import and
@@ -48,8 +62,6 @@ verify_fallback() {
     fi
     python3 ./verify_fallback_abi.py "$pkg/rive.wasm" "$pkg/rive_fallback.wasm"
 }
-
-source ./get_emcc.sh
 
 rm -f ../js/npm/canvas_advanced/*.mjs
 rm -f ../js/npm/canvas_advanced/*.wasm
@@ -86,7 +98,7 @@ mkdir -p ../js/npm/webgl2
 mkdir -p ../js/npm/webgl2_advanced
 mkdir -p ../js/npm/webgl2_threads
 
-if [ "$INCREMENTAL" -eq 0 ]; then
+if [ "$INCREMENTAL" -eq 0 ] && [ "$PREBUILT" -eq 0 ]; then
     echo
     echo "::::: cleaning all projects"
     echo
@@ -94,19 +106,13 @@ if [ "$INCREMENTAL" -eq 0 ]; then
 fi
 
 if [ -z "$TARGETS" ]; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced fallback"
-    echo
-    OUT_DIR=build/canvas_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -w -c ${WASM_CONFIG}
+    build canvas_advanced_fallback
     cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive_fallback.wasm
     cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive_fallback.wasm
 fi
 
 if target_enabled "canvas"; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced"
-    echo
-    OUT_DIR=build/canvas_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -w ${WASM_CONFIG}
+    build canvas_advanced
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.mjs ../js/npm/canvas_advanced/canvas_advanced.mjs
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas_advanced/rive.wasm
     cp build/canvas_advanced/bin/${WASM_CONFIG}/canvas_advanced.wasm ../js/npm/canvas/rive.wasm
@@ -115,19 +121,13 @@ if target_enabled "canvas"; then
 fi
 
 if [ -z "$TARGETS" ]; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced_lite fallback"
-    echo
-    OUT_DIR=build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -c -l -r c2d_only ${WASM_CONFIG}
+    build canvas_advanced_lite_fallback
     cp build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive_fallback.wasm
     cp build/canvas_advanced_lite_fallback/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive_fallback.wasm
 fi
 
 if target_enabled "canvas-lite"; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced_lite"
-    echo
-    OUT_DIR=build/canvas_advanced_lite/bin/${WASM_CONFIG} ./build_wasm.sh -l -r c2d_only ${WASM_CONFIG}
+    build canvas_advanced_lite
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.mjs ../js/npm/canvas_advanced_lite/canvas_advanced.mjs
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_advanced_lite/rive.wasm
     cp build/canvas_advanced_lite/bin/${WASM_CONFIG}/canvas_advanced_c2d_only.wasm ../js/npm/canvas_lite/rive.wasm
@@ -136,28 +136,19 @@ if target_enabled "canvas-lite"; then
 fi
 
 if target_enabled "canvas-single"; then
-    echo
-    echo "::::: building @rive-app/canvas_advanced_single"
-    echo
-    OUT_DIR=build/canvas_advanced_single/bin/${WASM_CONFIG} ./build_wasm.sh -w -c -s ${WASM_CONFIG}
-    cp build/canvas_advanced_single/bin/${WASM_CONFIG}/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
+    build canvas_advanced_single
+    cp build/canvas_advanced_fallback/bin/${WASM_CONFIG}/canvas_advanced_single.mjs ../js/npm/canvas_advanced_single/canvas_advanced_single.mjs
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/canvas_advanced_single/rive_advanced.mjs.d.ts
 fi
 
 if [ -z "$TARGETS" ]; then
-    echo
-    echo "::::: building @rive-app/webgl2_advanced fallback"
-    echo
-    OUT_DIR=build/webgl2_advanced_fallback/bin/${WASM_CONFIG} ./build_wasm.sh -w -c -r webgl2 ${WASM_CONFIG}
+    build webgl2_advanced_fallback
     cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive_fallback.wasm
     cp build/webgl2_advanced_fallback/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive_fallback.wasm
 fi
 
 if target_enabled "webgl2"; then
-    echo
-    echo "::::: building @rive-app/webgl2_advanced"
-    echo
-    OUT_DIR=build/webgl2_advanced/bin/${WASM_CONFIG} ./build_wasm.sh -w -r webgl2 ${WASM_CONFIG}
+    build webgl2_advanced
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.mjs ../js/npm/webgl2_advanced/webgl2_advanced.mjs
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_advanced/rive.wasm
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
@@ -166,10 +157,7 @@ if target_enabled "webgl2"; then
 fi
 
 if target_enabled "webgl2-threads"; then
-    echo
-    echo "::::: building @rive-app/webgl2-threads"
-    echo
-    OUT_DIR=build/webgl2_threads/bin/${WASM_CONFIG} ./build_wasm.sh -w -m -r webgl2 ${WASM_CONFIG}
+    build webgl2_threads
     cp build/webgl2_threads/bin/${WASM_CONFIG}/webgl2_advanced.mjs ../js/npm/webgl2_threads/webgl2_threads.mjs
     cp build/webgl2_threads/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_threads/rive_threads.wasm
     # Pages that cannot run threads load webgl2's own build.

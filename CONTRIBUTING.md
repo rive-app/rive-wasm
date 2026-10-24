@@ -92,8 +92,9 @@ The files in `wasm/js` (specifically `renderer.js` and `webgl2_renderer.js`) use
 If you're looking to alter or add bindings as a result of a change or new feature in rive-runtime, you'll work with these files (most likely starting with the `bindings.cpp` first). When making changes, you will have to re-build WASM to test them out in an app (`js/build.sh` script). When changing or adding low-level API functionality for the high-level API, ensure that the `js/src/rive_advanced.mjs.d.ts` types file is updated accordingly. This ensures types are up-to-date with any changes.
 
 The `build.sh` script makes all the WASM submodules for different packages; this can be a long process. If you're iterating on bindings or even cpp runtime submodule files, you can make it faster by doing the following things:
-- In `wasm/build_all_wasm.sh`:
-  - Comment out the lines where it calls `./build_wasm.sh release` on the packages you're not testing against (i.e only want to iterate on Canvas2D instead of WebGL2)
+- Pass `-r` with only the targets you're testing against, e.g. `./build.sh -r canvas` to iterate on Canvas2D instead of WebGL2
+- Pass `-i` to recompile only the C++ files that changed since the last build
+- Build a single flavor with `wasm/build_flavor.sh <flavor>`
 
 #### Running the example application
 

@@ -15,10 +15,10 @@
   "hooks": {
     "after:version:bump": [
       "npm run bumpVersions",
-      "npm run build:all",
+      "npm run build:prebuilt",
       "npm test",
       "npm run changelog",
-      "npm run publish:all",
+      "npm run publish:all -- $PUBLISH_FLAGS",
       "git add ../CHANGELOG.md"
     ]
   }

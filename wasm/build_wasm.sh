@@ -135,6 +135,21 @@ if [[ "$PREMAKE_FLAGS" == *scripting_vm=both* ]]; then
     done
 fi
 
+# make tracks sources, not flags, so a build dir regenerated with other compile
+# flags would keep objects compiled with the old ones.
+compile_flags() {
+    grep -hE '^\s*(DEFINES|INCLUDES|FORCE_INCLUDE|ALL_C(PP|XX)?FLAGS|PERFILE_FLAGS_[0-9]+) ' "$OUT_DIR"/*.make 2>/dev/null || true
+}
+premake() {
+    local before
+    before=$(compile_flags)
+    $PREMAKE "$@" || return
+    if [ -n "$before" ] && [ "$before" != "$(compile_flags)" ]; then
+        echo "Compile flags changed, rebuilding all of $OUT_DIR"
+        rm -rf "$OUT_DIR/obj"
+    fi
+}
+
 if [ "$OPTION" = 'help' ]; then
     echo build.sh - build debug library
     echo build.sh clean - clean the build
@@ -145,13 +160,13 @@ elif [ "$OPTION" = "clean" ]; then
     rm -fR ./build
     exit 0
 elif [ "$OPTION" = "tools" ]; then
-    $PREMAKE gmake2 $PREMAKE_FLAGS && CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES make -C $OUT_DIR -j$NCPU
+    premake gmake2 $PREMAKE_FLAGS && CFLAGS=-DENABLE_QUERY_FLAT_VERTICES CXXFLAGS=-DENABLE_QUERY_FLAT_VERTICES make -C $OUT_DIR -j$NCPU
 elif [ "$OPTION" = "profiling" ]; then
-    $PREMAKE gmake2 $PREMAKE_FLAGS --config=release --profiling-funcs && make -C $OUT_DIR -j$NCPU
+    premake gmake2 $PREMAKE_FLAGS --config=release --profiling-funcs && make -C $OUT_DIR -j$NCPU
 elif [ "$OPTION" = "release" ]; then
-    $PREMAKE gmake2 $PREMAKE_FLAGS --config=release gmake2 && make -C $OUT_DIR -j$NCPU
+    premake gmake2 $PREMAKE_FLAGS --config=release gmake2 && make -C $OUT_DIR -j$NCPU
 else
-    $PREMAKE gmake2 $PREMAKE_FLAGS && make -C $OUT_DIR -j$NCPU
+    premake gmake2 $PREMAKE_FLAGS && make -C $OUT_DIR -j$NCPU
 fi
 
 # If you want to run the leak checker with debug symbols, copy
