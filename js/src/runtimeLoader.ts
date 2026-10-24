@@ -1,8 +1,35 @@
 import * as rc from "./rive_advanced.mjs";
+import * as threads from "./rive_threads.mjs";
 import packageData from "package.json";
 
 // Callback type when looking for a runtime instance
 export type RuntimeCallback = (rive: rc.RiveCanvas) => void;
+
+// A module with a shared memory, an atomic load and a SIMD constant.
+const threadsProbe = new Uint8Array([
+  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x09, 0x02, 0x60, 0x00,
+  0x01, 0x7f, 0x60, 0x00, 0x01, 0x7b, 0x03, 0x03, 0x02, 0x00, 0x01, 0x05, 0x04,
+  0x01, 0x03, 0x01, 0x01, 0x0a, 0x1f, 0x02, 0x08, 0x00, 0x41, 0x00, 0xfe, 0x10,
+  0x02, 0x00, 0x0b, 0x14, 0x00, 0xfd, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b,
+]);
+
+// Null when this page can run the threaded build, else why not. A page that
+// is not isolated gets no shared memory, and the threaded build never loads.
+function threadsRefusal(): string | null {
+  if (globalThis.crossOriginIsolated !== true) {
+    return "the page is not cross origin isolated";
+  }
+  try {
+    new MessageChannel().port1.postMessage(new SharedArrayBuffer(1));
+  } catch {
+    return "the page cannot share memory with workers";
+  }
+  if (!WebAssembly.validate(threadsProbe)) {
+    return "the browser cannot run wasm threads with SIMD";
+  }
+  return null;
+}
 
 // Runtime singleton; use getInstance to provide a callback that returns the
 // Rive runtime
@@ -24,6 +51,15 @@ export class RuntimeLoader {
   private static wasmFallbackURL: string | null = `https://cdn.jsdelivr.net/npm/${packageData.name}@${packageData.version}/rive_fallback.wasm`;
 
   private static wasmBinary: ArrayBuffer | null = null;
+
+  // The threaded build's wasm, tried first on a page that can run it. Null
+  // in packages without one, or to stay on the build without threads.
+  private static wasmThreadsURL: string | null =
+    typeof threads.default === "function"
+      ? `https://unpkg.com/${packageData.name}@${packageData.version}/rive_threads.wasm`
+      : null;
+
+  private static triedThreads = false;
 
   // Error callbacks enqueued from .getInstance()
   private static errorCallbackQueue: ((error: Error) => void)[] = [];
@@ -47,8 +83,57 @@ export class RuntimeLoader {
     RuntimeLoader.callBackQueue = [];
   }
 
-  // Loads the runtime
+  private static loaded(rive: rc.RiveCanvas): void {
+    if (RuntimeLoader.enablePerfMarks) {
+      performance.mark('rive:wasm-init:end');
+      performance.measure('rive:wasm-init', 'rive:wasm-init:start', 'rive:wasm-init:end');
+    }
+    RuntimeLoader.runtime = rive;
+    RuntimeLoader.errorCallbackQueue = [];
+    // Fire all the callbacks
+    while (RuntimeLoader.callBackQueue.length > 0) {
+      RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
+    }
+  }
+
+  // Loads the runtime, threaded once per page where it can be, and otherwise
+  // without threads.
   private static loadRuntime(): void {
+    // Other packages bundle an empty module here, which webpack's interop
+    // hands over as an object rather than undefined.
+    const threaded = threads.default;
+    const threadsUrl = RuntimeLoader.wasmThreadsURL;
+    // A host's own binary is a build without threads.
+    if (
+      typeof threaded !== "function" ||
+      threadsUrl === null ||
+      RuntimeLoader.wasmBinary !== null ||
+      RuntimeLoader.triedThreads
+    ) {
+      RuntimeLoader.loadUnthreaded();
+      return;
+    }
+    RuntimeLoader.triedThreads = true;
+    const refusal = threadsRefusal();
+    if (refusal !== null) {
+      console.warn(`Rive is running without threads: ${refusal}.`);
+      RuntimeLoader.loadUnthreaded();
+      return;
+    }
+    if (RuntimeLoader.enablePerfMarks) performance.mark('rive:wasm-init:start');
+    // Not a catch, which would also take a throw from a callback.
+    threaded({ locateFile: () => threadsUrl }).then(
+      RuntimeLoader.loaded,
+      (error) => {
+        console.warn(
+          `Rive is running without threads: the threaded build failed to load (${error?.message ?? error}).`,
+        );
+        RuntimeLoader.loadUnthreaded();
+      },
+    );
+  }
+
+  private static loadUnthreaded(): void {
     // Capture the URL at call time so the catch closure always refers to the
     // URL this particular attempt used, even if wasmURL is mutated for a retry.
     const attemptedUrl = RuntimeLoader.wasmURL;
@@ -59,18 +144,7 @@ export class RuntimeLoader {
       locateFile: () => attemptedUrl,
       ...(wasmBinary ? { wasmBinary } : {})
     })
-      .then((rive: rc.RiveCanvas) => {
-        if (RuntimeLoader.enablePerfMarks) {
-          performance.mark('rive:wasm-init:end');
-          performance.measure('rive:wasm-init', 'rive:wasm-init:start', 'rive:wasm-init:end');
-        }
-        RuntimeLoader.runtime = rive;
-        RuntimeLoader.errorCallbackQueue = [];
-        // Fire all the callbacks
-        while (RuntimeLoader.callBackQueue.length > 0) {
-          RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
-        }
-      })
+      .then(RuntimeLoader.loaded)
       .catch((error) => {
         // Capture specific error details
         const errorDetails = {
@@ -103,7 +177,7 @@ export class RuntimeLoader {
           // instead of re-using the same (failing) in-memory binary.
           RuntimeLoader.wasmBinary = null;
           RuntimeLoader.setWasmUrl(fallbackUrl);
-          RuntimeLoader.loadRuntime();
+          RuntimeLoader.loadUnthreaded();
         } else {
           // When alreadyOnFallback is true, wasmURL has already been overwritten
           // with the fallback URL, so we can no longer recover the original
@@ -180,6 +254,23 @@ export class RuntimeLoader {
   // Gets the current fallback wasm url (null means fallback is disabled)
   public static getWasmFallbackUrl(): string | null {
     return RuntimeLoader.wasmFallbackURL;
+  }
+
+  /**
+   * Sets the URL of the threaded build's wasm, which
+   * `@rive-app/webgl2-threads` loads on a cross origin isolated page. Pass
+   * `null` to always load the build without threads. Other packages have no
+   * threaded build and ignore it.
+   *
+   * Defaults to pulling from the unpkg CDN.
+   */
+  public static setWasmThreadsUrl(url: string | null): void {
+    RuntimeLoader.wasmThreadsURL = url;
+  }
+
+  // Gets the threaded build's wasm url (null means threads are off)
+  public static getWasmThreadsUrl(): string | null {
+    return RuntimeLoader.wasmThreadsURL;
   }
 
   // Manually sets the wasm binary or clears it with null

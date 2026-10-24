@@ -1,6 +1,7 @@
 // Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
 // which means there is no loading an external WASM file for tests
 import * as rc from "../src/rive_advanced.mjs";
+import * as threads from "../src/rive_threads.mjs";
 import * as rive from "../src/rive";
 import {
   pingPongRiveFileBuffer,
@@ -301,6 +302,120 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
         throw new Error("onLoad should not be called when WASM fails");
       },
     });
+  });
+});
+
+describe("RuntimeLoader threads", () => {
+  const threadsUrl = "https://threads.example.com/rive_threads.wasm";
+  const threadedRuntime = {} as rc.RiveCanvas;
+  const unthreadedRuntime = {} as rc.RiveCanvas;
+  let saved: Record<string, unknown>;
+  let warn: jest.SpyInstance;
+
+  const isolate = (isolated: boolean) =>
+    Object.defineProperty(globalThis, "crossOriginIsolated", {
+      value: isolated,
+      configurable: true,
+    });
+
+  beforeEach(() => {
+    const loader = rive.RuntimeLoader as any;
+    saved = {
+      runtime: loader.runtime,
+      isLoading: loader.isLoading,
+      callBackQueue: loader.callBackQueue,
+      errorCallbackQueue: loader.errorCallbackQueue,
+      triedThreads: loader.triedThreads,
+      threadsUrl: rive.RuntimeLoader.getWasmThreadsUrl(),
+      binary: rive.RuntimeLoader.getWasmBinary(),
+      rcDefault: rc.default,
+      threadsDefault: threads.default,
+      messageChannel: globalThis.MessageChannel,
+    };
+    loader.runtime = undefined;
+    loader.isLoading = false;
+    loader.callBackQueue = [];
+    loader.errorCallbackQueue = [];
+    loader.triedThreads = false;
+    rive.RuntimeLoader.setWasmThreadsUrl(threadsUrl);
+    rive.RuntimeLoader.setWasmBinary(null);
+    (rc as any).default = jest.fn().mockResolvedValue(unthreadedRuntime);
+    (threads as any).default = jest.fn().mockResolvedValue(threadedRuntime);
+    warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    isolate(true);
+    // jsdom has none; the loader only checks that a post succeeds.
+    (globalThis as any).MessageChannel = class {
+      port1 = { postMessage: () => {} };
+    };
+  });
+
+  afterEach(() => {
+    const loader = rive.RuntimeLoader as any;
+    (rc as any).default = saved.rcDefault;
+    (threads as any).default = saved.threadsDefault;
+    loader.runtime = saved.runtime;
+    loader.isLoading = saved.isLoading;
+    loader.callBackQueue = saved.callBackQueue;
+    loader.errorCallbackQueue = saved.errorCallbackQueue;
+    loader.triedThreads = saved.triedThreads;
+    rive.RuntimeLoader.setWasmThreadsUrl(saved.threadsUrl as string | null);
+    rive.RuntimeLoader.setWasmBinary(saved.binary as ArrayBuffer | null);
+    delete (globalThis as any).crossOriginIsolated;
+    (globalThis as any).MessageChannel = saved.messageChannel;
+    jest.restoreAllMocks();
+  });
+
+  test("packages without a threaded build have no threads url", () => {
+    expect(saved.threadsUrl).toBeNull();
+  });
+
+  test("an isolated page loads the threaded build from its url", async () => {
+    const runtime = await rive.RuntimeLoader.awaitInstance();
+    expect(runtime).toBe(threadedRuntime);
+    expect(rc.default).not.toHaveBeenCalled();
+    const options = (threads.default as jest.Mock).mock.calls[0][0];
+    expect(options.locateFile()).toBe(threadsUrl);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  test("a page that is not isolated loads without threads and says why once", async () => {
+    isolate(false);
+    const runtime = await rive.RuntimeLoader.awaitInstance();
+    expect(runtime).toBe(unthreadedRuntime);
+    expect(threads.default).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("not cross origin isolated");
+  });
+
+  test("a threaded build that fails to load falls back to the one without threads", async () => {
+    (threads as any).default = jest
+      .fn()
+      .mockRejectedValue(new Error("no workers"));
+    const runtime = await rive.RuntimeLoader.awaitInstance();
+    expect(runtime).toBe(unthreadedRuntime);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("no workers");
+  });
+
+  test("a host's own binary skips threads", async () => {
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+    await rive.RuntimeLoader.awaitInstance();
+    expect(threads.default).not.toHaveBeenCalled();
+    expect(rc.default).toHaveBeenCalledTimes(1);
+  });
+
+  test("the empty module other packages bundle skips threads", async () => {
+    (threads as any).default = {};
+    const runtime = await rive.RuntimeLoader.awaitInstance();
+    expect(runtime).toBe(unthreadedRuntime);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  test("a null threads url skips threads", async () => {
+    rive.RuntimeLoader.setWasmThreadsUrl(null);
+    await rive.RuntimeLoader.awaitInstance();
+    expect(threads.default).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

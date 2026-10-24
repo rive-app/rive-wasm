@@ -7,7 +7,8 @@ set -e
 #             changed C++ files are recompiled.
 # -r <targets> For local dev. Comma-separated list of targets to build.
 #             Skips all fallback WASM builds and only compiles the specified targets.
-#             Available: canvas, canvas-lite, canvas-single, webgl2
+#             Available: canvas, canvas-lite, canvas-single, webgl2,
+#             webgl2-threads (which needs webgl2 built as well)
 WASM_CONFIG=release
 TARGETS=""
 INCREMENTAL=0
@@ -72,6 +73,9 @@ rm -f ../js/npm/webgl2_advanced/*.wasm
 rm -f ../js/npm/webgl2/*.mjs
 rm -f ../js/npm/webgl2/*.wasm
 
+rm -f ../js/npm/webgl2_threads/*.mjs
+rm -f ../js/npm/webgl2_threads/*.wasm
+
 mkdir -p ../js/npm/canvas
 mkdir -p ../js/npm/canvas_lite
 mkdir -p ../js/npm/canvas_single
@@ -80,6 +84,7 @@ mkdir -p ../js/npm/canvas_advanced_lite
 mkdir -p ../js/npm/canvas_advanced_single
 mkdir -p ../js/npm/webgl2
 mkdir -p ../js/npm/webgl2_advanced
+mkdir -p ../js/npm/webgl2_threads
 
 if [ "$INCREMENTAL" -eq 0 ]; then
     echo
@@ -158,4 +163,19 @@ if target_enabled "webgl2"; then
     cp build/webgl2_advanced/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2/rive.wasm
     cp ../js/src/rive_advanced.mjs.d.ts ../js/npm/webgl2_advanced/rive_advanced.mjs.d.ts
     verify_fallback webgl2
+fi
+
+if target_enabled "webgl2-threads"; then
+    echo
+    echo "::::: building @rive-app/webgl2-threads"
+    echo
+    OUT_DIR=build/webgl2_threads/bin/${WASM_CONFIG} ./build_wasm.sh -w -m -r webgl2 ${WASM_CONFIG}
+    cp build/webgl2_threads/bin/${WASM_CONFIG}/webgl2_advanced.mjs ../js/npm/webgl2_threads/webgl2_threads.mjs
+    cp build/webgl2_threads/bin/${WASM_CONFIG}/webgl2_advanced.wasm ../js/npm/webgl2_threads/rive_threads.wasm
+    # Pages that cannot run threads load webgl2's own build.
+    cp ../js/npm/webgl2/rive.wasm ../js/npm/webgl2_threads/rive.wasm
+    if [ -f ../js/npm/webgl2/rive_fallback.wasm ]; then
+        cp ../js/npm/webgl2/rive_fallback.wasm ../js/npm/webgl2_threads/rive_fallback.wasm
+    fi
+    verify_fallback webgl2_threads
 fi

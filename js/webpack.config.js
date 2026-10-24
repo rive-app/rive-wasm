@@ -6,6 +6,53 @@ const FileManagerPlugin = require("filemanager-webpack-plugin");
 // level api. Each one remaps the location of rive_advanced.mjs to the
 // appropriate one built by wasm/build_all_wasm.sh.
 
+// Every high-level package's plugins: no import.meta, and the type
+// declarations copied in beside rive.js.
+const highLevelPlugins = (dir) => [
+  // import.meta is a syntax error under classic <script> which some devs use today.
+  new webpack.DefinePlugin({
+    "import.meta.url":
+      "(typeof self !== 'undefined' && self.location ? self.location.href : '')",
+  }),
+  new FileManagerPlugin({
+    events: {
+      onEnd: {
+        copy: [
+          {
+            source: "build/src/rive.d.ts",
+            destination: path.resolve(__dirname, `npm/${dir}/rive.d.ts`),
+          },
+          {
+            source: "src/rive_advanced.mjs.d.ts",
+            destination: path.resolve(
+              __dirname,
+              `npm/${dir}/rive_advanced.mjs.d.ts`
+            ),
+          },
+          {
+            source: "build/src/runtimeLoader.d.ts",
+            destination: path.resolve(
+              __dirname,
+              `npm/${dir}/runtimeLoader.d.ts`
+            ),
+          },
+          {
+            source: "build/src/utils",
+            destination: path.resolve(__dirname, `npm/${dir}/utils`),
+          },
+          {
+            source: "build/src/semantics",
+            destination: path.resolve(__dirname, `npm/${dir}/semantics`),
+          },
+        ],
+      },
+    },
+  }),
+];
+
+// Only webgl2-threads bundles a threaded build.
+const noThreads = { "./rive_threads.mjs": false };
+
 // Uses canvas_advanced with an externally loaded wasm file.
 const canvas = {
   entry: "./src/rive.ts",
@@ -33,6 +80,7 @@ const canvas = {
       path: false,
     },
     alias: {
+      ...noThreads,
       "./rive_advanced.mjs": path.resolve(
         __dirname,
         "npm/canvas_advanced/canvas_advanced.mjs"
@@ -49,47 +97,7 @@ const canvas = {
   },
   devtool: "source-map",
   mode: "none",
-  plugins: [
-    // import.meta is a syntax error under classic <script> which some devs use today.
-    new webpack.DefinePlugin({
-      "import.meta.url":
-        "(typeof self !== 'undefined' && self.location ? self.location.href : '')",
-    }),
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(__dirname, "npm/canvas/rive.d.ts"),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas/rive_advanced.mjs.d.ts"
-              ),
-            },
-            {
-              source: "build/src/runtimeLoader.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas/runtimeLoader.d.ts"
-              ),
-            },
-            {
-              source: "build/src/utils",
-              destination: path.resolve(__dirname, "npm/canvas/utils"),
-            },
-            {
-              source: "build/src/semantics",
-              destination: path.resolve(__dirname, "npm/canvas/semantics"),
-            },
-          ],
-        },
-      },
-    }),
-  ],
+  plugins: highLevelPlugins("canvas"),
   watchOptions: {
     ignored: ["**/node_modules", "**/npm"],
   },
@@ -101,6 +109,7 @@ const canvasLite = {
   resolve: {
     ...canvas.resolve,
     alias: {
+      ...noThreads,
       "./rive_advanced.mjs": path.resolve(
         __dirname,
         "npm/canvas_advanced_lite/canvas_advanced.mjs"
@@ -112,46 +121,7 @@ const canvasLite = {
     ...canvas.output,
     path: path.resolve(__dirname, "npm/canvas_lite"),
   },
-  plugins: [
-    new webpack.DefinePlugin({
-      "import.meta.url":
-        "(typeof self !== 'undefined' && self.location ? self.location.href : '')",
-    }),
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(__dirname, "npm/canvas_lite/rive.d.ts"),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_lite/rive_advanced.mjs.d.ts"
-              ),
-            },
-            {
-              source: "build/src/runtimeLoader.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_lite/runtimeLoader.d.ts"
-              ),
-            },
-            {
-              source: "build/src/utils",
-              destination: path.resolve(__dirname, "npm/canvas_lite/utils"),
-            },
-            {
-              source: "build/src/semantics",
-              destination: path.resolve(__dirname, "npm/canvas_lite/semantics"),
-            },
-          ],
-        },
-      },
-    }),
-  ],
+  plugins: highLevelPlugins("canvas_lite"),
 };
 
 // Uses canvas_advanced with a bundled wasm file for simplicity/no external wasm
@@ -180,6 +150,7 @@ const canvasSingle = {
       "path": false,
     },
     alias: {
+      ...noThreads,
       "./rive_advanced.mjs": path.resolve(
         __dirname,
         "npm/canvas_advanced_single/canvas_advanced_single.mjs"
@@ -196,52 +167,7 @@ const canvasSingle = {
   },
   devtool: "source-map",
   mode: "none",
-  plugins: [
-    new webpack.DefinePlugin({
-      "import.meta.url":
-        "(typeof self !== 'undefined' && self.location ? self.location.href : '')",
-    }),
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_single/rive.d.ts"
-              ),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_single/rive_advanced.mjs.d.ts"
-              ),
-            },
-            {
-              source: "build/src/runtimeLoader.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_single/runtimeLoader.d.ts"
-              ),
-            },
-            {
-              source: "build/src/utils",
-              destination: path.resolve(__dirname, "npm/canvas_single/utils"),
-            },
-            {
-              source: "build/src/semantics",
-              destination: path.resolve(
-                __dirname,
-                "npm/canvas_single/semantics"
-              ),
-            },
-          ],
-        },
-      },
-    }),
-  ],
+  plugins: highLevelPlugins("canvas_single"),
   watchOptions: {
     ignored: ["**/node_modules", "**/npm"],
   },
@@ -272,6 +198,7 @@ const webgl2 = {
       "path": false,
     },
     alias: {
+      ...noThreads,
       "./rive_advanced.mjs": path.resolve(
         __dirname,
         "npm/webgl2_advanced/webgl2_advanced.mjs"
@@ -288,59 +215,45 @@ const webgl2 = {
   },
   devtool: "source-map",
   mode: "none",
-  plugins: [
-    // import.meta is a syntax error under classic <script> which some devs use today.
-    new webpack.DefinePlugin({
-      "import.meta.url":
-        "(typeof self !== 'undefined' && self.location ? self.location.href : '')",
-    }),
-    new FileManagerPlugin({
-      events: {
-        onEnd: {
-          copy: [
-            {
-              source: "build/src/rive.d.ts",
-              destination: path.resolve(__dirname, "npm/webgl2/rive.d.ts"),
-            },
-            {
-              source: "src/rive_advanced.mjs.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/webgl2/rive_advanced.mjs.d.ts"
-              ),
-            },
-            {
-              source: "build/src/runtimeLoader.d.ts",
-              destination: path.resolve(
-                __dirname,
-                "npm/webgl2/runtimeLoader.d.ts"
-              ),
-            },
-            {
-              source: "build/src/utils",
-              destination: path.resolve(__dirname, "npm/webgl2/utils"),
-            },
-            {
-              source: "build/src/semantics",
-              destination: path.resolve(__dirname, "npm/webgl2/semantics"),
-            },
-          ],
-        },
-      },
-    }),
-  ],
+  plugins: highLevelPlugins("webgl2"),
   watchOptions: {
     ignored: ["**/node_modules", "**/npm"],
   },
 };
 
+// webgl2 with the threaded build beside it, which a cross origin isolated
+// page loads first.
+const webgl2Threads = {
+  ...webgl2,
+  resolve: {
+    ...webgl2.resolve,
+    alias: {
+      "./rive_advanced.mjs": path.resolve(
+        __dirname,
+        "npm/webgl2_advanced/webgl2_advanced.mjs"
+      ),
+      "./rive_threads.mjs": path.resolve(
+        __dirname,
+        "npm/webgl2_threads/webgl2_threads.mjs"
+      ),
+      "package.json": path.resolve(__dirname, "npm/webgl2_threads/package.json"),
+    },
+  },
+  output: {
+    ...webgl2.output,
+    path: path.resolve(__dirname, "npm/webgl2_threads"),
+  },
+  plugins: highLevelPlugins("webgl2_threads"),
+};
+
 // Maps target names (passed via --env targets=... or npm run build:targets) to webpack configs.
-// Available targets: canvas, canvas-lite, canvas-single, webgl2
+// Available targets: canvas, canvas-lite, canvas-single, webgl2, webgl2-threads
 const TARGET_CONFIGS = {
   "canvas": canvas,
   "canvas-lite": canvasLite,
   "canvas-single": canvasSingle,
   "webgl2": webgl2,
+  "webgl2-threads": webgl2Threads,
 };
 
 module.exports = (env = {}) => {
@@ -355,5 +268,6 @@ module.exports = (env = {}) => {
         canvas,
         canvasLite,
         webgl2,
+        webgl2Threads,
       ];
 };

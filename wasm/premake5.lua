@@ -10,6 +10,17 @@ newoption({
     trigger = 'profiling-funcs',
     description = 'Build with --profiling-funcs for named WASM symbols in DevTools (uses -O2 instead of -Oz)',
 })
+
+newoption({
+    trigger = 'wasm_threads',
+    description = 'Build with pthreads, which only a cross origin isolated page can load',
+})
+if _OPTIONS['wasm_threads'] then
+    -- Workspace wide, so every library shares the pthread memory model.
+    buildoptions({ '-pthread' })
+    linkoptions({ '-pthread' })
+end
+
 RIVE_RUNTIME_DIR = os.isdir('../../runtime') and '../../runtime' or './submodules/rive-runtime'
 dofile(RIVE_RUNTIME_DIR .. '/premake5_v2.lua')
 
@@ -30,7 +41,7 @@ local function finalizeGlue(moduleName)
     postbuildcommands({
         'python3 '
             .. path.getabsolute('./finalize_glue.py')
-            .. ' '
+            .. (_OPTIONS['wasm_threads'] and ' --threads ' or ' ')
             .. path.getabsolute(RIVE_BUILD_OUT)
             .. '/'
             .. moduleName,
@@ -146,6 +157,18 @@ do
     end
 
     filter({})
+
+    if _OPTIONS['wasm_threads'] then
+        linkoptions({
+            -- A browser starts a thread past the pool only once the page
+            -- yields, so it covers 6 job threads, the worker scheduler and 8
+            -- workers' own threads.
+            '-s PTHREAD_POOL_SIZE=16',
+            -- Growth stays on; the glue rechecks its heap views at each access.
+            '-Wno-pthreads-mem-growth',
+            '--pre-js ' .. path.getabsolute('./js/threads.js'),
+        })
+    end
 
     kind('ConsoleApp')
     language('C++')

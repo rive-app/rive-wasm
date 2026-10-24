@@ -1,0 +1,43 @@
+{
+  "name": "@rive-app/webgl2-threads",
+  "version": "2.37.0",
+  "description": "Rive's webgl2 based web api, with threads on cross origin isolated pages.",
+  "main": "rive.js",
+  "homepage": "https://rive.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rive-app/rive-wasm/tree/master/js"
+  },
+  "keywords": [
+    "rive",
+    "animation"
+  ],
+  "author": "Rive",
+  "contributors": [
+    "Luigi Rosso <luigi@rive.app> (https://rive.app)",
+    "Maxwell Talbot <max@rive.app> (https://rive.app)",
+    "Arthur Vivian <arthur@rive.app> (https://rive.app)",
+    "Umberto Sonnino <umberto@rive.app> (https://rive.app)",
+    "Matthew Sullivan <matt.j.sullivan@gmail.com> (mailto:matt.j.sullivan@gmail.com)",
+    "Chris Dalton <chris@rive.app> (https://rive.app)"
+  ],
+  "license": "MIT",
+  "files": [
+    "rive.js",
+    "rive.wasm",
+    "rive_fallback.wasm",
+    "rive_threads.wasm",
+    "rive.js.map",
+    "rive.d.ts",
+    "rive_advanced.mjs.d.ts",
+    "runtimeLoader.d.ts",
+    "utils",
+    "semantics"
+  ],
+  "typings": "rive.d.ts",
+  "dependencies": {},
+  "browser": {
+    "fs": false,
+    "path": false
+  }
+}

@@ -17,7 +17,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 JS_DIR="$(pwd)"
 
 # High-level runtime packages built by webpack.config.js into npm/ (the ones consumers install).
-PACKAGES=(canvas canvas_lite canvas_single webgl2)
+PACKAGES=(canvas canvas_lite canvas_single webgl2 webgl2_threads)
 
 # `named-exports` is inherent to these bundled CommonJS packages (TypeScript can
 # see named exports that Node cannot statically detect from the single bundled

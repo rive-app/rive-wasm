@@ -48,6 +48,7 @@ node_modules
 /js/npm/canvas_advanced_lite/canvas_advanced.mjs
 /js/npm/**/rive.wasm
 /js/npm/**/rive_fallback.wasm
+/js/npm/**/rive_threads.wasm
 /js/npm/**/rive.js
 /js/npm/**/rive.js.map
 /js/npm/**/rive.d.ts
@@ -58,6 +59,7 @@ node_modules
 /js/npm/webgl_advanced_single/webgl_advanced_single.mjs
 /js/npm/webgl_advanced/webgl_advanced.mjs
 /js/npm/webgl2_advanced/webgl2_advanced.mjs
+/js/npm/webgl2_threads/webgl2_threads.mjs
 /js/examples/**/package-lock.json
 /wasm/examples/**/package-lock.json
 /wasm/examples/**/docs

@@ -59,7 +59,7 @@ RENDERER_FLAGS="--renderer=c2d --no-rive-decoders "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
-while getopts "clswtr:" flag; do
+while getopts "clswtmr:" flag; do
     case "${flag}" in
     c)
         # compatibility mode, disable simd
@@ -83,6 +83,11 @@ while getopts "clswtr:" flag; do
         # Runs unsigned script modules, for test builds of locally baked files
         OPTIONS=$((OPTIONS + 1))
         PREMAKE_FLAGS+="--with_rive_tools "
+        ;;
+    m)
+        # pthreads, for cross origin isolated pages
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--wasm_threads "
         ;;
     r)
         OPTIONS=$((OPTIONS + 2))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""finalize_glue.py <glue.mjs> [...]
+"""finalize_glue.py [--threads] <glue.mjs> [...]
 
 With the bump from Emsdk 3.x to 4.x, the JS glue has some breaking changes
 we need to account for to prevent a breaking change in the module format and
@@ -11,6 +11,11 @@ module with `export default Rive;` and document.currentScript-based script
 location, no import.meta. Strips the UMD tail and appends the export.
 
 The UMD tail cannot be kept alongside the export
+
+--threads takes a pthread build, whose glue ends in a pthread autostart after
+the UMD tail. Its module wraps the glue in a function and exports a factory
+that starts the pthread workers from that function's own source, so a worker
+needs no script URL, which a page loading rive.js from a CDN could not give it.
 
 Exits nonzero if the emcc output shape drifts. Safe to re-run.
 """
@@ -30,6 +35,28 @@ UMD_TAIL = re.compile(
     re.VERBOSE,
 )
 
+# What --threads expects after the UMD tail: a worker named em-pthread starts
+# the module itself.
+PTHREAD_TAIL = re.compile(
+    r"""\s*
+        var\s+isPthread\s*=\s*
+            globalThis\.self\?\.name\?\.startsWith\(\s*["']em-pthread["']\s*\)\s*;\s*
+        isPthread\s*&&\s*Rive\s*\(\s*\)\s*;?\s*
+        $""",
+    re.VERBOSE,
+)
+
+THREADS_EXPORT = """
+let riveWorker;
+export default (moduleArg = {}) =>
+  Rive({
+    mainScriptUrlOrBlob: (riveWorker ??= new Blob(["(" + riveGlue + ")()"], {
+      type: "text/javascript",
+    })),
+    ...moduleArg,
+  });
+"""
+
 
 def mask_line_comments(src: str) -> str:
     """Blank out whole-line // comments, preserving every offset.
@@ -45,18 +72,19 @@ def mask_line_comments(src: str) -> str:
     )
 
 
-def finalize(path: str) -> None:
+def finalize(path: str, threads: bool) -> None:
     with open(path, encoding="utf-8") as f:
         src = f.read()
 
     code = mask_line_comments(src)
+    export = THREADS_EXPORT if threads else "\nexport default Rive;\n"
 
     if "import.meta" in code:
         sys.exit(
             f"finalize_glue: {path}: contains import.meta — "
             "unexpected emcc output shape (was --oformat=js dropped?)"
         )
-    if src.rstrip().endswith("export default Rive;"):
+    if src.rstrip().endswith(export.strip()):
         if "module.exports" in code:
             sys.exit(
                 f"finalize_glue: {path}: finalized export still contains "
@@ -70,6 +98,19 @@ def finalize(path: str) -> None:
         print(f"finalize_glue: {path}: already finalized, skipping")
         return
 
+    autostart = ""
+    if threads:
+        tail = PTHREAD_TAIL.search(code)
+        if tail is None:
+            sys.exit(
+                f"finalize_glue: {path}: no pthread autostart after the UMD "
+                "tail — was -pthread dropped, or did emcc drift? update "
+                "PTHREAD_TAIL"
+            )
+        autostart = src[tail.start() :].strip()
+        src = src[: tail.start()]
+        code = code[: tail.start()]
+
     matches = list(UMD_TAIL.finditer(code))
     if len(matches) != 1:
         sys.exit(
@@ -77,7 +118,10 @@ def finalize(path: str) -> None:
             f"{len(matches)} — emcc output shape drifted; update UMD_TAIL"
         )
 
-    out = src[: matches[0].start()] + "\nexport default Rive;\n"
+    glue = src[: matches[0].start()]
+    if threads:
+        glue = f"function riveGlue() {{\n{glue}\n{autostart}\nreturn Rive;\n}}\nconst Rive = riveGlue();\n"
+    out = glue + export
     code_out = code[: matches[0].start()]
     if "module.exports" in code_out:
         sys.exit(f"finalize_glue: {path}: UMD strip left module.exports behind")
@@ -93,7 +137,10 @@ def finalize(path: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.exit("usage: finalize_glue.py <glue.mjs> [...]")
-    for p in sys.argv[1:]:
-        finalize(p)
+    args = sys.argv[1:]
+    threads = "--threads" in args
+    paths = [arg for arg in args if arg != "--threads"]
+    if not paths:
+        sys.exit("usage: finalize_glue.py [--threads] <glue.mjs> [...]")
+    for p in paths:
+        finalize(p, threads)

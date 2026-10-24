@@ -7,6 +7,7 @@ module.exports = {
     "rive_advanced.mjs":
       "<rootDir>/npm/canvas_advanced_single/canvas_advanced_single.mjs",
     "package.json": "<rootDir>/npm/canvas_advanced_single/package.json",
+    "rive_threads.mjs": "<rootDir>/test/no_threads.js",
   },
   "transformIgnorePatterns": [
     // Needed to handle ES6 rive-canvas module
