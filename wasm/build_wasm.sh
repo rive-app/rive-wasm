@@ -124,12 +124,14 @@ PREMAKE_FLAGS+="--scripts=$RUNTIME_DIR/build "
 
 # The link does not track its --pre-js input, so a changed bundle would
 # otherwise be silently left out.
-BUNDLE=$RUNTIME_DIR/src/wasm/web/rive_scripting_pre.js
 if [[ "$PREMAKE_FLAGS" == *scripting_vm=both* ]]; then
-    for glue in "$OUT_DIR"/*.mjs; do
-        if [[ $BUNDLE -nt $glue ]]; then
-            rm -f "$glue" "${glue%.mjs}.wasm"
-        fi
+    for BUNDLE in "$RUNTIME_DIR"/src/wasm/web/rive_scripting_pre.js \
+        "$RUNTIME_DIR"/src/wasm/web/rive_audio_worklet_pre.js; do
+        for glue in "$OUT_DIR"/*.mjs; do
+            if [[ $BUNDLE -nt $glue ]]; then
+                rm -f "$glue" "${glue%.mjs}.wasm"
+            fi
+        done
     done
 fi
 

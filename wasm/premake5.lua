@@ -231,6 +231,15 @@ do
                 RIVE_RUNTIME_DIR .. '/src/wasm/web/rive_scripting_pre.js'
             ),
         })
+        if _OPTIONS['wasm_threads'] then
+            -- Script audio plays on a worklet the build carries, so a page
+            -- serves nothing beside the runtime for it.
+            linkoptions({
+                '--pre-js ' .. path.getabsolute(
+                    RIVE_RUNTIME_DIR .. '/src/wasm/web/rive_audio_worklet_pre.js'
+                ),
+            })
+        end
     end
 
     filter({ 'options:with_rive_scripting' })
