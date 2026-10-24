@@ -5,7 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.47.0](https://github.com/rive-app/rive-wasm/compare/2.46.0...2.47.0)
+## [2.47.1](https://github.com/rive-app/rive-wasm/compare/2.47.0...2.47.1)
+
+### Merged
+
+- fix(runtime_wasm): play script audio in webgl2-threads without a hosted worklet [`#15082`](https://github.com/rive-app/rive-wasm/pull/15082)
+- chore: tag 2.47.0 [`#441`](https://github.com/rive-app/rive-wasm/pull/441)
+- fix(metal/ore): Use MTLStorageModeManaged for uploadable textures on Intel [`#15063`](https://github.com/rive-app/rive-wasm/pull/15063)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`e8f45f9`](https://github.com/rive-app/rive-wasm/commit/e8f45f9745892ebb844f6d72aeeceacfc2af9a72)
+- chore(downstream): advance submodule/refs [`15f390d`](https://github.com/rive-app/rive-wasm/commit/15f390d9b164e1dd6d500e3448e4d3995b940cba)
+
+## [2.47.0](https://github.com/rive-app/rive-wasm/compare/2.46.0...2.47.0) - 2026-10-24
 
 ### Merged
 
