@@ -13,6 +13,7 @@ import {
   registerTouchInteractions,
   KeyboardInteractions,
   FocusSessionState,
+  GamepadInteractions,
   sanitizeUrl,
   BLANK_URL,
   ImageWrapper,
@@ -116,6 +117,19 @@ export interface RiveFocusOptions {
    * @default false to prevent unwanted focus interruptions
    */
   allowFocusInterrupt: boolean;
+}
+
+// Options for gamepad input
+export interface RiveGamepadOptions {
+  /**
+   * When true, button and stick input only reaches the graphic while DOM focus is
+   * on the canvas (or its accessibility overlay). While focus is elsewhere,
+   * controllers still report as connected, but their input is held at rest.
+   * Useful when several gamepad-driven graphics share a page.
+   *
+   * @default false
+   */
+  requireFocus?: boolean;
 }
 
 // Interface for the Layout static method constructor
@@ -1569,6 +1583,10 @@ export interface RiveParameters {
    */
   focusOptions?: RiveFocusOptions;
   /**
+   * Optional settings for gamepad input
+   */
+  gamepadOptions?: RiveGamepadOptions;
+  /**
    * Allow the runtime to automatically load assets hosted in Rive's CDN.
    * enabled by default.
    */
@@ -1592,6 +1610,11 @@ export interface RiveParameters {
    * will be attached to the <canvas> element
    */
   shouldDisableRiveListeners?: boolean;
+  /**
+   * Turn off sending gamepad input to Rive. Connected game controllers are not read and the
+   * state machine receives no gamepad events.
+   */
+  shouldDisableGamepad?: boolean;
   /**
    * For Rive Listeners, allows scrolling behavior to still occur on canvas elements
    * when a touch/drag action is performed on touch-enabled devices. Otherwise,
@@ -2338,6 +2361,9 @@ export class Rive {
   // Manages keyboard and DOM-focus interactions for the canvas.
   private _keyboardInteractions: KeyboardInteractions | null = null;
 
+  // Polls game controllers and forwards input to the first playing state machine.
+  private _gamepadInteractions: GamepadInteractions | null = null;
+
   // Runtime file
   private file: rc.File;
 
@@ -2384,6 +2410,12 @@ export class Rive {
   }
 
   private shouldDisableRiveListeners = false;
+
+  private shouldDisableGamepad = false;
+
+  private _gamepadOptions: RiveGamepadOptions = {
+    requireFocus: false,
+  };
 
   private automaticallyHandleEvents = false;
 
@@ -2504,6 +2536,8 @@ export class Rive {
     this.riveFile = params.riveFile;
     this.layout = params.layout ?? new Layout();
     this.shouldDisableRiveListeners = !!params.shouldDisableRiveListeners;
+    this.shouldDisableGamepad = !!params.shouldDisableGamepad;
+    this._gamepadOptions = params.gamepadOptions ?? this._gamepadOptions;
     this.isTouchScrollEnabled = !!params.isTouchScrollEnabled;
     if (params.automaticallyHandleEvents) {
       warnOnce(
@@ -2836,6 +2870,7 @@ export class Rive {
       });
 
       this.ensureKeyboardInteractions();
+      this.ensureGamepadInteractions();
     }
   }
 
@@ -2921,6 +2956,52 @@ export class Rive {
     this._prevWantsTextInputSession = false;
     this._accessibilityOverlay?.releaseEditingHost(null, null);
   }
+
+  // Survives play/pause/stop so the state machine only receives missed changes on resume.
+  private ensureGamepadInteractions(): void {
+    if (
+      this._gamepadInteractions ||
+      this.shouldDisableGamepad ||
+      this.shouldDisableRiveListeners
+    ) {
+      return;
+    }
+    this._gamepadInteractions = new GamepadInteractions({
+      requireFocus: !!this._gamepadOptions.requireFocus,
+      isFocusWithin: this.isFocusWithinCanvas,
+    });
+  }
+
+  private cleanupGamepadInteractions(): void {
+    this._gamepadInteractions?.dispose();
+    this._gamepadInteractions = null;
+  }
+
+  private isFocusWithinCanvas = (): boolean => {
+    if (typeof document === "undefined") {
+      return false;
+    }
+    // Inside a shadow root, document.activeElement is the shadow host.
+    const root =
+      this.canvas instanceof HTMLCanvasElement ? this.canvas.getRootNode() : null;
+    const active =
+      (typeof ShadowRoot !== "undefined" && root instanceof ShadowRoot
+        ? root.activeElement
+        : null) ?? document.activeElement;
+    if (!active) {
+      return false;
+    }
+    // Canvas, overlay and the text input proxy.
+    if (this._keyboardInteractions) {
+      return this._keyboardInteractions.isInFocusDomain(active);
+    }
+    if (active === this.canvas) {
+      return true;
+    }
+    const overlay =
+      this._accessibilityOverlay?.getSemanticOverlayContainer() ?? null;
+    return !!overlay && overlay.contains(active);
+  };
 
   /**
    * Remove Rive Listeners setup on the canvas
@@ -3372,8 +3453,9 @@ export class Rive {
    * due to state changes, view model property changes, etc.
    * 
    * @param elapsedTime time to advance the state machine by
+   * @param frameTime the rAF timestamp; omitted by pointer drains, which skip gamepad polling.
    */
-  private advanceAndReportChanges(elapsedTime: number): void {
+  private advanceAndReportChanges(elapsedTime: number, frameTime?: number): void {
     // - Advance non-paused animations by the elapsed number of seconds
     // - Advance any animations that require scrubbing
     // - Advance to the first frame even when autoplay is false
@@ -3395,6 +3477,14 @@ export class Rive {
     const activeStateMachines = this.animator.stateMachines.filter(
       (a) => a.playing,
     );
+    // Gamepad input lands before this frame's advance.
+    // Also, frameTime is not passed for other places this function is called (i.e. after pointer events)
+    if (frameTime !== undefined) {
+      this._gamepadInteractions?.handleGamepadInputs(
+        frameTime,
+        activeStateMachines[0]?.instance,
+      );
+    }
     // Instrument the first 3 frames so the Performance timeline shows precise
     // per-call latency for advance, draw, and flush without polluting the trace.
     const _perfFrame =
@@ -3529,6 +3619,10 @@ export class Rive {
     // Poll focus state to see whether or not to blur or pull up a virtual keyboard for any change to a text input node.
     this.pollFocusState();
 
+    // Reattaches after reset(), which doesn't rerun setupRiveListeners. Runs after the
+    // advance so a new state machine has its initial focus before input arrives.
+    this.ensureGamepadInteractions();
+
     // Handle callbacks for main view model property changes
     this._viewModelInstance?.handleCallbacks();
 
@@ -3575,7 +3669,7 @@ export class Rive {
     const elapsedTime = (time - this.lastRenderTime) / 1000;
     this.lastRenderTime = time;
 
-    this.advanceAndReportChanges(elapsedTime);
+    this.advanceAndReportChanges(elapsedTime, time);
 
     const { renderer } = this;
     // Do not draw on 0 canvas size
@@ -3792,6 +3886,7 @@ export class Rive {
       this.eventCleanup();
     }
     this.cleanupKeyboardInteractions();
+    this.cleanupGamepadInteractions();
     // Tear down semantics before deleting state machines — the overlay's action
     // closures point at instances that stop() is about to free.
     this.cleanupSemantics();

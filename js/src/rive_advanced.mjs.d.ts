@@ -1201,6 +1201,16 @@ export declare class StateMachineInstance {
   textInput(text: string): boolean;
 
   /**
+   * Submit one frame of gamepad input encoded in the v2 wire format
+   * (see rive-runtime/include/rive/input/gamepad_batch.hpp). Events route to the primary focus
+   * node and bubble up its ancestors; with nothing focused, only scripted drawables receive them.
+   * @param batch - little-endian v2 batch of connected/update/disconnected records
+   * @returns false if the batch was rejected (bad version, malformed record, unknown device,
+   *   or no focus manager)
+   */
+  submitGamepadsFromBuffer(batch: Uint8Array): boolean;
+
+  /**
    * The selected text of the focused element, or an empty string when nothing with a
    * selection is focused. Used to fill the clipboard on copy/cut. An obscured field 
    * (i.e. a password) reports empty string.

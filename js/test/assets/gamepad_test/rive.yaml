@@ -1,0 +1,4 @@
+name: gamepad_test
+logs:
+  file: build/rive.log
+  problems: build/problems.log

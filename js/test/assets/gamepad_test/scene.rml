@@ -1,0 +1,96 @@
+<Rive version="1" kind="fragment">
+<!-- Gamepad jest fixture. Pad.a/b: 1 while standard button 0/1 is held.
+     Pad.connected: 1 after a connected event, 0 after disconnected. -->
+<Artboard defaultStateMachineId="0:7" viewModelId="0:40" viewModelInstanceId="0:41"
+          width="100" height="100" styleId="0:5" name="Gamepad" id="0:2">
+<LayoutComponentStyle name="Artboard Style" id="0:5"/>
+<Shape x="50" y="50" name="Input Surface" id="0:6">
+    <FocusData id="0:3"/>
+    <Rectangle width="100" height="100" cornerRadiusTL="0" name="Path" id="0:10"/>
+    <Fill name="Fill" id="0:11"><SolidColor colorValue="FF14171C" name="Color" id="0:12"/></Fill>
+</Shape>
+<LinearAnimation duration="1" name="Idle" id="0:30"/>
+<StateMachine name="State Machine 1" id="0:7">
+<StateMachineListener targetId="0:6" name="A down" id="0:200">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:201">
+        <GamepadInput kind="button" mapping="standard" inputIndex="0" buttonPhase="1" id="0:202"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:203">
+    <BindablePropertyNumber propertyValue="1" id="0:204">
+        <DataBindContext sourcePathIds="0:40-0:100" propertyKey="636" direction="true" id="0:205"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineListener targetId="0:6" name="A up" id="0:210">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:211">
+        <GamepadInput kind="button" mapping="standard" inputIndex="0" buttonPhase="2" id="0:212"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:213">
+    <BindablePropertyNumber propertyValue="0" id="0:214">
+        <DataBindContext sourcePathIds="0:40-0:100" propertyKey="636" direction="true" id="0:215"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineListener targetId="0:6" name="B down" id="0:220">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:221">
+        <GamepadInput kind="button" mapping="standard" inputIndex="1" buttonPhase="1" id="0:222"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:223">
+    <BindablePropertyNumber propertyValue="1" id="0:224">
+        <DataBindContext sourcePathIds="0:40-0:101" propertyKey="636" direction="true" id="0:225"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineListener targetId="0:6" name="B up" id="0:230">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:231">
+        <GamepadInput kind="button" mapping="standard" inputIndex="1" buttonPhase="2" id="0:232"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:233">
+    <BindablePropertyNumber propertyValue="0" id="0:234">
+        <DataBindContext sourcePathIds="0:40-0:101" propertyKey="636" direction="true" id="0:235"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineListener targetId="0:6" name="Connected" id="0:240">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:241">
+        <GamepadInput kind="connected" id="0:242"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:243">
+    <BindablePropertyNumber propertyValue="1" id="0:244">
+        <DataBindContext sourcePathIds="0:40-0:102" propertyKey="636" direction="true" id="0:245"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineListener targetId="0:6" name="Disconnected" id="0:250">
+    <ListenerInputTypeGamepad listenerTypeValue="gamepad" id="0:251">
+        <GamepadInput kind="disconnected" id="0:252"/>
+    </ListenerInputTypeGamepad>
+    <ListenerViewModelChange id="0:253">
+    <BindablePropertyNumber propertyValue="0" id="0:254">
+        <DataBindContext sourcePathIds="0:40-0:102" propertyKey="636" direction="true" id="0:255"/>
+    </BindablePropertyNumber>
+</ListenerViewModelChange>
+</StateMachineListener>
+<StateMachineLayer name="Main" id="0:8">
+    <AnyState x="400" y="-120" id="0:60"/>
+    <ExitState x="600" y="-120" id="0:61"/>
+    <EntryState x="0" y="100" id="0:62">
+        <StateTransition stateToId="0:70" id="0:63"/>
+    </EntryState>
+    <AnimationState x="200" y="100" animationId="0:30" stateName="Ready" id="0:70">
+        <FocusActionTarget targetId="0:6" id="0:71"/>
+    </AnimationState>
+</StateMachineLayer>
+</StateMachine>
+</Artboard>
+<ViewModel defaultInstanceId="0:41" name="Pad" id="0:40">
+<ViewModelPropertyNumber name="a" id="0:100"/>
+<ViewModelPropertyNumber name="b" id="0:101"/>
+<ViewModelPropertyNumber name="connected" id="0:102"/>
+</ViewModel>
+<ViewModelInstance exports="true" name="Default" id="0:41">
+<ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:100" id="0:110"/>
+<ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:101" id="0:111"/>
+<ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:102" id="0:112"/>
+</ViewModelInstance>
+</Rive>

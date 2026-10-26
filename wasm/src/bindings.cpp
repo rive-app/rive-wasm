@@ -1323,6 +1323,15 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                   optional_override([](rive::StateMachineInstance& self, std::string text) -> bool {
                       return self.textInput(text);
                   }))
+        .function("submitGamepadsFromBuffer",
+                  optional_override([](rive::StateMachineInstance& self,
+                                       emscripten::val byteArray) -> bool {
+                      const auto l = byteArray["byteLength"].as<unsigned>();
+                      std::vector<uint8_t> buffer(l);
+                      emscripten::val memoryView{emscripten::typed_memory_view(l, buffer.data())};
+                      memoryView.call<void>("set", byteArray);
+                      return self.submitGamepadsFromBuffer(buffer.data(), l);
+                  }))
         .function("selectedText",
                   optional_override([](rive::StateMachineInstance& self) -> std::string {
                       return self.selectedText();
