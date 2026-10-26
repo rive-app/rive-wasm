@@ -2755,6 +2755,7 @@ export class Rive {
     // Ensure loaded is marked as false if loading new file
     this.loaded = false;
     this.readyForPlaying = false;
+    this.lastRenderTime = 0;
 
     // Ensure the runtime is loaded
     RuntimeLoader.awaitInstance()
@@ -3331,7 +3332,7 @@ export class Rive {
   public drawFrame() {
     if (document?.timeline?.currentTime) {
       if (this.loaded && this.artboard && !this.frameRequestId) {
-        this._boundDraw(document!.timeline!.currentTime as number);
+        this.draw(null);
         this.runtime?.resolveAnimationFrame();
       }
     } else {
@@ -3435,9 +3436,11 @@ export class Rive {
     }
   }
 
-  // Tracks the last timestamp at which the animation was rendered. Used only in
-  // draw().
-  private lastRenderTime: number;
+  // rAF time of the last frame; 0 makes the next frame start the clock.
+  private lastRenderTime = 0;
+
+  // performance.now() at the current rAF batch's start; first frames seed from it.
+  private static batchStart = { time: -1, now: 0 };
 
   // Tracks the current animation frame request
   private frameRequestId: number | null = null;
@@ -3636,9 +3639,9 @@ export class Rive {
 
   /**
    * Draw rendering loop; renders animation frames at the correct time interval.
-   * @param time the time at which to render a frame
+   * @param time the rAF timestamp, or null to draw now without advancing
    */
-  private draw(time: number, onSecond?: VoidCallback): void {
+  private draw(time: number | null, onSecond?: VoidCallback): void {
     // Clear the frameRequestId, as we're now rendering a fresh frame
     this.frameRequestId = null;
     // load() tears the artboard down and re-inits asynchronously; a frame
@@ -3653,21 +3656,32 @@ export class Rive {
     const _perfFrame =
       this.enablePerfMarks && this.frameCount < 3 ? this.frameCount : -1;
 
-    // On the first pass, make sure lastTime has a valid value
-    if (!this.lastRenderTime) {
+    const batch = Rive.batchStart;
+    if (time !== null && batch.time !== time) {
+      batch.time = time;
+      batch.now = before;
+    }
+    // A frame queued during a long task is stamped inside it: start at now.
+    if (!this.lastRenderTime && time !== null) {
+      this.lastRenderTime = Math.max(time, batch.now);
+    } else if (time !== null && time < this.lastRenderTime) {
+      // The now-seed can lead the next stamp by a vsync; restart, don't freeze.
       this.lastRenderTime = time;
     }
+    // Out-of-frame draws keep the clock: timeline time is frozen per task.
+    const frameTime =
+      time === null ? this.lastRenderTime : Math.max(time, this.lastRenderTime);
 
     // Handle the onSecond callback
-    this.renderSecondTimer += time - this.lastRenderTime;
+    this.renderSecondTimer += frameTime - this.lastRenderTime;
     if (this.renderSecondTimer > 5000) {
       this.renderSecondTimer = 0;
       onSecond?.();
     }
 
     // Calculate the elapsed time between frames in seconds
-    const elapsedTime = (time - this.lastRenderTime) / 1000;
-    this.lastRenderTime = time;
+    const elapsedTime = (frameTime - this.lastRenderTime) / 1000;
+    this.lastRenderTime = frameTime;
 
     this.advanceAndReportChanges(elapsedTime, time);
 
