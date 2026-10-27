@@ -5,7 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.47.1](https://github.com/rive-app/rive-wasm/compare/2.47.0...2.47.1)
+## [2.48.0](https://github.com/rive-app/rive-wasm/compare/2.47.1...2.48.0)
+
+### Merged
+
+- Bound a Luau module top level [`#15079`](https://github.com/rive-app/rive-wasm/pull/15079)
+- chore(global text styles): data bind to run, and complete libraries [`#15035`](https://github.com/rive-app/rive-wasm/pull/15035)
+- feat(runtime, editor): capture-phase listeners for keys and pointers [`#14928`](https://github.com/rive-app/rive-wasm/pull/14928)
+- fix(runtime): measure scroll velocity on a clock the tests control [`#15132`](https://github.com/rive-app/rive-wasm/pull/15132)
+- fix(editor, runtime): listener vm from property [`#15121`](https://github.com/rive-app/rive-wasm/pull/15121)
+- fix(runtime): bound undelivered fetch answers and never send a fetch cancelled while queued [`#15086`](https://github.com/rive-app/rive-wasm/pull/15086)
+- fix(scripting): compile closures past 64 parameter cells ahead of time [`#15118`](https://github.com/rive-app/rive-wasm/pull/15118)
+- feat: make TextStyle.fontAssetId animatable [`#15064`](https://github.com/rive-app/rive-wasm/pull/15064)
+- fix(js): start the frame clock at the first rAF frame, not the load task [`#15096`](https://github.com/rive-app/rive-wasm/pull/15096)
+- chore: tag 2.47.1 [`#443`](https://github.com/rive-app/rive-wasm/pull/443)
+- refactor(renderer): wrap allocator release in virtual call [`#15110`](https://github.com/rive-app/rive-wasm/pull/15110)
+- fix(runtime): skip layout re-collection on Solo switch without layout… [`#15114`](https://github.com/rive-app/rive-wasm/pull/15114)
+- feat(js): Add gamepad support for JS runtime [`#15066`](https://github.com/rive-app/rive-wasm/pull/15066)
+- feat(scripting): faster lane sync and compiled scripts, lane clocks, release builds [`#15091`](https://github.com/rive-app/rive-wasm/pull/15091)
+- fix(scripting): play script audio through the iOS silent switch [`#15090`](https://github.com/rive-app/rive-wasm/pull/15090)
+- ci(runtime_wasm): build release wasm flavors in parallel [`#15088`](https://github.com/rive-app/rive-wasm/pull/15088)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`8cc0236`](https://github.com/rive-app/rive-wasm/commit/8cc0236ca5e9df028c9ffab43f68f3356d30ef1e)
+- chore(downstream): advance submodule/refs [`6fd63d8`](https://github.com/rive-app/rive-wasm/commit/6fd63d802b500710df743b8b5a4fc7fb08f1b0d5)
+- chore(downstream): advance submodule/refs [`542ba20`](https://github.com/rive-app/rive-wasm/commit/542ba2001e9700beeda83190cb3c57846b1a5464)
+- chore(downstream): advance submodule/refs [`49faf36`](https://github.com/rive-app/rive-wasm/commit/49faf3652462c39bec2d3a4065c7eb632c200f28)
+- chore(downstream): advance submodule/refs [`6f8ffba`](https://github.com/rive-app/rive-wasm/commit/6f8ffbad8742e25802c5540940e513cbe7296fa5)
+- chore(downstream): advance submodule/refs [`951bfde`](https://github.com/rive-app/rive-wasm/commit/951bfdea217a53ea8c103fcd0e3f33bb99b0fc27)
+- chore(downstream): advance submodule/refs [`ab47b3d`](https://github.com/rive-app/rive-wasm/commit/ab47b3dc6a9389a0ac0fa269cccc69062d8077c8)
+- chore(downstream): advance submodule/refs [`cbb0692`](https://github.com/rive-app/rive-wasm/commit/cbb0692bff0da3ee4b8fc5c1db69f92cc5c66340)
+- chore(downstream): advance submodule/refs [`982dcfd`](https://github.com/rive-app/rive-wasm/commit/982dcfd331f61cad2f46b176fc7dcc2c60028787)
+- chore(downstream): advance submodule/refs [`bade998`](https://github.com/rive-app/rive-wasm/commit/bade9980b1ff11d54aed2a746b19386c755b670b)
+- chore(downstream): advance submodule/refs [`0661974`](https://github.com/rive-app/rive-wasm/commit/06619749aaab1cd5c020a7440d12d5710af869d5)
+
+## [2.47.1](https://github.com/rive-app/rive-wasm/compare/2.47.0...2.47.1) - 2026-10-24
 
 ### Merged
 
