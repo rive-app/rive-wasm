@@ -46,6 +46,9 @@ export interface RiveCanvas {
   RenderPaintStyle: typeof RenderPaintStyle;
   StrokeCap: typeof StrokeCap;
   StrokeJoin: typeof StrokeJoin;
+  StrokePosition: typeof StrokePosition;
+  ImageFilter: typeof ImageFilter;
+  ImageWrap: typeof ImageWrap;
   decodeAudio: DecodeAudio;
   decodeImage: DecodeImage;
   decodeFont: DecodeFont;
@@ -304,11 +307,15 @@ export declare class RenderPathWrapper {
   close(): void;
 }
 
+export declare class RenderImageWrapper {
+}
+
 export declare class RenderPaintWrapper {
   color(value: number): void;
   thickness(value: number): void;
   join(value: StrokeJoin): void;
   cap(value: StrokeCap): void;
+  strokePosition(value: StrokePosition): void;
   blendMode(value: BlendMode): void;
   style(value: RenderPaintStyle): void;
   linearGradient(sx: number, sy: number, ex: number, ey: number): void;
@@ -316,6 +323,19 @@ export declare class RenderPaintWrapper {
   addStop(color: number, stop: number): void;
   completeGradient(): void;
   gradientTransform(
+    xx: number,
+    xy: number,
+    yx: number,
+    yy: number,
+    tx: number,
+    ty: number,
+  ): void;
+
+  modulatedImage(
+    image: RenderImage,
+    filter: ImageFilter,
+    wrapX: ImageWrap,
+    wrapY: ImageWrap,
     xx: number,
     xy: number,
     yx: number,
@@ -351,6 +371,8 @@ export declare class CommandPath { }
 export declare class RenderPath extends RenderPathWrapper { }
 
 export declare class RenderPaint extends RenderPaintWrapper { }
+
+export declare class RenderImage extends RenderImageWrapper { }
 
 /////////////////////
 // CANVAS RENDERER //
@@ -1212,7 +1234,7 @@ export declare class StateMachineInstance {
 
   /**
    * The selected text of the focused element, or an empty string when nothing with a
-   * selection is focused. Used to fill the clipboard on copy/cut. An obscured field 
+   * selection is focused. Used to fill the clipboard on copy/cut. An obscured field
    * (i.e. a password) reports empty string.
    */
   selectedText(): string;
@@ -1539,6 +1561,23 @@ export enum BlendMode {
   saturation = 26,
   color = 27,
   luminosity = 28,
+}
+
+export enum ImageFilter {
+  bilinear,
+  nearest,
+}
+
+export enum ImageWrap {
+  clamp,
+  repeat,
+  mirror,
+}
+
+export enum StrokePosition {
+  inside,
+  center,
+  outside,
 }
 
 ///////////

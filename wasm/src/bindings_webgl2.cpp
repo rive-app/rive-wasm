@@ -3,10 +3,11 @@
 #ifdef RIVE_WEBGL2_RENDERER
 
 #include "rive/renderer/draw.hpp"
+#include "rive/renderer/rive_renderer.hpp"
 #include "rive/renderer/rive_render_factory.hpp"
 #include "rive/renderer/rive_render_image.hpp"
+#include "rive/renderer/rive_render_paint.hpp"
 #include "rive/renderer/gl/render_context_gl_impl.hpp"
-#include "rive/renderer/rive_renderer.hpp"
 #include "rive/renderer/gl/render_target_gl.hpp"
 #include "js_alignment.hpp"
 #include "webgl2_bridge.hpp"
@@ -96,6 +97,8 @@ private:
 // All objects are context free and keyed to actual resources the the specific GL contexts.
 class WebGL2Factory : public RiveRenderFactory
 {
+    using Super = RiveRenderFactory;
+
 public:
     static WebGL2Factory* Instance()
     {
@@ -126,6 +129,7 @@ public:
     rcp<RenderBuffer> makeRenderBuffer(RenderBufferType,
                                        RenderBufferFlags,
                                        size_t sizeInBytes) override;
+    rcp<RenderPaint> makeRenderPaint() override;
 
 private:
     WebGL2Factory() = default;
@@ -292,6 +296,24 @@ public:
 private:
     std::unique_ptr<uint8_t[]> m_data;
     PLSResourceID m_mutationID = 1; // So a 0-initialized PLS buffer will be out of sync.
+};
+
+// We need to handle modulated images specially (since we cannot prep the image without a renderer)
+class WebGL2RenderPaint : public LITE_RTTI_OVERRIDE(RiveRenderPaint, WebGL2RenderPaint)
+{
+    using Super = RiveRenderPaint;
+
+public:
+    void modulatedImage(const RenderImage* image,
+                        ImageSampler sampler,
+                        const Mat2D& matrix) override;
+
+    void prepModulatedImage(WebGL2Renderer* renderer);
+
+private:
+    rcp<const WebGL2RenderImage> m_cachedImage;
+    ImageSampler m_cachedSampler;
+    Mat2D m_cachedMatrix;
 };
 
 // High-level, context agnostic RenderBuffer for the WebGL2 system. Wraps the buffer contents in a
@@ -674,6 +696,13 @@ public:
     }
     void drawPath(RenderPath* path, RenderPaint* paint) override
     {
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+        if (auto* gl2Paint = lite_rtti_cast<WebGL2RenderPaint*>(paint); gl2Paint != nullptr)
+        {
+            gl2Paint->prepModulatedImage(this);
+        }
+#endif
+
         if (m_target != nullptr)
         {
             m_target->drawPath(path, paint);
@@ -841,11 +870,6 @@ public:
         m_plsSynchronizedBuffers.erase(webglBufferID);
     }
 
-private:
-#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
-    void deferredFlush();
-#endif
-
     // Resolves renderImage to something RiveRenderer can draw and returns
     // whether it's ready to draw
     bool prepImage(const RenderImage*& renderImage)
@@ -866,6 +890,11 @@ private:
         renderImage = ((WebGL2RenderImage*)webglRenderImage)->prep(this, m_contextGL);
         return renderImage != nullptr;
     }
+
+private:
+#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
+    void deferredFlush();
+#endif
 
     // A WebGL2 buffer becomes its synchronized GL buffer; anything else passes.
     rcp<RenderBuffer> toPLSBuffer(rcp<RenderBuffer> buffer)
@@ -1235,6 +1264,15 @@ rcp<RenderBuffer> WebGL2Factory::makeRenderBuffer(RenderBufferType type,
     return make_rcp<WebGL2RenderBuffer>(type, flags, sizeInBytes);
 }
 
+rcp<RenderPaint> WebGL2Factory::makeRenderPaint()
+{
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
+    return make_rcp<WebGL2RenderPaint>();
+#else
+    return Super::makeRenderPaint();
+#endif
+}
+
 void WebGL2Factory::onWebGL2BufferDeleted(WebGL2RenderBuffer* webglRenderBuffer)
 {
     for (WebGL2Renderer* renderer : m_renderers)
@@ -1258,6 +1296,39 @@ EM_JS(void, ensure_images_map, (), {
         Module["images"] = new Map();
     }
 });
+
+void WebGL2RenderPaint::modulatedImage(const RenderImage* image,
+                                       ImageSampler sampler,
+                                       const Mat2D& matrix)
+{
+    // We need to cache this image so that it can be prepped properly with the renderer (which
+    // we don't have yet).
+    m_cachedImage = ref_rcp(lite_rtti_cast<const WebGL2RenderImage*>(image));
+    m_cachedSampler = sampler;
+    m_cachedMatrix = matrix;
+
+    // Intentionally not calling Super::modulatedImage here, we can't do that until we can prep
+    // the image.
+}
+
+void WebGL2RenderPaint::prepModulatedImage(WebGL2Renderer* renderer)
+{
+    if (m_cachedImage == nullptr)
+    {
+        return;
+    }
+
+    const RenderImage* image = m_cachedImage.get();
+    if (!renderer->prepImage(image))
+    {
+        // Prepping failed for some reason, so we'll clear the modulated image set on this paint.
+        image = nullptr;
+    }
+
+    // *Now* we can call modulatedImage on the RiveRenderPaint and actually feed it something
+    // usable.
+    Super::modulatedImage(image, m_cachedSampler, m_cachedMatrix);
+}
 
 WebGL2RenderImage* adoptWebGL2Image(emscripten::val htmlImage, int width, int height)
 {
@@ -1353,17 +1424,28 @@ template <typename T> static std::vector<T> readTypedArray(const val& source)
     return values;
 }
 
+// Must match GRADIENT_TYPE_* in renderer.js
+enum class GradientTypeFromJS : int
+{
+    Linear,
+    Radial,
+    Angular,
+};
+
 RenderPaint* makeWebGL2Paint(RenderPaintStyle style,
                              ColorInt color,
                              float thickness,
                              StrokeJoin join,
                              StrokeCap cap,
+                             StrokePosition strokePosition,
                              float feather,
                              // Null when the paint has no gradient. The arguments after it are
                              // then ignored.
                              const val& gradientColors,
                              const val& gradientStops,
-                             bool gradientIsRadial,
+                             // gradient type as int because this is a JS binding and it doesn't
+                             // recognize the enum type.
+                             int gradientTypeAsInt,
                              float sx,
                              float sy,
                              float ex,
@@ -1373,7 +1455,17 @@ RenderPaint* makeWebGL2Paint(RenderPaintStyle style,
                              float yx,
                              float yy,
                              float tx,
-                             float ty)
+                             float ty,
+                             WebGL2RenderImage* image,
+                             ImageFilter imageFilter,
+                             ImageWrap wrapX,
+                             ImageWrap wrapY,
+                             float imgXX,
+                             float imgXY,
+                             float imgYX,
+                             float imgYY,
+                             float imgTX,
+                             float imgTY)
 {
     WebGL2Factory* factory = WebGL2Factory::Instance();
     rcp<RenderPaint> paint = factory->makeRenderPaint();
@@ -1382,7 +1474,15 @@ RenderPaint* makeWebGL2Paint(RenderPaintStyle style,
     paint->thickness(thickness);
     paint->join(join);
     paint->cap(cap);
+    paint->strokePosition(strokePosition);
     paint->feather(feather);
+    if (image != nullptr)
+    {
+        paint->modulatedImage(image,
+                              {ImageWrap(wrapX), ImageWrap(wrapY), ImageFilter(imageFilter)},
+                              {imgXX, imgXY, imgYX, imgYY, imgTX, imgTY});
+    }
+
     // This paint draws onto the atlas. The blend mode is applied when the atlas is composited back
     // to canvas 2D.
     if (!gradientColors.isNull())
@@ -1390,17 +1490,29 @@ RenderPaint* makeWebGL2Paint(RenderPaintStyle style,
         std::vector<ColorInt> colors = readTypedArray<ColorInt>(gradientColors);
         std::vector<float> stops = readTypedArray<float>(gradientStops);
         const size_t count = std::min(colors.size(), stops.size());
-        if (gradientIsRadial)
+        switch (GradientTypeFromJS(gradientTypeAsInt))
         {
-            // renderer.js gives the radius as a point on the circle.
-            float radius = Vec2D(ex - sx, ey - sy).length();
-            paint->shader(
-                factory->makeRadialGradient(sx, sy, radius, colors.data(), stops.data(), count));
-        }
-        else
-        {
-            paint->shader(
-                factory->makeLinearGradient(sx, sy, ex, ey, colors.data(), stops.data(), count));
+            case GradientTypeFromJS::Linear:
+            {
+                paint->shader(
+                    factory
+                        ->makeLinearGradient(sx, sy, ex, ey, colors.data(), stops.data(), count));
+                break;
+            }
+            case GradientTypeFromJS::Radial:
+            {
+                // renderer.js gives the radius as a point on the circle.
+                float radius = Vec2D(ex - sx, ey - sy).length();
+                paint->shader(
+                    factory
+                        ->makeRadialGradient(sx, sy, radius, colors.data(), stops.data(), count));
+                break;
+            }
+            case GradientTypeFromJS::Angular:
+            {
+                paint->shader(factory->makeAngularGradient(colors.data(), stops.data(), count));
+                break;
+            }
         }
         paint->shaderTransform(Mat2D(xx, xy, yx, yy, tx, ty));
     }
@@ -1418,9 +1530,10 @@ void webGL2PathPixelBounds(WebGL2Path* path,
                            float ty,
                            val outBounds)
 {
-    const IAABB bounds = gpu::PathDraw::calculatePixelBounds(Mat2D(xx, xy, yx, yy, tx, ty),
-                                                             asRiveRenderPath(path->get()),
-                                                             asRiveRenderPaint(paint));
+    const IAABB bounds =
+        gpu::PathDraw::calculatePixelBounds(Mat2D(xx, xy, yx, yy, tx, ty),
+                                            asRiveRenderPath(path->get()),
+                                            lite_rtti_cast_or_assert<RiveRenderPaint*>(paint));
     const int32_t values[4] = {bounds.left, bounds.top, bounds.right, bounds.bottom};
     outBounds.call<void>("set", val{typed_memory_view(4, values)});
 }

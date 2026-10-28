@@ -320,6 +320,16 @@ public:
     void passToJS(const Canvas2DRenderPaintWrapper& wrapper) override;
 };
 
+class Canvas2DAngularGradientShader : public Canvas2DGradientShader
+{
+public:
+    Canvas2DAngularGradientShader(const rive::ColorInt colors[], const float stops[], int count) :
+        Canvas2DGradientShader(colors, stops, count)
+    {}
+
+    void passToJS(const Canvas2DRenderPaintWrapper& wrapper) override;
+};
+
 class Canvas2DRenderPaintWrapper : public wrapper<rive::RenderPaint>
 {
 public:
@@ -331,6 +341,10 @@ public:
     void cap(rive::StrokeCap value) override { call<void>("cap", value); }
     void feather(float value) override { call<void>("feather", value); }
     void blendMode(rive::BlendMode value) override { call<void>("blendMode", value); }
+    void strokePosition(rive::StrokePosition value) override
+    {
+        call<void>("strokePosition", value);
+    }
 
     void style(rive::RenderPaintStyle value) override { call<void>("style", value); }
 
@@ -394,6 +408,40 @@ public:
     }
 
     void invalidateStroke() override {}
+
+    void modulatedImage(const rive::RenderImage* img,
+                        rive::ImageSampler sampler,
+                        const rive::Mat2D& xform) override
+    {
+        call<void>("modulatedImage",
+                   img,
+                   sampler.filter,
+                   sampler.wrapX,
+                   sampler.wrapY,
+                   xform[0],
+                   xform[1],
+                   xform[2],
+                   xform[3],
+                   xform[4],
+                   xform[5],
+                   allow_raw_pointers());
+    }
+
+    // Bound to JS as `modulatedImage` (rive_advanced.mjs.d.ts), which passes the sampler and matrix
+    // as individual values.
+    void jsModulatedImage(const rive::RenderImage* img,
+                          rive::ImageFilter filter,
+                          rive::ImageWrap wrapX,
+                          rive::ImageWrap wrapY,
+                          float xx,
+                          float xy,
+                          float yx,
+                          float yy,
+                          float tx,
+                          float ty)
+    {
+        modulatedImage(img, {wrapX, wrapY, filter}, rive::Mat2D{xx, xy, yx, yy, tx, ty});
+    }
 };
 
 void Canvas2DGradientShader::passStopsToJS(const Canvas2DRenderPaintWrapper& wrapper)
@@ -414,6 +462,12 @@ void Canvas2DLinearGradientShader::passToJS(const Canvas2DRenderPaintWrapper& wr
 void Canvas2DRadialGradientShader::passToJS(const Canvas2DRenderPaintWrapper& wrapper)
 {
     wrapper.call<void>("radialGradient", m_CenterX, m_CenterY, m_CenterX + m_Radius, m_CenterY);
+    passStopsToJS(wrapper);
+}
+
+void Canvas2DAngularGradientShader::passToJS(const Canvas2DRenderPaintWrapper& wrapper)
+{
+    wrapper.call<void>("angularGradient");
     passStopsToJS(wrapper);
 }
 
@@ -475,6 +529,13 @@ class Canvas2DFactory : public Factory
     {
         return rcp<RenderShader>(
             new Canvas2DRadialGradientShader(colors, stops, count, cx, cy, radius));
+    }
+
+    rcp<RenderShader> makeAngularGradient(const ColorInt colors[], // [count]
+                                          const float stops[],     // [count]
+                                          size_t count) override
+    {
+        return rcp<RenderShader>(new Canvas2DAngularGradientShader(colors, stops, count));
     }
 
     rcp<RenderPath> makeRenderPath(RawPath& path, FillRule fr) override
@@ -655,6 +716,11 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         .value("round", rive::StrokeJoin::round)
         .value("bevel", rive::StrokeJoin::bevel);
 
+    enum_<rive::StrokePosition>("StrokePosition")
+        .value("inside", rive::StrokePosition::inside)
+        .value("center", rive::StrokePosition::center)
+        .value("outside", rive::StrokePosition::outside);
+
     enum_<rive::BlendMode>("BlendMode")
         .value("srcOver", rive::BlendMode::srcOver)
         .value("additive", rive::BlendMode::additive)
@@ -698,6 +764,9 @@ EMSCRIPTEN_BINDINGS(RiveWASM_C2D)
         // radialGradient and addStop calls that JS provides.
         .function("shader", &Canvas2DRenderPaintWrapper::shader, allow_raw_pointers())
         .function("gradientTransform", &Canvas2DRenderPaintWrapper::jsGradientTransform)
+        .function("modulatedImage",
+                  &Canvas2DRenderPaintWrapper::jsModulatedImage,
+                  allow_raw_pointers())
         .allow_subclass<Canvas2DRenderPaintWrapper>("RenderPaintWrapper");
 
     class_<rive::RenderImage>("RenderImage")

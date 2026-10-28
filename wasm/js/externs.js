@@ -13,6 +13,11 @@ var Rive = {
     round: {},
     square: {},
   },
+  StrokePosition: {
+    inside: {},
+    center: {},
+    outside: {},
+  },
   StrokeJoin: {
     miter: {},
     round: {},
@@ -35,6 +40,15 @@ var Rive = {
     saturation: {},
     color: {},
     luminosity: {},
+  },
+  ImageFilter: {
+    bilinear: {},
+    nearest: {},
+  },
+  ImageWrap: {
+    clamp: {},
+    repeat: {},
+    mirror: {},
   },
   Renderer: {},
   Artboard: {},

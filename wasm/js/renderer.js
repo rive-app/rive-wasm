@@ -47,7 +47,10 @@ Module["onRuntimeInitialized"] = function () {
   const Renderer = Module.Renderer;
   const StrokeCap = Module.StrokeCap;
   const StrokeJoin = Module.StrokeJoin;
+  const StrokePosition = Module.StrokePosition;
   const BlendMode = Module.BlendMode;
+  const ImageFilter = Module.ImageFilter;
+  const ImageWrap = Module.ImageWrap;
 
   const fill = RenderPaintStyle.fill;
   const stroke = RenderPaintStyle.stroke;
@@ -62,6 +65,11 @@ Module["onRuntimeInitialized"] = function () {
   // backend can draw paths.
   const _offscreenRenderer = canvasOffscreenRenderer;
   const _offscreenBackend = _offscreenRenderer.backend;
+
+  // Must match GradientTypeFromJS in bindings_webgl2.cpp
+  const GRADIENT_TYPE_LINEAR = 0
+  const GRADIENT_TYPE_RADIAL = 1
+  const GRADIENT_TYPE_ANGULAR = 2
 
   let _nextImageUniqueID = 1;
 
@@ -469,13 +477,13 @@ Module["onRuntimeInitialized"] = function () {
   // Stops are added later using addStop(). canvasGradient is used to memoize the
   // resulting gradient+stops for reuse by multiple draw calls as long as no stops
   // were later added.
-  function _makeGradient(sx, sy, ex, ey, isRadial) {
-    return { sx, sy, ex, ey, isRadial, stops: [], canvasGradient: null };
+  function _makeGradient(sx, sy, ex, ey, type) {
+    return { sx, sy, ex, ey, type, stops: [], canvasGradient: null };
   }
 
   // Stands in for the gradient of a paint that has none, so that _acquireWebGL2Paint() has
   // something to read the arguments the other side ignores from.
-  const _noGradient = _makeGradient(0, 0, 0, 0, false);
+  const _noGradient = _makeGradient(0, 0, 0, 0, GRADIENT_TYPE_LINEAR);
 
   function _canvasGradient(ctx, gradient) {
     if (gradient.canvasGradient === null) {
@@ -483,14 +491,17 @@ Module["onRuntimeInitialized"] = function () {
       const sy = gradient.sy;
       const ex = gradient.ex;
       const ey = gradient.ey;
-      if (gradient.isRadial) {
+      if (gradient.type == GRADIENT_TYPE_LINEAR) {
+        gradient.canvasGradient = ctx["createLinearGradient"](sx, sy, ex, ey);
+      } else if (gradient.type == GRADIENT_TYPE_RADIAL) {
         const dx = ex - sx;
         const dy = ey - sy;
         const radius = Math.sqrt(dx * dx + dy * dy);
         gradient.canvasGradient = ctx["createRadialGradient"](sx, sy, 0, sx, sy, radius);
       } else {
-        gradient.canvasGradient = ctx["createLinearGradient"](sx, sy, ex, ey);
+        gradient.canvasGradient = ctx["createConicGradient"](0, 0, 0);
       }
+
       const stops = gradient.stops;
       for (let i = 0, l = stops.length; i < l; i++) {
         gradient.canvasGradient["addColorStop"](stops[i].stop, _colorStyle(stops[i].color));
@@ -508,10 +519,12 @@ Module["onRuntimeInitialized"] = function () {
       this._thickness = 1;
       this._join = StrokeJoin.miter;
       this._cap = StrokeCap.butt;
+      this._strokePosition = StrokePosition.center;
       this._feather = 0;
       this._blend = _canvasBlend(BlendMode.srcOver);
       this._gradient = null;
       this._gradientTransform = null;
+      this._modulatedImage = null;
       this._inverseGradientTransform = null;
       this._strokeThicknessScale = 1;
 
@@ -544,6 +557,10 @@ Module["onRuntimeInitialized"] = function () {
       this._cap = value;
       this._version++;
     },
+    "strokePosition": function(value) {
+      this._strokePosition = value;
+      this._version++;
+    },
     "feather": function (value) {
       this._feather = Math.abs(value);
       this._version++;
@@ -561,17 +578,48 @@ Module["onRuntimeInitialized"] = function () {
       this._version++;
     },
     "linearGradient": function (sx, sy, ex, ey) {
-      this._gradient = _makeGradient(sx, sy, ex, ey, false);
+      this._gradient = _makeGradient(sx, sy, ex, ey, GRADIENT_TYPE_LINEAR);
       this._version++;
     },
     "radialGradient": function (sx, sy, ex, ey) {
-      this._gradient = _makeGradient(sx, sy, ex, ey, true);
+      this._gradient = _makeGradient(sx, sy, ex, ey, GRADIENT_TYPE_RADIAL);
+      this._version++;
+    },
+    "angularGradient": function () {
+      this._gradient = _makeGradient(0, 0, 0, 0, GRADIENT_TYPE_ANGULAR);
       this._version++;
     },
     "addStop": function (color, stop) {
       this._gradient.stops.push({ color, stop });
       this._gradient.canvasGradient = null;
       this._version++;
+    },
+    "modulatedImage": function(
+      image,
+      filter,
+      wrapX,
+      wrapY,
+      xx,
+      xy,
+      yx,
+      yy,
+      tx,
+      ty) {
+      const img = image._image
+
+      if (!img) {
+        this._modulatedImage = null;
+        return;
+      }
+
+      this._modulatedImage = {
+          image: img,
+          webGL2Image: image._webGL2Image,
+          filter,
+          wrapX,
+          wrapY,
+          transform: makeMatrix(xx, xy, yx, yy, tx, ty),
+        }
     },
 
     "completeGradient": function () { },
@@ -610,6 +658,30 @@ Module["onRuntimeInitialized"] = function () {
             stops[i] = gradientStops[i].stop;
           }
         }
+
+        let modulatedImage = null;
+        let imgFilter = ImageFilter.bilinear;
+        let imgWrapX = ImageWrap.clamp;
+        let imgWrapY = ImageWrap.clamp;
+        let imgXX = 1;
+        let imgXY = 0;
+        let imgYX = 0;
+        let imgYY = 1;
+        let imgTX = 0;
+        let imgTY = 0;
+        if (this._modulatedImage !== null) {
+          modulatedImage = this._modulatedImage.webGL2Image;
+          imgFilter = this._modulatedImage.filter;
+          imgWrapX = this._modulatedImage.wrapX;
+          imgWrapY = this._modulatedImage.wrapY;
+          imgXX = this._modulatedImage.transform.a;
+          imgXY = this._modulatedImage.transform.b;
+          imgYX = this._modulatedImage.transform.c;
+          imgYY = this._modulatedImage.transform.d;
+          imgTX = this._modulatedImage.transform.e;
+          imgTY = this._modulatedImage.transform.f;
+        }
+
         // A null gradient transform is the identity; see _setGradientTransform().
         let xx = 1;
         let xy = 0;
@@ -634,10 +706,11 @@ Module["onRuntimeInitialized"] = function () {
           this._thickness,
           this._join,
           this._cap,
+          this._strokePosition,
           this._feather,
           colors,
           stops,
-          gradient.isRadial,
+          gradient.type,
           gradient.sx,
           gradient.sy,
           gradient.ex,
@@ -648,7 +721,16 @@ Module["onRuntimeInitialized"] = function () {
           yy,
           tx,
           ty,
-        );
+          modulatedImage,
+          imgFilter,
+          imgWrapX,
+          imgWrapY,
+          imgXX,
+          imgXY,
+          imgYX,
+          imgYY,
+          imgTX,
+          imgTY);
         this._webGL2PaintVersion = this._version;
       }
       Module["refWebGL2Paint"](this._webGL2Paint);
@@ -665,8 +747,14 @@ Module["onRuntimeInitialized"] = function () {
   const DRAW_MODE_DELEGATE = 2;
 
   function _drawMode(paint) {
+    // modulated image and non-centered strokes always goes through WebGL.
+    if (paint._modulatedImage || paint._strokePosition !== StrokePosition.center)
+    {
+      return DRAW_MODE_DELEGATE;
+    }
+
     // Feathering always goes through the WebGL renderer (canvas 2D's blur cannot
-    // reproduce it accurately)
+    // reproduce it accurately)...unless the offscreen backend isn't WebGL.
     if (paint._feather !== 0) {
       return _offscreenBackend.supportsPaths ? DRAW_MODE_DELEGATE : DRAW_MODE_NATIVE;
     }
@@ -861,7 +949,12 @@ Module["onRuntimeInitialized"] = function () {
       const opacity = Math.max(0, this._opacityStack[this._opacityStack.length - 1]);
       const mode = _drawMode(paint);
       if (mode === DRAW_MODE_DELEGATE) {
-        this._delegateDrawPath(path, paint, opacity);
+        // Only draw if we either don't have a modulated image, or we do and its webGL2
+        // image is ready.
+        if (paint._modulatedImage === null || paint._modulatedImage.webGL2Image) {
+          this._delegateDrawPath(path, paint, opacity);
+        }
+
         return;
       }
       const state = _captureDrawState(path, paint, mode, opacity);
