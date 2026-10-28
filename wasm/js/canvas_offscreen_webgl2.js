@@ -40,12 +40,13 @@ function _createWebGL2Renderer(enableMSAA) {
   }
 
   // Not calling preventDefault() leaves the context unrestorable, which is what we want.
-  canvas.addEventListener("webglcontextlost", function () {
+  const onContextLost = function () {
     if (!_contextLost) {
       _contextLost = true;
       console.error("WebGL context lost. Draws that rely on the WebGL2 renderer will be dropped.");
     }
-  });
+  };
+  canvas.addEventListener("webglcontextlost", onContextLost);
 
   const handle = GL.registerContext(gl, contextAttributes);
   GL.makeContextCurrent(handle);
@@ -53,12 +54,14 @@ function _createWebGL2Renderer(enableMSAA) {
   const renderer = Module["makeWebGL2Renderer"](canvas.width, canvas.height);
   if (!renderer) {
     GL.deleteContext(handle);
+    _loseHiddenContext(canvas, gl, onContextLost);
     return null;
   }
 
   renderer._handle = handle;
   renderer._canvas = canvas;
   renderer._gl = gl;
+  renderer._onContextLost = onContextLost;
   renderer._width = canvas.width;
   renderer._height = canvas.height;
 
@@ -71,11 +74,20 @@ function _createWebGL2Renderer(enableMSAA) {
   return renderer;
 }
 
+// Unreleased, the context counts toward the page's context limit until GC.
+// Unhooked first so the loss doesn't disable WebGL2.
+function _loseHiddenContext(canvas, gl, onContextLost) {
+  canvas.removeEventListener("webglcontextlost", onContextLost);
+  const ext = gl.getExtension("WEBGL_lose_context");
+  ext && ext["loseContext"]();
+}
+
 function _destroyWebGL2Renderer(renderer) {
   // Native teardown routes into glDelete*, which act on whatever context is current.
   GL.makeContextCurrent(renderer._handle);
   renderer["delete"]();
   GL.deleteContext(renderer._handle);
+  _loseHiddenContext(renderer._canvas, renderer._gl, renderer._onContextLost);
 }
 
 function _shouldDropMSAA(renderer) {

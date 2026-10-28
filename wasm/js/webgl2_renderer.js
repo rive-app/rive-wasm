@@ -129,6 +129,15 @@ Module["onRuntimeInitialized"] = function () {
     return renderer;
   }
 
+  // Only for canvases we created: a caller's canvas would keep handing back the
+  // lost context. Unreleased, it counts toward the page's context limit until GC.
+  function releaseHiddenGLRenderer(renderer) {
+    const gl = renderer._gl;
+    renderer.delete();
+    const ext = gl.getExtension("WEBGL_lose_context");
+    ext && ext["loseContext"]();
+  }
+
   const makeRenderer = Module.makeRenderer;
   Module.makeRenderer = function (canvas, useOffScreenRenderer, options) {
     const inkbleed = !!(options && options["inkbleed"]);
@@ -169,12 +178,13 @@ Module["onRuntimeInitialized"] = function () {
       }
 
       _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/true);
+      if (_offscreenGL && !_offscreenGL._enableAntialiasCanvas) {
+        // This browser prefers "antialias:false". Re-create the offscreen without MSAA.
+        releaseHiddenGLRenderer(_offscreenGL);
+        _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/false);
+      }
       if (!_offscreenGL) {
         throw "Unable to create WebGL context, your environment may not support WebGL. Try out @rive-app/canvas as an alternative.";
-      }
-      if (!_offscreenGL._enableAntialiasCanvas) {
-        // This browser prefers "antialias:false". Re-create the offscreen without MSAA.
-        _offscreenGL = MakeOffscreenGL(/*enableMSAA =*/false);
       }
     }
     if (useOffScreenRenderer) {
