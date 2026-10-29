@@ -5,7 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.48.0](https://github.com/rive-app/rive-wasm/compare/2.47.1...2.48.0)
+## [2.49.0](https://github.com/rive-app/rive-wasm/compare/2.48.0...2.49.0)
+
+### Merged
+
+- fix(audio): exact mp3 lengths, and toBlob decodes a slice per poll without pool threads [`#15191`](https://github.com/rive-app/rive-wasm/pull/15191)
+- feat(runtime): WinHTTP transport for scripts' fetch() on Windows [`#15168`](https://github.com/rive-app/rive-wasm/pull/15168)
+- feat(layouts): Aspect ratio lock [`#15163`](https://github.com/rive-app/rive-wasm/pull/15163)
+- perf(scripting): hardware bounds on windows x64 [`#15170`](https://github.com/rive-app/rive-wasm/pull/15170)
+- refactor(renderer): Combine non-contiguous ranges into batches [`#15037`](https://github.com/rive-app/rive-wasm/pull/15037)
+- perf(scripting): reserve 4 gb and a guard per hardware bounds memory instead of 8 gb [`#15169`](https://github.com/rive-app/rive-wasm/pull/15169)
+- fix(scripting): lanes on web pool threads read the page's clock [`#15189`](https://github.com/rive-app/rive-wasm/pull/15189)
+- perf(renderer): Merge "Path" and "Paint" into one buffer [`#15147`](https://github.com/rive-app/rive-wasm/pull/15147)
+- fix(scripting): read windows aot float constants from the right address [`#15172`](https://github.com/rive-app/rive-wasm/pull/15172)
+- fix(canvas2D): Add angular gradients, image paint, and inner/outer strokes [`#15074`](https://github.com/rive-app/rive-wasm/pull/15074)
+- perf(scripting): hardware bounds checks by default on macos and linux [`#15153`](https://github.com/rive-app/rive-wasm/pull/15153)
+- fix(runtime): time a trackpad fling's first delta from the priming event, and zero ScrollEvent's delta [`#15174`](https://github.com/rive-app/rive-wasm/pull/15174)
+- perf(editor, runtime): text render bug fixes [`#15180`](https://github.com/rive-app/rive-wasm/pull/15180)
+- chore(editor): dart monotonic triggers [`#15112`](https://github.com/rive-app/rive-wasm/pull/15112)
+- feat(scripting): decode or stream an AudioSource's samples to scripts [`#15098`](https://github.com/rive-app/rive-wasm/pull/15098)
+- fix(js): release the MSAA probe WebGL context [`#15173`](https://github.com/rive-app/rive-wasm/pull/15173)
+- fix(editor, runtime): rtl text ellipsis [`#15162`](https://github.com/rive-app/rive-wasm/pull/15162)
+- fix(runtime): hangs and crashes from unset path positions, long trims and paintless strokes [`#15171`](https://github.com/rive-app/rive-wasm/pull/15171)
+- feat(editor, runtime): recursively data bind converters [`#15140`](https://github.com/rive-app/rive-wasm/pull/15140)
+- fix(text): text shaped ahead of the update still draws [`#15152`](https://github.com/rive-app/rive-wasm/pull/15152)
+- chore(editor): fetch support in editor [`#15009`](https://github.com/rive-app/rive-wasm/pull/15009)
+
+### Commits
+
+- fix(runtime_wasm): drop the unreleased changelog entry that blocks the rive-wasm sync (#15203) d73a375973 [`598627c`](https://github.com/rive-app/rive-wasm/commit/598627c7f493cab5e1d297c79a278419ee67cb84)
+- chore(downstream): advance submodule/refs [`5057285`](https://github.com/rive-app/rive-wasm/commit/5057285e405b7cfdb733cf3500086a935a4360db)
+- chore(downstream): advance submodule/refs [`29c5b8e`](https://github.com/rive-app/rive-wasm/commit/29c5b8e44327c41634105c01c6a9aa1f1dad61f0)
+- chore(downstream): advance submodule/refs [`f35ac66`](https://github.com/rive-app/rive-wasm/commit/f35ac662b1e0cd618feee04896d0f0d0fe31afb4)
+- chore(downstream): advance submodule/refs [`16cf964`](https://github.com/rive-app/rive-wasm/commit/16cf964e253fb7a85ac609a4187eccf29362999e)
+- chore(downstream): advance submodule/refs [`a27da2c`](https://github.com/rive-app/rive-wasm/commit/a27da2ce840e9858842868f8b3cf4a94c009d5c4)
+- chore(downstream): advance submodule/refs [`f982e5a`](https://github.com/rive-app/rive-wasm/commit/f982e5a7e0e71d956e60c265a04eb766ab738164)
+- chore(downstream): advance submodule/refs [`96cb915`](https://github.com/rive-app/rive-wasm/commit/96cb9159816c0445ed8c29056cb0bf0716ba873f)
+- chore(downstream): advance submodule/refs [`15c04ac`](https://github.com/rive-app/rive-wasm/commit/15c04acca2891ab76d36dff111ade22c37910dfe)
+- chore(downstream): advance submodule/refs [`cb10c96`](https://github.com/rive-app/rive-wasm/commit/cb10c9677557693752d524f4365370dd0477e10d)
+- chore(downstream): advance submodule/refs [`4cac6a2`](https://github.com/rive-app/rive-wasm/commit/4cac6a2607c72645911f8dad7f863883ba811516)
+- chore(downstream): advance submodule/refs [`1955c02`](https://github.com/rive-app/rive-wasm/commit/1955c023f485a782bdb95d7381acc6baec40b6fc)
+- chore(downstream): advance submodule/refs [`6958fb3`](https://github.com/rive-app/rive-wasm/commit/6958fb381b57550dab4114c517286e9839ae452f)
+- chore(downstream): advance submodule/refs [`443f965`](https://github.com/rive-app/rive-wasm/commit/443f965bd04c13c153e003a60c8617eca2ff6527)
+
+## [2.48.0](https://github.com/rive-app/rive-wasm/compare/2.47.1...2.48.0) - 2026-10-27
 
 ### Merged
 
@@ -28,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.48.0 [`b1510ce`](https://github.com/rive-app/rive-wasm/commit/b1510ce53be56d31f3748b397d66560ca7456659)
 - chore(downstream): advance submodule/refs [`8cc0236`](https://github.com/rive-app/rive-wasm/commit/8cc0236ca5e9df028c9ffab43f68f3356d30ef1e)
 - chore(downstream): advance submodule/refs [`6fd63d8`](https://github.com/rive-app/rive-wasm/commit/6fd63d802b500710df743b8b5a4fc7fb08f1b0d5)
 - chore(downstream): advance submodule/refs [`542ba20`](https://github.com/rive-app/rive-wasm/commit/542ba2001e9700beeda83190cb3c57846b1a5464)
