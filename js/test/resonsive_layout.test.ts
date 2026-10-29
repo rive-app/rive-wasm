@@ -204,4 +204,67 @@ test("resizeDrawingSurfaceToCanvas with Fit.Layout before onLoad does not throw"
   expect(() => r.resizeDrawingSurfaceToCanvas(1)).not.toThrow();
 });
 
+// With no frame pending this draws synchronously, before the observer flags 0x0.
+test("resizeDrawingSurfaceToCanvas to 0x0 skips the draw until the canvas has area", async () => {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasInitialWidth;
+  canvas.height = canvasInitialHeight;
+  document.body.appendChild(canvas);
+
+  const r = await new Promise<rive.Rive>((resolve) => {
+    const instance: rive.Rive = new rive.Rive({
+      canvas: canvas,
+      artboard: "MyArtboard",
+      buffer: stateMachineFileBuffer,
+      onLoad: () => resolve(instance),
+    });
+  });
+  // Let the load frame land so drawFrame() is not short-circuited by it.
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  Object.defineProperty(document, "timeline", {
+    value: { currentTime: 1000 },
+    configurable: true,
+  });
+  try {
+    // Only a frame that clears and draws aligns the renderer.
+    const drawn = jest.spyOn(r as any, "alignRenderer");
+    mockGetBoundingClientRect.mockImplementation(() => ({
+      width: 0,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      x: 0,
+      y: 0,
+    }));
+    r.resizeDrawingSurfaceToCanvas(1);
+    expect(canvas.width).toBe(0);
+    expect(drawn).not.toHaveBeenCalled();
+
+    mockGetBoundingClientRect.mockImplementation(() => ({
+      width: canvasInitialWidth,
+      height: canvasInitialHeight,
+      top: 0,
+      left: 0,
+      right: canvasInitialWidth,
+      bottom: canvasInitialHeight,
+      x: 0,
+      y: 0,
+    }));
+    r.resizeDrawingSurfaceToCanvas(1);
+    expect(drawn).toHaveBeenCalledTimes(1);
+
+    // Restoring the same size by hand draws too, with nothing else dirty.
+    canvas.width = 0;
+    r.drawFrame();
+    canvas.width = canvasInitialWidth;
+    r.drawFrame();
+    expect(drawn).toHaveBeenCalledTimes(2);
+  } finally {
+    delete (document as any).timeline;
+    r.cleanup();
+  }
+});
+
 // #endregion

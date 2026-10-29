@@ -3799,8 +3799,13 @@ export class Rive {
     this.advanceAndReportChanges(elapsedTime, time);
 
     const { renderer } = this;
-    // Do not draw on 0 canvas size
-    if (!this._hasZeroSize) {
+    // Don't draw on a 0-size canvas; redraw once it has area. The observer
+    // flags zero size late, so also check the surface itself.
+    const hasSurface = this.canvas.width > 0 && this.canvas.height > 0;
+    if (!hasSurface) {
+      this._needsRedraw = true;
+    }
+    if (!this._hasZeroSize && hasSurface) {
       // If there was no dirt on this frame, do not clear and draw. The deferred
       // term has to be read here, before `clear()` below: clearing opens the
       // session's recording window and marks its stream, so a read taken after
