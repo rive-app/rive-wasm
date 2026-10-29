@@ -32,7 +32,18 @@
 #include <emscripten/html5.h>
 using namespace emscripten;
 
+// Pages that can share memory record on their own thread and replay on a
+// worker that owns the canvas's transferred GL context.
+#if defined(RIVE_CANVAS) && defined(RIVE_ORE) && defined(__EMSCRIPTEN_PTHREADS__) &&               \
+    defined(RIVE_WEBGL2_RENDERER_STANDALONE_BINDINGS)
+#define RIVE_WEBGL2_REPLAY_WORKER
+#include "rive/renderer/cmd/deferred_replayer.hpp"
+#include "rive/renderer/cmd/web_replay_worker.hpp"
+#endif
+
 #include <algorithm>
+#include <functional>
+#include <memory>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -50,6 +61,22 @@ class WebGL2RenderBuffer;
 using PLSResourceID = uint64_t;
 
 static std::atomic<PLSResourceID> s_nextWebGL2BufferID;
+
+// Keys the decoded pixels each thread keeps for an image. Never reused, unlike
+// the image's address, so a release that lands late cannot hit a newer image.
+static std::atomic<uint32_t> s_nextWebImageID{1};
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+using ReplayWorker = cmd::WebReplayWorker;
+
+void cmd::webReplayWorkerListen()
+{
+    EM_ASM({ Module["riveReplayWorkerListen"](); });
+}
+
+// Set once from JS before anything records for the worker.
+static std::atomic<bool> s_replayWorkerEnabled{false};
+#endif
 
 #if defined(RIVE_CANVAS) && defined(RIVE_ORE)
 // A deferred recording session JS owns, one per file that opted into deferred.
@@ -72,6 +99,8 @@ public:
         m_renderer = renderer;
         m_everBound = m_everBound || renderer != nullptr;
     }
+    // A worker renderer hears of our death as an attachment instead.
+    void claim() { m_everBound = true; }
     // A claim is for the session's whole life, not just the attachment: detach
     // resets the frame and drops the ore context the recorded stream created
     // its resources against, so a second renderer would replay against nothing.
@@ -107,14 +136,14 @@ public:
     }
 
     // Register GL contexts for resource deletion notifications.
-    void registerContext(WebGL2Renderer* renderer) { m_renderers.insert(renderer); }
+    void registerContext(WebGL2Renderer* renderer) { renderers().insert(renderer); }
     void unregisterContext(WebGL2Renderer* renderer);
 
     // This factory is a singleton shared by every GL context, so it has no one
     // render context to hand out. Whoever has a frame open claims it for the
     // duration, which is the only window in which anything can ask -- an
     // artboard caching itself as a bitmap does so mid-draw.
-    void bindActiveRenderer(WebGL2Renderer* renderer) { m_activeRenderer = renderer; }
+    void bindActiveRenderer(WebGL2Renderer* renderer) { activeRenderer() = renderer; }
 #ifdef RIVE_CANVAS
     // Only canvasContentHost: answering deferredCanvasHost() would tell the
     // scripting layer its canvas work is being recorded for a replay, and it
@@ -134,8 +163,18 @@ public:
 private:
     WebGL2Factory() = default;
 
-    std::set<WebGL2Renderer*> m_renderers;
-    WebGL2Renderer* m_activeRenderer = nullptr;
+    // A GL context belongs to the thread that made it, and the replay worker
+    // draws while the page records, so each thread tracks its own renderers.
+    static std::set<WebGL2Renderer*>& renderers()
+    {
+        static thread_local std::set<WebGL2Renderer*> s_renderers;
+        return s_renderers;
+    }
+    static WebGL2Renderer*& activeRenderer()
+    {
+        static thread_local WebGL2Renderer* s_activeRenderer = nullptr;
+        return s_activeRenderer;
+    }
 };
 
 // RAII utility to set and restore the current GL context.
@@ -149,7 +188,11 @@ public:
         // it current would leave the GL calls that follow with no context.
         if (m_contextGL != 0 && m_contextGL != m_previousContext)
         {
-            emscripten_webgl_make_context_current(m_contextGL);
+            m_ok = emscripten_webgl_make_context_current(m_contextGL) == EMSCRIPTEN_RESULT_SUCCESS;
+        }
+        else
+        {
+            m_ok = m_contextGL != 0;
         }
     }
 
@@ -161,41 +204,79 @@ public:
         }
     }
 
+    // False when the context is gone, so GL calls would land on no context.
+    bool ok() const { return m_ok; }
+
 private:
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL;
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_previousContext;
+    bool m_ok = false;
 };
 
-EM_JS(void, decode_image, (uintptr_t renderImage, uintptr_t imgDataPtr, int imgDataLength), {
-    var images = Module["images"];
-    if (!images)
+EM_JS(
+    void,
+    decode_image,
+    (uintptr_t renderImage, uint32_t imageID, uintptr_t imgDataPtr, int imgDataLength, bool share),
     {
-        images = new Map();
-        Module["images"] = images;
-    }
+        var images = Module["images"];
+        if (!images)
+        {
+            images = new Map();
+            Module["images"] = images;
+        }
 
+        // Copy heap as it's a SharedBufferArray which cannot be used for
+        // Blob. The live buffer, since a view taken before growth detaches.
+        var sourceView = new Uint8Array(wasmMemory.buffer, imgDataPtr, imgDataLength);
+        var buffer = new Uint8Array(imgDataLength);
+        buffer.set(sourceView);
+        var blob = new Blob([buffer], {
+            type:
+                "image/png"
+        });
+        if (share)
+        {
+            // Kept in case a renderer on this thread draws it after all.
+            var blobs = Module["imageBlobs"];
+            if (!blobs)
+            {
+                blobs = new Map();
+                Module["imageBlobs"] = blobs;
+            }
+            blobs.set(imageID, blob);
+            Module["riveReplayWorkerDecodeImage"](renderImage, imageID, blob);
+            return;
+        }
+        var image = new Image();
+        images.set(imageID, image);
+        image.src = URL.createObjectURL(blob);
+        image.onload = function()
+        {
+            Module["_setWebImage"](renderImage, image.width, image.height);
+        };
+    });
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+EM_JS(void, decode_page_copy, (uintptr_t renderImage, uint32_t imageID), {
+    var blob = Module["imageBlobs"].get(imageID);
     var image = new Image();
-    images.set(renderImage, image);
-    // Copy heap as it's a SharedBufferArray which cannot be used for
-    // Blob.
-    var sourceView = Module["HEAP8"].subarray(imgDataPtr, imgDataPtr + imgDataLength);
-    var buffer = new Uint8Array(imgDataLength);
-    buffer.set(sourceView);
-    image.src = URL.createObjectURL(new Blob([buffer], {
-        type:
-            "image/png"
-    }));
-    image.onload = function() { Module["_setWebImage"](renderImage, image.width, image.height); };
+    image.src = URL.createObjectURL(blob);
+    image.onload = function()
+    {
+        Module["images"].set(imageID, image);
+        Module["_riveWebImagePageDecoded"](renderImage, image.width, image.height);
+    };
 });
+#endif
 
-EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uintptr_t renderImage), {
+EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uint32_t imageID), {
     var images = Module["images"];
     if (!images)
     {
         return;
     }
 
-    var image = images.get(renderImage);
+    var image = images.get(imageID);
     if (!image)
     {
         return;
@@ -206,19 +287,20 @@ EM_JS(void, upload_image, (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl, uintptr_t renderI
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 });
 
-EM_JS(void, delete_image, (uintptr_t renderImage), {
+EM_JS(void, delete_image, (uint32_t imageID), {
     var images = Module["images"];
-    if (!images)
+    var image = images && images.get(imageID);
+    if (image)
     {
-        return;
+        // The worker's ImageBitmap holds its pixels until closed.
+        image.close&& image.close();
+        images.delete(imageID);
     }
-
-    var image = images.get(renderImage);
-    if (!image)
+    var blobs = Module["imageBlobs"];
+    if (blobs)
     {
-        return;
+        blobs.delete(imageID);
     }
-    images.delete(renderImage);
 });
 
 // High-level, context agnostic RenderImage for the WebGL2 system. Wraps a blob of encoded image
@@ -226,17 +308,25 @@ EM_JS(void, delete_image, (uintptr_t renderImage), {
 class WebGL2RenderImage : public LITE_RTTI_OVERRIDE(RenderImage, WebGL2RenderImage)
 {
 public:
-    WebGL2RenderImage(Span<const uint8_t> encodedBytes)
+    // share decodes on the replay worker instead, which draws a deferred
+    // file's images on its own GL contexts.
+    WebGL2RenderImage(Span<const uint8_t> encodedBytes, bool share = false)
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+        :
+        m_shared(share)
+#endif
     {
         m_Width = 0;
         m_Height = 0;
 
         // Balanced by the unref() in the exported setWebImage(), which decode_image() calls
-        // back asynchronously.
+        // back asynchronously, once the worker holds the pixels when shared.
         ref();
         decode_image(reinterpret_cast<uintptr_t>(this),
+                     m_imageID,
                      reinterpret_cast<uintptr_t>(encodedBytes.data()),
-                     encodedBytes.size());
+                     encodedBytes.size(),
+                     share);
     }
 
     WebGL2RenderImage()
@@ -245,12 +335,9 @@ public:
         m_Height = 0;
     }
 
-    ~WebGL2RenderImage()
-    {
-        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-        delete_image(reinterpret_cast<uintptr_t>(this));
-        m_renderImage.reset();
-    }
+    ~WebGL2RenderImage();
+
+    uint32_t imageID() const { return m_imageID; }
 
     void setWebImage(int width, int height)
     {
@@ -260,10 +347,66 @@ public:
         decodedAsync();
     }
 
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    // The page's readiness follows in setWebImage, so the worker never sees
+    // a draw of this image before its pixels.
+    void arrivedOnWorker(int width, int height)
+    {
+        m_workerWidth = width;
+        m_workerHeight = height;
+        m_arrivedOnWorker.store(true, std::memory_order_release);
+    }
+    // Shared images decode on the page only once something there needs them.
+    void decodePageCopy()
+    {
+        if (!m_pageDecoding)
+        {
+            m_pageDecoding = true;
+            ref();
+            decode_page_copy(reinterpret_cast<uintptr_t>(this), m_imageID);
+        }
+    }
+    void decodedOnPage(int width, int height)
+    {
+        m_pageWidth = width;
+        m_pageHeight = height;
+        m_pageDecoded = true;
+        decodedAsync();
+    }
+#endif
+
 private:
+    // Each thread that draws the image uploads it to its own context.
+    struct Upload
+    {
+        EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL = 0;
+        uint32_t replayBuild = 0;
+        rcp<RiveRenderImage> renderImage;
+    };
+    RenderImage* upload(WebGL2Renderer*,
+                        EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context,
+                        Upload&,
+                        bool ready,
+                        int width,
+                        int height);
+    // Frees this thread's texture and decoded pixels.
+    static void release(uint32_t imageID, Upload&);
+
+    const uint32_t m_imageID = s_nextWebImageID++;
     bool m_readyToUpload = false;
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = 0;
-    rcp<RiveRenderImage> m_renderImage;
+    Upload m_page;
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    const bool m_shared = false;
+    // Only a renderer the page keeps decodes a shared image here.
+    bool m_pageDecoding = false;
+    bool m_pageDecoded = false;
+    int m_pageWidth = 0;
+    int m_pageHeight = 0;
+    std::atomic<bool> m_arrivedOnWorker{false};
+    int m_workerWidth = 0;
+    int m_workerHeight = 0;
+    Upload m_worker;
+#endif
 
 public:
     RenderImage* prep(WebGL2Renderer* webglRenderer, const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context);
@@ -273,6 +416,61 @@ EXPORT void setWebImage(WebGL2RenderImage* renderImage, int width, int height)
 {
     renderImage->setWebImage(width, height);
     renderImage->unref();
+}
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+EXPORT void riveReplayWorkerImageArrived(WebGL2RenderImage* renderImage, int width, int height)
+{
+    renderImage->arrivedOnWorker(width, height);
+    ReplayWorker::Instance().postToMain(
+        [renderImage, width, height] { setWebImage(renderImage, width, height); });
+}
+
+EXPORT void riveWebImagePageDecoded(WebGL2RenderImage* renderImage, int width, int height)
+{
+    renderImage->decodedOnPage(width, height);
+    renderImage->unref();
+}
+#endif
+
+WebGL2RenderImage::~WebGL2RenderImage()
+{
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    if (m_shared)
+    {
+        // The other thread's copy can only be freed there.
+        ReplayWorker& worker = ReplayWorker::Instance();
+        const bool onWorker = worker.onWorker();
+        // Moved so this thread holds no reference the other could outlive.
+        auto releaseOther = [imageID = m_imageID,
+                             other = std::move(onWorker ? m_page : m_worker)]() mutable {
+            release(imageID, other);
+        };
+        if (onWorker)
+        {
+            worker.postToMain(std::move(releaseOther));
+        }
+        else
+        {
+            worker.post(std::move(releaseOther));
+        }
+        release(m_imageID, onWorker ? m_worker : m_page);
+        return;
+    }
+#endif
+    release(m_imageID, m_page);
+}
+
+void WebGL2RenderImage::release(uint32_t imageID, Upload& upload)
+{
+    ScopedGLContextMakeCurrent makeCurrent(upload.contextGL);
+    if (upload.renderImage != nullptr && !makeCurrent.ok())
+    {
+        // Its context died first and took the texture with it.
+        upload.renderImage.release();
+    }
+    upload.renderImage.reset();
+    delete_image(imageID);
 }
 
 // Shared object that holds the contents of a WebGL2Buffer. PLS buffers are synchronized to these
@@ -444,6 +642,7 @@ public:
         m_inkbleed = enabled;
         return !enabled || m_canInkbleed;
     }
+    bool canInkbleed() const { return m_canInkbleed; }
 
     bool inkbleedActive() const { return m_inkbleed && m_canInkbleed; }
 
@@ -658,6 +857,33 @@ public:
     void detachSession();
     bool deferredActive() const { return m_session != nullptr; }
     uint64_t screenTarget() const { return m_screenTarget; }
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    // Replays frames the page recorded for another renderer, so images this
+    // renderer draws have to be the worker's own uploads.
+    void markReplayWorker()
+    {
+        static uint32_t builds = 0;
+        m_onReplayWorker = true;
+        m_replayBuild = ++builds;
+    }
+    bool onReplayWorker() const { return m_onReplayWorker; }
+    // Worker contexts are rebuilt in place and their handles reused, so an
+    // upload is only good for the build that made it.
+    uint32_t replayBuild() const { return m_replayBuild; }
+    // The frame's target is the recording renderer's identity in its session.
+    void replaySnapshot(const cmd::DeferredFrame&,
+                        uint64_t target,
+                        bool clear,
+                        ColorInt color,
+                        bool replayOre);
+    // The resident resources belong to a session that is gone.
+    void resetReplay()
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        m_host.replayer().reset();
+    }
+#endif
 
     // While a deferred frame is open, draws record into the session stream.
     // Cleared before replay so the replayed commands run on this renderer.
@@ -1027,49 +1253,89 @@ private:
     cmd::DeferredInlineHost m_host;
     Renderer* m_target = nullptr;
 #endif
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    bool m_onReplayWorker = false;
+    uint32_t m_replayBuild = 0;
+#endif
 };
 
 void WebGL2Factory::unregisterContext(WebGL2Renderer* renderer)
 {
-    m_renderers.erase(renderer);
-    if (m_activeRenderer == renderer)
+    renderers().erase(renderer);
+    if (activeRenderer() == renderer)
     {
         // A renderer torn down mid-frame must not leave a dangling claim.
-        m_activeRenderer = nullptr;
+        activeRenderer() = nullptr;
     }
 }
 
 #ifdef RIVE_CANVAS
-rive::cmd::DeferredCanvasHost* WebGL2Factory::canvasContentHost() { return m_activeRenderer; }
+rive::cmd::DeferredCanvasHost* WebGL2Factory::canvasContentHost() { return activeRenderer(); }
 #endif
 
 RenderImage* WebGL2RenderImage::prep(WebGL2Renderer* webglRenderer,
                                      const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context)
 {
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    if (webglRenderer->onReplayWorker())
+    {
+        return upload(webglRenderer,
+                      context,
+                      m_worker,
+                      m_arrivedOnWorker.load(std::memory_order_acquire),
+                      m_workerWidth,
+                      m_workerHeight);
+    }
+    if (m_shared)
+    {
+        decodePageCopy();
+        return upload(webglRenderer, context, m_page, m_pageDecoded, m_pageWidth, m_pageHeight);
+    }
+#endif
+    return upload(webglRenderer, context, m_page, m_readyToUpload, m_Width, m_Height);
+}
+
+RenderImage* WebGL2RenderImage::upload(WebGL2Renderer* webglRenderer,
+                                       const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context,
+                                       Upload& upload,
+                                       bool ready,
+                                       int width,
+                                       int height)
+{
+    uint32_t replayBuild = 0;
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    replayBuild = webglRenderer->replayBuild();
+#endif
     // Only return the existing render image if its from the same context,
     // otherwise we need to re-upload.
-    if (context == m_contextGL && m_renderImage)
+    if (context == upload.contextGL && replayBuild == upload.replayBuild && upload.renderImage)
     {
-        return m_renderImage.get();
+        return upload.renderImage.get();
     }
-    if (m_readyToUpload)
+    if (ready)
     {
-        ScopedGLContextMakeCurrent makeCurrent(m_contextGL = context);
+        if (context == upload.contextGL && upload.renderImage)
+        {
+            // The handle outlived the context that owned the texture.
+            upload.renderImage.release();
+        }
+        upload.replayBuild = replayBuild;
+        ScopedGLContextMakeCurrent makeCurrent(upload.contextGL = context);
         GLuint textureId = 0;
         glGenTextures(1, &textureId);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
         webglRenderer->renderContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-        upload_image(emscripten_webgl_get_current_context(), reinterpret_cast<uintptr_t>(this));
+        upload_image(emscripten_webgl_get_current_context(), m_imageID);
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        m_renderImage = make_rcp<RiveRenderImage>(
-            webglRenderer->renderContextGL()->adoptImageTexture(m_Width, m_Height, textureId));
+        upload.renderImage = make_rcp<RiveRenderImage>(
+            webglRenderer->renderContextGL()->adoptImageTexture(width, height, textureId));
     }
-    return m_renderImage.get();
+    return upload.renderImage.get();
 }
 
 PLSSynchronizedBuffer::PLSSynchronizedBuffer(WebGL2Renderer* webglRenderer,
@@ -1088,8 +1354,12 @@ PLSSynchronizedBuffer::PLSSynchronizedBuffer(WebGL2Renderer* webglRenderer,
 class WebGL2FrameSink : public cmd::HostFrameSink
 {
 public:
-    WebGL2FrameSink(WebGL2Renderer* renderer, bool clear, ColorInt color, bool replayOre) :
-        HostFrameSink(clear, color, renderer->screenTarget(), replayOre), m_renderer(renderer)
+    WebGL2FrameSink(WebGL2Renderer* renderer,
+                    uint64_t target,
+                    bool clear,
+                    ColorInt color,
+                    bool replayOre) :
+        HostFrameSink(clear, color, target, replayOre), m_renderer(renderer)
     {}
 
     RenderContext* renderContext() override { return m_renderer->gpuRenderContext(); }
@@ -1221,7 +1491,12 @@ void WebGL2Renderer::detachSession()
 
 rcp<RenderImage> WebGL2DeferredSession::decodeImage(Span<const uint8_t> bytes)
 {
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    return make_rcp<WebGL2RenderImage>(bytes,
+                                       s_replayWorkerEnabled.load(std::memory_order_relaxed));
+#else
     return WebGL2Factory::Instance()->decodeImage(bytes);
+#endif
 }
 
 WebGL2DeferredSession::~WebGL2DeferredSession()
@@ -1245,10 +1520,683 @@ void WebGL2Renderer::deferredFlush()
         return;
     }
     ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
-    WebGL2FrameSink sink(this, m_host.doClear(), m_host.clearColor(), m_host.replayOre());
+    WebGL2FrameSink sink(this,
+                         m_screenTarget,
+                         m_host.doClear(),
+                         m_host.clearColor(),
+                         m_host.replayOre());
     m_host.replayInline(sink,
                         [this] { m_renderContext->flush({.renderTarget = m_renderTarget.get()}); });
 }
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+void WebGL2Renderer::replaySnapshot(const cmd::DeferredFrame& frame,
+                                    uint64_t target,
+                                    bool clear,
+                                    ColorInt color,
+                                    bool replayOre)
+{
+    ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+    WebGL2FrameSink sink(this, target, clear, color, replayOre);
+    m_host.replayer().replayFrame(frame, sink);
+    if (sink.began())
+    {
+        m_renderContext->flush({.renderTarget = m_renderTarget.get()});
+    }
+    WebGL2Factory::Instance()->bindActiveRenderer(nullptr);
+    ++m_currentFrameID;
+}
+#endif
+
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+// A canvas transferred to the replay worker, kept for the canvas's life so the
+// renderers that take it in turn share one GL context. The page records for
+// it; its context, renderer and resident resources live on the worker and only
+// the worker touches them.
+class ReplaySurface : public RefCnt<ReplaySurface>
+{
+public:
+    enum class State
+    {
+        pending,
+        ready,
+        failed,
+    };
+
+    // ---- Page ----
+    State state() const { return m_state.load(std::memory_order_acquire); }
+    // Published by the worker before ready, so read only after it.
+    const ore::ReplayCaps& caps() const { return m_caps; }
+    RenderContext* renderContext() const { return m_renderContext.load(std::memory_order_acquire); }
+    bool canInkbleed() const { return m_canInkbleed; }
+    uint32_t framesInFlight() const { return m_framesInFlight.load(std::memory_order_acquire); }
+    void noteFrameQueued() { m_framesInFlight.fetch_add(1, std::memory_order_relaxed); }
+    // Bumped when a restored context replaces everything resident.
+    uint32_t generation() const { return m_generation.load(std::memory_order_acquire); }
+
+    // ---- Worker ----
+    // The message that brought the canvas made its context current.
+    void attach(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL, int width, int height, bool inkbleed)
+    {
+        m_contextGL = contextGL;
+        m_width = width;
+        m_height = height;
+        m_inkbleed = inkbleed;
+        if (m_retired)
+        {
+            // The canvas went before it arrived.
+            retire();
+            return;
+        }
+        if (!build())
+        {
+            fprintf(stderr, "Rive: the replay worker could not create a WebGL2 context.\n");
+            m_state.store(State::failed, std::memory_order_release);
+            return;
+        }
+        m_caps = ore::ReplayCaps::from(*m_renderer->gpuRenderContext()->getOreContext());
+        m_canInkbleed = m_renderer->canInkbleed();
+        m_state.store(State::ready, std::memory_order_release);
+    }
+
+    // The newest renderer on the canvas owns the replayer, so an older one's
+    // frames and release no longer touch it.
+    void claim(uint32_t owner)
+    {
+        m_owner = owner;
+        if (m_renderer != nullptr)
+        {
+            m_renderer->resetReplay();
+        }
+    }
+
+    void replay(std::shared_ptr<cmd::DeferredFrame> frame,
+                uint32_t owner,
+                uint32_t generation,
+                uint64_t target,
+                bool clear,
+                ColorInt color,
+                bool replayOre)
+    {
+        // A lost context draws nothing, and a frame recorded before a restore
+        // names resources that no longer exist, but either still retires.
+        if (m_renderer != nullptr && !m_lost && owner == m_owner &&
+            generation == this->generation())
+        {
+            m_renderer->replaySnapshot(*frame, target, clear, color, replayOre);
+        }
+        dropFrame(std::move(frame));
+        m_framesInFlight.fetch_sub(1, std::memory_order_release);
+    }
+
+    void resize(int width, int height)
+    {
+        if (m_renderer == nullptr || (width == m_width && height == m_height))
+        {
+            return;
+        }
+        m_width = width;
+        m_height = height;
+        EM_ASM({ Module["riveReplayWorkerResize"]($0, $1, $2); }, this, width, height);
+        m_renderer->resize(width, height);
+    }
+
+    void setInkbleed(bool enabled)
+    {
+        m_inkbleed = enabled;
+        if (m_renderer != nullptr)
+        {
+            m_renderer->setInkbleed(enabled);
+        }
+    }
+
+    // The session is gone, so its resident resources and unreplayed frame go
+    // too. The context stays for the canvas's next renderer.
+    void release(uint32_t owner, std::shared_ptr<cmd::DeferredFrame> leftover)
+    {
+        dropFrame(std::move(leftover));
+        if (owner != m_owner)
+        {
+            return;
+        }
+        if (m_renderer != nullptr)
+        {
+            m_renderer->resetReplay();
+        }
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        m_replacedRenderers.clear();
+    }
+
+    // The canvas itself is gone.
+    void retire()
+    {
+        m_retired = true;
+        EM_ASM({ Module["riveReplayWorkerForget"]($0); }, this);
+        m_replacedRenderers.clear();
+        m_renderer.reset();
+        destroyContext();
+    }
+
+    void contextLost() { m_lost = true; }
+    // Everything resident died with the old context, so the page has to
+    // record it all again through a fresh renderer.
+    void contextRestored()
+    {
+        if (m_retired || m_renderer == nullptr)
+        {
+            return;
+        }
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        // Its session still points at its render context until the page
+        // reloads and lets go of it.
+        m_replacedRenderers.push_back(std::move(m_renderer));
+        if (!build())
+        {
+            m_state.store(State::failed, std::memory_order_release);
+            return;
+        }
+        m_lost = false;
+        m_generation.fetch_add(1, std::memory_order_release);
+        // An instance with nothing animating would otherwise never look.
+        ReplayWorker::Instance().postToMain([surface = ref_rcp(this)] {
+            EM_ASM({ Module["riveReplaySurfaceRestored"]($0); }, surface.get());
+        });
+    }
+
+private:
+    bool build()
+    {
+        std::unique_ptr<RenderContext> renderContext =
+            m_contextGL != 0 ? RenderContextGLImpl::MakeContext() : nullptr;
+        if (renderContext == nullptr)
+        {
+            return false;
+        }
+        m_renderer = std::make_unique<WebGL2Renderer>(std::move(renderContext), m_width, m_height);
+        m_renderer->markReplayWorker();
+        if (m_inkbleed)
+        {
+            m_renderer->setInkbleed(true);
+        }
+        m_renderContext.store(m_renderer->gpuRenderContext(), std::memory_order_release);
+        return true;
+    }
+
+    // Its canvas backings and textures belong to this context.
+    void dropFrame(std::shared_ptr<cmd::DeferredFrame> frame)
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        if (!makeCurrent.ok() && frame.use_count() == 1)
+        {
+            // Its context died first and took the frame's GL objects with it;
+            // freeing them with none current would throw and stall the queue.
+            new std::shared_ptr<cmd::DeferredFrame>(std::move(frame));
+        }
+        frame.reset();
+    }
+
+    void destroyContext()
+    {
+        if (m_contextGL != 0)
+        {
+            emscripten_webgl_destroy_context(m_contextGL);
+            m_contextGL = 0;
+        }
+    }
+
+    std::atomic<State> m_state{State::pending};
+    ore::ReplayCaps m_caps;
+    std::atomic<RenderContext*> m_renderContext{nullptr};
+    bool m_canInkbleed = false;
+    std::atomic<uint32_t> m_framesInFlight{0};
+    std::atomic<uint32_t> m_generation{0};
+
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = 0;
+    std::unique_ptr<WebGL2Renderer> m_renderer;
+    std::vector<std::unique_ptr<WebGL2Renderer>> m_replacedRenderers;
+    int m_width = 0;
+    int m_height = 0;
+    bool m_inkbleed = false;
+    bool m_retired = false;
+    bool m_lost = false;
+    uint32_t m_owner = 0;
+};
+
+// Records on the page for a canvas the replay worker draws, so a frame's
+// advance and recording overlap the previous frame's replay. Draws go to the
+// session's recorder while a frame is open and are dropped otherwise.
+class WebGL2WorkerRenderer : public Renderer, public cmd::DeferredSessionAttachment
+{
+public:
+    // How far the page may record ahead of the worker before it waits.
+    static constexpr uint32_t kMaxFramesInFlight = 2;
+
+    WebGL2WorkerRenderer(rcp<ReplaySurface> surface, int width, int height, bool inkbleed) :
+        m_surface(std::move(surface)),
+        m_owner(++s_owners),
+        m_generation(m_surface->generation()),
+        m_width(width),
+        m_height(height),
+        m_inkbleed(inkbleed)
+    {
+        ReplayWorker::Instance().post(
+            [surface = m_surface, owner = m_owner] { surface->claim(owner); });
+    }
+
+    ~WebGL2WorkerRenderer() override { detachSession(); }
+
+    // A reference for whoever holds the surface past this renderer: the
+    // canvas, and the message that carries it to the worker.
+    uintptr_t surfaceRef()
+    {
+        m_surface->ref();
+        return reinterpret_cast<uintptr_t>(m_surface.get());
+    }
+
+    bool acceptsFrame() const
+    {
+        switch (m_surface->state())
+        {
+            case ReplaySurface::State::pending:
+                return false;
+            case ReplaySurface::State::ready:
+                return m_surface->framesInFlight() < kMaxFramesInFlight;
+            case ReplaySurface::State::failed:
+                // Nothing will replay, so holding the page back gains nothing.
+                return true;
+        }
+        return true;
+    }
+
+    bool contextRestored() const { return m_surface->generation() != m_generation; }
+
+    void resize(int width, int height)
+    {
+        m_width = width;
+        m_height = height;
+    }
+
+    bool setInkbleed(bool enabled)
+    {
+        m_inkbleed = enabled;
+        // Until the worker makes the context, the attributes asked for answer.
+        return !enabled || m_surface->state() != ReplaySurface::State::ready ||
+               m_surface->canInkbleed();
+    }
+
+    // "clear()" is our hook for the beginning of a frame.
+    void clear()
+    {
+        m_target = nullptr;
+        if (m_session == nullptr || !bindReplayDevice())
+        {
+            return;
+        }
+        sendState();
+        m_host.beginRecord(/*clear=*/true, /*color=*/0);
+        m_session->beginTargetFrame(m_screenTarget);
+        m_target = m_host.screenRenderer();
+    }
+
+    void flush()
+    {
+        if (m_target == nullptr)
+        {
+            return;
+        }
+        m_target = nullptr;
+        if (!m_session->endTargetFrame(m_screenTarget) || !m_session->recordedThisFrame())
+        {
+            return;
+        }
+        const bool replayOre = m_host.replayOre();
+        auto frame = std::make_shared<cmd::DeferredFrame>(cmd::takeFrame(*m_session));
+        m_surface->noteFrameQueued();
+        ReplayWorker::Instance().post([surface = m_surface,
+                                       frame = std::move(frame),
+                                       owner = m_owner,
+                                       generation = m_generation,
+                                       target = m_screenTarget,
+                                       clear = m_host.doClear(),
+                                       color = m_host.clearColor(),
+                                       replayOre]() mutable {
+            surface->replay(std::move(frame), owner, generation, target, clear, color, replayOre);
+        });
+    }
+
+    // Same contract as WebGL2Renderer::attachSession.
+    bool attachSession(WebGL2DeferredSession* session)
+    {
+        if (session == nullptr)
+        {
+            return false;
+        }
+        if (m_session == session)
+        {
+            return true;
+        }
+        if (m_session != nullptr || session->everBound())
+        {
+            return false;
+        }
+        session->claim();
+        session->attach(this);
+        m_screenTarget = session->acquireScreenTarget();
+        m_host.bindSession(session, m_screenTarget);
+        m_session = session;
+        m_deviceBound = false;
+        bindReplayDevice();
+        return true;
+    }
+
+    void detachSession()
+    {
+        if (m_session == nullptr)
+        {
+            return;
+        }
+        cmd::DeferredSession* session = m_session;
+        session->detach(this);
+        session->discardTargetFrame(m_screenTarget);
+        auto leftover = std::make_shared<cmd::DeferredFrame>(cmd::takeFrame(*session));
+        session->releaseScreenTarget(m_screenTarget);
+        // The worker frees this context once we let go of the session.
+        session->bindRenderContext(nullptr);
+        forgetSession();
+        releaseOnWorker(std::move(leftover));
+    }
+
+    bool deferredActive() const { return m_session != nullptr; }
+
+    // Called from inside ~DeferredSession, whose members are still alive.
+    void deferredSessionDestroyed() override
+    {
+        auto leftover = std::make_shared<cmd::DeferredFrame>(cmd::takeFrame(*m_session));
+        forgetSession();
+        releaseOnWorker(std::move(leftover));
+    }
+
+    void save() override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->save();
+        }
+    }
+    void restore() override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->restore();
+        }
+    }
+    void transform(const Mat2D& matrix) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->transform(matrix);
+        }
+    }
+    void drawPath(RenderPath* path, RenderPaint* paint) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawPath(path, paint);
+        }
+    }
+    void clipPath(RenderPath* path) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->clipPath(path);
+        }
+    }
+    void clipStroke(RenderPath* path, const StrokeParams& params) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->clipStroke(path, params);
+        }
+    }
+    void drawImage(const RenderImage* image,
+                   ImageSampler sampler,
+                   BlendMode blendMode,
+                   float opacity) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawImage(image, sampler, blendMode, opacity);
+        }
+    }
+    void drawImage(const RenderImage* image,
+                   ImageSampler sampler,
+                   BlendMode blendMode,
+                   float opacity,
+                   float additiveness) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawImage(image, sampler, blendMode, opacity, additiveness);
+        }
+    }
+    void drawImageMesh(const RenderImage* image,
+                       ImageSampler sampler,
+                       rcp<RenderBuffer> vertices_f32,
+                       rcp<RenderBuffer> uvCoords_f32,
+                       rcp<RenderBuffer> indices_u16,
+                       uint32_t vertexCount,
+                       uint32_t indexCount,
+                       BlendMode blendMode,
+                       float opacity) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawImageMesh(image,
+                                    sampler,
+                                    std::move(vertices_f32),
+                                    std::move(uvCoords_f32),
+                                    std::move(indices_u16),
+                                    vertexCount,
+                                    indexCount,
+                                    blendMode,
+                                    opacity);
+        }
+    }
+    void drawImageMesh(const RenderImage* image,
+                       ImageSampler sampler,
+                       rcp<RenderBuffer> vertices_f32,
+                       rcp<RenderBuffer> uvCoords_f32,
+                       rcp<RenderBuffer> indices_u16,
+                       uint32_t vertexCount,
+                       uint32_t indexCount,
+                       BlendMode blendMode,
+                       float opacity,
+                       float additiveness) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawImageMesh(image,
+                                    sampler,
+                                    std::move(vertices_f32),
+                                    std::move(uvCoords_f32),
+                                    std::move(indices_u16),
+                                    vertexCount,
+                                    indexCount,
+                                    blendMode,
+                                    opacity,
+                                    additiveness);
+        }
+    }
+    void drawImageMeshInstanced(const RenderImage* image,
+                                ImageSampler sampler,
+                                rcp<RenderBuffer> vertices_f32,
+                                rcp<RenderBuffer> uvCoords_f32,
+                                rcp<RenderBuffer> indices_u16,
+                                uint32_t vertexCount,
+                                uint32_t indexCount,
+                                rcp<ImageMeshInstances> instances) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->drawImageMeshInstanced(image,
+                                             sampler,
+                                             std::move(vertices_f32),
+                                             std::move(uvCoords_f32),
+                                             std::move(indices_u16),
+                                             vertexCount,
+                                             indexCount,
+                                             std::move(instances));
+        }
+    }
+    void applyLayerMask(const RenderImage* mask, ImageSampler sampler, LayerMaskMode mode) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->applyLayerMask(mask, sampler, mode);
+        }
+    }
+    void modulateOpacity(float opacity) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->modulateOpacity(opacity);
+        }
+    }
+    void modulateColor(ColorInt color, bool replace) override
+    {
+        if (m_target != nullptr)
+        {
+            m_target->modulateColor(color, replace);
+        }
+    }
+    bool currentTransform(Mat2D* out) const override
+    {
+        return m_target != nullptr && m_target->currentTransform(out);
+    }
+    bool currentModulatedOpacity(float* out) const override
+    {
+        return m_target != nullptr && m_target->currentModulatedOpacity(out);
+    }
+
+private:
+    // The handshake: the worker's context answers the replay caps, so the
+    // page never touches the device it records for.
+    bool bindReplayDevice()
+    {
+        if (m_surface->state() != ReplaySurface::State::ready)
+        {
+            return false;
+        }
+        if (!m_deviceBound)
+        {
+            m_session->bindReplayCaps(m_surface->caps());
+            m_session->bindRenderContext(m_surface->renderContext());
+            m_deviceBound = true;
+        }
+        return true;
+    }
+
+    // Queued ahead of the frame they apply to. The first frame sends both,
+    // since an earlier renderer may have left the surface otherwise.
+    void sendState()
+    {
+        if (!m_stateSent || m_width != m_sentWidth || m_height != m_sentHeight)
+        {
+            m_sentWidth = m_width;
+            m_sentHeight = m_height;
+            ReplayWorker::Instance().post([surface = m_surface,
+                                           width = m_width,
+                                           height = m_height] { surface->resize(width, height); });
+        }
+        if (!m_stateSent || m_inkbleed != m_sentInkbleed)
+        {
+            m_stateSent = true;
+            m_sentInkbleed = m_inkbleed;
+            ReplayWorker::Instance().post(
+                [surface = m_surface, enabled = m_inkbleed] { surface->setInkbleed(enabled); });
+        }
+    }
+
+    void forgetSession()
+    {
+        m_session = nullptr;
+        m_target = nullptr;
+        m_screenTarget = 0;
+        m_host.bindSession(nullptr);
+    }
+
+    // Queued behind every frame that may still reference those resources.
+    void releaseOnWorker(std::shared_ptr<cmd::DeferredFrame> leftover)
+    {
+        ReplayWorker::Instance().post(
+            [surface = m_surface, owner = m_owner, leftover = std::move(leftover)]() mutable {
+                surface->release(owner, std::move(leftover));
+            });
+    }
+
+    // Page only.
+    static inline uint32_t s_owners = 0;
+    const rcp<ReplaySurface> m_surface;
+    const uint32_t m_owner;
+    const uint32_t m_generation;
+    cmd::DeferredSession* m_session = nullptr;
+    cmd::DeferredInlineHost m_host;
+    uint64_t m_screenTarget = 0;
+    Renderer* m_target = nullptr;
+    bool m_deviceBound = false;
+    int m_width;
+    int m_height;
+    int m_sentWidth = 0;
+    int m_sentHeight = 0;
+    bool m_inkbleed;
+    bool m_sentInkbleed = false;
+    bool m_stateSent = false;
+};
+
+// Takes the canvas's surface, or makes it on the canvas's first renderer.
+WebGL2WorkerRenderer* makeWorkerRenderer(int width, int height, bool inkbleed, uintptr_t surface)
+{
+    return new WebGL2WorkerRenderer(surface != 0
+                                        ? ref_rcp(reinterpret_cast<ReplaySurface*>(surface))
+                                        : make_rcp<ReplaySurface>(),
+                                    width,
+                                    height,
+                                    inkbleed);
+}
+
+// Pages that enable the worker decode their deferred files' images on it.
+EXPORT void riveReplayWorkerEnable()
+{
+    s_replayWorkerEnabled.store(true, std::memory_order_relaxed);
+}
+
+EXPORT bool riveReplayWorkerListening() { return ReplayWorker::Instance().listening(); }
+
+EXPORT uintptr_t riveReplayWorkerThread()
+{
+    return reinterpret_cast<uintptr_t>(ReplayWorker::Instance().thread());
+}
+
+EXPORT void riveReplayWorkerAttach(ReplaySurface* surface,
+                                   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL,
+                                   int width,
+                                   int height,
+                                   bool inkbleed)
+{
+    rcp<ReplaySurface> adopted(surface);
+    adopted->attach(contextGL, width, height, inkbleed);
+}
+
+EXPORT void riveReplayWorkerContextLost(ReplaySurface* surface) { surface->contextLost(); }
+
+EXPORT void riveReplayWorkerContextRestored(ReplaySurface* surface) { surface->contextRestored(); }
+
+// The canvas was collected, so its context goes, behind every queued frame.
+EXPORT void riveReplaySurfaceRelease(ReplaySurface* surface)
+{
+    ReplayWorker::Instance().post([adopted = rcp<ReplaySurface>(surface)] { adopted->retire(); });
+}
+#endif // RIVE_WEBGL2_REPLAY_WORKER
 
 #endif // RIVE_CANVAS && RIVE_ORE
 
@@ -1275,7 +2223,7 @@ rcp<RenderPaint> WebGL2Factory::makeRenderPaint()
 
 void WebGL2Factory::onWebGL2BufferDeleted(WebGL2RenderBuffer* webglRenderBuffer)
 {
-    for (WebGL2Renderer* renderer : m_renderers)
+    for (WebGL2Renderer* renderer : renderers())
     {
         renderer->onWebGL2BufferDeleted(webglRenderBuffer->uniqueID());
     }
@@ -1336,10 +2284,7 @@ WebGL2RenderImage* adoptWebGL2Image(emscripten::val htmlImage, int width, int he
     // map and be marked ready to upload.
     auto* renderImage = new WebGL2RenderImage();
     ensure_images_map();
-    emscripten::val::module_property("images").call<void>(
-        "set",
-        static_cast<unsigned>(reinterpret_cast<uintptr_t>(renderImage)),
-        htmlImage);
+    emscripten::val::module_property("images").call<void>("set", renderImage->imageID(), htmlImage);
     renderImage->setWebImage(width, height);
     return renderImage;
 }
@@ -1622,7 +2567,21 @@ WebGL2RenderImageWrapper* decodeWebGL2Image(emscripten::val byteArray, emscripte
 
     emscripten::val memoryView{emscripten::typed_memory_view(l, vector.data())};
     memoryView.call<void>("set", byteArray);
-    rcp rcpImage = jsSessionFactory(session)->decodeImage(vector);
+    rcp<RenderImage> rcpImage;
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    // Without a session any canvas may draw it, so both threads decode now.
+    if ((session.isUndefined() || session.isNull()) &&
+        s_replayWorkerEnabled.load(std::memory_order_relaxed))
+    {
+        auto shared = make_rcp<WebGL2RenderImage>(vector, true);
+        shared->decodePageCopy();
+        rcpImage = std::move(shared);
+    }
+    else
+#endif
+    {
+        rcpImage = jsSessionFactory(session)->decodeImage(vector);
+    }
     // NOTE: ref so the image does not get disposed after the scope of this function.
     rcpImage->ref();
     return (WebGL2RenderImageWrapper*)(rcpImage.get());
@@ -1675,6 +2634,20 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
     class_<WebGL2DeferredSession, base<Factory>>("DeferredSession")
         .function("recordedThisFrame", &sessionRecordedThisFrame, allow_raw_pointers());
     function("makeDeferredSession", &makeDeferredSession, allow_raw_pointers());
+#endif
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    class_<WebGL2WorkerRenderer, base<Renderer>>("WebGL2WorkerRenderer")
+        .function("clear", &WebGL2WorkerRenderer::clear)
+        .function("flush", &WebGL2WorkerRenderer::flush)
+        .function("resize", &WebGL2WorkerRenderer::resize)
+        .function("setInkbleed", &WebGL2WorkerRenderer::setInkbleed)
+        .function("attachSession", &WebGL2WorkerRenderer::attachSession, allow_raw_pointers())
+        .function("detachSession", &WebGL2WorkerRenderer::detachSession)
+        .function("deferredActive", &WebGL2WorkerRenderer::deferredActive)
+        .function("acceptsFrame", &WebGL2WorkerRenderer::acceptsFrame)
+        .function("contextRestored", &WebGL2WorkerRenderer::contextRestored)
+        .function("surfaceRef", &WebGL2WorkerRenderer::surfaceRef);
+    function("makeWorkerRenderer", &makeWorkerRenderer, allow_raw_pointers());
 #endif
     function("makeRenderer", &makeWebGL2Renderer, allow_raw_pointers());
     function("decodeWebGL2Image", &decodeWebGL2Image, allow_raw_pointers());

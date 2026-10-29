@@ -161,12 +161,15 @@ do
     if _OPTIONS['wasm_threads'] then
         linkoptions({
             -- A browser starts a thread past the pool only once the page
-            -- yields, so it covers 6 job threads, the worker scheduler and 8
-            -- workers' own threads.
-            '-s PTHREAD_POOL_SIZE=16',
+            -- yields, so it covers 6 job threads, the worker scheduler, 8
+            -- workers' own threads and the deferred replay worker.
+            '-s PTHREAD_POOL_SIZE=17',
             -- Growth stays on; the glue rechecks its heap views at each access.
             '-Wno-pthreads-mem-growth',
             '--pre-js ' .. path.getabsolute('./js/threads.js'),
+            '--pre-js ' .. path.getabsolute(
+                RIVE_RUNTIME_DIR .. '/src/wasm/web/rive_threads_pre.js'
+            ),
         })
     end
 
@@ -341,6 +344,12 @@ do
                 '--pre-js ' .. path.getabsolute('./js/webgl2_renderer.js'),
                 '-o ' .. path.getabsolute(RIVE_BUILD_OUT) .. '/webgl2_advanced.mjs',
             })
+            if _OPTIONS['wasm_threads'] then
+                linkoptions({
+                    -- After webgl2_renderer.js, whose makeRenderer it wraps.
+                    '--pre-js ' .. path.getabsolute('./js/replay_worker.js'),
+                })
+            end
             finalizeGlue('webgl2_advanced.mjs')
             targetname('webgl2_advanced')
             targetextension('.mjs')

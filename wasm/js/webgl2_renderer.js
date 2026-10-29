@@ -1,3 +1,52 @@
+// Shared by the page's canvases and the replay worker's, so both make the same
+// kind of context.
+function riveContextAttributes(enableMSAA, inkbleed) {
+  return {
+    "alpha": true,
+    "depth": enableMSAA || inkbleed,
+    "stencil": enableMSAA || inkbleed,
+    "antialias": enableMSAA && !inkbleed,
+    "premultipliedAlpha": true,
+    "preserveDrawingBuffer": 0,
+    "powerPreference": "high-performance",
+    "failIfMajorPerformanceCaveat": 0,
+    "enableExtensionsByDefault": false,
+    "explicitSwapControl": 0,
+    "renderViaOffscreenBackBuffer": 0,
+  };
+}
+
+// Whether canvases should ask for "antialias:true", judged from a context made
+// with it.
+function riveCanvasAntialiasPreferred(gl) {
+  // WEBGL_shader_pixel_local_storage works without MSAA.
+  if (gl.getExtension("WEBGL_shader_pixel_local_storage")) {
+    return false;
+  }
+  const webglDebugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+  if (webglDebugInfo) {
+    const vendor = gl.getParameter(webglDebugInfo.UNMASKED_VENDOR_WEBGL);
+    const renderer = gl.getParameter(webglDebugInfo.UNMASKED_RENDERER_WEBGL);
+    if (vendor.includes("Google") && renderer.includes("ANGLE Metal Renderer")) {
+      // We experience flickering on Chrome/Metal when using a WebGL context with
+      // "antialias:true". This appears to be a synchronization issue internal to the browser.
+      // Avoid "antialias:true" in this case, opting instead to do our own internal MSAA.
+      return false;
+    }
+  }
+  return true;
+}
+
+// Resize the renderer's surface if the canvas size changed.
+function riveSyncRendererSize(renderer) {
+  const canvas = renderer._canvas;
+  if (renderer._width != canvas.width || renderer._height != canvas.height) {
+    renderer.resize(canvas.width, canvas.height);
+    renderer._width = canvas.width;
+    renderer._height = canvas.height;
+  }
+}
+
 const webglOnRuntimeInitialized = Module["onRuntimeInitialized"];
 
 Module["onRuntimeInitialized"] = function () {
@@ -79,19 +128,7 @@ Module["onRuntimeInitialized"] = function () {
   }
 
   function makeGLRenderer(canvas, enableMSAA = false, inkbleed = false) {
-    var contextAttributes = {
-      "alpha": true,
-      "depth": enableMSAA || inkbleed,
-      "stencil": enableMSAA || inkbleed,
-      "antialias": enableMSAA && !inkbleed,
-      "premultipliedAlpha": true,
-      "preserveDrawingBuffer": 0,
-      "powerPreference": "high-performance",
-      "failIfMajorPerformanceCaveat": 0,
-      "enableExtensionsByDefault": false,
-      "explicitSwapControl": 0,
-      "renderViaOffscreenBackBuffer": 0,
-    };
+    var contextAttributes = riveContextAttributes(enableMSAA, inkbleed);
 
     var gl = canvas.getContext("webgl2", contextAttributes);
     if (!gl) {
@@ -159,20 +196,7 @@ Module["onRuntimeInitialized"] = function () {
           _offscreenGL._gl.getParameter(_offscreenGL._gl.MAX_TEXTURE_SIZE)
         );
 
-        // WEBGL_shader_pixel_local_storage works without MSAA.
-        _offscreenGL._enableAntialiasCanvas = !_offscreenGL._hasPixelLocalStorage
-
-        const webglDebugInfo = _offscreenGL._gl.getExtension("WEBGL_debug_renderer_info")
-        if (webglDebugInfo) {
-          const vendor = _offscreenGL._gl.getParameter(webglDebugInfo.UNMASKED_VENDOR_WEBGL);
-          const renderer = _offscreenGL._gl.getParameter(webglDebugInfo.UNMASKED_RENDERER_WEBGL);
-          if (vendor.includes("Google") && renderer.includes("ANGLE Metal Renderer")) {
-            // We experience flickering on Chrome/Metal when using a WebGL context with
-            // "antialias:true". This appears to be a synchronization issue internal to the browser.
-            // Avoid "antialias:true" in this case, opting instead to do our own internal MSAA.
-            _offscreenGL._enableAntialiasCanvas = false;
-          }
-        }
+        _offscreenGL._enableAntialiasCanvas = riveCanvasAntialiasPreferred(_offscreenGL._gl);
 
         return _offscreenGL;
       }
@@ -436,14 +460,8 @@ Module["onRuntimeInitialized"] = function () {
 
   const cppClear = Module["WebGL2Renderer"]["prototype"]["clear"];
   Module["WebGL2Renderer"]["prototype"]["clear"] = function () {
-    // Resize WebGL surface if the canvas size changed.
     GL.makeContextCurrent(this._handle);
-    const canvas = this._canvas;
-    if (this._width != canvas.width || this._height != canvas.height) {
-      this.resize(canvas.width, canvas.height);
-      this._width = canvas.width;
-      this._height = canvas.height;
-    }
+    riveSyncRendererSize(this);
     cppClear.call(this);
   };
 

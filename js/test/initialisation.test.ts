@@ -417,6 +417,18 @@ describe("RuntimeLoader threads", () => {
     expect(threads.default).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
   });
+
+  test("parallel parts reach the scripts of the runtime that loads", async () => {
+    const scripting: { parallelParts?: number | null } = {};
+    (threads as any).default = jest
+      .fn()
+      .mockResolvedValue({ riveScripting: scripting });
+    rive.RuntimeLoader.setParallelParts(4);
+    await rive.RuntimeLoader.awaitInstance();
+    expect(scripting.parallelParts).toBe(4);
+    rive.RuntimeLoader.setParallelParts(null);
+    expect(scripting.parallelParts).toBeNull();
+  });
 });
 
 // #endregion

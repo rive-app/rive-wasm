@@ -77,6 +77,15 @@ export interface RiveCanvas {
   makeDeferredSession?(): DeferredSession | undefined;
 
   /**
+   * @experimental Lets deferred renderers replay on one worker shared by the
+   * page. Only in the threaded webgl2 build; call it before loading files, so
+   * their images reach the worker too.
+   *
+   * @returns false where the browser cannot draw WebGL2 on a transferred canvas
+   */
+  enableReplayWorker?(): boolean;
+
+  /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
    *
    * @param buffer - Array buffer of a Rive file
@@ -206,6 +215,18 @@ export interface RendererOptions {
    * converted to clockwise on a best-effort basis
    */
   inkbleed?: boolean;
+  /**
+   * @experimental (webgl2-threads only) Hands the canvas to the replay worker,
+   * once `enableReplayWorker()` has succeeded. The renderer then replays only
+   * deferred sessions. A canvas handed over before keeps going to the worker.
+   */
+  replayWorker?: boolean;
+  /**
+   * @experimental (webgl2-threads only) Called when the replay worker
+   * restores the renderer's lost context, so an idle instance still draws
+   * and notices it.
+   */
+  onContextRestored?: () => void;
 }
 
 /**
@@ -280,6 +301,22 @@ export declare class RendererWrapper {
    * @returns false if inkbleed was requested but the canvas context does not support it
    */
   setInkbleed?(enabled: boolean): boolean;
+  /**
+   * @experimental Present on renderers whose canvas is on the replay worker,
+   * which can only draw deferred sessions.
+   */
+  replaysOnWorker?(): boolean;
+  /**
+   * @experimental False while the replay worker has yet to take the canvas, or
+   * is as many frames behind as it queues. Skip the frame rather than record it.
+   */
+  acceptsFrame?(): boolean;
+  /**
+   * @experimental True once the replay worker's context was lost and restored.
+   * What it held is gone, so the renderer and the file's session must be
+   * recreated.
+   */
+  contextRestored?(): boolean;
 }
 
 export declare class RenderPathWrapper {

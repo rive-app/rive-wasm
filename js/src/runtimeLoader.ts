@@ -61,6 +61,12 @@ export class RuntimeLoader {
 
   private static triedThreads = false;
 
+  // The parts a script's parallel call gets on the threaded build, or null
+  // for the runtime's default.
+  private static parallelParts: number | null = null;
+  // Whether a threaded runtime replays deferred frames on a worker.
+  private static replayWorker = true;
+
   // Error callbacks enqueued from .getInstance()
   private static errorCallbackQueue: ((error: Error) => void)[] = [];
 
@@ -89,7 +95,12 @@ export class RuntimeLoader {
       performance.measure('rive:wasm-init', 'rive:wasm-init:start', 'rive:wasm-init:end');
     }
     RuntimeLoader.runtime = rive;
+    RuntimeLoader.applyParallelParts();
     RuntimeLoader.errorCallbackQueue = [];
+    // Before any callback can import a file, so its images reach the worker.
+    if (RuntimeLoader.replayWorker) {
+      rive.enableReplayWorker?.();
+    }
     // Fire all the callbacks
     while (RuntimeLoader.callBackQueue.length > 0) {
       RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
@@ -271,6 +282,54 @@ export class RuntimeLoader {
   // Gets the threaded build's wasm url (null means threads are off)
   public static getWasmThreadsUrl(): string | null {
     return RuntimeLoader.wasmThreadsURL;
+  }
+
+  /**
+   * Sets how many parts a script's parallel call gets on a page that runs
+   * the threaded build, the page's thread and one worker thread for each
+   * other part. 1 turns parallel calls off, and null leaves the runtime's
+   * default of one part per core, up to 8. Set it before the first file
+   * loads.
+   */
+  public static setParallelParts(parts: number | null): void {
+    RuntimeLoader.parallelParts = parts;
+    RuntimeLoader.applyParallelParts();
+  }
+
+  // Gets the parts set with setParallelParts (null means the default)
+  public static getParallelParts(): number | null {
+    return RuntimeLoader.parallelParts;
+  }
+
+  private static applyParallelParts(): void {
+    const scripting = (
+      RuntimeLoader.runtime as unknown as
+        | { riveScripting?: { parallelParts?: number | null } }
+        | undefined
+    )?.riveScripting;
+    if (scripting) {
+      scripting.parallelParts = RuntimeLoader.parallelParts;
+    }
+  }
+
+  /**
+   * @experimental When the threaded build loads, instances with
+   * `enableGPUCanvas` hand their canvas to one worker that replays every
+   * instance's frames while the page records the next ones. Pass `false`
+   * before the runtime loads to keep replay on the page's thread; a single
+   * instance can opt out with `useReplayWorker: false`. Pages where the
+   * browser cannot draw WebGL2 on a transferred canvas stay on the page's
+   * thread regardless.
+   *
+   * True by default.
+   */
+  public static setReplayWorker(enabled: boolean): void {
+    RuntimeLoader.replayWorker = enabled;
+  }
+
+  // Gets whether a threaded runtime may replay on a worker
+  public static getReplayWorker(): boolean {
+    return RuntimeLoader.replayWorker;
   }
 
   // Manually sets the wasm binary or clears it with null

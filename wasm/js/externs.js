@@ -95,6 +95,11 @@ var Rive = {
   detachSession: function () {},
   deferredActive: function () {},
   recordedThisFrame: function () {},
+  // The threads build's replay worker, reached from the published runtime.
+  enableReplayWorker: function () {},
+  acceptsFrame: function () {},
+  contextRestored: function () {},
+  replaysOnWorker: function () {},
   decodeWebGL2Image: function () {},
   c2dDeferredClaim: function () {},
   c2dDeferredRenderer: function () {},

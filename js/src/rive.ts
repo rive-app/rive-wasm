@@ -1665,6 +1665,19 @@ export interface RiveParameters {
    */
   enableGPUCanvas?: boolean;
   /**
+   * @experimental This API is early and may encounter breaking behavior change without a major version bump
+   *
+   * With `enableGPUCanvas`, on `@rive-app/webgl2-threads` loaded threaded, the
+   * canvas moves to a worker shared by every instance on the page, which replays
+   * each frame while this instance records the next. Set false to keep this
+   * instance's rendering on the page's thread. Has no effect where the worker is
+   * unavailable. True by default; see also {@link RuntimeLoader.setReplayWorker}.
+   *
+   * A canvas handed to the worker stays there: its `width` and `height` still
+   * work, but it can no longer give out a context of its own.
+   */
+  useReplayWorker?: boolean;
+  /**
    * Emit performance.mark / performance.measure entries for load lifecycle
    * events and the first 3 render frames. Useful for profiling Rive's
    * contribution to load and render time in browser devtools.
@@ -2341,10 +2354,14 @@ export class Rive {
   // has the final say, since a file's mode is fixed at import.
   private deferredRenderer: boolean = false;
 
+  // Whether a deferred instance may hand its canvas to the replay worker.
+  private useReplayWorker: boolean = true;
+
   // Decides the context attributes on every init(); cleared if the renderer can't inkbleed.
   private _inkbleedCapable = false;
   private _inkbleed = false;
   private static inkbleedUnsupportedWarned = false;
+  private static replayContextLostWarned = false;
   private static inkbleedNotCapableWarned = false;
 
   // Whether this instance imported the file in `riveFile` (true) or the caller
@@ -2562,6 +2579,7 @@ export class Rive {
     this._focusOptions = params.focusOptions ?? this._focusOptions;
     this._tabIndex = params.tabIndex ?? null;
     this.deferredRenderer = !!params.enableGPUCanvas;
+    this.useReplayWorker = params.useReplayWorker ?? true;
     this._inkbleedCapable = !!params.enableInkbleed;
     this._inkbleed = this._inkbleedCapable;
 
@@ -2779,7 +2797,20 @@ export class Rive {
           this.renderer = this.runtime.makeRenderer(
             this.canvas,
             useOffscreenRenderer,
-            { inkbleed: this._inkbleedCapable },
+            {
+              inkbleed: this._inkbleedCapable,
+              // An immediate file would only re-import for the worker.
+              replayWorker:
+                this.deferredRenderer &&
+                this.useReplayWorker &&
+                (this.riveFile?.deferredRequested ?? true),
+              // Draws notice a restored context, so one has to be scheduled.
+              onContextRestored: () => {
+                if (!this._explicitlyStoppedRendering) {
+                  this.scheduleRendering();
+                }
+              },
+            },
           );
           if (!this.renderer) {
             throw new Error("Renderer is null, cannot render Rive on the canvas.");
@@ -3081,7 +3112,11 @@ export class Rive {
       // May replace this.riveFile with a re-import, so it runs before the
       // instance takes its reference. Skipped unless something deferred is in
       // play, so the default path stays synchronous through to the load event.
-      if (this.riveFile.deferredSession !== null || this.deferredRenderer) {
+      if (
+        this.riveFile.deferredSession !== null ||
+        this.deferredRenderer ||
+        this.renderer?.replaysOnWorker?.() === true
+      ) {
         await this.resolveDeferredRendering();
         if (this.destroyed) {
           // cleanup() ran during a re-import. Taking a reference now would
@@ -3162,7 +3197,19 @@ export class Rive {
     const ownsFile = this.ownsRiveFile;
     const renderer = this.renderer;
     const session = file.deferredSession;
+    // A canvas on the replay worker can only draw what a session records.
+    const deferredOnly = renderer?.replaysOnWorker?.() === true;
     if (session === null) {
+      if (deferredOnly) {
+        console.warn(
+          "Rive: this canvas draws on the replay worker, which only replays GPU Canvas files. Re-importing the file with `enableGPUCanvas: true` for this instance.",
+        );
+        const { attached } = await this.attachDeferredCopy(file, renderer);
+        if (attached && ownsFile) {
+          file.destroyIfUnused();
+        }
+        return;
+      }
       // No second warning when the file asked for deferred and the build
       // could not honor it; the unsupported-build warning already fired, and
       // telling the user to set a flag they set would mislead.
@@ -3208,18 +3255,14 @@ export class Rive {
     // Bound to another instance. Re-import from the retained buffer into a
     // session of our own.
     file.warnBoundElsewhereOnce();
-    const copy = await file.reimport(true);
-    if (this.destroyed) {
-      // The renderer was deleted while we imported; attaching to it would hand
-      // embind a deleted object.
-      copy.destroyIfUnused();
+    const { copy, attached } = await this.attachDeferredCopy(file, renderer);
+    if (attached || this.destroyed) {
       return;
     }
-    this.riveFile = copy;
-    this.ownsRiveFile = true;
-    const copySession = copy.deferredSession;
-    if (copySession !== null && attachSession.call(renderer, copySession)) {
-      copy.claimSession();
+    if (deferredOnly) {
+      console.warn(
+        "Rive: could not attach the re-imported file's deferred session to this canvas, which draws on the replay worker and has no immediate fallback.",
+      );
       return;
     }
     // The copy's session could not take this canvas either (this renderer
@@ -3243,6 +3286,63 @@ export class Rive {
     if (ownsFile) {
       file.destroyIfUnused();
     }
+  }
+
+  // Reloads what this instance was playing. State the reload does not carry,
+  // such as a view model instance bound by hand, starts over.
+  private reloadForRestoredContext(): void {
+    // A copy re-imported for this instance kept no source to reload from.
+    const riveFile = this.ownsRiveFile ? undefined : this.riveFile;
+    if (!this.src && !this.buffer && !riveFile) {
+      this.stopRendering();
+      if (!Rive.replayContextLostWarned) {
+        Rive.replayContextLostWarned = true;
+        console.warn(
+          "Rive: the replay worker's WebGL context was restored, but this instance has no `src` or `buffer` to reload from, so its canvas stays blank.",
+        );
+      }
+      return;
+    }
+    this.load({
+      src: this.src,
+      buffer: this.buffer,
+      riveFile,
+      artboard: this.activeArtboard,
+      animations: this.playingAnimationNames.concat(this.pausedAnimationNames),
+      stateMachines: this.playingStateMachineNames.concat(
+        this.pausedStateMachineNames,
+      ),
+      autoplay: this.isPlaying,
+      autoBind: this._viewModelInstance !== null,
+      enableGPUCanvas: this.deferredRenderer,
+    });
+  }
+
+  /**
+   * Re-imports `file` deferred and attaches the copy's session to `renderer`.
+   * The copy becomes this instance's file either way, unless the instance was
+   * destroyed while it imported.
+   */
+  private async attachDeferredCopy(
+    file: RiveFile,
+    renderer: rc.WrappedRenderer,
+  ): Promise<{ copy: RiveFile; attached: boolean }> {
+    const copy = await file.reimport(true);
+    if (this.destroyed) {
+      // The renderer was deleted while we imported; attaching to it would hand
+      // embind a deleted object.
+      copy.destroyIfUnused();
+      return { copy, attached: false };
+    }
+    this.riveFile = copy;
+    this.ownsRiveFile = true;
+    const copySession = copy.deferredSession;
+    const attached =
+      copySession !== null && renderer.attachSession?.(copySession) === true;
+    if (attached) {
+      copy.claimSession();
+    }
+    return { copy, attached };
   }
 
   // Initialize for playback
@@ -3647,6 +3747,19 @@ export class Rive {
     // load() tears the artboard down and re-inits asynchronously; a frame
     // queued before that lands here with nothing to draw.
     if (!this.artboard) {
+      return;
+    }
+    // The replay worker's context came back empty, so everything it held has
+    // to be recorded again through a fresh renderer and session.
+    if (this.renderer?.contextRestored?.() === true) {
+      this.reloadForRestoredContext();
+      return;
+    }
+    // The replay worker has yet to take the canvas, or is still on earlier
+    // frames. Waiting keeps its queue bounded, and the frame that follows
+    // advances by the whole wait, so playback keeps time.
+    if (this.renderer?.acceptsFrame?.() === false) {
+      this.scheduleRendering();
       return;
     }
     const before = performance.now();
