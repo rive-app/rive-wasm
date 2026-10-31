@@ -3117,7 +3117,14 @@ export class Rive {
         this.deferredRenderer ||
         this.renderer?.replaysOnWorker?.() === true
       ) {
-        await this.resolveDeferredRendering();
+        // Asked for when the runtime loaded, so the wait overlapped the fetch
+        // and import.
+        if (this.renderer?.replaysOnWorker?.() === true) {
+          await RuntimeLoader.awaitReplayCaps();
+        }
+        if (!this.destroyed) {
+          await this.resolveDeferredRendering();
+        }
         if (this.destroyed) {
           // cleanup() ran during a re-import. Taking a reference now would
           // resurrect a file this instance is never going to draw. Only ours

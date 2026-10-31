@@ -349,3 +349,63 @@ test("a restored worker context reloads onto a fresh renderer", async () => {
     stub.restore();
   }
 });
+
+test("the worker's caps arrive before the first instance's scripts init, and only once", async () => {
+  const stub = await stubWorkerRenderers();
+  const runtime = (await rive.RuntimeLoader.awaitInstance()) as any;
+  let arrive = () => {};
+  const caps = new Promise<void>((resolve) => {
+    arrive = resolve;
+  });
+  const awaitReplayCaps = jest.fn(() => caps);
+  runtime.awaitReplayCaps = awaitReplayCaps;
+  const initArtboard = jest.spyOn(rive.Rive.prototype as any, "initArtboard");
+  const instances: rive.Rive[] = [];
+  try {
+    const first = createRive({
+      ...stateMachineParams(newCanvas()),
+      enableGPUCanvas: true,
+    });
+    await nextFrames(3);
+    expect(awaitReplayCaps).toHaveBeenCalledTimes(1);
+    expect(initArtboard).not.toHaveBeenCalled();
+
+    arrive();
+    instances.push(await first);
+    expect(initArtboard).toHaveBeenCalledTimes(1);
+
+    instances.push(
+      await createRive({
+        ...stateMachineParams(newCanvas()),
+        enableGPUCanvas: true,
+      }),
+    );
+    expect(awaitReplayCaps).toHaveBeenCalledTimes(1);
+    expect(initArtboard).toHaveBeenCalledTimes(2);
+  } finally {
+    instances.forEach((r) => r.cleanup());
+    delete runtime.awaitReplayCaps;
+    stub.restore();
+  }
+});
+
+test("a worker that never sends its caps does not hold the load", async () => {
+  const stub = await stubWorkerRenderers();
+  const runtime = (await rive.RuntimeLoader.awaitInstance()) as any;
+  (rive.RuntimeLoader as any).replayCapsArrived = false;
+  runtime.awaitReplayCaps = () => new Promise<void>(() => {});
+  jest.useFakeTimers({ doNotFake: ["requestAnimationFrame"] });
+  try {
+    const loaded = createRive({
+      ...stateMachineParams(newCanvas()),
+      enableGPUCanvas: true,
+    });
+    await jest.advanceTimersByTimeAsync(5000);
+    jest.useRealTimers();
+    (await loaded).cleanup();
+  } finally {
+    jest.useRealTimers();
+    delete runtime.awaitReplayCaps;
+    stub.restore();
+  }
+});

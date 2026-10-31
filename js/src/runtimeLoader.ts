@@ -66,6 +66,8 @@ export class RuntimeLoader {
   private static parallelParts: number | null = null;
   // Whether a threaded runtime replays deferred frames on a worker.
   private static replayWorker = true;
+  private static replayCapsArrived = false;
+  private static readonly replayCapsTimeoutMs = 2000;
 
   // Error callbacks enqueued from .getInstance()
   private static errorCallbackQueue: ((error: Error) => void)[] = [];
@@ -240,6 +242,29 @@ export class RuntimeLoader {
     return new Promise<rc.RiveCanvas>((resolve, reject) =>
       RuntimeLoader.getInstance(resolve, reject),
     );
+  }
+
+  /**
+   * @internal Resolves once the replay worker's device caps reach the page,
+   * so scripts init against them. Null when there is nothing left to wait
+   * for, which keeps every later instance's load synchronous.
+   */
+  public static awaitReplayCaps(): Promise<void> | null {
+    if (RuntimeLoader.replayCapsArrived) {
+      return null;
+    }
+    const pending = RuntimeLoader.runtime?.awaitReplayCaps?.();
+    if (!pending) {
+      return null;
+    }
+    // A worker that never answers must not hold every load back; its caps
+    // then bind when the surface does, as before.
+    const timeout = new Promise<void>((resolve) =>
+      setTimeout(resolve, RuntimeLoader.replayCapsTimeoutMs),
+    );
+    return Promise.race([pending, timeout]).then(() => {
+      RuntimeLoader.replayCapsArrived = true;
+    });
   }
 
   // Manually sets the wasm url

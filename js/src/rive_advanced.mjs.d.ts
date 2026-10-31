@@ -86,6 +86,14 @@ export interface RiveCanvas {
   enableReplayWorker?(): boolean;
 
   /**
+   * @internal Settles once the replay worker's device caps reach the page, so
+   * scripts read truthful features before any canvas reaches the worker.
+   *
+   * @returns undefined when nothing replays on the worker
+   */
+  awaitReplayCaps?(): Promise<void> | undefined;
+
+  /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
    *
    * @param buffer - Array buffer of a Rive file

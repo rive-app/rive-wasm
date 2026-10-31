@@ -97,6 +97,7 @@ var Rive = {
   recordedThisFrame: function () {},
   // The threads build's replay worker, reached from the published runtime.
   enableReplayWorker: function () {},
+  awaitReplayCaps: function () {},
   acceptsFrame: function () {},
   contextRestored: function () {},
   replaysOnWorker: function () {},

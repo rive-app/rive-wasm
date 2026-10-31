@@ -1011,6 +1011,10 @@ public:
         ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
         return m_renderContext->makeRenderCanvas(width, height);
     }
+    rcp<gpu::RenderCanvas> makeUnboundContentCanvas(uint32_t width, uint32_t height) override
+    {
+        return makeContentCanvas(width, height);
+    }
 
     // Answered from the context rather than left to the host default: a GL
     // frame can land on atomics or depth-stencil, and neither applies the mask
@@ -1549,6 +1553,11 @@ void WebGL2Renderer::replaySnapshot(const cmd::DeferredFrame& frame,
 #endif
 
 #ifdef RIVE_WEBGL2_REPLAY_WORKER
+// The worker's device caps, measured once per page on a probe context, since
+// scripts init before any canvas reaches the worker.
+static ore::ReplayCaps s_pageCaps;
+static std::atomic<bool> s_pageCapsReady{false};
+
 // A canvas transferred to the replay worker, kept for the canvas's life so the
 // renderers that take it in turn share one GL context. The page records for
 // it; its context, renderer and resident resources live on the worker and only
@@ -1885,6 +1894,12 @@ public:
         m_host.bindSession(session, m_screenTarget);
         m_session = session;
         m_deviceBound = false;
+        // Scripts init before the surface is ready, so they answer from the
+        // caps the page awaited once.
+        if (s_pageCapsReady.load(std::memory_order_acquire))
+        {
+            bindCapsIfUnknown(s_pageCaps);
+        }
         bindReplayDevice();
         return true;
     }
@@ -2089,11 +2104,21 @@ private:
         }
         if (!m_deviceBound)
         {
-            m_session->bindReplayCaps(m_surface->caps());
+            // Caps scripts already recorded against stay, so replay checks
+            // them against this device.
+            bindCapsIfUnknown(m_surface->caps());
             m_session->bindRenderContext(m_surface->renderContext());
             m_deviceBound = true;
         }
         return true;
+    }
+
+    void bindCapsIfUnknown(const ore::ReplayCaps& caps)
+    {
+        if (!m_session->oreContext().caps().featuresKnown)
+        {
+            m_session->bindReplayCaps(caps);
+        }
     }
 
     // Queued ahead of the frame they apply to. The first frame sends both,
@@ -2185,6 +2210,26 @@ EXPORT void riveReplayWorkerAttach(ReplaySurface* surface,
 {
     rcp<ReplaySurface> adopted(surface);
     adopted->attach(contextGL, width, height, inkbleed);
+}
+
+// The page waits on this, so it answers even when the probe context failed.
+EXPORT void riveReplayWorkerProbeCaps(EMSCRIPTEN_WEBGL_CONTEXT_HANDLE contextGL)
+{
+    if (contextGL != 0)
+    {
+        {
+            ScopedGLContextMakeCurrent makeCurrent(contextGL);
+            std::unique_ptr<RenderContext> renderContext =
+                makeCurrent.ok() ? RenderContextGLImpl::MakeContext() : nullptr;
+            if (renderContext != nullptr)
+            {
+                s_pageCaps = ore::ReplayCaps::from(*renderContext->getOreContext());
+            }
+        }
+        emscripten_webgl_destroy_context(contextGL);
+    }
+    s_pageCapsReady.store(true, std::memory_order_release);
+    ReplayWorker::Instance().postToMain([] { EM_ASM({ Module["riveReplayCapsArrived"](); }); });
 }
 
 EXPORT void riveReplayWorkerContextLost(ReplaySurface* surface) { surface->contextLost(); }

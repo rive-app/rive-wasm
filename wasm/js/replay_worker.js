@@ -61,6 +61,27 @@ if (ENVIRONMENT_IS_PTHREAD) {
       );
     }
 
+    // A context of our own, with the attributes a canvas would get, measures
+    // the caps scripts read before any canvas arrives.
+    function probeCaps() {
+      let gl = null;
+      let handle = 0;
+      try {
+        const attributes = riveContextAttributes(
+          canvasAntialiasPreferred(),
+          false,
+        );
+        gl = new OffscreenCanvas(1, 1).getContext("webgl2", attributes);
+        handle = gl ? GL.registerContext(gl, attributes) : 0;
+      } catch (e) {
+        handle = 0;
+      }
+      Module["_riveReplayWorkerProbeCaps"](handle);
+      // Unregistering leaves the context alive until GC.
+      const loseContext = gl && gl.getExtension("WEBGL_lose_context");
+      loseContext && loseContext.loseContext();
+    }
+
     // Premultiplied here, since the browser ignores
     // UNPACK_PREMULTIPLY_ALPHA_WEBGL for an ImageBitmap.
     function decodeImage(message) {
@@ -91,6 +112,8 @@ if (ENVIRONMENT_IS_PTHREAD) {
       }
       if (message["riveCanvas"]) {
         attach(message);
+      } else if (message["riveProbeCaps"]) {
+        probeCaps();
       } else if (message["riveImage"]) {
         decodeImage(message);
       }
@@ -139,6 +162,8 @@ if (ENVIRONMENT_IS_PTHREAD) {
     }
 
     let enabled = false;
+    let replayCaps = null;
+    let replayCapsArrived = null;
     // Needs WebGL2 on an OffscreenCanvas, which the page probes for the
     // worker.
     function workerCanDraw() {
@@ -164,8 +189,21 @@ if (ENVIRONMENT_IS_PTHREAD) {
       if (!enabled && workerCanDraw()) {
         enabled = true;
         Module["_riveReplayWorkerEnable"]();
+        replayCaps = new Promise((resolve) => {
+          replayCapsArrived = resolve;
+        });
+        postToWorker({ "riveProbeCaps": 1 }, []);
       }
       return enabled;
+    };
+
+    // Settles once the worker's caps have reached the page, or undefined when
+    // nothing replays on the worker.
+    Module["awaitReplayCaps"] = function () {
+      return replayCaps || undefined;
+    };
+    Module["riveReplayCapsArrived"] = function () {
+      replayCapsArrived && replayCapsArrived();
     };
 
     Module["riveReplayWorkerDecodeImage"] = function (image, imageID, blob) {
