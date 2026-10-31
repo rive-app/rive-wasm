@@ -560,6 +560,8 @@ void setFallbackFontCb(emscripten::val cb)
         jsFallbackFontCbRef = emscripten::val::null();
         rive::Font::gFallbackProc = nullptr;
     }
+    // A new callback may pick other fonts through the same proc.
+    rive::Font::fallbackFontsChanged();
 }
 #endif // WITH_RIVE_TEXT
 
