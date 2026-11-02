@@ -975,16 +975,9 @@ public:
     // A renderer that carried state across the interrupt cannot draw the
     // composite -- proven by probe: the same canvas composites through a
     // renderer made after the resume and not through the one that was mid
-    // draw. So hand back a clean one.
-    //
-    // Known limitation: a clean renderer inherits no clip. The caller
-    // re-applies the CTM, but an ancestor clip that constrained the original
-    // vector draw does not constrain the composite, so a cached artboard under
-    // a clipping shape can paint outside it on WebGL. Fixing it needs the clip
-    // stack captured and replayed onto the resumed renderer.
-    bool compositeDropsClips() const override { return true; }
-
-    Renderer* compositeRenderer() override
+    // draw. So hand back a clean one, carrying the interrupted renderer's
+    // clip.
+    Renderer* compositeRenderer(Renderer* current) override
     {
         // Retained rather than replaced: a cached artboard nested inside
         // another one composites first, and freeing its renderer when the
@@ -992,7 +985,16 @@ public:
         // under a draw that is still in progress. The whole set is dropped
         // when the screen frame flushes.
         m_compositeRenderers.push_back(std::make_unique<ConvertingRenderer>(this));
-        return m_compositeRenderers.back().get();
+        RiveRenderer* fresh = m_compositeRenderers.back().get();
+        // [current] is always one of ours: this host is only bound while
+        // this renderer draws a screen frame.
+        const RiveRenderer* from = ownRenderer(current);
+        assert(from != nullptr);
+        if (from != nullptr)
+        {
+            from->copyClipTo(fresh);
+        }
+        return fresh;
     }
 
     rcp<RenderImage> contentCanvasImage(gpu::RenderCanvas* canvas) override
@@ -1243,6 +1245,30 @@ private:
         WebGL2Renderer* m_owner;
     };
     std::vector<std::unique_ptr<RiveRenderer>> m_compositeRenderers;
+
+    // [renderer] as one of the RiveRenderers this host made, or null.
+    const RiveRenderer* ownRenderer(const Renderer* renderer) const
+    {
+        if (renderer == this)
+        {
+            return this;
+        }
+        for (const CanvasPass& pass : m_canvasPasses)
+        {
+            if (renderer == pass.renderer.get())
+            {
+                return pass.renderer.get();
+            }
+        }
+        for (const auto& composite : m_compositeRenderers)
+        {
+            if (renderer == composite.get())
+            {
+                return composite.get();
+            }
+        }
+        return nullptr;
+    }
 #endif
 
     std::map<PLSResourceID, PLSSynchronizedBuffer> m_plsSynchronizedBuffers;
