@@ -25,6 +25,7 @@ var Rive = {
   },
   BlendMode: {
     srcOver: {},
+    additive: {},
     screen: {},
     overlay: {},
     darken: {},

@@ -145,7 +145,7 @@ Module["onRuntimeInitialized"] = function () {
       case BlendMode.srcOver:
         return "source-over";
       case BlendMode.additive:
-        return "plus-lighter";
+        return "lighter";
       case BlendMode.screen:
         return "screen";
       case BlendMode.overlay:
