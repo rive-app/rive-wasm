@@ -343,7 +343,8 @@ export class RuntimeLoader {
    * instance's frames while the page records the next ones. Pass `false`
    * before the runtime loads to keep replay on the page's thread; a single
    * instance can opt out with `useReplayWorker: false`. Pages where the
-   * browser cannot draw WebGL2 on a transferred canvas stay on the page's
+   * browser cannot draw WebGL2 on a transferred canvas, or whose threads miss
+   * each other's heap growth (such as Safari 26.2), stay on the page's
    * thread regardless.
    *
    * True by default.

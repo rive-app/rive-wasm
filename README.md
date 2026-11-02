@@ -52,7 +52,7 @@ Rive can be used in all major browsers. We're constantly working to improve perf
 
 `@rive-app/webgl2-threads` loads a threaded build on pages that are cross origin isolated. There, instances created with `enableGPUCanvas: true` hand their canvas to one worker shared by every instance on the page: each frame advances and records on the page's thread while the worker replays the previous frame on the GPU, so the two no longer add up on the page's thread. This is on by default wherever the browser can draw WebGL2 on a transferred `OffscreenCanvas`.
 
-- Turn it off for the whole page with `RuntimeLoader.setReplayWorker(false)` before the runtime loads, or for one instance with `useReplayWorker: false`. Both keep replay on the page's thread, as do builds without threads, pages that are not isolated, and browsers without WebGL2 on `OffscreenCanvas`.
+- Turn it off for the whole page with `RuntimeLoader.setReplayWorker(false)` before the runtime loads, or for one instance with `useReplayWorker: false`. Both keep replay on the page's thread, as do builds without threads, pages that are not isolated, browsers without WebGL2 on `OffscreenCanvas`, and browsers whose threads miss each other's heap growth, such as Safari 26.2.
 - A canvas handed to the worker stays with it. Setting its `width` and `height` properties still resizes it (the browser owns its attributes from then on), but the page can no longer get a context from it, and any later instance on that canvas renders through the worker too, reusing the same WebGL context.
 - Images in those files decode on the worker, off the page's thread.
 - The page records at most two frames ahead of the worker and skips a frame rather than queue more; the next frame advances by the time skipped.
