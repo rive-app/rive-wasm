@@ -166,7 +166,6 @@ do
             '-s PTHREAD_POOL_SIZE=17',
             -- Growth stays on; the glue rechecks its heap views at each access.
             '-Wno-pthreads-mem-growth',
-            '--pre-js ' .. path.getabsolute('./js/threads.js'),
             '--pre-js ' .. path.getabsolute(
                 RIVE_RUNTIME_DIR .. '/src/wasm/web/rive_threads_pre.js'
             ),

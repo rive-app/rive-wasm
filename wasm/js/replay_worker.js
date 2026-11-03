@@ -184,19 +184,9 @@ if (ENVIRONMENT_IS_PTHREAD) {
         return false;
       }
     }
-    // Only WebKit misses heap growth across threads, and asking the worker
-    // blocks the page until it starts.
-    function workerSeesHeapGrowth() {
-      const userAgent = navigator.userAgent;
-      return (
-        !/AppleWebKit\//.test(userAgent) ||
-        /Chrome\//.test(userAgent) ||
-        Module["_riveReplayWorkerSeesHeapGrowth"]()
-      );
-    }
     // Before any file imports, so its images reach the worker too.
     Module["enableReplayWorker"] = function () {
-      if (!enabled && workerCanDraw() && workerSeesHeapGrowth()) {
+      if (!enabled && workerCanDraw()) {
         enabled = true;
         Module["_riveReplayWorkerEnable"]();
         replayCaps = new Promise((resolve) => {

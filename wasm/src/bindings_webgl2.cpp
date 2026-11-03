@@ -2354,8 +2354,6 @@ EXPORT void riveReplayWorkerEnable()
 
 EXPORT bool riveReplayWorkerListening() { return ReplayWorker::Instance().listening(); }
 
-EXPORT bool riveReplayWorkerSeesHeapGrowth() { return ReplayWorker::Instance().seesHeapGrowth(); }
-
 EXPORT uintptr_t riveReplayWorkerThread()
 {
     return reinterpret_cast<uintptr_t>(ReplayWorker::Instance().thread());

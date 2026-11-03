@@ -82,7 +82,6 @@ export interface RiveCanvas {
    * their images reach the worker too.
    *
    * @returns false where the browser cannot draw WebGL2 on a transferred canvas
-   * or its threads miss each other's heap growth
    */
   enableReplayWorker?(): boolean;
 
