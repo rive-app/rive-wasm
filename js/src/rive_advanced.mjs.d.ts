@@ -321,6 +321,11 @@ export declare class RendererWrapper {
    */
   acceptsFrame?(): boolean;
   /**
+   * @experimental How long the replay worker's recent frames took to finish,
+   * in milliseconds, or 0 before its first.
+   */
+  replayMs?(): number;
+  /**
    * @experimental True once the replay worker's context was lost and restored.
    * What it held is gone, so the renderer and the file's session must be
    * recreated.

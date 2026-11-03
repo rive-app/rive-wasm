@@ -39,9 +39,12 @@ using namespace emscripten;
 #define RIVE_WEBGL2_REPLAY_WORKER
 #include "rive/renderer/cmd/deferred_replayer.hpp"
 #include "rive/renderer/cmd/web_replay_worker.hpp"
+#include <deque>
+#include <emscripten/eventloop.h>
 #endif
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <stdint.h>
@@ -1606,6 +1609,8 @@ public:
     bool canInkbleed() const { return m_canInkbleed; }
     uint32_t framesInFlight() const { return m_framesInFlight.load(std::memory_order_acquire); }
     void noteFrameQueued() { m_framesInFlight.fetch_add(1, std::memory_order_relaxed); }
+    // How long recent frames took to finish, 0 before the first.
+    float replayMs() const { return m_replayMs.load(std::memory_order_relaxed); }
     // Bumped when a restored context replaces everything resident.
     uint32_t generation() const { return m_generation.load(std::memory_order_acquire); }
 
@@ -1658,9 +1663,31 @@ public:
         if (m_renderer != nullptr && !m_lost && owner == m_owner &&
             generation == this->generation())
         {
+            const double submitted = emscripten_get_now();
             m_renderer->replaySnapshot(*frame, target, clear, color, replayOre);
+            dropFrame(std::move(frame));
+            // Replay only queues GL commands; the frame is done once the GPU
+            // process has run them, and only then does its slot free.
+            ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+            GLsync sync = m_fenceTimeouts >= kMaxFenceTimeouts
+                              ? nullptr
+                              : glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            if (sync != nullptr)
+            {
+                glFlush();
+                m_gpuFrames.push_back({sync, submitted, emscripten_get_now()});
+                if (m_gpuFrames.size() == 1)
+                {
+                    ref();
+                    emscripten_set_timeout(&PollGPUFrames, 1, this);
+                }
+                return;
+            }
         }
-        dropFrame(std::move(frame));
+        else
+        {
+            dropFrame(std::move(frame));
+        }
         m_framesInFlight.fetch_sub(1, std::memory_order_release);
     }
 
@@ -1705,6 +1732,7 @@ public:
     // The canvas itself is gone.
     void retire()
     {
+        retireGPUFrames();
         m_retired = true;
         EM_ASM({ Module["riveReplayWorkerForget"]($0); }, this);
         m_replacedRenderers.clear();
@@ -1739,6 +1767,95 @@ public:
     }
 
 private:
+    struct GPUFrame
+    {
+        GLsync sync;
+        double submitted;
+        double fenced;
+    };
+
+    // WebGL2 can only poll a fence, and only sees it signal between tasks.
+    static void PollGPUFrames(void* userData)
+    {
+        rcp<ReplaySurface> surface(static_cast<ReplaySurface*>(userData));
+        if (surface->m_gpuFrames.empty())
+        {
+            return;
+        }
+        ScopedGLContextMakeCurrent makeCurrent(surface->m_contextGL);
+        const double now = emscripten_get_now();
+        while (!surface->m_gpuFrames.empty())
+        {
+            const GPUFrame& front = surface->m_gpuFrames.front();
+            // A lost context fails the wait, which retires the frame too.
+            if (makeCurrent.ok() && glClientWaitSync(front.sync, 0, 0) == GL_TIMEOUT_EXPIRED)
+            {
+                // A fence that never signals would hold its slot for good. A
+                // slow first frame trips this too, so only fences that keep
+                // failing make the surface free slots at replay instead.
+                if (now - front.fenced > kFenceDeadlineMs)
+                {
+                    if (++surface->m_fenceTimeouts >= kMaxFenceTimeouts)
+                    {
+                        surface->m_replayMs.store(0, std::memory_order_relaxed);
+                    }
+                    surface->retireGPUFrames();
+                    return;
+                }
+                surface->m_lastPoll = now;
+                surface->ref();
+                emscripten_set_timeout(&PollGPUFrames, 1, surface.get());
+                return;
+            }
+            // The GPU ran frames back to back, so a frame's cost starts when
+            // the one before it finished, if that was after it was submitted.
+            const double start = std::max(front.submitted, surface->m_lastGPUFrameDone);
+            // Polls are coarse, so it finished somewhere since the last one,
+            // and not before its fence.
+            const double done = (std::max({surface->m_lastPoll, start, front.fenced}) + now) / 2;
+            surface->noteReplayMs(done - start);
+            surface->m_lastGPUFrameDone = done;
+            surface->retireGPUFrame(makeCurrent.ok());
+        }
+    }
+
+    // With no context the sync died with it.
+    void retireGPUFrame(bool contextOK)
+    {
+        if (contextOK)
+        {
+            glDeleteSync(m_gpuFrames.front().sync);
+        }
+        m_gpuFrames.pop_front();
+        m_framesInFlight.fetch_sub(1, std::memory_order_release);
+    }
+
+    void retireGPUFrames()
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        while (!m_gpuFrames.empty())
+        {
+            retireGPUFrame(makeCurrent.ok());
+        }
+    }
+
+    // A trimmed mean, since polling quantizes each sample but evens out
+    // across several, and one slow frame should not move it.
+    void noteReplayMs(double ms)
+    {
+        m_replaySamples[m_replaySampleCount++ % kReplaySamples] = static_cast<float>(ms);
+        std::array<float, kReplaySamples> sorted = m_replaySamples;
+        const size_t count = std::min(m_replaySampleCount, kReplaySamples);
+        std::sort(sorted.begin(), sorted.begin() + count);
+        const size_t trim = count / 4;
+        float sum = 0;
+        for (size_t i = trim; i < count - trim; ++i)
+        {
+            sum += sorted[i];
+        }
+        m_replayMs.store(sum / (count - 2 * trim), std::memory_order_relaxed);
+    }
+
     bool build()
     {
         std::unique_ptr<RenderContext> renderContext =
@@ -1785,6 +1902,7 @@ private:
     bool m_canInkbleed = false;
     std::atomic<uint32_t> m_framesInFlight{0};
     std::atomic<uint32_t> m_generation{0};
+    std::atomic<float> m_replayMs{0};
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE m_contextGL = 0;
     std::unique_ptr<WebGL2Renderer> m_renderer;
@@ -1795,6 +1913,15 @@ private:
     bool m_retired = false;
     bool m_lost = false;
     uint32_t m_owner = 0;
+    std::deque<GPUFrame> m_gpuFrames;
+    double m_lastGPUFrameDone = 0;
+    double m_lastPoll = 0;
+    uint32_t m_fenceTimeouts = 0;
+    static constexpr double kFenceDeadlineMs = 1000;
+    static constexpr uint32_t kMaxFenceTimeouts = 3;
+    static constexpr size_t kReplaySamples = 9;
+    std::array<float, kReplaySamples> m_replaySamples{};
+    size_t m_replaySampleCount = 0;
 };
 
 // Records on the page for a canvas the replay worker draws, so a frame's
@@ -1803,8 +1930,10 @@ private:
 class WebGL2WorkerRenderer : public Renderer, public cmd::DeferredSessionAttachment
 {
 public:
-    // How far the page may record ahead of the worker before it waits.
-    static constexpr uint32_t kMaxFramesInFlight = 2;
+    // How far the page may record ahead of the GPU finishing its frames
+    // before it waits. Frames that overlap on the GPU take longer than a
+    // refresh to finish while still keeping up with it.
+    static constexpr uint32_t kMaxFramesInFlight = 3;
 
     WebGL2WorkerRenderer(rcp<ReplaySurface> surface, int width, int height, bool inkbleed) :
         m_surface(std::move(surface)),
@@ -1844,6 +1973,8 @@ public:
     }
 
     bool contextRestored() const { return m_surface->generation() != m_generation; }
+
+    float replayMs() const { return m_surface->replayMs(); }
 
     void resize(int width, int height)
     {
@@ -2719,6 +2850,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM_WebGL2)
         .function("deferredActive", &WebGL2WorkerRenderer::deferredActive)
         .function("acceptsFrame", &WebGL2WorkerRenderer::acceptsFrame)
         .function("contextRestored", &WebGL2WorkerRenderer::contextRestored)
+        .function("replayMs", &WebGL2WorkerRenderer::replayMs)
         .function("surfaceRef", &WebGL2WorkerRenderer::surfaceRef);
     function("makeWorkerRenderer", &makeWorkerRenderer, allow_raw_pointers());
 #endif

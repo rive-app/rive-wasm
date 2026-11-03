@@ -19,3 +19,4 @@ export {
   createFinalization,
 } from "./finalizationRegistry";
 export { RiveFont } from "./riveFont";
+export { ReplayPacer } from "./replayPacer";

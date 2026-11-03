@@ -24,6 +24,7 @@ import {
   FileFinalizer,
   createFinalization,
   RiveFont as RiveFontClassUtil,
+  ReplayPacer,
 } from "./utils";
 export type AssetLoadCallback = (
   asset: rc.FileAsset,
@@ -3552,6 +3553,8 @@ export class Rive {
   // Tracks the current animation frame request
   private frameRequestId: number | null = null;
 
+  private replayPacer = new ReplayPacer();
+
   /**
    * Used be draw to track when a second of active rendering time has passed.
    * Used for debugging purposes
@@ -3762,10 +3765,17 @@ export class Rive {
       this.reloadForRestoredContext();
       return;
     }
-    // The replay worker has yet to take the canvas, or is still on earlier
-    // frames. Waiting keeps its queue bounded, and the frame that follows
+    // The replay worker has yet to take the canvas, is still on earlier
+    // frames, or is slower than the display and this frame falls between its
+    // paced ones. Waiting keeps its queue bounded, and the frame that follows
     // advances by the whole wait, so playback keeps time.
-    if (this.renderer?.acceptsFrame?.() === false) {
+    const accepts = this.renderer?.acceptsFrame?.() !== false;
+    const replayMs = this.renderer?.replayMs?.();
+    if (
+      time !== null && replayMs !== undefined
+        ? !this.replayPacer.shouldRecord(time, replayMs, accepts)
+        : !accepts
+    ) {
       this.scheduleRendering();
       return;
     }

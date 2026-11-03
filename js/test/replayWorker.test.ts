@@ -4,6 +4,7 @@
 // the canvas build's, dressed as a worker renderer through the methods rive.ts
 // reads off it.
 import * as rive from "../src/rive";
+import { ReplayPacer } from "../src/utils/replayPacer";
 import { stateMachineFileBuffer } from "./assets/bytes";
 
 class MockResizeObserver {
@@ -49,6 +50,7 @@ const fileOf = (r: rive.Rive): rive.RiveFile => (r as any).riveFile;
 /** What a worker renderer would report, per renderer. */
 interface WorkerState {
   accepts: boolean;
+  replayMs: number;
   restored: boolean;
   clears: number;
   resizes: [number, number][];
@@ -75,6 +77,7 @@ const stubWorkerRenderers = async (onWorker = () => true) => {
     }
     const state: WorkerState = {
       accepts: true,
+      replayMs: 0,
       restored: false,
       clears: 0,
       resizes: [],
@@ -89,6 +92,8 @@ const stubWorkerRenderers = async (onWorker = () => true) => {
             return () => true;
           case "acceptsFrame":
             return () => state.accepts;
+          case "replayMs":
+            return () => state.replayMs;
           case "contextRestored":
             return () => state.restored;
           case "clear":
@@ -406,6 +411,170 @@ test("a worker that never sends its caps does not hold the load", async () => {
   } finally {
     jest.useRealTimers();
     delete runtime.awaitReplayCaps;
+    stub.restore();
+  }
+});
+
+const refresh = 1000 / 180;
+
+interface Gpu {
+  // How long the GPU takes per frame once busy, and from submit to done.
+  frameMs: (frame: number) => number;
+  latencyMs?: (frame: number) => number;
+  // Refreshes before the worker takes the canvas.
+  pendingFrames?: number;
+}
+
+/**
+ * Drives a pacer against a worker that holds three frames until the GPU
+ * finishes them, reporting replay times the way the worker measures them.
+ * Returns the rAF times that recorded.
+ */
+const simulatePacing = (gpu: Gpu, seconds = 4): number[] => {
+  const pacer = new ReplayPacer();
+  const frames: { done: number; sample: number }[] = [];
+  const recorded: number[] = [];
+  let lastDone = 0;
+  for (let i = 1; i <= seconds * 180; i++) {
+    const time = i * refresh;
+    const done = frames.filter((frame) => frame.done <= time);
+    const samples = done
+      .slice(-9)
+      .map((frame) => frame.sample)
+      .sort((a, b) => a - b);
+    const trim = samples.length >> 2;
+    const kept = samples.slice(trim, samples.length - trim);
+    const replayMs = kept.length
+      ? kept.reduce((a, b) => a + b, 0) / kept.length
+      : 0;
+    const accepts =
+      i > (gpu.pendingFrames ?? 0) && frames.length - done.length < 3;
+    if (pacer.shouldRecord(time, replayMs, accepts)) {
+      const frame = recorded.length;
+      recorded.push(time);
+      const latency = (gpu.latencyMs ?? gpu.frameMs)(frame);
+      const finish = Math.max(time + latency, lastDone + gpu.frameMs(frame));
+      frames.push({ done: finish, sample: finish - Math.max(time, lastDone) });
+      lastDone = finish;
+    }
+  }
+  return recorded;
+};
+
+const gapsAfter = (times: number[], seconds: number): number[] =>
+  times
+    .slice(1)
+    .map((time, i) => [time, time - times[i]])
+    .filter(([time]) => time > seconds * 1000)
+    .map(([, gap]) => gap);
+
+test("a worker slower than the display gets frames at an even cadence", () => {
+  for (const frameMs of [6, 10, 15, 33, 44]) {
+    // Past the first probes, which back off.
+    const gaps = gapsAfter(simulatePacing({ frameMs: () => frameMs }, 24), 8);
+    const divisor = Math.ceil(frameMs / refresh);
+    const refreshes = gaps.map((gap) => Math.round(gap / refresh));
+    // Never two quick frames then a long gap; only a backed off probe for a
+    // faster cadence breaks the even one.
+    for (const count of refreshes) {
+      expect([divisor - 1, divisor]).toContain(count);
+    }
+    const even = refreshes.filter((count) => count === divisor).length;
+    expect(even / refreshes.length).toBeGreaterThan(0.9);
+  }
+});
+
+test("a worker that keeps up gets every frame", () => {
+  // The second overlaps frames on the GPU, so each takes longer than a
+  // refresh to finish while it still keeps up.
+  for (const gpu of [
+    { frameMs: () => 3 },
+    { frameMs: () => 5, latencyMs: () => 9 },
+    { frameMs: () => 5, latencyMs: () => 9, pendingFrames: 30 },
+  ]) {
+    const recorded = simulatePacing(gpu);
+    expect(recorded.length).toBe(4 * 180 - (gpu.pendingFrames ?? 0));
+    const gaps = gapsAfter(recorded, 0);
+    for (const gap of gaps) {
+      expect(gap).toBeCloseTo(refresh, 5);
+    }
+  }
+});
+
+test("a worker that keeps up again after a slow stretch gets every frame back", () => {
+  const slow = (frame: number) => frame >= 40 && frame < 80;
+  const recorded = simulatePacing(
+    {
+      frameMs: (frame) => (slow(frame) ? 30 : 5),
+      latencyMs: (frame) => (slow(frame) ? 30 : 9),
+    },
+    5,
+  );
+  const gaps = gapsAfter(recorded, 4);
+  expect(gaps.length).toBeGreaterThan(170);
+  for (const gap of gaps) {
+    expect(gap).toBeCloseTo(refresh, 5);
+  }
+});
+
+test("a worker whose frames get cheaper while their latency holds gets every frame back", () => {
+  const recorded = simulatePacing(
+    {
+      frameMs: (frame) => (frame < 100 ? 15 : 5),
+      latencyMs: () => 15,
+    },
+    12,
+  );
+  const gaps = gapsAfter(recorded, 11);
+  expect(gaps.length).toBeGreaterThan(170);
+  for (const gap of gaps) {
+    expect(gap).toBeCloseTo(refresh, 5);
+  }
+});
+
+test("a paced instance advances by the paced cadence", async () => {
+  const frames = new Map<number, FrameRequestCallback>();
+  let nextId = 0;
+  jest
+    .spyOn(window, "requestAnimationFrame")
+    .mockImplementation((cb: FrameRequestCallback) => {
+      frames.set(++nextId, cb);
+      return nextId;
+    });
+  jest.spyOn(window, "cancelAnimationFrame").mockImplementation((id) => {
+    frames.delete(id);
+  });
+  const stub = await stubWorkerRenderers();
+  const r = await createRive({
+    ...stateMachineParams(newCanvas()),
+    enableGPUCanvas: true,
+    drawingOptions: rive.DrawOptimizationOptions.AlwaysDraw,
+  });
+  try {
+    const [state] = stub.states;
+    state.replayMs = 33;
+    const advance = jest.spyOn(r as any, "advanceAndReportChanges");
+    const clears = state.clears;
+    const start = performance.now();
+    // Short of the pacer's first probe for a faster cadence.
+    for (let i = 1; i <= 150; i++) {
+      // A worker behind the display fills its queue now and then.
+      state.accepts = i % 8 !== 0 || i > 40;
+      const callbacks = [...frames.values()];
+      frames.clear();
+      callbacks.forEach((cb) => cb(start + i * refresh));
+    }
+    // Once the queue has filled and the pacer settled.
+    const elapsed = advance.mock.calls
+      .map(([seconds]) => (seconds as number) * 1000)
+      .slice(12);
+    expect(elapsed.length).toBeGreaterThan(10);
+    for (const ms of elapsed) {
+      expect(ms).toBeCloseTo(6 * refresh, 5);
+    }
+    expect(state.clears - clears).toBe(advance.mock.calls.length);
+  } finally {
+    r.cleanup();
     stub.restore();
   }
 });
