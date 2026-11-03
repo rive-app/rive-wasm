@@ -5,7 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.49.1](https://github.com/rive-app/rive-wasm/compare/2.49.0...2.49.1)
+## [2.49.2](https://github.com/rive-app/rive-wasm/compare/2.49.1...2.49.2)
+
+### Merged
+
+- docs(cli): fix gaps agents hit authoring animated files [`#15237`](https://github.com/rive-app/rive-wasm/pull/15237)
+- fix(Vulkan): Skip warmup pipelines without matching subpasses [`#15295`](https://github.com/rive-app/rive-wasm/pull/15295)
+- fix(runtime_wasm, rive_native): load the build without threads where threads lose heap growth [`#15355`](https://github.com/rive-app/rive-wasm/pull/15355)
+- fix(runtime_wasm): pace webgl2 replay worker frames to the GPU's cadence [`#15362`](https://github.com/rive-app/rive-wasm/pull/15362)
+- refactor(Command Queue): Remove unused command server file dependencies [`#15360`](https://github.com/rive-app/rive-wasm/pull/15360)
+- perf(runtime): build list rows with fewer allocations [`#15354`](https://github.com/rive-app/rive-wasm/pull/15354)
+- fix(editor, runtime): bitmap cache UI pass [`#15356`](https://github.com/rive-app/rive-wasm/pull/15356)
+- perf(renderer): Improve batching with a virtual patch buffer [`#15270`](https://github.com/rive-app/rive-wasm/pull/15270)
+- fix(runtime_wasm): keep replay on the page where threads miss heap growth [`#15341`](https://github.com/rive-app/rive-wasm/pull/15341)
+- perf(runtime, renderer): skip transparent paints and draws under a collapsed transform [`#15303`](https://github.com/rive-app/rive-wasm/pull/15303)
+- perf(runtime): let list rows that host artboards go quiet [`#15308`](https://github.com/rive-app/rive-wasm/pull/15308)
+- fix(ore): honour invariant positions on metal [`#15336`](https://github.com/rive-app/rive-wasm/pull/15336)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`3b68d7a`](https://github.com/rive-app/rive-wasm/commit/3b68d7a0830d7e72bd606b64d61f6c005c5f5f7a)
+- chore(downstream): advance submodule/refs [`d37626d`](https://github.com/rive-app/rive-wasm/commit/d37626d7c8cbbabab97eed43a55ab0f5d4950884)
+- chore(downstream): advance submodule/refs [`ef7cbdf`](https://github.com/rive-app/rive-wasm/commit/ef7cbdfe67b1f334e5acd4774fc86d701a92fc26)
+- chore(downstream): advance submodule/refs [`f573214`](https://github.com/rive-app/rive-wasm/commit/f573214cda5fd7d3bca36af422ed1eaf9a532e4b)
+- chore(downstream): advance submodule/refs [`ca79add`](https://github.com/rive-app/rive-wasm/commit/ca79add60c99998edb5730155940e72a49701820)
+- chore(downstream): advance submodule/refs [`26fd275`](https://github.com/rive-app/rive-wasm/commit/26fd2756f8404ee8dda7cd3103bd3bbd9a97e7bc)
+- chore(downstream): advance submodule/refs [`e4a0f64`](https://github.com/rive-app/rive-wasm/commit/e4a0f6461069fcbca1bf109942ffca3ba66e8b76)
+- chore(downstream): advance submodule/refs [`fa52f22`](https://github.com/rive-app/rive-wasm/commit/fa52f22c3af54695aaf3a2a4dd1b21fb525646e4)
+- chore(downstream): advance submodule/refs [`e53a82e`](https://github.com/rive-app/rive-wasm/commit/e53a82e058febce05a501d6c7d00a02b52d9b54e)
+- chore(downstream): advance submodule/refs [`e4fc685`](https://github.com/rive-app/rive-wasm/commit/e4fc6851161c90bd1a120f765eeb446e1c3eabe9)
+- chore(downstream): advance submodule/refs [`a98cb8d`](https://github.com/rive-app/rive-wasm/commit/a98cb8d960dc5f7071bb126bd670b2de988078f5)
+
+## [2.49.1](https://github.com/rive-app/rive-wasm/compare/2.49.0...2.49.1) - 2026-11-02
 
 ### Merged
 
@@ -55,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.49.1 [`a518772`](https://github.com/rive-app/rive-wasm/commit/a5187722095662de2bf6a3c47b183b8547acb243)
 - chore(downstream): advance submodule/refs [`fb8cfd0`](https://github.com/rive-app/rive-wasm/commit/fb8cfd0cd48052c3e3e2c18f27051dd1ec7e03d3)
 - chore(downstream): advance submodule/refs [`ac49ae6`](https://github.com/rive-app/rive-wasm/commit/ac49ae6c6cca52cd7bb1879617c9cc97e8914263)
 - chore(downstream): advance submodule/refs [`4800a6a`](https://github.com/rive-app/rive-wasm/commit/4800a6add2c6f4d27a0fd9a143ed4fe3b88464d0)
