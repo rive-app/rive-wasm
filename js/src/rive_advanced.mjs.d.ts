@@ -1009,6 +1009,8 @@ export interface FocusState {
   hasFocus: boolean;
   /** True if the focused element accepts keyboard input (e.g. a TextInput node). */
   expectsKeyboardInput: boolean;
+  /** True if the focused element or an ancestor takes typed text: show a virtual keyboard. */
+  expectsTextInput: boolean;
 }
 
 export declare class LinearAnimation {

@@ -28,7 +28,7 @@ class MockResizeObserver {
 function makeTextInputSm(baseInstance: object = {}) {
   const focusState = jest
     .fn()
-    .mockReturnValue({ hasFocus: false, expectsKeyboardInput: false });
+    .mockReturnValue({ hasFocus: false, expectsKeyboardInput: false, expectsTextInput: false });
   const instance = Object.assign(baseInstance, {
     focusState,
     focusNext: jest.fn().mockReturnValue(true),
@@ -52,7 +52,11 @@ function makeTextInputSm(baseInstance: object = {}) {
       return [];
     },
     cleanup: jest.fn(),
-    setFocusState(state: { hasFocus: boolean; expectsKeyboardInput: boolean }) {
+    setFocusState(state: {
+      hasFocus: boolean;
+      expectsKeyboardInput: boolean;
+      expectsTextInput: boolean;
+    }) {
       focusState.mockReturnValue(state);
     },
   };
@@ -100,7 +104,7 @@ function proxyIn(container: HTMLElement): HTMLInputElement {
 
 /** Frame that wires KeyboardInteractions without starting a session. */
 function primeKeyboardInteractions(r: rive.Rive, sm: FakeSm) {
-  sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false });
+  sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false, expectsTextInput: false });
   callPollFocusState(r);
 }
 
@@ -110,7 +114,7 @@ function focusCanvas(r: rive.Rive) {
 }
 
 function beginSession(r: rive.Rive, sm: FakeSm) {
-  sm.setFocusState({ hasFocus: true, expectsKeyboardInput: true });
+  sm.setFocusState({ hasFocus: true, expectsKeyboardInput: true, expectsTextInput: true });
   callPollFocusState(r);
 }
 
@@ -121,7 +125,7 @@ afterEach(() => {
 });
 
 describe("Text input session lifecycle through pollFocusState", () => {
-  test("expectsKeyboardInput false→true focuses the proxy, and staying true does not restart", async () => {
+  test("expectsTextInput false→true focuses the proxy, and staying true does not restart", async () => {
     const { r, container } = await loadRive();
     const sm = makeTextInputSm();
     injectFocusSm(r, sm);
@@ -146,7 +150,7 @@ describe("Text input session lifecycle through pollFocusState", () => {
     r.cleanup();
   });
 
-  test("expectsKeyboardInput true→false with no overlay parks DOM focus on the canvas", async () => {
+  test("expectsTextInput true→false with no overlay parks DOM focus on the canvas", async () => {
     const { r, canvas, container } = await loadRive();
     const sm = makeTextInputSm();
     injectFocusSm(r, sm);
@@ -156,7 +160,7 @@ describe("Text input session lifecycle through pollFocusState", () => {
     beginSession(r, sm);
     expect(document.activeElement).toBe(proxyIn(container));
 
-    sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false });
+    sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false, expectsTextInput: false });
     callPollFocusState(r);
 
     expect(document.activeElement).toBe(canvas);
@@ -237,7 +241,7 @@ describe("Text input session lifecycle through pollFocusState", () => {
       }),
     );
     overlay.update(tree, identityMat, 1, artboardBounds);
-    sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false });
+    sm.setFocusState({ hasFocus: true, expectsKeyboardInput: false, expectsTextInput: false });
     callPollFocusState(r);
 
     expect(document.activeElement).toBe(buttonEl);
@@ -390,7 +394,7 @@ describe("Text input session lifecycle through pollFocusState", () => {
     expect(ki.isTextInputSessionActive()).toBe(false);
     expect(document.activeElement).toBe(pageButton);
 
-    sm.setFocusState({ hasFocus: false, expectsKeyboardInput: false });
+    sm.setFocusState({ hasFocus: false, expectsKeyboardInput: false, expectsTextInput: false });
     expect(() => callPollFocusState(r)).not.toThrow();
 
     expect(sm.instance.clearFocus).toHaveBeenCalledTimes(1);
@@ -461,7 +465,7 @@ describe("Text input session gating on the focused semantic node's role", () => 
     };
   }
 
-  test("focused non-textField node with expectsKeyboardInput starts no session and keeps DOM focus", async () => {
+  test("focused non-textField node with expectsTextInput starts no session and keeps DOM focus", async () => {
     const s = await loadWithSemantics("button");
     const { r, sm, buttonEl } = s;
     buttonEl.focus();
@@ -521,6 +525,22 @@ describe("Text input session gating on the focused semantic node's role", () => 
     r.cleanup();
   });
 
+  test("key listeners alone start no session, and a tap leaves focus on the canvas", async () => {
+    const { r, canvas } = await loadRive();
+    const sm = makeTextInputSm();
+    injectFocusSm(r, sm);
+    primeKeyboardInteractions(r, sm);
+    focusCanvas(r);
+
+    sm.setFocusState({ hasFocus: true, expectsKeyboardInput: true, expectsTextInput: false });
+    callPollFocusState(r);
+    (r as any).summonKeyboardForGesture();
+
+    expect((r as any)._keyboardInteractions.isTextInputSessionActive()).toBe(false);
+    expect(document.activeElement).toBe(canvas);
+    r.cleanup();
+  });
+
   test("mid-session hop textField → button ends the session; hopping back resumes it", async () => {
     const s = await loadWithSemantics("field");
     const { r, container, sm, moveFocus, fieldEl, buttonEl } = s;
@@ -530,7 +550,7 @@ describe("Text input session gating on the focused semantic node's role", () => 
     expect(document.activeElement).toBe(proxy);
     expect(fieldEl.getAttribute("aria-hidden")).toBe("true");
 
-    // Both nodes have listeners, so expectsKeyboardInput stays true across the hop.
+    // Both nodes have listeners, so expectsTextInput stays true across the hop.
     moveFocus("button");
     callPollFocusState(r);
 

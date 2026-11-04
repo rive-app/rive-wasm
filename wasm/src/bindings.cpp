@@ -1308,6 +1308,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
                       auto obj = emscripten::val::object();
                       obj.set("hasFocus", state.hasFocus);
                       obj.set("expectsKeyboardInput", state.expectsKeyboardInput);
+                      obj.set("expectsTextInput", state.expectsTextInput);
                       return obj;
                   }))
         .function("keyInput",

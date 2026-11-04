@@ -549,7 +549,7 @@ class StateMachine {
 
   /**
    * Get metadata about the state of focus if applicable for this state machine.
-   * @returns FocusState - { hasFocus: boolean, expectsKeyboardInput: boolean }
+   * @returns FocusState - { hasFocus: boolean, expectsKeyboardInput: boolean, expectsTextInput: boolean }
    */
   public focusState(): rc.FocusState { 
     return this.instance.focusState();
@@ -2953,14 +2953,14 @@ export class Rive {
     if (!this._keyboardInteractions) return;
     const activeSm = this.focusStateMachine;
     if (!activeSm) return;
-    if (this.wantsTextInputSession(activeSm.focusState().expectsKeyboardInput)) {
+    if (this.wantsTextInputSession(activeSm.focusState().expectsTextInput)) {
       this._keyboardInteractions.summonForPointer();
     }
   }
 
-  /** expectsKeyboardInput, and (with semantics on) the focused node is a textField. */
-  private wantsTextInputSession(expectsKeyboardInput: boolean): boolean {
-    if (!expectsKeyboardInput) return false;
+  /** expectsTextInput (not key listeners alone), and with semantics on a textField. */
+  private wantsTextInputSession(expectsTextInput: boolean): boolean {
+    if (!expectsTextInput) return false;
     const node = this._semanticTree?.focusedNode();
     return node === undefined || node.role === SemanticRole.textField;
   }
@@ -3481,8 +3481,8 @@ export class Rive {
       return;
     }
 
-    const { hasFocus, expectsKeyboardInput } = activeSm.focusState();
-    this.syncTextInputSession(ki, this.wantsTextInputSession(expectsKeyboardInput));
+    const { hasFocus, expectsTextInput } = activeSm.focusState();
+    this.syncTextInputSession(ki, this.wantsTextInputSession(expectsTextInput));
     this.syncRiveFocus(ki, this.canvas, hasFocus);
   }
 
