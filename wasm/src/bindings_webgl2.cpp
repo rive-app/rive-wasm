@@ -45,6 +45,7 @@ using namespace emscripten;
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -1652,6 +1653,8 @@ public:
                 uint32_t owner,
                 uint32_t generation,
                 uint64_t target,
+                int width,
+                int height,
                 bool clear,
                 ColorInt color,
                 bool replayOre)
@@ -1661,6 +1664,9 @@ public:
         if (m_renderer != nullptr && !m_lost && owner == m_owner &&
             generation == this->generation())
         {
+            // Resizing clears the canvas, which presents at the end of the
+            // task, so the frame has to draw in the same one.
+            resize(width, height);
             const double submitted = emscripten_get_now();
             m_renderer->replaySnapshot(*frame, target, clear, color, replayOre);
             dropFrame(std::move(frame));
@@ -1676,18 +1682,6 @@ public:
             dropFrame(std::move(frame));
         }
         m_framesInFlight.fetch_sub(1, std::memory_order_release);
-    }
-
-    void resize(int width, int height)
-    {
-        if (m_renderer == nullptr || (width == m_width && height == m_height))
-        {
-            return;
-        }
-        m_width = width;
-        m_height = height;
-        EM_ASM({ Module["riveReplayWorkerResize"]($0, $1, $2); }, this, width, height);
-        m_renderer->resize(width, height);
     }
 
     void setInkbleed(bool enabled)
@@ -1754,6 +1748,18 @@ public:
     }
 
 private:
+    void resize(int width, int height)
+    {
+        if (width == m_width && height == m_height)
+        {
+            return;
+        }
+        m_width = width;
+        m_height = height;
+        EM_ASM({ Module["riveReplayWorkerResize"]($0, $1, $2); }, this, width, height);
+        m_renderer->resize(width, height);
+    }
+
     bool build()
     {
         std::unique_ptr<RenderContext> renderContext =
@@ -1887,7 +1893,7 @@ public:
         {
             return;
         }
-        sendState();
+        sendInkbleed();
         m_host.beginRecord(/*clear=*/true, /*color=*/0);
         m_session->beginTargetFrame(m_screenTarget);
         m_target = m_host.screenRenderer();
@@ -1912,10 +1918,20 @@ public:
                                        owner = m_owner,
                                        generation = m_generation,
                                        target = m_screenTarget,
+                                       width = m_width,
+                                       height = m_height,
                                        clear = m_host.doClear(),
                                        color = m_host.clearColor(),
                                        replayOre]() mutable {
-            surface->replay(std::move(frame), owner, generation, target, clear, color, replayOre);
+            surface->replay(std::move(frame),
+                            owner,
+                            generation,
+                            target,
+                            width,
+                            height,
+                            clear,
+                            color,
+                            replayOre);
         });
     }
 
@@ -2167,21 +2183,12 @@ private:
         }
     }
 
-    // Queued ahead of the frame they apply to. The first frame sends both,
-    // since an earlier renderer may have left the surface otherwise.
-    void sendState()
+    // Queued ahead of the frame it applies to. The first frame sends it, since
+    // an earlier renderer may have left the surface otherwise.
+    void sendInkbleed()
     {
-        if (!m_stateSent || m_width != m_sentWidth || m_height != m_sentHeight)
+        if (m_sentInkbleed != m_inkbleed)
         {
-            m_sentWidth = m_width;
-            m_sentHeight = m_height;
-            ReplayWorker::Instance().post([surface = m_surface,
-                                           width = m_width,
-                                           height = m_height] { surface->resize(width, height); });
-        }
-        if (!m_stateSent || m_inkbleed != m_sentInkbleed)
-        {
-            m_stateSent = true;
             m_sentInkbleed = m_inkbleed;
             ReplayWorker::Instance().post(
                 [surface = m_surface, enabled = m_inkbleed] { surface->setInkbleed(enabled); });
@@ -2217,11 +2224,8 @@ private:
     bool m_deviceBound = false;
     int m_width;
     int m_height;
-    int m_sentWidth = 0;
-    int m_sentHeight = 0;
     bool m_inkbleed;
-    bool m_sentInkbleed = false;
-    bool m_stateSent = false;
+    std::optional<bool> m_sentInkbleed;
 };
 
 // Takes the canvas's surface, or makes it on the canvas's first renderer.

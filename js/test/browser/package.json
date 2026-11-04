@@ -1,0 +1,12 @@
+{
+  "name": "rive-wasm-browser-tests",
+  "private": true,
+  "description": "Browser tests for the webgl2-threads build, which jest cannot load.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright-core install chromium-headless-shell && node replay_resize.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
