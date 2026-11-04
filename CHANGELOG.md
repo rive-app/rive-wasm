@@ -5,7 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.49.2](https://github.com/rive-app/rive-wasm/compare/2.49.1...2.49.2)
+## [2.49.3](https://github.com/rive-app/rive-wasm/compare/2.49.2...2.49.3)
+
+### Merged
+
+- fix(ore): start gl render passes unscissored [`#15400`](https://github.com/rive-app/rive-wasm/pull/15400)
+- perf(runtime): share names and size lists when instancing artboards [`#15394`](https://github.com/rive-app/rive-wasm/pull/15394)
+- fix(renderer): Bind the virtual patch buffer on Metal [`#15386`](https://github.com/rive-app/rive-wasm/pull/15386)
+- perf(renderer): Always enable primitive restart [`#15361`](https://github.com/rive-app/rive-wasm/pull/15361)
+- feat(renderer): let deferred hosts open canvas frames with inkbleed [`#15298`](https://github.com/rive-app/rive-wasm/pull/15298)
+- fix(rive_native): pace the editor's web replay worker to the GPU's cadence [`#15387`](https://github.com/rive-app/rive-wasm/pull/15387)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`c6f864f`](https://github.com/rive-app/rive-wasm/commit/c6f864f6fb75412bc3f4791475eb7c0815719212)
+- chore(downstream): advance submodule/refs [`e27ce64`](https://github.com/rive-app/rive-wasm/commit/e27ce64a1d1cf31bb936dc0061d6c567c291a46f)
+- chore(downstream): advance submodule/refs [`83e013d`](https://github.com/rive-app/rive-wasm/commit/83e013d2f2cd55c42942bf80611b521af0a6ab5d)
+
+## [2.49.2](https://github.com/rive-app/rive-wasm/compare/2.49.1...2.49.2) - 2026-11-03
 
 ### Merged
 
@@ -24,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.49.2 [`beae27c`](https://github.com/rive-app/rive-wasm/commit/beae27cf0d4da6c955e1990c087572ccc99dcce6)
 - chore(downstream): advance submodule/refs [`3b68d7a`](https://github.com/rive-app/rive-wasm/commit/3b68d7a0830d7e72bd606b64d61f6c005c5f5f7a)
 - chore(downstream): advance submodule/refs [`d37626d`](https://github.com/rive-app/rive-wasm/commit/d37626d7c8cbbabab97eed43a55ab0f5d4950884)
 - chore(downstream): advance submodule/refs [`ef7cbdf`](https://github.com/rive-app/rive-wasm/commit/ef7cbdfe67b1f334e5acd4774fc86d701a92fc26)
