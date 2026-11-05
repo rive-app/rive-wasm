@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.49.3](https://github.com/rive-app/rive-wasm/compare/2.49.2...2.49.3)
+## [2.49.4](https://github.com/rive-app/rive-wasm/compare/2.49.3...2.49.4)
+
+### Merged
+
+- docs(runtimes): match READMEs and package metadata to rive.app positioning [`#15442`](https://github.com/rive-app/rive-wasm/pull/15442)
+- fix(scripting): build the linux cli release on clang 14 again [`#15423`](https://github.com/rive-app/rive-wasm/pull/15423)
+- fix(runtime, runtime_wasm): raise the soft keyboard for text focus only [`#15428`](https://github.com/rive-app/rive-wasm/pull/15428)
+- perf(runtime): share bind paths and hold bound values inline when instancing artboards [`#15411`](https://github.com/rive-app/rive-wasm/pull/15411)
+- fix(scripting): mint 2d canvases before the device binds, like gpu canvases [`#15399`](https://github.com/rive-app/rive-wasm/pull/15399)
+- fix(js): resize the replay worker's canvas in its frame's task [`#15374`](https://github.com/rive-app/rive-wasm/pull/15374)
+- perf(runtime): build and sync layouts with fewer allocations [`#15378`](https://github.com/rive-app/rive-wasm/pull/15378)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`64d66f4`](https://github.com/rive-app/rive-wasm/commit/64d66f4230c865d21090109a74a4aa27b0abffe0)
+- chore(downstream): advance submodule/refs [`23ed10c`](https://github.com/rive-app/rive-wasm/commit/23ed10c110f14da54bec888ff8220c3d5c088c15)
+- chore(downstream): advance submodule/refs [`03b4a3c`](https://github.com/rive-app/rive-wasm/commit/03b4a3c90c0c958b526919fde4841d1deeb6a93b)
+- chore(downstream): advance submodule/refs [`b4763c3`](https://github.com/rive-app/rive-wasm/commit/b4763c3608c9a824f1adc43ea2e7d5f26028dcc4)
+- chore(downstream): advance submodule/refs [`695e6e2`](https://github.com/rive-app/rive-wasm/commit/695e6e2103776d2c2156c4f6520504457f946d8b)
+
+## [2.49.3](https://github.com/rive-app/rive-wasm/compare/2.49.2...2.49.3) - 2026-11-04
 
 ### Merged
 
@@ -18,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.49.3 [`5d653a0`](https://github.com/rive-app/rive-wasm/commit/5d653a01289d4184492c020cff50574c5d762197)
 - chore(downstream): advance submodule/refs [`c6f864f`](https://github.com/rive-app/rive-wasm/commit/c6f864f6fb75412bc3f4791475eb7c0815719212)
 - chore(downstream): advance submodule/refs [`e27ce64`](https://github.com/rive-app/rive-wasm/commit/e27ce64a1d1cf31bb936dc0061d6c567c291a46f)
 - chore(downstream): advance submodule/refs [`83e013d`](https://github.com/rive-app/rive-wasm/commit/83e013d2f2cd55c42942bf80611b521af0a6ab5d)
