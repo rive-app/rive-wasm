@@ -1,6 +1,10 @@
 import * as rc from "./rive_advanced.mjs";
 import { Animation } from "./animation";
-import { RuntimeLoader, type RuntimeCallback } from "./runtimeLoader";
+import {
+  RuntimeLoader,
+  type RuntimeCallback,
+  type ScriptFetchOptions,
+} from "./runtimeLoader";
 import {
   SemanticTreeModel,
   AccessibilityOverlay,
@@ -258,7 +262,7 @@ export class Layout {
 
 // #region runtime
 
-export { RuntimeLoader, type RuntimeCallback };
+export { RuntimeLoader, type RuntimeCallback, type ScriptFetchOptions };
 
 // #endregion
 

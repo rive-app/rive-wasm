@@ -59,7 +59,7 @@ RENDERER_FLAGS="--renderer=c2d --no-rive-decoders "
 WD=$(pwd)
 NCPU=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)
 export EMCC_CLOSURE_ARGS="--externs $WD/js/externs.js"
-while getopts "clswtmr:" flag; do
+while getopts "clswtmnr:" flag; do
     case "${flag}" in
     c)
         # compatibility mode, disable simd
@@ -88,6 +88,11 @@ while getopts "clswtmr:" flag; do
         # pthreads, for cross origin isolated pages
         OPTIONS=$((OPTIONS + 1))
         PREMAKE_FLAGS+="--wasm_threads "
+        ;;
+    n)
+        # Script fetch(); the host still enables it at runtime
+        OPTIONS=$((OPTIONS + 1))
+        PREMAKE_FLAGS+="--with_rive_scriptnet "
         ;;
     r)
         OPTIONS=$((OPTIONS + 2))
@@ -131,9 +136,16 @@ fi
 if [[ "$PREMAKE_FLAGS" == *wasm_threads* ]]; then
     BUNDLES+=(rive_threads_pre.js)
 fi
+BUNDLE_PATHS=()
 for BUNDLE in "${BUNDLES[@]}"; do
+    BUNDLE_PATHS+=("$RUNTIME_DIR/src/wasm/web/$BUNDLE")
+done
+if [[ "$PREMAKE_FLAGS" == *with_rive_scriptnet* ]]; then
+    BUNDLE_PATHS+=(js/script_fetch.js)
+fi
+for BUNDLE_PATH in "${BUNDLE_PATHS[@]}"; do
     for glue in "$OUT_DIR"/*.mjs; do
-        if [[ "$RUNTIME_DIR/src/wasm/web/$BUNDLE" -nt $glue ]]; then
+        if [[ "$BUNDLE_PATH" -nt $glue ]]; then
             rm -f "$glue" "${glue%.mjs}.wasm"
         fi
     done

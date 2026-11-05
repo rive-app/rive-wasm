@@ -7,15 +7,16 @@ const runtimeDir = [
   path.join(__dirname, "../../wasm/submodules/rive-runtime"),
 ].find((dir) => fs.existsSync(dir))!;
 
-export const webScriptingFixture = (name: string): ArrayBuffer => {
-  const bytes = fs.readFileSync(
-    path.join(runtimeDir, "tests/web_scripting/fixture", name),
-  );
+export const readFixture = (file: string): ArrayBuffer => {
+  const bytes = fs.readFileSync(file);
   return bytes.buffer.slice(
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength,
   ) as ArrayBuffer;
 };
+
+export const webScriptingFixture = (name: string): ArrayBuffer =>
+  readFixture(path.join(runtimeDir, "tests/web_scripting/fixture", name));
 
 /**
  * Convert string to array buffer.

@@ -244,6 +244,13 @@ do
         end
     end
 
+    if _OPTIONS['with_rive_scriptnet'] then
+        -- The page side of src/script_fetch.cpp.
+        linkoptions({
+            '--pre-js ' .. path.getabsolute('./js/script_fetch.js'),
+        })
+    end
+
     filter({ 'options:with_rive_scripting' })
     do
         includedirs({

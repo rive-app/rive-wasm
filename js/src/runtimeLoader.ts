@@ -31,6 +31,99 @@ function threadsRefusal(): string | null {
   return null;
 }
 
+/**
+ * @experimental Options for {@link RuntimeLoader.setScriptFetch}. Requests
+ * sent from this page, or through the reference proxy page, never carry
+ * cookies or other credentials, a referrer or the HTTP cache, and redirects
+ * fail with "policy". A proxy page of your own decides these itself. Either
+ * way, the runtime allows only https: URLs on public hosts, and checks the
+ * URL a response came from against `allowedHosts`.
+ */
+export interface ScriptFetchOptions {
+  /**
+   * URL of a script fetch proxy page, hosted on a cookie-less domain, that
+   * accepts this page's origin. It loads in a hidden iframe added to the
+   * page's `<body>`. Requests then leave from the proxy's origin
+   * under its CSP. On a cross origin isolated page, the proxy page must be
+   * served with `Cross-Origin-Embedder-Policy: require-corp` and
+   * `Cross-Origin-Resource-Policy: cross-origin`. Without it, requests leave
+   * from this page with `fetch()`.
+   */
+  proxyUrl?: string;
+  /**
+   * Hosts scripts may fetch from: exact (`"api.example.com"`), any subdomain
+   * (`"*.example.com"`, which doesn't match `"example.com"`) or any host
+   * (`"*"`). Omitted is `["*"]`; empty allows none. This page's own host is
+   * only allowed when named, e.g. `["*", "www.example.com"]`.
+   */
+  allowedHosts?: string[];
+  /**
+   * Requests scripts may start per minute, counted per scripting VM, so
+   * scripts that share one share the limit. Requests past it wait their turn
+   * rather than fail. 0 is no limit. Default 60.
+   */
+  maxRequestsPerMinute?: number;
+  /**
+   * Largest response body, in bytes, up to 64 MiB. 0 keeps the default of
+   * 16 MiB.
+   */
+  maxResponseBytes?: number;
+}
+
+const defaultScriptFetchRequestsPerMinute = 60;
+// The runtime's ceiling for maxResponseBytes.
+const maxScriptFetchResponseBytes = 64 * 1024 * 1024;
+
+// A non-negative integer that fits in a uint32, else the fallback.
+const uint32Option = (value: number | undefined, fallback: number): number =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= 0 &&
+  value <= 0xffffffff
+    ? value
+    : fallback;
+
+const hostPattern = /^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)*$/;
+
+// Warns about allowedHosts entries that never match, or match a whole
+// top-level domain.
+const checkAllowedHosts = (hosts: string[]): void => {
+  for (const entry of hosts) {
+    const host = String(entry).trim().toLowerCase();
+    if (host === "*") {
+      continue;
+    }
+    if (!hostPattern.test(host)) {
+      console.warn(
+        `[Rive] allowedHosts entry "${entry}" never matches. Use a host name ` +
+          `("api.example.com"), "*.example.com" or "*".`,
+      );
+    } else if (host.startsWith("*.") && !host.includes(".", 2)) {
+      console.warn(
+        `[Rive] allowedHosts entry "${entry}" allows every host under a ` +
+          `top-level domain.`,
+      );
+    }
+  }
+};
+
+// Warns about a proxy on this page's own origin, where the iframe's sandbox
+// keeps nothing apart from the page.
+const checkProxyUrl = (proxyUrl: string): void => {
+  let origin: string;
+  try {
+    origin = new URL(proxyUrl, document.baseURI).origin;
+  } catch {
+    return;
+  }
+  if (origin === location.origin) {
+    console.warn(
+      `[Rive] proxyUrl "${proxyUrl}" is on this page's origin, so the proxy ` +
+        `is not isolated from it. Host it on a separate domain.`,
+    );
+  }
+};
+
 // Runtime singleton; use getInstance to provide a callback that returns the
 // Rive runtime
 export class RuntimeLoader {
@@ -68,6 +161,9 @@ export class RuntimeLoader {
   private static replayWorker = true;
   private static replayCapsArrived = false;
   private static readonly replayCapsTimeoutMs = 2000;
+  // Script fetch options, or null while disabled.
+  private static scriptFetch: ScriptFetchOptions | null = null;
+  private static warnedNoScriptFetch = false;
 
   // Error callbacks enqueued from .getInstance()
   private static errorCallbackQueue: ((error: Error) => void)[] = [];
@@ -103,6 +199,7 @@ export class RuntimeLoader {
     if (RuntimeLoader.replayWorker) {
       rive.enableReplayWorker?.();
     }
+    RuntimeLoader.applyScriptFetch();
     // Fire all the callbacks
     while (RuntimeLoader.callBackQueue.length > 0) {
       RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
@@ -355,6 +452,103 @@ export class RuntimeLoader {
   // Gets whether a threaded runtime may replay on a worker
   public static getReplayWorker(): boolean {
     return RuntimeLoader.replayWorker;
+  }
+
+  /**
+   * @experimental Lets scripts in Rive files call `fetch()`. Pass `true` or
+   * options to enable it for every file on the page, `false` to disable it.
+   * Only `@rive-app/webgl2-threads` running its threaded build has it;
+   * elsewhere this warns once and does nothing.
+   *
+   * Enabling it lets any script in any file this page loads send what it
+   * can read to the hosts it may reach. Limit them with `allowedHosts`.
+   * Scripts can't fetch this page's own host unless `allowedHosts` names it.
+   *
+   * Each call replaces the previous options, and any option left out goes
+   * back to its default (an omitted `allowedHosts` allows every host). To
+   * change one option, spread the current ones:
+   *
+   * ```ts
+   * RuntimeLoader.setScriptFetch({
+   *   ...RuntimeLoader.getScriptFetch(),
+   *   maxResponseBytes: 32 * 1024 * 1024,
+   * });
+   * ```
+   *
+   * Disabled by default.
+   */
+  public static setScriptFetch(options: ScriptFetchOptions | boolean): void {
+    if (options === true) {
+      RuntimeLoader.scriptFetch = {};
+    } else if (options && typeof options === "object") {
+      let hosts = options.allowedHosts;
+      // Anything else, such as a single host as a string, allows no host
+      // rather than falling back to every host.
+      if (hosts != null && !Array.isArray(hosts)) {
+        console.warn(
+          "[Rive] allowedHosts must be an array of host names. Scripts may " +
+            "fetch from no host.",
+        );
+        hosts = [];
+      }
+      if (hosts) {
+        checkAllowedHosts(hosts);
+      }
+      if (options.proxyUrl) {
+        checkProxyUrl(options.proxyUrl);
+      }
+      if ((options.maxResponseBytes ?? 0) > maxScriptFetchResponseBytes) {
+        console.warn(
+          "[Rive] maxResponseBytes is capped at 64 MiB " +
+            `(${maxScriptFetchResponseBytes} bytes).`,
+        );
+      }
+      RuntimeLoader.scriptFetch = {
+        ...options,
+        allowedHosts: hosts?.slice(),
+      };
+    } else {
+      RuntimeLoader.scriptFetch = null;
+    }
+    RuntimeLoader.applyScriptFetch();
+  }
+
+  // Gets the script fetch options (null means disabled)
+  public static getScriptFetch(): ScriptFetchOptions | null {
+    const options = RuntimeLoader.scriptFetch;
+    return options
+      ? { ...options, allowedHosts: options.allowedHosts?.slice() }
+      : null;
+  }
+
+  private static applyScriptFetch(): void {
+    const runtime = RuntimeLoader.runtime;
+    if (!runtime) {
+      return;
+    }
+    const options = RuntimeLoader.scriptFetch;
+    if (!runtime.configureScriptFetch) {
+      if (options && !RuntimeLoader.warnedNoScriptFetch) {
+        RuntimeLoader.warnedNoScriptFetch = true;
+        console.warn(
+          "[Rive] Script fetch is only available in @rive-app/webgl2-threads " +
+            "on a cross origin isolated page. Scripts' fetch() stays disabled.",
+        );
+      }
+      return;
+    }
+    runtime.configureScriptFetch(
+      options && {
+        proxyUrl: options.proxyUrl || null,
+        allowedHosts: options.allowedHosts ?? null,
+        maxRequestsPerMinute: uint32Option(
+          options.maxRequestsPerMinute,
+          defaultScriptFetchRequestsPerMinute,
+        ),
+        // 0 keeps the runtime's default.
+        maxResponseBytes: uint32Option(options.maxResponseBytes, 0),
+      },
+    );
   }
 
   // Manually sets the wasm binary or clears it with null

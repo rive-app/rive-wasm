@@ -22,6 +22,16 @@ interface RiveOptions {
 declare function Rive(options?: RiveOptions): Promise<RiveCanvas>;
 export default Rive;
 
+/** Resolved script fetch options; see RuntimeLoader.setScriptFetch. */
+export interface ScriptFetchConfig {
+  proxyUrl: string | null;
+  allowedHosts: string[] | null;
+  /** 0 is no limit. */
+  maxRequestsPerMinute: number;
+  /** 0 keeps the runtime's default. */
+  maxResponseBytes: number;
+}
+
 /**
  * RiveCanvas is the main export object that contains references to different Rive classes to help
  * build the Rive render loop for low-level API usage. In addition, this contains multiple methods
@@ -92,6 +102,13 @@ export interface RiveCanvas {
    * @returns undefined when nothing replays on the worker
    */
   awaitReplayCaps?(): Promise<void> | undefined;
+
+  /**
+   * @experimental Enables scripts' fetch() for every file, or disables it
+   * with null. Only in builds with script networking (the threaded webgl2
+   * build), so always feature-detect it. Use RuntimeLoader.setScriptFetch.
+   */
+  configureScriptFetch?(options: ScriptFetchConfig | null): void;
 
   /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class

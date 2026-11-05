@@ -1,7 +1,7 @@
 // Runs test/scripting against the wasm scripting tools build, which only
 // exists in the monorepo:
 //   cd ../wasm && OUT_DIR=build/canvas_scripting_single/bin/release \
-//       ./build_wasm.sh -s -w -t release
+//       ./build_wasm.sh -s -w -t -n release
 const base = require("./jest.config.js");
 
 module.exports = {

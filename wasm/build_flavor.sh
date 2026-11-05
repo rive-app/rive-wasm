@@ -29,7 +29,7 @@ canvas_advanced_single)
     ;;
 webgl2_advanced_fallback) FLAGS="-w -c -r webgl2" ;;
 webgl2_advanced) FLAGS="-w -r webgl2" ;;
-webgl2_threads) FLAGS="-w -m -r webgl2" ;;
+webgl2_threads) FLAGS="-w -m -n -r webgl2" ;;
 *)
     echo "Unknown flavor: $1" >&2
     exit 1
