@@ -747,9 +747,13 @@ Module["onRuntimeInitialized"] = function () {
   const DRAW_MODE_DELEGATE = 2;
 
   function _drawMode(paint) {
-    // modulated image and non-centered strokes always goes through WebGL.
-    if (paint._modulatedImage || paint._strokePosition !== StrokePosition.center)
-    {
+    // modulated image always goes through WebGL.
+    if (paint._modulatedImage) {
+      return DRAW_MODE_DELEGATE;
+    }
+    // Non-centered strokes go through WebGL. Without a backend that draws paths,
+    // they draw as centered strokes.
+    if (paint._strokePosition !== StrokePosition.center && _offscreenBackend.supportsPaths) {
       return DRAW_MODE_DELEGATE;
     }
 
