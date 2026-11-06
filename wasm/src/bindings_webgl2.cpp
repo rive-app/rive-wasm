@@ -922,24 +922,6 @@ public:
             RiveRenderer::transform(matrix);
         }
     }
-    void drawPath(RenderPath* path, RenderPaint* paint) override
-    {
-#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
-        if (auto* gl2Paint = lite_rtti_cast<WebGL2RenderPaint*>(paint); gl2Paint != nullptr)
-        {
-            gl2Paint->prepModulatedImage(this);
-        }
-#endif
-
-        if (m_target != nullptr)
-        {
-            m_target->drawPath(path, paint);
-        }
-        else
-        {
-            RiveRenderer::drawPath(path, paint);
-        }
-    }
     void clipPath(RenderPath* path) override
     {
         if (m_target != nullptr)
@@ -963,6 +945,24 @@ public:
         }
     }
 #endif
+
+    // A modulated image can only be uploaded once the renderer is known, so a
+    // WebGL2RenderPaint holds it until the path is drawn.
+    void drawPath(RenderPath* path, RenderPaint* paint) override
+    {
+        if (auto* gl2Paint = lite_rtti_cast<WebGL2RenderPaint*>(paint); gl2Paint != nullptr)
+        {
+            gl2Paint->prepModulatedImage(this);
+        }
+#if defined(RIVE_CANVAS) && defined(RIVE_ORE)
+        if (m_target != nullptr)
+        {
+            m_target->drawPath(path, paint);
+            return;
+        }
+#endif
+        RiveRenderer::drawPath(path, paint);
+    }
 
 #ifdef RIVE_CANVAS
     // ---- DeferredCanvasHost ----
@@ -1191,6 +1191,15 @@ private:
                 return;
             }
             RiveRenderer::drawImage(renderImage, imageSampler, blendMode, opacity, additiveness);
+        }
+
+        void drawPath(RenderPath* path, RenderPaint* paint) override
+        {
+            if (auto* gl2Paint = lite_rtti_cast<WebGL2RenderPaint*>(paint); gl2Paint != nullptr)
+            {
+                gl2Paint->prepModulatedImage(m_owner);
+            }
+            RiveRenderer::drawPath(path, paint);
         }
 
         void drawImageMesh(const RenderImage* renderImage,
@@ -2307,14 +2316,7 @@ rcp<RenderBuffer> WebGL2Factory::makeRenderBuffer(RenderBufferType type,
     return make_rcp<WebGL2RenderBuffer>(type, flags, sizeInBytes);
 }
 
-rcp<RenderPaint> WebGL2Factory::makeRenderPaint()
-{
-#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
-    return make_rcp<WebGL2RenderPaint>();
-#else
-    return Super::makeRenderPaint();
-#endif
-}
+rcp<RenderPaint> WebGL2Factory::makeRenderPaint() { return make_rcp<WebGL2RenderPaint>(); }
 
 void WebGL2Factory::onWebGL2BufferDeleted(WebGL2RenderBuffer* webglRenderBuffer)
 {
@@ -2340,13 +2342,24 @@ EM_JS(void, ensure_images_map, (), {
     }
 });
 
+#endif
 void WebGL2RenderPaint::modulatedImage(const RenderImage* image,
                                        ImageSampler sampler,
                                        const Mat2D& matrix)
 {
+    auto* webglImage = lite_rtti_cast<const WebGL2RenderImage*>(image);
+    if (webglImage == nullptr)
+    {
+        // Nothing to upload: either no image, or one that already is a GPU
+        // texture (such as an artboard source's raster). Apply it now, which
+        // also clears any image this paint held before.
+        m_cachedImage = nullptr;
+        Super::modulatedImage(image, sampler, matrix);
+        return;
+    }
     // We need to cache this image so that it can be prepped properly with the renderer (which
     // we don't have yet).
-    m_cachedImage = ref_rcp(lite_rtti_cast<const WebGL2RenderImage*>(image));
+    m_cachedImage = ref_rcp(webglImage);
     m_cachedSampler = sampler;
     m_cachedMatrix = matrix;
 
@@ -2372,6 +2385,7 @@ void WebGL2RenderPaint::prepModulatedImage(WebGL2Renderer* renderer)
     // usable.
     Super::modulatedImage(image, m_cachedSampler, m_cachedMatrix);
 }
+#ifdef RIVE_WEBGL2_RENDERER_CANVAS_BINDINGS
 
 WebGL2RenderImage* adoptWebGL2Image(emscripten::val htmlImage, int width, int height)
 {
