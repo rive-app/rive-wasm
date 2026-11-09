@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/webgl2-threads",
-  "version": "2.49.4",
+  "version": "2.50.0",
   "description": "Rive web runtime with the WebGL2 renderer, using threads on cross-origin isolated pages. Rive is an agent-native 2D and 3D engine for games, apps, and interactive UI.",
   "main": "rive.js",
   "homepage": "https://rive.app",

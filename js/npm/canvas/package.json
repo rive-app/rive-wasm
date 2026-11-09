@@ -1,6 +1,6 @@
 {
   "name": "@rive-app/canvas",
-  "version": "2.49.4",
+  "version": "2.50.0",
   "description": "Rive web runtime with the canvas renderer. Rive is an agent-native 2D and 3D engine for games, apps, and interactive UI.",
   "main": "rive.js",
   "homepage": "https://rive.app",
