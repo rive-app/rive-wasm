@@ -62,8 +62,12 @@ export interface RiveCanvas {
   decodeAudio: DecodeAudio;
   decodeImage: DecodeImage;
   decodeFont: DecodeFont;
-  // Returns a pointer value to the FontWrapper
-  setFallbackFontCallback: (callback: (missingGlyph: number, fallbackFontIndex: number, weight: number) => number | null) => void;
+  // Returns a pointer value to the FontWrapper. [languages] are BCP 47 tags,
+  // the text's own language first, then the system languages.
+  setFallbackFontCallback: (callback: (missingGlyph: number, fallbackFontIndex: number, weight: number, languages: string[]) => number | null) => void;
+  // The preferred languages text without a language of its own shapes and
+  // falls back with, most preferred first.
+  setSystemLanguages: (languages: string[]) => void;
 
   /**
    * @experimental Creates a deferred recording session. Only present in builds

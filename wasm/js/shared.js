@@ -70,6 +70,12 @@ Module["onRuntimeInitialized"] = function () {
     };
   }
 
+  if (typeof Module["setSystemLanguages"] !== "function") {
+    // Without text support (WITH_RIVE_TEXT) nothing shapes, so there is
+    // nothing for the languages to reach.
+    Module["setSystemLanguages"] = function (languages) {};
+  }
+
   const FileAssetLoader = Module.FileAssetLoader;
 
   Module["ptrToAsset"] = (assetAddress) => {

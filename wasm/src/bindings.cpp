@@ -43,6 +43,7 @@
 #include "rive/shapes/cubic_vertex.hpp"
 #include "rive/shapes/path.hpp"
 #include "rive/text/font_hb.hpp"
+#include "rive/text/text_language.hpp"
 #include "rive/text/utf.hpp"
 #include "rive/text/text_style.hpp"
 #include "rive/text/text_value_run.hpp"
@@ -517,9 +518,7 @@ FontWrapper* decodeFont(emscripten::val byteArray, emscripten::val session)
 // Holds JS callback set by setFallbackFontCb
 static emscripten::val jsFallbackFontCbRef = emscripten::val::null();
 
-static rive::rcp<rive::Font> fallbackProc(const rive::Unichar missing,
-                                          const uint32_t fallbackIndex,
-                                          const rive::Font* font)
+static rive::rcp<rive::Font> fallbackProc(const rive::Font::FallbackRequest& request)
 {
     if (jsFallbackFontCbRef.isNull() || jsFallbackFontCbRef.isUndefined())
     {
@@ -527,11 +526,21 @@ static rive::rcp<rive::Font> fallbackProc(const rive::Unichar missing,
     }
 
     // Extract weight from the requesting font
-    const HBFont* hbFont = static_cast<const HBFont*>(font);
+    const HBFont* hbFont = static_cast<const HBFont*>(request.font);
     float weight = hbFont->getWeight();
 
-    // Synchronously call JS: (missing, fallbackIndex, weight) -> FontWrapper* | null
-    emscripten::val result = jsFallbackFontCbRef(missing, fallbackIndex, weight);
+    // The text's language first, then the system's, so the callback can pick
+    // a Japanese or a Chinese font for the same Han codepoint.
+    emscripten::val languages = emscripten::val::array();
+    for (const std::string& language : request.languages)
+    {
+        languages.call<void>("push", language);
+    }
+
+    // Synchronously call JS:
+    // (missing, fallbackIndex, weight, languages) -> FontWrapper* | null
+    emscripten::val result =
+        jsFallbackFontCbRef(request.missing, request.fallbackIndex, weight, languages);
     if (result.isNull() || result.isUndefined())
     {
         return nullptr;
@@ -553,15 +562,29 @@ void setFallbackFontCb(emscripten::val cb)
     if (!cb.isNull() && !cb.isUndefined())
     {
         jsFallbackFontCbRef = cb;
-        rive::Font::gFallbackProc = fallbackProc;
+        rive::Font::gFallbackRequestProc = fallbackProc;
     }
     else
     {
         jsFallbackFontCbRef = emscripten::val::null();
-        rive::Font::gFallbackProc = nullptr;
+        rive::Font::gFallbackRequestProc = nullptr;
     }
     // A new callback may pick other fonts through the same proc.
     rive::Font::fallbackFontsChanged();
+}
+
+// The page's preferred languages (navigator.languages), which text without a
+// language of its own shapes and falls back with.
+void setSystemLanguages(emscripten::val languagesList)
+{
+    unsigned length = languagesList["length"].as<unsigned>();
+    std::vector<std::string> languages;
+    languages.reserve(length);
+    for (unsigned i = 0; i < length; i++)
+    {
+        languages.push_back(languagesList[i].as<std::string>());
+    }
+    rive::TextLanguages::setSystemLanguages(languages);
 }
 #endif // WITH_RIVE_TEXT
 
@@ -629,6 +652,7 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
     function("decodeFont", &decodeFont, allow_raw_pointers());
 #ifdef WITH_RIVE_TEXT
     function("setFallbackFontCb", &setFallbackFontCb, allow_raw_pointers());
+    function("setSystemLanguages", &setSystemLanguages);
 #endif
     function("load", &load, allow_raw_pointers());
     function("jsFactory", &jsFactory, allow_raw_pointers());

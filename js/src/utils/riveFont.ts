@@ -2,10 +2,14 @@ import * as rc from "../rive_advanced.mjs";
 import { RuntimeLoader } from "../runtimeLoader";
 import type { FontWrapper } from "./finalizationRegistry";
 
-// Callback type for the fallback fonts callback
-export type FallbackFontsCallback = (missingGlyph: number, weight: number) => FontWrapper | FontWrapper[] | null | undefined;
+// Callback type for the fallback fonts callback. `languages` holds BCP 47
+// tags, most preferred first: the text's own language (its `language`, or
+// its Text's) when it has one, then the system languages. Pick a font for
+// the first one you can, e.g. a Japanese font over a Chinese one for the
+// same Han codepoint.
+export type FallbackFontsCallback = (missingGlyph: number, weight: number, languages: string[]) => FontWrapper | FontWrapper[] | null | undefined;
 
-type CallbackToPointerValue = (missingGlyph: number, fallbackFontIndex: number, weight: number) => number | null;
+type CallbackToPointerValue = (missingGlyph: number, fallbackFontIndex: number, weight: number, languages: string[]) => number | null;
 
 // Class to manage fallback fonts for Rive.
 export class RiveFont {
@@ -23,6 +27,18 @@ export class RiveFont {
   public static setFallbackFontCallback(fontCallback: FallbackFontsCallback | null): void {
     RiveFont._fallbackFontCallback = fontCallback ?? null;
     RiveFont._wireFallbackProc();
+  }
+
+  /**
+   * Set the preferred languages (BCP 47 tags, most preferred first) that text
+   * without a `language` of its own shapes and falls back with, like
+   * `navigator.languages` is for a page. Pass nothing to follow
+   * `navigator.languages`, which is also what happens until this is called,
+   * including when the browser's languages change.
+   * @param languages The languages to use, or nothing for the browser's.
+   */
+  public static setSystemLanguages(languages?: readonly string[] | null): void {
+    RuntimeLoader.setSystemLanguages(languages ?? null);
   }
 
   // Get the pointer value to the Embind Font object from FontWrapper
@@ -55,8 +71,13 @@ export class RiveFont {
       const { _fallbackFontCallback: cb } = RiveFont;
       if (cb) {
         rive.setFallbackFontCallback(
-          ((missingGlyph: number, fallbackFontIndex: number, weight: number) => {
-            const fontsReturned = cb(missingGlyph, weight);
+          ((
+            missingGlyph: number,
+            fallbackFontIndex: number,
+            weight: number,
+            languages: string[]
+          ) => {
+            const fontsReturned = cb(missingGlyph, weight, languages ?? []);
             if (fontsReturned) {
               if (Array.isArray(fontsReturned)) {
                 return RiveFont._getFallbackPtr(

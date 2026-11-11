@@ -30,9 +30,48 @@ describe("RiveFont.setFallbackFontCallback()", () => {
         expect(outerStringProp?.value).not.toBeNull();
         outerStringProp!.value = "ส";
         await new Promise((resolve) => setTimeout(resolve, 50));
-        // Value specific to the character above
-        expect(userCallback).toHaveBeenCalledWith(3626, 400);
+        // Value specific to the character above. The text names no
+        // language, so the request lists only the system languages.
+        expect(userCallback).toHaveBeenCalledWith(
+          3626,
+          400,
+          expect.any(Array),
+        );
 
+        done();
+      },
+    });
+  });
+});
+
+describe("RiveFont.setSystemLanguages()", () => {
+  afterEach(() => {
+    RiveFont.setFallbackFontCallback(null);
+    RiveFont.setSystemLanguages(null);
+  });
+
+  test("fallback requests list the system languages", (done) => {
+    const userCallback = jest.fn().mockReturnValue(null);
+    RiveFont.setFallbackFontCallback(userCallback);
+    RiveFont.setSystemLanguages(["ja_jp", "zh-hans"]);
+
+    const canvas = document.createElement("canvas");
+    const r = new rive.Rive({
+      canvas: canvas,
+      buffer: loadFile("assets/fallback_fonts_test.riv"),
+      autoplay: true,
+      autoBind: false,
+      onLoad: async () => {
+        const viewModel = r.defaultViewModel();
+        const viewModelInstance = viewModel!.defaultInstance();
+        r.bindViewModelInstance(viewModelInstance!);
+        viewModelInstance!.string("text")!.value = "ส";
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        // As set, most preferred first.
+        expect(userCallback).toHaveBeenCalledWith(3626, 400, [
+          "ja_jp",
+          "zh-hans",
+        ]);
         done();
       },
     });

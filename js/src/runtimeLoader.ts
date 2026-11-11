@@ -187,6 +187,31 @@ export class RuntimeLoader {
     RuntimeLoader.callBackQueue = [];
   }
 
+  // The languages text without one of its own shapes and falls back with,
+  // most preferred first. Null follows navigator.languages, including when
+  // the browser's change. See RiveFont.setSystemLanguages.
+  private static systemLanguages: readonly string[] | null = null;
+  private static listeningForLanguageChange = false;
+
+  public static setSystemLanguages(languages: readonly string[] | null): void {
+    RuntimeLoader.systemLanguages = languages;
+    RuntimeLoader.applySystemLanguages();
+  }
+
+  private static applySystemLanguages(): void {
+    const rive = RuntimeLoader.runtime;
+    if (!rive) {
+      // Applied once it loads.
+      return;
+    }
+    const languages =
+      RuntimeLoader.systemLanguages ??
+      (typeof navigator !== "undefined" && navigator.languages
+        ? navigator.languages
+        : []);
+    rive.setSystemLanguages?.([...languages]);
+  }
+
   private static loaded(rive: rc.RiveCanvas): void {
     if (RuntimeLoader.enablePerfMarks) {
       performance.mark('rive:wasm-init:end');
@@ -194,6 +219,19 @@ export class RuntimeLoader {
     }
     RuntimeLoader.runtime = rive;
     RuntimeLoader.applyParallelParts();
+    RuntimeLoader.applySystemLanguages();
+    if (
+      !RuntimeLoader.listeningForLanguageChange &&
+      typeof window !== "undefined" &&
+      typeof window.addEventListener === "function"
+    ) {
+      RuntimeLoader.listeningForLanguageChange = true;
+      window.addEventListener("languagechange", () => {
+        if (RuntimeLoader.systemLanguages === null) {
+          RuntimeLoader.applySystemLanguages();
+        }
+      });
+    }
     RuntimeLoader.errorCallbackQueue = [];
     // Before any callback can import a file, so its images reach the worker.
     if (RuntimeLoader.replayWorker) {
