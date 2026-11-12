@@ -541,10 +541,7 @@
       Module["_riveScriptFetchSetEnabled"](0);
       return;
     }
-    Module["_riveScriptFetchSetLimits"](
-      options["maxRequestsPerMinute"] >>> 0,
-      options["maxResponseBytes"] >>> 0,
-    );
+    Module["_riveScriptFetchSetLimits"](options["maxResponseBytes"] >>> 0);
     Module["_riveScriptFetchSetEnabled"](1);
   };
 })();

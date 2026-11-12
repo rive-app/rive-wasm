@@ -39,11 +39,11 @@ describe("RuntimeLoader.setScriptFetch without script networking", () => {
   test("enabling warns once and leaves instances working", async () => {
     rive.RuntimeLoader.setScriptFetch({
       allowedHosts: ["api.example.com"],
-      maxRequestsPerMinute: 10,
+      maxResponseBytes: 1024,
     });
     expect(rive.RuntimeLoader.getScriptFetch()).toEqual({
       allowedHosts: ["api.example.com"],
-      maxRequestsPerMinute: 10,
+      maxResponseBytes: 1024,
     });
     const r = await new Promise<rive.Rive>((resolve, reject) => {
       const instance: rive.Rive = new rive.Rive({

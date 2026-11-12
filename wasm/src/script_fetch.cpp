@@ -146,11 +146,10 @@ EXPORT void riveScriptFetchFail(uint32_t id,
 // a failed allocation there aborts the module, so the byte cap has a ceiling.
 static constexpr uint32_t kMaxResponseBytesCeiling = 64 * 1024 * 1024;
 
-// A per-minute cap of 0 is no cap; a byte cap of 0 keeps the default.
-EXPORT void riveScriptFetchSetLimits(uint32_t maxRequestsPerMinute, uint32_t maxResponseBytes)
+// A byte cap of 0 keeps the default.
+EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes)
 {
     NetLimits netLimits;
-    netLimits.maxRequestsPerMinutePerOwner = maxRequestsPerMinute;
     if (maxResponseBytes != 0)
     {
         netLimits.maxResponseBodyBytes = std::min(maxResponseBytes, kMaxResponseBytesCeiling);

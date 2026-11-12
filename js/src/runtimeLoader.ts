@@ -58,19 +58,12 @@ export interface ScriptFetchOptions {
    */
   allowedHosts?: string[];
   /**
-   * Requests scripts may start per minute, counted per scripting VM, so
-   * scripts that share one share the limit. Requests past it wait their turn
-   * rather than fail. 0 is no limit. Default 60.
-   */
-  maxRequestsPerMinute?: number;
-  /**
    * Largest response body, in bytes, up to 64 MiB. 0 keeps the default of
    * 16 MiB.
    */
   maxResponseBytes?: number;
 }
 
-const defaultScriptFetchRequestsPerMinute = 60;
 // The runtime's ceiling for maxResponseBytes.
 const maxScriptFetchResponseBytes = 64 * 1024 * 1024;
 
@@ -579,10 +572,6 @@ export class RuntimeLoader {
       options && {
         proxyUrl: options.proxyUrl || null,
         allowedHosts: options.allowedHosts ?? null,
-        maxRequestsPerMinute: uint32Option(
-          options.maxRequestsPerMinute,
-          defaultScriptFetchRequestsPerMinute,
-        ),
         // 0 keeps the runtime's default.
         maxResponseBytes: uint32Option(options.maxResponseBytes, 0),
       },

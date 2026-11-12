@@ -26,8 +26,6 @@ export default Rive;
 export interface ScriptFetchConfig {
   proxyUrl: string | null;
   allowedHosts: string[] | null;
-  /** 0 is no limit. */
-  maxRequestsPerMinute: number;
   /** 0 keeps the runtime's default. */
   maxResponseBytes: number;
 }
