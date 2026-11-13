@@ -1169,7 +1169,7 @@ export declare class StateMachineInstance {
    * @param dy - Vertical distance the content moves, in Artboard pixels. Revealing content below
    * is negative.
    * @param phase - Where the event sits within its gesture: 0 begin, 1 update, 2 end,
-   * 3 momentum, 4 inertiaCancel. A phaseless wheel only ever sends 1 (update).
+   * 3 momentum, 4 inertiaCancel. A phaseless wheel sends 1 (update), or 3 for momentum.
    * @param precise - True for a pixel-precise source such as a trackpad, false for a detented
    * wheel.
    * @param timeStamp - Event time in seconds.

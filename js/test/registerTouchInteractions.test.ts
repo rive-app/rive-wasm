@@ -950,6 +950,71 @@ test("a pixel wheel scrolls as precise content travel and keeps the page still",
   expect(mockAdvanceAndDrain).toBeCalledWith(0);
 });
 
+const scrollPhases = (): number[] =>
+  scrollMock(0).mock.calls.map((call) => call[4]);
+
+test("momentum the browser reports is sent as the momentum phase", (): void => {
+  for (const momentum of [false, true]) {
+    const event = new WheelEvent("wheel", { deltaY: 30, cancelable: true });
+    Object.defineProperty(event, "momentum", { value: momentum });
+    canvas.dispatchEvent(event);
+  }
+
+  expect(scrollPhases()).toEqual([1, 3]);
+});
+
+// 60 events per second, whatever the test's own pace.
+const wheelStream = (inits: WheelEventInit[]): void =>
+  inits.forEach((init, i) => {
+    const event = new WheelEvent("wheel", {
+      clientX: 100,
+      clientY: 100,
+      cancelable: true,
+      ...init,
+    });
+    Object.defineProperty(event, "timeStamp", { value: 1000 + i * 16 });
+    canvas.dispatchEvent(event);
+  });
+
+test("a falling pixel stream turns to the momentum phase", (): void => {
+  wheelStream([40, 36, 32, 28, 24].map((deltaY) => ({ deltaY })));
+
+  expect(scrollPhases()).toEqual([1, 1, 1, 3, 3]);
+});
+
+test("a line wheel starts the pixel stream over", (): void => {
+  wheelStream([
+    ...[40, 36, 32, 28].map((deltaY) => ({ deltaY })),
+    { deltaY: 1, deltaMode: WheelEvent.DOM_DELTA_LINE },
+    { deltaY: 24 },
+    { deltaY: 20 },
+  ]);
+
+  expect(scrollPhases()).toEqual([1, 1, 1, 3, 1, 1, 1]);
+});
+
+test("a wheel left to the page starts the pixel stream over", (): void => {
+  wheelStream([
+    ...[40, 36, 32, 28].map((deltaY) => ({ deltaY })),
+    { deltaY: 26, ctrlKey: true },
+    { deltaY: 24 },
+    { deltaY: 20 },
+  ]);
+
+  expect(scrollPhases()).toEqual([1, 1, 1, 3, 1, 1]);
+});
+
+test("a falling line wheel is never momentum", (): void => {
+  wheelStream(
+    [5, 4, 3, 2, 1].map((deltaY) => ({
+      deltaY,
+      deltaMode: WheelEvent.DOM_DELTA_LINE,
+    })),
+  );
+
+  expect(scrollPhases()).toEqual([1, 1, 1, 1, 1]);
+});
+
 test("a line wheel converts to pixels and is not precise", (): void => {
   wheel({ deltaX: 3, deltaMode: WheelEvent.DOM_DELTA_LINE });
 

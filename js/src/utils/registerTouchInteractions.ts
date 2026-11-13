@@ -1,10 +1,12 @@
 import * as rc from "../rive_advanced.mjs";
+import { WheelMomentumDetector } from "./wheelMomentum";
 
 // A detented wheel reports lines; the runtime wants pixels.
 const PIXELS_PER_LINE = 16;
-// ScrollPhase.update. The DOM reports no gesture phase, so every wheel event
-// is an update and the runtime closes the gesture once it goes quiet.
+// ScrollPhase.update and ScrollPhase.momentum. The DOM reports no gesture
+// phase, so the runtime closes the gesture once it goes quiet.
 const SCROLL_PHASE_UPDATE = 1;
+const SCROLL_PHASE_MOMENTUM = 3;
 
 export interface TouchInteractionsParams {
   canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -539,11 +541,13 @@ export const registerTouchInteractions = ({
    * the wheel unless a scroll view actually moves, so it still scrolls when
    * Rive has nothing to scroll or a view sits at its edge.
    */
+  const wheelMomentum = new WheelMomentumDetector();
   const wheelCallback = (event: WheelEvent) => {
     // Pinch zoom arrives as a ctrl+wheel and belongs to the page. A wheel that
     // can't be cancelled is part of a sequence the page is already scrolling;
     // taking it too would move both.
     if (event.ctrlKey || !event.cancelable) {
+      wheelMomentum.reset();
       return;
     }
     // Read before the deltas: Firefox reports pixels once a delta has been
@@ -592,6 +596,13 @@ export const registerTouchInteractions = ({
     // counts as precise either way, as it does in the browser's own scrolling.
     const precise = deltaMode === WheelEvent.DOM_DELTA_PIXEL;
     const timeStamp = event.timeStamp / 1000;
+    // Momentum bounces at the end of a scroll view; the fingers stretch it.
+    let phase = SCROLL_PHASE_UPDATE;
+    if (!precise) {
+      wheelMomentum.reset();
+    } else if (wheelMomentum.isMomentum(event, deltaX, deltaY)) {
+      phase = SCROLL_PHASE_MOMENTUM;
+    }
 
     // A latched state machine owns the rest of its gesture, even past its edge.
     const latched = stateMachines.filter((sm) => sm.hasScrollLatch());
@@ -605,7 +616,7 @@ export const registerTouchInteractions = ({
           position.y,
           moved.x - position.x,
           moved.y - position.y,
-          SCROLL_PHASE_UPDATE,
+          phase,
           precise,
           timeStamp,
           0,
