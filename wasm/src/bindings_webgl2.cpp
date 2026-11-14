@@ -24,6 +24,9 @@
 #ifdef RIVE_CANVAS
 #include "rive/renderer/cmd/deferred_canvas_host.hpp"
 #include "rive/renderer/render_canvas.hpp"
+#ifdef RIVE_ORE
+#include "rive/renderer/ore/layer_mask_compositor.hpp"
+#endif
 #endif
 
 #include <emscripten.h>
@@ -595,6 +598,7 @@ public:
         // The session outlives us and references the ore context the render
         // context owns, so it has to let go first, while GL is still current.
         detachSession();
+        m_layerMaskCompositor = nullptr;
 #endif
         m_plsSynchronizedBuffers.clear();
         m_renderTarget = nullptr;
@@ -1020,12 +1024,49 @@ public:
         return makeContentCanvas(width, height);
     }
 
-    // Answered from the context rather than left to the host default: a GL
-    // frame can land on atomics or depth-stencil, and neither applies the mask
-    // op, so an optimistic yes would have the artboard rasterize to the
-    // content-and-coverage intersection and then composite it unmasked -- the
-    // layer both unmasked and cropped.
-    bool supportsLayerMask() const override { return m_renderContext->supportsLayerMask(); }
+#ifdef RIVE_ORE
+    bool supportsLayerMask() const override
+    {
+        if (!m_hasOre)
+        {
+            // getOreContext can create the Ore context, which needs our GL context.
+            ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+            m_hasOre = m_renderContext->getOreContext() != nullptr;
+        }
+        return m_hasOre && !m_layerMaskFailed;
+    }
+
+    // Frames cannot nest, so the live frame flushes before the Ore pass and
+    // resumes after it.
+    bool composeLayerMask(gpu::RenderCanvas* content,
+                          gpu::RenderCanvas* coverage,
+                          gpu::RenderCanvas* result,
+                          LayerMaskMode mode) override
+    {
+        ScopedGLContextMakeCurrent makeCurrent(m_contextGL);
+        ore::Context* ore = m_renderContext->getOreContext();
+        if (ore == nullptr)
+        {
+            return false;
+        }
+        if (m_layerMaskCompositor == nullptr)
+        {
+            m_layerMaskCompositor = std::make_unique<ore::LayerMaskCompositor>();
+        }
+        RenderContext::FrameDescriptor resumed = liveFrame();
+        resumed.loadAction = gpu::LoadAction::preserveRenderTarget;
+        m_renderContext->flush({.renderTarget = liveTarget()});
+        ore->beginFrame({});
+        bool composed = m_layerMaskCompositor->compose(*ore, content, coverage, result, mode);
+        ore->endFrame();
+        m_renderContext->impl()->scrubStateAfterOre();
+        m_renderContext->beginFrame(std::move(resumed));
+        // Our canvases are always backed, so a failure is the device's and
+        // would repeat every frame.
+        m_layerMaskFailed = !composed;
+        return composed;
+    }
+#endif
 
     Renderer* beginCanvasContent(gpu::RenderCanvas* canvas, uint32_t clearColor) override
     {
@@ -1037,11 +1078,8 @@ public:
         // What this pass is about to interrupt. Not necessarily the screen:
         // a cached artboard can nest inside another one, and the inner pass
         // has to resume the outer canvas rather than jump back to the window.
-        const RenderContext::FrameDescriptor& outerFrame =
-            m_canvasPasses.empty() ? m_screenFrame : m_canvasPasses.back().frame;
-        gpu::RenderTarget* outerTarget = m_canvasPasses.empty()
-                                             ? static_cast<gpu::RenderTarget*>(m_renderTarget.get())
-                                             : m_canvasPasses.back().target.get();
+        const RenderContext::FrameDescriptor& outerFrame = liveFrame();
+        gpu::RenderTarget* outerTarget = liveTarget();
 
         // Frames cannot nest, so resolve what the interrupted target has drawn
         // so far and give the context to the canvas.
@@ -1170,6 +1208,20 @@ private:
         gpu::RenderTarget* outerTarget;
     };
     std::vector<CanvasPass> m_canvasPasses;
+    const RenderContext::FrameDescriptor& liveFrame() const
+    {
+        return m_canvasPasses.empty() ? m_screenFrame : m_canvasPasses.back().frame;
+    }
+    gpu::RenderTarget* liveTarget() const
+    {
+        return m_canvasPasses.empty() ? static_cast<gpu::RenderTarget*>(m_renderTarget.get())
+                                      : m_canvasPasses.back().target.get();
+    }
+#ifdef RIVE_ORE
+    std::unique_ptr<ore::LayerMaskCompositor> m_layerMaskCompositor;
+    bool m_layerMaskFailed = false;
+    mutable bool m_hasOre = false;
+#endif
     // A clean renderer (no inherited transform or clip) that still converts
     // WebGL2 images and buffers, as the draws above do: the GL backend drops
     // anything that isn't its own. Used for canvas content and composites.
@@ -2132,13 +2184,6 @@ public:
                                              vertexCount,
                                              indexCount,
                                              std::move(instances));
-        }
-    }
-    void applyLayerMask(const RenderImage* mask, ImageSampler sampler, LayerMaskMode mode) override
-    {
-        if (m_target != nullptr)
-        {
-            m_target->applyLayerMask(mask, sampler, mode);
         }
     }
     void modulateOpacity(float opacity) override
