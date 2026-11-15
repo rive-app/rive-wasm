@@ -150,6 +150,36 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
+test("only instances that draw on the worker ask for its frames", async () => {
+  let onWorker = true;
+  const stub = await stubWorkerRenderers(() => onWorker);
+  const runtime = (await rive.RuntimeLoader.awaitInstance()) as any;
+  const request = jest.spyOn(runtime, "requestAnimationFrame");
+  const instances: rive.Rive[] = [];
+  try {
+    instances.push(
+      await createRive({
+        ...stateMachineParams(newCanvas()),
+        enableGPUCanvas: true,
+      }),
+    );
+    await nextFrames();
+    expect(request.mock.calls.length).toBeGreaterThan(0);
+    expect(request.mock.calls.every((call) => call[1] === true)).toBe(true);
+
+    instances.pop().cleanup();
+    request.mockClear();
+    onWorker = false;
+    instances.push(await createRive(stateMachineParams(newCanvas())));
+    await nextFrames();
+    expect(request.mock.calls.length).toBeGreaterThan(0);
+    expect(request.mock.calls.every((call) => call[1] === false)).toBe(true);
+  } finally {
+    instances.forEach((r) => r.cleanup());
+    stub.restore();
+  }
+});
+
 test("deferred instances ask for the worker unless they opt out", async () => {
   const stub = await stubWorkerRenderers(() => false);
   const instances: rive.Rive[] = [];

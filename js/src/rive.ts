@@ -4845,6 +4845,7 @@ export class Rive {
       if (this.runtime.requestAnimationFrame) {
         this.frameRequestId = this.runtime.requestAnimationFrame(
           this._boundDraw,
+          this.renderer?.replaysOnWorker?.() === true,
         );
       } else {
         this.frameRequestId = requestAnimationFrame(this._boundDraw);

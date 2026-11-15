@@ -161,6 +161,130 @@ if (ENVIRONMENT_IS_PTHREAD) {
       pending.length = 0;
     }
 
+    // Chrome slows a page's animation frames while the page repaints nothing,
+    // and a page whose canvases draw on the replay worker repaints nothing. A
+    // worker's frames keep the display's rate, so one that does nothing else
+    // paces those canvases while its frames outrun the page's. A worker
+    // without frames never answers.
+    const frameWorkerSource =
+      "let r=0;self.requestAnimationFrame&&(onmessage=()=>{r=r||" +
+      "requestAnimationFrame((t)=>{r=0;postMessage(performance.timeOrigin+t)})})";
+    // Out of view the page's frames stop and the worker's do not.
+    const maxFramesPerPageFrame = 16;
+    // Frames the worker must gain on the page to pace, and lose to stop.
+    const maxLead = 4;
+    // Page frames the comparison goes on after its last caller.
+    const comparedFrames = 2;
+    // Null once it could not start.
+    let frameWorker;
+    let frameCallback = null;
+    let frameAsked = false;
+    let workerPaces = false;
+    let lead = 0;
+    let comparing = 0;
+    let pageFrame = 0;
+    // Stale after a pause.
+    let framesComparable = false;
+    // A worker frame from before it is stale.
+    let lastFrameTime = 0;
+    // The worker is asked nothing before the page's next frame.
+    let framesSincePageFrame = maxFramesPerPageFrame;
+    function askFrame() {
+      if (!frameAsked && framesSincePageFrame < maxFramesPerPageFrame) {
+        frameAsked = true;
+        frameWorker.postMessage(0);
+      }
+    }
+    function watchPage() {
+      if (!pageFrame) {
+        pageFrame = requestAnimationFrame(onPageFrame);
+        framesComparable = false;
+        // The page may have left the view since its last frame.
+        framesSincePageFrame = maxFramesPerPageFrame;
+      }
+    }
+    function runFrame(time) {
+      const callback = frameCallback;
+      frameCallback = null;
+      lastFrameTime = time;
+      callback(time);
+    }
+    function onWorkerFrame(event) {
+      frameAsked = false;
+      ++framesSincePageFrame;
+      if (!workerPaces) {
+        comparing && askFrame();
+      } else if (
+        frameCallback &&
+        // A frame asked for before a pause arrives after it.
+        framesSincePageFrame <= maxFramesPerPageFrame
+      ) {
+        // The worker's clock started after the page's.
+        const time = event.data - performance.timeOrigin;
+        time > lastFrameTime ? runFrame(time) : askFrame();
+      }
+    }
+    function onPageFrame(time) {
+      pageFrame = 0;
+      const frames = framesSincePageFrame;
+      const waited = frames >= maxFramesPerPageFrame;
+      framesSincePageFrame = 0;
+      // A page whose frames stopped says nothing of the worker's rate.
+      if (framesComparable && !waited) {
+        // One late page frame is not a slower page: a frame gains 1 at most.
+        lead = Math.max(Math.min(lead + Math.min(frames - 1, 1), maxLead), -maxLead);
+        if (lead == -maxLead) {
+          workerPaces = false;
+        } else if (lead == maxLead && !workerPaces) {
+          workerPaces = true;
+          // The page's callers draw this frame.
+          lastFrameTime = time;
+        }
+      }
+      framesComparable = true;
+      comparing && --comparing;
+      const callback = frameCallback && (waited || !workerPaces);
+      if (frameCallback || comparing) {
+        pageFrame = requestAnimationFrame(onPageFrame);
+      }
+      callback && runFrame(time);
+    }
+    function startFrameWorker() {
+      if (frameWorker !== undefined) {
+        return;
+      }
+      frameWorker = null;
+      try {
+        frameWorker = new Worker(
+          URL.createObjectURL(
+            new Blob([frameWorkerSource], { "type": "text/javascript" }),
+          ),
+        );
+      } catch (e) {
+        // The page's policy forbids it; its own frames go on pacing.
+        return;
+      }
+      frameWorker.onmessage = onWorkerFrame;
+      riveWorkerFrames = {
+        // Asking keeps the two rates compared.
+        paces: () => {
+          comparing = comparedFrames;
+          watchPage();
+          workerPaces || askFrame();
+          return workerPaces;
+        },
+        request: (callback) => {
+          frameCallback = callback;
+          watchPage();
+          askFrame();
+          return 1;
+        },
+        cancel: () => {
+          frameCallback = null;
+        },
+      };
+    }
+
     let enabled = false;
     let replayCaps = null;
     let replayCapsArrived = null;
@@ -273,6 +397,7 @@ if (ENVIRONMENT_IS_PTHREAD) {
     }
 
     function makeWorkerRenderer(canvas, record, options) {
+      startFrameWorker();
       const inkbleed = !!(options && options["inkbleed"]);
       const width = record["width"];
       const height = record["height"];

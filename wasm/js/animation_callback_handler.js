@@ -1,52 +1,82 @@
+// Frames a worker paces for the page, in a build with one that can.
+let riveWorkerFrames = null;
+
 // Manages a list of animation callbacks to be called in batch.
 // Override this.onAfterCallbacks to get a call once all animation callbacks have been invoked.
 function AnimationCallbackHandler() {
-    let _mainAnimationCallbackID = 0;
-    let _lastAnimationSubCallbackID = 0;
-    let _animationSubCallbacks = new Map();
     let _fpsCounter = null;
     let _fpsDiv = null;
 
-    this.requestAnimationFrame = function(callback) {
-        if (!_mainAnimationCallbackID) {
-            _mainAnimationCallbackID =
-                    requestAnimationFrame(mainAnimationCallback.bind(this));
-        }
-        const id = ++_lastAnimationSubCallbackID;
-        _animationSubCallbacks.set(id, callback);
-        return id;
+    // The callbacks waiting on one source of frames. The worker's ids are
+    // negative, so cancelAnimationFrame can tell the batches apart.
+    const makeBatch = (onWorker, request, cancel) => {
+        const sign = onWorker ? -1 : 1;
+        let mainAnimationCallbackID = 0;
+        let lastAnimationSubCallbackID = 0;
+        let animationSubCallbacks = new Map();
+
+        const mainAnimationCallback = (time) => {
+            // Snap off and reset the sub-callbacks first, since they might call requestAnimationFrame
+            // recursively.
+            const flushingSubCallbacks = animationSubCallbacks;
+            mainAnimationCallbackID = 0;
+            lastAnimationSubCallbackID = 0;
+            animationSubCallbacks = new Map();
+
+            // Invoke all pending animation callbacks.
+            flushingSubCallbacks.forEach((callback) => {
+                try {
+                    callback(time);
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+
+            this.onAfterCallbacks();
+
+            if (_fpsCounter) {
+                _fpsCounter.frameComplete(onWorker);
+            }
+        };
+
+        return {
+            add: (callback) => {
+                if (!mainAnimationCallbackID) {
+                    mainAnimationCallbackID = request(mainAnimationCallback);
+                }
+                const id = ++lastAnimationSubCallbackID;
+                animationSubCallbacks.set(id, callback);
+                return sign * id;
+            },
+            remove: (id) => {
+                animationSubCallbacks.delete(sign * id);
+                if (mainAnimationCallbackID && animationSubCallbacks.size == 0) {
+                    cancel(mainAnimationCallbackID);
+                    mainAnimationCallbackID = 0;
+                }
+            },
+        };
+    };
+
+    const _pageBatch = makeBatch(
+            false,
+            (callback) => requestAnimationFrame(callback),
+            (id) => cancelAnimationFrame(id));
+    const _workerBatch = makeBatch(
+            true,
+            (callback) => riveWorkerFrames.request(callback),
+            (id) => riveWorkerFrames.cancel(id));
+
+    // onWorker: the caller draws on a worker, so a worker's frames pace it
+    // when the page's own, which slow while the page repaints nothing, lag.
+    this.requestAnimationFrame = function(callback, onWorker) {
+        return onWorker && riveWorkerFrames && riveWorkerFrames.paces()
+                ? _workerBatch.add(callback)
+                : _pageBatch.add(callback);
     }
 
     this.cancelAnimationFrame = function(id) {
-        _animationSubCallbacks.delete(id);
-        if (_mainAnimationCallbackID && _animationSubCallbacks.size == 0) {
-            cancelAnimationFrame(_mainAnimationCallbackID);
-            _mainAnimationCallbackID = 0;
-        }
-    }
-
-    function mainAnimationCallback(time) {
-        // Snap off and reset the sub-callbacks first, since they might call requestAnimationFrame
-        // recursively.
-        const flushingSubCallbacks = _animationSubCallbacks;
-        _mainAnimationCallbackID = 0;
-        _lastAnimationSubCallbackID = 0;
-        _animationSubCallbacks = new Map();
-
-        // Invoke all pending animation callbacks.
-        flushingSubCallbacks.forEach((callback) => {
-            try {
-                callback(time);
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        this.onAfterCallbacks();
-
-        if (_fpsCounter) {
-            _fpsCounter.frameComplete();
-        }
+        (id < 0 ? _workerBatch : _pageBatch).remove(id);
     }
 
     this.enableFPSCounter = function(fpsCallback) {
@@ -73,19 +103,20 @@ function AnimationCallbackHandler() {
         }
 
         _fpsCounter = new (function() {
-            let _frames = 0;
+            // The page's frames and the worker's; the faster batch is the rate.
+            let _frames = [0, 0];
             let _startMS = 0;
-            this.frameComplete = function() {
+            this.frameComplete = function(onWorker) {
                 const now = performance.now();
                 if (!_startMS) {
                     _startMS = now;
-                    _frames = 0;
+                    _frames = [0, 0];
                 } else {
-                    ++_frames;
+                    ++_frames[onWorker ? 1 : 0];
                     const milliseconds = now - _startMS;
                     if (milliseconds > 1000) {  // Update every 1 second.
-                        fpsCallback(_frames * 1000 / milliseconds);
-                        _frames = _startMS = 0;
+                        fpsCallback(Math.max(_frames[0], _frames[1]) * 1000 / milliseconds);
+                        _startMS = 0;
                     }
                 }
             };

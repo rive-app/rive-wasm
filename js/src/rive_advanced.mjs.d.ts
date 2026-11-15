@@ -169,9 +169,14 @@ export interface RiveCanvas {
    * A Rive-specific requestAnimationFrame function; this must be used instead of the global
    * requestAnimationFrame function.
    * @param cb - Callback function to call with an elapsed timestamp
+   * @param onWorker - True when the caller's renderer draws on the replay
+   * worker (`replaysOnWorker()`), so a worker's frames pace it
    * @returns number - An ID of the requestAnimationFrame request
    */
-  requestAnimationFrame(cb: (timestamp: DOMHighResTimeStamp) => void): number;
+  requestAnimationFrame(
+    cb: (timestamp: DOMHighResTimeStamp) => void,
+    onWorker?: boolean,
+  ): number;
   /**
    * A Rive-specific cancelAnimationFrame function; this must be used instead of the global
    * cancelAnimationFrame function.
