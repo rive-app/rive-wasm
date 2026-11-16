@@ -459,9 +459,13 @@ public:
 
 // The optional trailing session fixes the file's mode at import: its resources
 // are typed by the factory that made them and can never switch afterwards.
+// deferDecoding decodes animations, artboards (other than the default one) and
+// file level view model instances the first time they're used instead of at
+// import (FileImportOptions::deferDecoding).
 rive::File* load(emscripten::val byteArray,
                  rive::FileAssetLoader* fileAssetLoader,
-                 emscripten::val session)
+                 emscripten::val session,
+                 bool deferDecoding)
 {
     std::vector<unsigned char> rv;
 
@@ -475,7 +479,15 @@ rive::File* load(emscripten::val byteArray,
     // Importing through the deferred session wires scripting by itself: the
     // context derives the ore recorder and canvas host from its import
     // factory, and the session carries the bound render context.
-    auto file = rive::File::import(rv, jsSessionFactory(session), nullptr, fileAssetLoader);
+    rive::FileImportOptions options;
+    options.deferDecoding = deferDecoding;
+    auto file = rive::File::import(rv,
+                                   jsSessionFactory(session),
+                                   nullptr,
+                                   fileAssetLoader,
+                                   nullptr,
+                                   false,
+                                   options);
     // Need to manually ref the file to keep alive until the JS runtime cleans it up.
     return file.release();
 }

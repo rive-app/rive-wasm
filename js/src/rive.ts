@@ -1597,6 +1597,13 @@ export interface RiveParameters {
    */
   enableRiveAssetCDN?: boolean;
   /**
+   * Decode parts of the file the first time they're used instead of at import.
+   * Only applies when this instance loads its own file (`src`/`buffer`), where it
+   * is forwarded to that file as {@link RiveFileParameters.deferDecoding}. With a
+   * supplied `riveFile` the file's own flag wins. False by default.
+   */
+  deferDecoding?: boolean;
+  /**
    * @experimental This API is early and may encounter breaking behavior change without a major version bump
    *
    * When to build semantic trees and the accessibility DOM overlay.
@@ -1811,6 +1818,21 @@ export interface RiveFileParameters {
   buffer?: ArrayBuffer;
   assetLoader?: AssetLoadCallback;
   enableRiveAssetCDN?: boolean;
+  /**
+   * Decode parts of the file the first time they're used instead of at import,
+   * keeping a copy of their bytes until then. Speeds up loading files with many
+   * artboards, animations or view model instances when only some of them are used:
+   *
+   * - Animations decode the first time they're played.
+   * - Artboards decode the first time they're instanced. The default artboard
+   *   (the first) still decodes at import.
+   * - View model instances decode the first time they're handed out. Their names
+   *   and counts are read without decoding.
+   *
+   * Listing a file's {@link Rive.contents} decodes every artboard. Fixed at import.
+   * False by default.
+   */
+  deferDecoding?: boolean;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   /**
@@ -1902,6 +1924,9 @@ export class RiveFile implements rc.FinalizableTarget {
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN: boolean = true;
 
+  // Decode parts of the file on first use instead of at import.
+  private deferDecoding: boolean = false;
+
   // When true, emits performance.mark/measure entries during RiveFile load.
   private enablePerfMarks: boolean = false;
 
@@ -1948,6 +1973,7 @@ export class RiveFile implements rc.FinalizableTarget {
       typeof params.enableRiveAssetCDN == "boolean"
         ? params.enableRiveAssetCDN
         : true;
+    this.deferDecoding = !!params.deferDecoding;
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
 
@@ -2018,6 +2044,7 @@ export class RiveFile implements rc.FinalizableTarget {
         loader,
         this.enableRiveAssetCDN,
         this.session,
+        this.deferDecoding,
       );
     } catch (error) {
       // The finalizer that would reclaim the session is only registered once
@@ -2229,6 +2256,7 @@ export class RiveFile implements rc.FinalizableTarget {
       buffer: this.buffer,
       assetLoader: this.assetLoader,
       enableRiveAssetCDN: this.enableRiveAssetCDN,
+      deferDecoding: this.deferDecoding,
       enablePerfMarks: this.enablePerfMarks,
       enableGPUCanvas: deferred,
     });
@@ -2449,6 +2477,9 @@ export class Rive {
   // Allow the runtime to automatically load assets hosted in Rive's runtime.
   private enableRiveAssetCDN = true;
 
+  // Forwarded to the file this instance imports itself.
+  private deferDecoding = false;
+
   private semanticsMode: SemanticMode = SemanticMode.Disabled;
 
   private semanticsOptions: RiveSemanticsOptions = {
@@ -2579,6 +2610,7 @@ export class Rive {
       params.enableRiveAssetCDN === undefined
         ? true
         : params.enableRiveAssetCDN;
+    this.deferDecoding = !!params.deferDecoding;
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
     this._focusOptions = params.focusOptions ?? this._focusOptions;
@@ -3100,6 +3132,7 @@ export class Rive {
           src: this.src,
           buffer: this.buffer,
           enableRiveAssetCDN: this.enableRiveAssetCDN,
+          deferDecoding: this.deferDecoding,
           assetLoader: this.assetLoader,
           enablePerfMarks: this.enablePerfMarks,
           // The instance owns this file, so its flag is the file's flag.

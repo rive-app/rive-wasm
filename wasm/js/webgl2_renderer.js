@@ -440,11 +440,14 @@ Module["onRuntimeInitialized"] = function () {
   // The session fixes the file's mode at import: every resource it creates is
   // typed by the factory it came from, so out of band assets have to decode
   // through the same session (the CDN loader carries it for that reason).
+  // deferDecoding decodes parts of the file the first time they're used
+  // instead of at import.
   Module["load"] = function (
     bytes,
     fileAssetLoader,
     enableRiveAssetCDN = true,
-    session = null
+    session = null,
+    deferDecoding = false
   ) {
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
@@ -455,7 +458,9 @@ Module["onRuntimeInitialized"] = function () {
       loader.addLoader(cdnLoader);
     }
 
-    return Module["startFileScripts"](load(bytes, loader, session ?? null));
+    return Module["startFileScripts"](
+      load(bytes, loader, session ?? null, !!deferDecoding)
+    );
   };
 
   const cppClear = Module["WebGL2Renderer"]["prototype"]["clear"];

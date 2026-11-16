@@ -120,6 +120,9 @@ export interface RiveCanvas {
    * @param enableRiveAssetCDN - boolean flag to allow loading assets from the Rive CDN, enabled by default.
    * @param session - @experimental Deferred session to import through. The file's mode is fixed
    * at import: pass null (the default) for an immediate file.
+   * @param deferDecoding - Decode animations, artboards (other than the default
+   * one) and file level view model instances the first time they're used instead of at import.
+   * False by default.
    * @returns A Promise for a Rive File class
    */
   load(
@@ -127,6 +130,7 @@ export interface RiveCanvas {
     assetLoader?: FileAssetLoader,
     enableRiveAssetCDN?: boolean,
     session?: DeferredSession | null,
+    deferDecoding?: boolean,
   ): Promise<File>;
 
   /**
