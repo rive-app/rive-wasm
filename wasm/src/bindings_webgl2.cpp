@@ -1669,7 +1669,7 @@ public:
     bool canInkbleed() const { return m_canInkbleed; }
     uint32_t framesInFlight() const { return m_framesInFlight.load(std::memory_order_acquire); }
     void noteFrameQueued() { m_framesInFlight.fetch_add(1, std::memory_order_relaxed); }
-    // How long recent frames took to finish, 0 before the first.
+    // How long recent frames took to finish, 0 before the third.
     float replayMs() const { return m_gpuFrames->replayMs(); }
     // Bumped when a restored context replaces everything resident.
     uint32_t generation() const { return m_generation.load(std::memory_order_acquire); }

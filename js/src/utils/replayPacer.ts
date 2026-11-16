@@ -93,7 +93,12 @@ export class ReplayPacer {
       this.probeAfter = this.probing
         ? Math.min(this.probeAfter * 2, kMaxProbeAfterMs)
         : kProbeAfterMs;
-      this.setDivisor(time, Math.max(divisor + 1, Math.ceil(ratio)));
+      // At most doubling, since settling at the cadence one bad replay time
+      // asks for can hold recording back for seconds.
+      this.setDivisor(
+        time,
+        Math.min(Math.max(divisor + 1, Math.ceil(ratio)), divisor * 2),
+      );
     } else if (ratio < (divisor - 1) * 0.9) {
       // Paced frames no longer overlap, so their replay time is a ceiling
       // and a faster cadence under it is safe.

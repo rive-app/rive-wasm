@@ -345,7 +345,7 @@ export declare class RendererWrapper {
   acceptsFrame?(): boolean;
   /**
    * @experimental How long the replay worker's recent frames took to finish,
-   * in milliseconds, or 0 before its first.
+   * in milliseconds, or 0 before its third.
    */
   replayMs?(): number;
   /**

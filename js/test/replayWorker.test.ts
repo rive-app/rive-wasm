@@ -472,8 +472,10 @@ const simulatePacing = (gpu: Gpu, seconds = 4): number[] => {
       .slice(-9)
       .map((frame) => frame.sample)
       .sort((a, b) => a - b);
-    const trim = samples.length >> 2;
-    const kept = samples.slice(trim, samples.length - trim);
+    // Trimmed like the worker's ReplayTime, which waits for three.
+    const trim = Math.max(samples.length >> 2, 1);
+    const kept =
+      samples.length < 3 ? [] : samples.slice(trim, samples.length - trim);
     const replayMs = kept.length
       ? kept.reduce((a, b) => a + b, 0) / kept.length
       : 0;
@@ -562,6 +564,21 @@ test("a worker whose frames get cheaper while their latency holds gets every fra
   }
 });
 
+test("a worker whose first frames take seconds gets its cadence back within a second", () => {
+  // A cold load's shader compiles, more than the replay time trims.
+  const slow = [4500, 1500];
+  const recorded = simulatePacing(
+    { frameMs: (frame) => slow[frame] ?? 10 },
+    10,
+  );
+  const divisor = Math.ceil(10 / refresh);
+  const gaps = gapsAfter(recorded, 7);
+  expect(gaps.length).toBeGreaterThan(250);
+  for (const gap of gaps) {
+    expect(Math.round(gap / refresh)).toBeLessThanOrEqual(divisor);
+  }
+});
+
 test("a paced instance advances by the paced cadence", async () => {
   const frames = new Map<number, FrameRequestCallback>();
   let nextId = 0;
@@ -587,18 +604,19 @@ test("a paced instance advances by the paced cadence", async () => {
     const clears = state.clears;
     const start = performance.now();
     // Short of the pacer's first probe for a faster cadence.
-    for (let i = 1; i <= 150; i++) {
-      // A worker behind the display fills its queue now and then.
-      state.accepts = i % 8 !== 0 || i > 40;
+    for (let i = 1; i <= 180; i++) {
+      // A worker behind the display fills its queue now and then, which each
+      // step to a slower cadence waits for.
+      state.accepts = i % 8 !== 0 || i > 80;
       const callbacks = [...frames.values()];
       frames.clear();
       callbacks.forEach((cb) => cb(start + i * refresh));
     }
-    // Once the queue has filled and the pacer settled.
+    // Once the pacer has slowed to the worker's cadence.
     const elapsed = advance.mock.calls
       .map(([seconds]) => (seconds as number) * 1000)
-      .slice(12);
-    expect(elapsed.length).toBeGreaterThan(10);
+      .slice(-12);
+    expect(elapsed.length).toBe(12);
     for (const ms of elapsed) {
       expect(ms).toBeCloseTo(6 * refresh, 5);
     }
