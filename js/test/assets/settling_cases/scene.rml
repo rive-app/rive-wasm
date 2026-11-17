@@ -1,6 +1,6 @@
 <Rive version="1" kind="fragment">
-    <!-- Settling jest fixture. "Main" plays a 0.5s one-shot on each input kind, then
-         settles; "Looping" never settles; nested "child" plays a 0.3s one-shot. -->
+    <!-- Settling jest fixture. "Main" plays a 0.4s intro on load, then a 0.5s one-shot
+         on each input kind, then settles; "Looping" never settles; nested "child" plays a 0.3s one-shot. -->
 
     <!-- ===== Settle (default artboard) ===== -->
     <Artboard defaultStateMachineId="0:10" viewModelId="0:100" width="200" height="200" name="Settle" id="0:1">
@@ -35,8 +35,12 @@
                 <AnyState x="0" y="-100"/>
                 <ExitState x="300" y="-100"/>
                 <EntryState>
-                    <StateTransition stateToId="0:17"/>
+                    <StateTransition stateToId="0:20"/>
                 </EntryState>
+                <AnimationState x="50" y="100" animationId="0:43" id="0:20">
+                    <StateTransition stateToId="0:17" duration="0"
+                                     enableExitTime="true" exitTimeIsPercetange="true" exitTime="100"/>
+                </AnimationState>
                 <AnimationState x="100" animationId="0:40" id="0:17">
                     <!-- (a) SM trigger trig -->
                     <StateTransition stateToId="0:18" duration="0">
@@ -102,6 +106,15 @@
             </StateMachineLayer>
         </StateMachine>
 
+        <!-- intro: 24 frames @60fps = 0.4 s, one-shot, Box y 0 -> 60 -->
+        <LinearAnimation duration="24" name="intro" id="0:43">
+            <KeyedObject objectId="0:11">
+                <KeyedProperty propertyKey="14">
+                    <KeyFrameDouble frame="0" value="0" interpolationType="linear"/>
+                    <KeyFrameDouble frame="24" value="60"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
         <!-- idle: 1 frame @60fps, one-shot, holds Box x = 20 -->
         <LinearAnimation duration="1" name="idle" id="0:40">
             <KeyedObject objectId="0:11">
