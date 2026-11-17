@@ -1508,7 +1508,8 @@ class ObjectObservers {
    */
   private _onObservedEntry = (entry: ResizeObserverEntry) => {
     const observed = this._elementsMap.get(entry.target as HTMLCanvasElement);
-    if (observed !== null) {
+    // An entry queued before remove() can still arrive after it.
+    if (observed) {
       observed.onResize(
         entry.target.clientWidth == 0 || entry.target.clientHeight == 0,
       );
