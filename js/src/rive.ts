@@ -291,6 +291,7 @@ export class StateMachineInput {
   constructor(
     public readonly type: StateMachineInputType,
     private runtimeInput: rc.SMIInput,
+    private onChange?: () => void,
   ) {}
 
   /**
@@ -312,6 +313,7 @@ export class StateMachineInput {
    */
   public set value(value: number | boolean) {
     this.runtimeInput.value = value;
+    this.onChange?.();
   }
 
   /**
@@ -320,6 +322,7 @@ export class StateMachineInput {
   public fire(): void {
     if (this.type === StateMachineInputType.Trigger) {
       this.runtimeInput.fire();
+      this.onChange?.();
     }
   }
 
@@ -405,6 +408,7 @@ class StateMachine {
     runtime: rc.RiveCanvas,
     public playing: boolean,
     private artboard: rc.Artboard,
+    private onInputChange?: () => void,
   ) {
     this.instance = new runtime.StateMachineInstance(stateMachine, artboard);
     this.initInputs(runtime);
@@ -436,9 +440,10 @@ class StateMachine {
   /**
    * Advances the state machine instance by a given time and apply changes to artboard.
    * @param time - the time to advance the animation by in seconds
+   * @returns false once the state machine has nothing left to animate
    */
-  public advanceAndApply(time: number) {
-    this.instance.advanceAndApply(time);
+  public advanceAndApply(time: number): boolean {
+    return this.instance.advanceAndApply(time);
   }
 
   /**
@@ -462,6 +467,7 @@ class StateMachine {
    * @param actionType - 0 = tap, 1 = increase, 2 = decrease
    */
   public fireSemanticAction(nodeId: number, actionType: SemanticActionType) {
+    this.onInputChange?.();
     this.instance.fireSemanticAction(nodeId, actionType);
   }
 
@@ -473,6 +479,7 @@ class StateMachine {
    * @returns boolean - True if focus was set, false otherwise
    */
   public focusSemanticNode(nodeId: number): boolean {
+    this.onInputChange?.();
     return this.instance.focusSemanticNode(nodeId);
   }
 
@@ -519,16 +526,19 @@ class StateMachine {
       return new StateMachineInput(
         StateMachineInputType.Boolean,
         input.asBool(),
+        this.onInputChange,
       );
     } else if (input.type === runtime.SMIInput.number) {
       return new StateMachineInput(
         StateMachineInputType.Number,
         input.asNumber(),
+        this.onInputChange,
       );
     } else if (input.type === runtime.SMIInput.trigger) {
       return new StateMachineInput(
         StateMachineInputType.Trigger,
         input.asTrigger(),
+        this.onInputChange,
       );
     }
   }
@@ -563,6 +573,7 @@ class StateMachine {
    * Clear focus from the Rive focus node tree.
    */
   public clearFocus(): void {
+    this.onInputChange?.();
     this.instance.clearFocus();
   }
 }
@@ -590,6 +601,9 @@ class Animator {
     public readonly animations: Animation[] = [],
     public readonly stateMachines: StateMachine[] = [],
   ) {}
+
+  /** Given to each state machine it creates; called when one of its inputs changes. */
+  public onInputChange?: () => void;
 
   /**
    * Adds animations and state machines by their names. If names are shared
@@ -647,6 +661,7 @@ class Animator {
                 this.runtime,
                 playing,
                 this.artboard,
+                this.onInputChange,
               );
               if (semanticsActive) {
                 newStateMachine.enableSemantics();
@@ -738,6 +753,7 @@ class Animator {
             this.runtime,
             playing,
             this.artboard,
+            this.onInputChange,
           );
           if (semanticsActive) {
             newStateMachine.enableSemantics();
@@ -1531,6 +1547,14 @@ const observers = new ObjectObservers();
 
 let nextRiveInstanceId = 0;
 
+// Instances whose requestAnimationFrame stopped because they settled.
+const settledInstances = new Set<Rive>();
+// Live instances created with enableSettling.
+let settlingEnabledInstanceCount = 0;
+// Bumped by every asset change. The change has no owning instance to wake, so
+// draw() compares this to its frame-start value and doesn't settle if it moved.
+let assetGeneration = 0;
+
 // Interface for the Rive static method contructor
 export interface RiveParameters {
   canvas: HTMLCanvasElement | OffscreenCanvas; // canvas is required
@@ -1665,6 +1689,17 @@ export interface RiveParameters {
    * Enum with drawing options for optimizations
    */
   drawingOptions?: DrawOptimizationOptions;
+  /**
+   * Stop the render loop once every playing state machine has nothing left to
+   * animate, and restart it when something changes: pointer, keyboard, focus
+   * or gamepad input, state machine inputs, view model values, text runs,
+   * assets, layout or size. While stopped, `isSettled` is true and nothing is
+   * advanced or drawn. Changes the runtime can't see (for example writing
+   * `canvas.width` directly) need a `drawFrame()` call. Linear animations
+   * without a state machine never settle. Defaults to false, but will be enabled
+   * by default in the next major version.
+   */
+  enableSettling?: boolean;
   /**
    * @experimental This API is early and may encounter breaking behavior change without a major version bump
    *
@@ -2526,6 +2561,22 @@ export class Rive {
   // visibilitychange handler from restarting a rendering loop the caller intentionally stopped.
   private _explicitlyStoppedRendering = false;
 
+  private _enableSettling = false;
+  // Bumped by every wake. draw() compares it to its frame-start value and
+  // doesn't settle if a wake happened mid-frame (e.g. from a callback), since
+  // that change wasn't advanced.
+  private _wakeGeneration = 0;
+  // Registered on bound view model instances so their writes restart this instance's loop.
+  private readonly _wakeFromViewModel = () => this.wake();
+
+  // Asset changes have no owning instance, so they wake every settled one;
+  // a frame running now sees assetGeneration move.
+  private static wakeSettledInstances = () => {
+    assetGeneration++;
+    // Waking removes the instance from the set.
+    Array.from(settledInstances).forEach((rive) => rive.wake());
+  };
+
   private _viewModelInstance: ViewModelInstance | null = null;
   // User-provided global view model instances, keyed by their global view
   // model's name. Globals not present here are still driven by the default
@@ -2606,6 +2657,10 @@ export class Rive {
         : this.dispatchPointerExit;
     this.enableMultiTouch = !!params.enableMultiTouch;
     this.drawOptimization = params.drawingOptions ?? this.drawOptimization;
+    this._enableSettling = !!params.enableSettling;
+    if (this._enableSettling) {
+      settlingEnabledInstanceCount++;
+    }
     this.enableRiveAssetCDN =
       params.enableRiveAssetCDN === undefined
         ? true
@@ -2692,6 +2747,7 @@ export class Rive {
    * default {@link SemanticMode.Disabled}.
    */
   public enableSemantics(): void {
+    this.wake();
     this.semanticsMode = SemanticMode.Enabled;
     this.activateSemantics();
   }
@@ -2819,6 +2875,7 @@ export class Rive {
           return;
         }
         this.runtime = runtime;
+        runtime.onAssetChange = Rive.wakeSettledInstances;
 
         this.removeRiveListeners();
         // load() reinitializes without cleanupInstances(); drop any stale overlay
@@ -2843,6 +2900,7 @@ export class Rive {
                 (this.riveFile?.deferredRequested ?? true),
               // Draws notice a restored context, so one has to be scheduled.
               onContextRestored: () => {
+                this.removeFromSettledInstances();
                 if (!this._explicitlyStoppedRendering) {
                   this.scheduleRendering();
                 }
@@ -2934,6 +2992,7 @@ export class Rive {
         enableMultiTouch: enableMultiTouch,
         layoutScaleFactor: this._layout.layoutScaleFactor,
         advanceAndDrain: this.advanceAndDrainForPointer.bind(this),
+        wake: this.wake.bind(this),
         summonKeyboard: this.summonKeyboardForGesture.bind(this),
         isTextProxyFocused: this.isEditingHostFocused,
       });
@@ -2981,6 +3040,7 @@ export class Rive {
       hasFocusNodes: true,
       getOverlayElement: () =>
         this._accessibilityOverlay?.getSemanticOverlayContainer() ?? null,
+      onInput: () => this.wake(),
     });
   }
 
@@ -3005,6 +3065,7 @@ export class Rive {
     elapsedTime: number,
     options?: { pointerDown?: boolean },
   ): void {
+    this.wake();
     if (!options?.pointerDown) {
       this.advanceAndReportChanges(elapsedTime);
       return;
@@ -3038,6 +3099,7 @@ export class Rive {
     this._gamepadInteractions = new GamepadInteractions({
       requireFocus: !!this._gamepadOptions.requireFocus,
       isFocusWithin: this.isFocusWithinCanvas,
+      onPadConnected: () => this.wake(),
     });
   }
 
@@ -3414,12 +3476,15 @@ export class Rive {
     this.artboard = rootArtboard;
     rootArtboard.volume = this._volume * audioManager.systemVolume;
 
+    // A new artboard has to be drawn, so a settled loop restarts.
+    this.wake();
     // Initialize the animator
     this.animator = new Animator(
       this.runtime,
       this.artboard,
       this.eventManager,
     );
+    this.animator.onInputChange = () => this.wake();
 
     // Initialize the animations; as loaded hasn't happened yet, we need to
     // suppress firing the play/pause events until the load event has fired. To
@@ -3475,6 +3540,10 @@ export class Rive {
 
   // Draws the current artboard frame
   public drawFrame() {
+    // A settled instance resumes its loop from this frame, and a frame that
+    // called this from a callback doesn't settle.
+    this.removeFromSettledInstances();
+    this._wakeGeneration++;
     if (document?.timeline?.currentTime) {
       if (this.loaded && this.artboard && !this.frameRequestId) {
         this.draw(null);
@@ -3604,8 +3673,9 @@ export class Rive {
    * 
    * @param elapsedTime time to advance the state machine by
    * @param frameTime the rAF timestamp; omitted by pointer drains, which skip gamepad polling.
+   * @returns false when only state machines are playing and none has anything left to animate
    */
-  private advanceAndReportChanges(elapsedTime: number, frameTime?: number): void {
+  private advanceAndReportChanges(elapsedTime: number, frameTime?: number): boolean {
     // - Advance non-paused animations by the elapsed number of seconds
     // - Advance any animations that require scrubbing
     // - Advance to the first frame even when autoplay is false
@@ -3627,12 +3697,14 @@ export class Rive {
     const activeStateMachines = this.animator.stateMachines.filter(
       (a) => a.playing,
     );
+    let needsAdvance =
+      activeAnimations.length > 0 || activeStateMachines.length === 0;
     // Gamepad input lands before this frame's advance.
     // Also, frameTime is not passed for other places this function is called (i.e. after pointer events)
     if (frameTime !== undefined) {
       this._gamepadInteractions?.handleGamepadInputs(
         frameTime,
-        activeStateMachines[0]?.instance,
+        this.gamepadStateMachine?.instance,
       );
     }
     // Instrument the first 3 frames so the Performance timeline shows precise
@@ -3674,7 +3746,9 @@ export class Rive {
         }
       }
       if (_perfFrame >= 0) performance.mark(`rive:sm-advance:start:f${_perfFrame}`);
-      stateMachine.advanceAndApply(elapsedTime);
+      if (stateMachine.advanceAndApply(elapsedTime) !== false) {
+        needsAdvance = true;
+      }
       if (_perfFrame >= 0) {
         performance.mark(`rive:sm-advance:end:f${_perfFrame}`);
         performance.measure(`rive:sm-advance:f${_perfFrame}`, `rive:sm-advance:start:f${_perfFrame}`, `rive:sm-advance:end:f${_perfFrame}`);
@@ -3713,7 +3787,7 @@ export class Rive {
           requestFocus: (nodeId) =>
             mainSm.focusSemanticNode(nodeId),
           clearFocus: () =>
-            mainSm.instance.clearFocus(),
+            mainSm.clearFocus(),
         });
       }
       const overlayChange = this._accessibilityOverlay?.needsUpdate(this._semanticTree);
@@ -3782,6 +3856,7 @@ export class Rive {
         instance.handleCallbacks();
       }
     });
+    return needsAdvance;
   }
 
   /**
@@ -3795,6 +3870,23 @@ export class Rive {
     // queued before that lands here with nothing to draw.
     if (!this.artboard) {
       return;
+    }
+    // While settled, a timed frame only polls gamepads; pad input or an
+    // out-of-frame draw wakes.
+    if (this.isInSettledInstances) {
+      const padInput =
+        time !== null &&
+        !!this._gamepadInteractions?.handleGamepadInputs(
+          time,
+          this.gamepadStateMachine?.instance,
+        );
+      if (time !== null && !padInput) {
+        if (this.needsNextFrame) {
+          this.scheduleRendering();
+        }
+        return;
+      }
+      this.removeFromSettledInstances();
     }
     // The replay worker's context came back empty, so everything it held has
     // to be recorded again through a fresh renderer and session.
@@ -3850,12 +3942,26 @@ export class Rive {
     const elapsedTime = (frameTime - this.lastRenderTime) / 1000;
     this.lastRenderTime = frameTime;
 
-    this.advanceAndReportChanges(elapsedTime, time);
+    const wakeGenerationAtFrameStart = this._wakeGeneration;
+    const assetGenerationAtFrameStart = assetGeneration;
+    const needsAdvance = this.advanceAndReportChanges(elapsedTime, time);
 
     const { renderer } = this;
     // Don't draw on a 0-size canvas; redraw once it has area. The observer
     // flags zero size late, so also check the surface itself.
     const hasSurface = this.canvas.width > 0 && this.canvas.height > 0;
+    // A 0-second advance always reports work, so only a timed frame can settle.
+    // A frame that can't draw, or that saw a wake during its callbacks, keeps going.
+    // Deferred work must be read before the renderer clears below.
+    const settles =
+      this._enableSettling &&
+      time !== null &&
+      elapsedTime > 0 &&
+      hasSurface &&
+      !needsAdvance &&
+      this._wakeGeneration === wakeGenerationAtFrameStart &&
+      assetGeneration === assetGenerationAtFrameStart &&
+      !this._deferredWorkPending();
     if (!hasSurface) {
       this._needsRedraw = true;
     }
@@ -3916,8 +4022,15 @@ export class Rive {
     // Calling requestAnimationFrame will rerun draw() at the correct rate:
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations
     if (this.animator.isPlaying) {
-      // Request a new rendering frame
-      this.scheduleRendering();
+      if (settles) {
+        this.addToSettledInstances();
+        // A wake restarts from elapsedTime 0 instead of the time spent settled.
+        this.lastRenderTime = 0;
+      }
+      if (this.needsNextFrame) {
+        // Request a new rendering frame
+        this.scheduleRendering();
+      }
     } else if (this.animator.isPaused) {
       // Reset the end time so on playback it starts at the correct frame
       this.lastRenderTime = 0;
@@ -3972,7 +4085,11 @@ export class Rive {
    * Rive class
    */
   public cleanup() {
+    if (this._enableSettling && !this.destroyed) {
+      settlingEnabledInstanceCount--;
+    }
     this.destroyed = true;
+    this.removeFromSettledInstances();
     // Stop the renderer if it hasn't already been stopped.
     this.stopRendering();
     // Make the GL context backing this renderer current before any WASM teardown
@@ -4005,9 +4122,11 @@ export class Rive {
       document.removeEventListener('visibilitychange', this._pageVisibilityHandler);
       this._pageVisibilityHandler = null;
     }
-    this._viewModelInstance?.cleanup();
+    this.releaseViewModelInstance(this._viewModelInstance);
     this._viewModelInstance = null;
-    this._globalViewModelInstances.forEach((instance) => instance.cleanup());
+    this._globalViewModelInstances.forEach((instance) =>
+      this.releaseViewModelInstance(instance),
+    );
     this._globalViewModelInstances.clear();
     this._dataEnums = null;
   }
@@ -4136,6 +4255,7 @@ export class Rive {
    * @param textRunValue - String value to set on the text run node
    */
   public setTextRunValue(textRunName: string, textRunValue: string): void {
+    this.wake();
     warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const textRun = this.retrieveTextRun(textRunName);
     if (textRun) {
@@ -4214,6 +4334,7 @@ export class Rive {
     }
     this.cleanupKeyboardInteractions();
     this.animator.pause(names);
+    this.removeFromSettledInstancesIfNotPlaying();
     this.warnIfLinearAnimationNames(names, "pause");
   }
 
@@ -4273,6 +4394,7 @@ export class Rive {
     }
     this.cleanupKeyboardInteractions();
     this.cleanupSemantics();
+    this.removeFromSettledInstancesIfNotPlaying();
   }
 
   /**
@@ -4328,6 +4450,7 @@ export class Rive {
 
   // Sets a new layout
   public set layout(layout: Layout) {
+    this.wake();
     this._layout = layout;
     this.reportDisplayScale();
     // Fit/alignment/bounds feed the overlay transform.
@@ -4355,6 +4478,7 @@ export class Rive {
    * when the canvas is resized
    */
   public resizeToCanvas() {
+    this.wake();
     this._layout = this.layout.copyWith({
       minX: 0,
       minY: 0,
@@ -4522,6 +4646,7 @@ export class Rive {
     value: boolean,
     path: string,
   ) {
+    this.wake();
     warnOnce(
       DeprecationKeys.stateMachineInputs,
       stateMachineInputsDeprecationWarning,
@@ -4549,6 +4674,7 @@ export class Rive {
    * @param path the path the input is located at an artboard level
    */
   public setNumberStateAtPath(inputName: string, value: number, path: string) {
+    this.wake();
     warnOnce(
       DeprecationKeys.stateMachineInputs,
       stateMachineInputsDeprecationWarning,
@@ -4575,6 +4701,7 @@ export class Rive {
    * @param path the path the input is located at an artboard level
    */
   public fireStateAtPath(inputName: string, path: string) {
+    this.wake();
     warnOnce(
       DeprecationKeys.stateMachineInputs,
       stateMachineInputsDeprecationWarning,
@@ -4679,6 +4806,7 @@ export class Rive {
    * for how to migrate.
    */
   public setTextRunValueAtPath(textName: string, value: string, path: string) {
+    this.wake();
     warnOnce(DeprecationKeys.textRuns, textRunsDeprecationWarning);
     const run: rc.TextValueRun = this.retrieveTextAtPath(textName, path);
     if (!run) {
@@ -4873,6 +5001,60 @@ export class Rive {
     this.drawFrame();
   }
 
+  /**
+   * True while `enableSettling` has stopped the render loop because every
+   * playing state machine has nothing left to animate. Not set by `pause()`
+   * or `stopRendering()`.
+   */
+  public get isSettled(): boolean {
+    return this.isInSettledInstances && !!this.animator?.isPlaying;
+  }
+
+  private get isInSettledInstances(): boolean {
+    return settledInstances.has(this);
+  }
+
+  private addToSettledInstances(): void {
+    settledInstances.add(this);
+  }
+
+  private removeFromSettledInstances(): void {
+    settledInstances.delete(this);
+  }
+
+  // A paused or stopped loop isn't settled: wakes leave it alone until play()
+  // starts rendering again, as they do when settling is off.
+  private removeFromSettledInstancesIfNotPlaying(): void {
+    if (!this.animator?.isPlaying) {
+      this.removeFromSettledInstances();
+    }
+  }
+
+  /** Whether the loop needs another frame: always, unless settled with no gamepad to poll. */
+  private get needsNextFrame(): boolean {
+    return (
+      !this.isInSettledInstances ||
+      (!!this.animator?.isPlaying && !!this._gamepadInteractions?.isPolling)
+    );
+  }
+
+  /** The state machine that receives gamepad input. */
+  private get gamepadStateMachine(): StateMachine | undefined {
+    return this.animator.stateMachines.find((sm) => sm.playing);
+  }
+
+  /** Records a change, and restarts the loop if it stopped because it settled. */
+  private wake(): void {
+    this._wakeGeneration++;
+    if (!this.isInSettledInstances) {
+      return;
+    }
+    this.removeFromSettledInstances();
+    if (!this._explicitlyStoppedRendering) {
+      this.scheduleRendering();
+    }
+  }
+
   private scheduleRendering() {
     if (this.loaded && this.artboard && !this.frameRequestId) {
       if (this.runtime.requestAnimationFrame) {
@@ -4904,7 +5086,11 @@ export class Rive {
       }
       // Reset so the first resumed frame starts with elapsedTime === 0.
       this.lastRenderTime = 0;
-    } else if (this.animator?.isPlaying && !this._explicitlyStoppedRendering) {
+    } else if (
+      this.animator?.isPlaying &&
+      !this._explicitlyStoppedRendering &&
+      this.needsNextFrame
+    ) {
       this.scheduleRendering();
     }
   }
@@ -5004,6 +5190,7 @@ export class Rive {
   }
 
   public set artboardWidth(value: number) {
+    this.wake();
     this._artboardWidth = value;
     if (this.artboard) {
       this.artboard.width = value;
@@ -5028,6 +5215,7 @@ export class Rive {
   }
 
   public set artboardHeight(value: number) {
+    this.wake();
     this._artboardHeight = value;
 
     if (this.artboard) {
@@ -5039,6 +5227,7 @@ export class Rive {
    * Reset the artboard size to its original values.
    */
   public resetArtboardSize() {
+    this.wake();
     if (this.artboard) {
       this.artboard.resetArtboardSize();
       this._artboardWidth = this.artboard.width;
@@ -5061,6 +5250,7 @@ export class Rive {
   }
 
   public set devicePixelRatioUsed(value: number) {
+    this.wake();
     if (value !== this._devicePixelRatioUsed) {
       this._overlayTransformDirty = true;
     }
@@ -5125,6 +5315,7 @@ export class Rive {
    * `setViewModelInstance(vmi)` followed by `bind()`.
    */
   public bindViewModelInstance(viewModelInstance: ViewModelInstance | null) {
+    this.wake();
     if (!viewModelInstance) {
       return;
     }
@@ -5138,6 +5329,7 @@ export class Rive {
    * to batch multiple changes into a single rebind.
    */
   public setViewModelInstance(viewModelInstance: ViewModelInstance | null) {
+    this.wake();
     const runtimeInstance = viewModelInstance?.runtimeInstance;
     if (
       !this.artboard ||
@@ -5147,8 +5339,7 @@ export class Rive {
     ) {
       return;
     }
-    viewModelInstance.internalIncrementReferenceCount();
-    this._viewModelInstance?.cleanup();
+    this.holdViewModelInstance(viewModelInstance, this._viewModelInstance);
     this._viewModelInstance = viewModelInstance;
     if (this.animator.stateMachines.length > 0) {
       this.animator.stateMachines.forEach((stateMachine) =>
@@ -5159,12 +5350,32 @@ export class Rive {
     }
   }
 
+  /** Takes a reference to `next` in place of `previous`; with settling on, writes to `next` wake this instance. */
+  private holdViewModelInstance(
+    next: ViewModelInstance,
+    previous: ViewModelInstance | null | undefined,
+  ): void {
+    next.internalIncrementReferenceCount();
+    this.releaseViewModelInstance(previous);
+    if (this._enableSettling) {
+      next.internalAddWakeCallback(this._wakeFromViewModel);
+    }
+  }
+
+  private releaseViewModelInstance(
+    instance: ViewModelInstance | null | undefined,
+  ): void {
+    instance?.internalRemoveWakeCallback(this._wakeFromViewModel);
+    instance?.cleanup();
+  }
+
   /**
    * Applies any pending `set*` view model instance changes by rebinding the
    * data binds once.
    * Implicitly creates and binds any view models that have not been set.
    */
   public bind() {
+    this.wake();
     if (!this.artboard || this.destroyed) {
       return;
     }
@@ -5195,6 +5406,7 @@ export class Rive {
     name: string,
     viewModelInstance: ViewModelInstance,
   ): boolean {
+    this.wake();
     const runtimeInstance = viewModelInstance?.runtimeInstance;
     if (!this.artboard || this.destroyed || !runtimeInstance) {
       return false;
@@ -5215,8 +5427,10 @@ export class Rive {
       bound = this.artboard.setGlobalViewModelInstance(name, runtimeInstance);
     }
     if (bound) {
-      viewModelInstance.internalIncrementReferenceCount();
-      this._globalViewModelInstances.get(name)?.cleanup();
+      this.holdViewModelInstance(
+        viewModelInstance,
+        this._globalViewModelInstances.get(name),
+      );
       this._globalViewModelInstances.set(name, viewModelInstance);
     }
     return bound;
@@ -5249,7 +5463,7 @@ export class Rive {
     }
     const viewModelInstance = new ViewModelInstance(runtimeInstance, null);
     createFinalization(viewModelInstance, runtimeInstance);
-    viewModelInstance.internalIncrementReferenceCount();
+    this.holdViewModelInstance(viewModelInstance, undefined);
     this._globalViewModelInstances.set(name, viewModelInstance);
     return viewModelInstance;
   }
@@ -5445,6 +5659,10 @@ export class ViewModelInstance {
 
   private _referenceCount = 0;
 
+  // One per Rive instance this is bound to as its main or a global instance,
+  // with how many of that instance's slots hold this.
+  private _wakeCallbacks: Map<() => void, number> | null = null;
+
   public selfUnref: boolean = false;
 
   constructor(
@@ -5475,6 +5693,56 @@ export class ViewModelInstance {
       });
     }
     this._children.forEach((child) => child.handleCallbacks());
+  }
+
+  /*
+   * method for internal use, it shouldn't be called externally
+   */
+  public internalAddWakeCallback(callback: () => void) {
+    if (!this._wakeCallbacks) {
+      this._wakeCallbacks = new Map();
+    }
+    this._wakeCallbacks.set(
+      callback,
+      (this._wakeCallbacks.get(callback) ?? 0) + 1,
+    );
+  }
+
+  /*
+   * method for internal use, it shouldn't be called externally
+   */
+  public internalRemoveWakeCallback(callback: () => void) {
+    const count = this._wakeCallbacks?.get(callback);
+    if (count === undefined) {
+      return;
+    }
+    if (count > 1) {
+      this._wakeCallbacks!.set(callback, count - 1);
+    } else {
+      this._wakeCallbacks!.delete(callback);
+    }
+  }
+
+  /*
+   * method for internal use, it shouldn't be called externally.
+   * Wakes every Rive instance this is bound to, directly or through any parent.
+   */
+  public internalWake() {
+    // Only an instance with settling on has anything to wake, including one
+    // mid-frame that hasn't settled yet.
+    if (settlingEnabledInstanceCount > 0) {
+      this.wakeOwners(new Set());
+    }
+  }
+
+  private wakeOwners(visited: Set<ViewModelInstance>) {
+    if (visited.has(this)) {
+      return;
+    }
+    visited.add(this);
+    this._wakeCallbacks?.forEach((_count, callback) => callback());
+    // Walks the parent chain and wakes all Rive instance owners of that instance
+    this._parents.forEach((parent) => parent.wakeOwners(visited));
   }
 
   public addParent(parent: ViewModelInstance) {
@@ -5913,6 +6181,7 @@ export class ViewModelInstance {
    * @param value - view model that will replace the original
    */
   public replaceViewModel(path: string, value: ViewModelInstance): boolean {
+    this.internalWake();
     const pathSegments = path.split("/");
     const viewModelInstance =
       pathSegments.length > 1
@@ -6023,6 +6292,11 @@ export class ViewModelInstanceValue {
   }
   public internalHandleCallback(callback: Function) {}
 
+  /** Wakes every Rive instance the owning view model instance is bound to. */
+  protected wakeOwners() {
+    this._parentViewModel.internalWake();
+  }
+
   public handleCallbacks() {
     if (this._viewModelInstanceValue.hasChanged) {
       this.callbacks.forEach((callback) => {
@@ -6054,6 +6328,7 @@ export class ViewModelInstanceString extends ViewModelInstanceValue {
   }
 
   public set value(val: string) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceString).value = val;
   }
   public internalHandleCallback(callback: Function) {
@@ -6071,6 +6346,7 @@ export class ViewModelInstanceNumber extends ViewModelInstanceValue {
   }
 
   public set value(val: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceNumber).value = val;
   }
   public internalHandleCallback(callback: Function) {
@@ -6091,6 +6367,7 @@ export class ViewModelInstanceBoolean extends ViewModelInstanceValue {
   }
 
   public set value(val: boolean) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceBoolean).value = val;
   }
   public internalHandleCallback(callback: Function) {
@@ -6107,6 +6384,7 @@ export class ViewModelInstanceTrigger extends ViewModelInstanceValue {
   }
 
   public trigger(): void {
+    this.wakeOwners();
     return (
       this._viewModelInstanceValue as rc.ViewModelInstanceTrigger
     ).trigger();
@@ -6127,10 +6405,12 @@ export class ViewModelInstanceEnum extends ViewModelInstanceValue {
   }
 
   public set value(val: string) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).value = val;
   }
 
   public set valueIndex(val: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceEnum).valueIndex = val;
   }
 
@@ -6158,6 +6438,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
   }
 
   public addInstance(instance: ViewModelInstance) {
+    this.wakeOwners();
     if (instance.runtimeInstance != null) {
       (this._viewModelInstanceValue as rc.ViewModelInstanceList).addInstance(
         instance.runtimeInstance!,
@@ -6167,6 +6448,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
   }
 
   public addInstanceAt(instance: ViewModelInstance, index: number): boolean {
+    this.wakeOwners();
     if (instance.runtimeInstance != null) {
       if (
         (
@@ -6181,6 +6463,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
   }
 
   public removeInstance(instance: ViewModelInstance) {
+    this.wakeOwners();
     if (instance.runtimeInstance != null) {
       (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstance(
         instance.runtimeInstance!,
@@ -6190,6 +6473,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
   }
 
   public removeInstanceAt(index: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceList).removeInstanceAt(
       index,
     );
@@ -6211,6 +6495,7 @@ export class ViewModelInstanceList extends ViewModelInstanceValue {
   }
 
   public swap(a: number, b: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceList).swap(a, b);
   }
 
@@ -6229,14 +6514,17 @@ export class ViewModelInstanceColor extends ViewModelInstanceValue {
   }
 
   public set value(val: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).value = val;
   }
 
   public rgb(r: number, g: number, b: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).rgb(r, g, b);
   }
 
   public rgba(r: number, g: number, b: number, a: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).argb(
       a,
       r,
@@ -6246,6 +6534,7 @@ export class ViewModelInstanceColor extends ViewModelInstanceValue {
   }
 
   public argb(a: number, r: number, g: number, b: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).argb(
       a,
       r,
@@ -6256,11 +6545,13 @@ export class ViewModelInstanceColor extends ViewModelInstanceValue {
 
   // Value 0 to 255
   public alpha(a: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).alpha(a);
   }
 
   // Value 0 to 1
   public opacity(o: number) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceColor).alpha(
       Math.round(Math.max(0, Math.min(1, o)) * 255),
     );
@@ -6279,6 +6570,7 @@ export class ViewModelInstanceAssetImage extends ViewModelInstanceValue {
   }
 
   public set value(image: rc.Image | null) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetImage).value(
       image?.nativeImage ?? null,
     );
@@ -6298,6 +6590,7 @@ export class ViewModelInstanceAssetFont extends ViewModelInstanceValue {
   }
 
   public set value(font: rc.Font | null) {
+    this.wakeOwners();
     (this._viewModelInstanceValue as rc.ViewModelInstanceAssetFont).value(
       font?.nativeFont ?? null,
     );
@@ -6314,6 +6607,7 @@ export class ViewModelInstanceArtboard extends ViewModelInstanceValue {
   }
 
   public set value(artboard: BaseArtboard | null) {
+    this.wakeOwners();
     let bindableArtboard: BindableArtboard;
     if (artboard.isBindableArtboard) {
       bindableArtboard = artboard as BindableArtboard;

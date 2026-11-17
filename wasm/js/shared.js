@@ -47,12 +47,37 @@ Module["onRuntimeInitialized"] = function () {
     onComplete(font);
   };
 
+  // Set by the JS runtime. Called whenever an asset's contents change after
+  // load, so instances that stopped drawing redraw.
+  function notifyAssetChange() {
+    Module["onAssetChange"] && Module["onAssetChange"]();
+  }
+
   // FileAsset.decode() is raw embind with no wrapper of its own; default the
   // session so the pre-existing 1-arg call site keeps working.
   const assetDecode = Module["FileAsset"]["prototype"]["decode"];
   Module["FileAsset"]["prototype"]["decode"] = function (bytes, session) {
-    return assetDecode.call(this, bytes, session ?? null);
+    const result = assetDecode.call(this, bytes, session ?? null);
+    notifyAssetChange();
+    return result;
   };
+
+  [
+    ["ImageAsset", "setRenderImage"],
+    ["FontAsset", "setFont"],
+    ["AudioAsset", "setAudioSource"],
+  ].forEach(function ([className, method]) {
+    // Builds without text or audio leave those classes out.
+    if (!Module[className]) {
+      return;
+    }
+    const proto = Module[className]["prototype"];
+    const set = proto[method];
+    proto[method] = function (value) {
+      set.call(this, value);
+      notifyAssetChange();
+    };
+  });
 
   let setFallbackFontCb = Module["setFallbackFontCb"];
   if (typeof setFallbackFontCb === "function") {

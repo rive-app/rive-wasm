@@ -188,6 +188,11 @@ export interface RiveCanvas {
    */
   cancelAnimationFrame(requestID: number): void;
   /**
+   * Called by the runtime whenever an asset's contents change after load (an
+   * image finished decoding, or an image, font or audio source was swapped).
+   */
+  onAssetChange?: () => void;
+  /**
    * A Rive-specific function to "flush" queued up draw calls from using the renderer.
    * It also ends the frame for scripts, which collect their memory then.
    *

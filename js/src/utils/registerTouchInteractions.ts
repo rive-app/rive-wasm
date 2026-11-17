@@ -26,6 +26,9 @@ export interface TouchInteractionsParams {
     elapsedTime: number,
     options?: { pointerDown?: boolean },
   ) => void;
+  // Restarts a settled render loop. Pointer moves and exits use this rather
+  // than advanceAndDrain, so they're still advanced on the next frame.
+  wake?: () => void;
   summonKeyboard?: () => void;
   // True while the text input proxy holds DOM focus
   isTextProxyFocused?: () => boolean;
@@ -156,6 +159,7 @@ export const registerTouchInteractions = ({
   enableMultiTouch = false,
   layoutScaleFactor = 1.0,
   advanceAndDrain,
+  wake,
   summonKeyboard,
   isTextProxyFocused,
 }: TouchInteractionsParams) => {
@@ -388,6 +392,7 @@ export const registerTouchInteractions = ({
             });
           }
         }
+        wake?.();
         break;
 
       // Pointer moving/hovering on the canvas
@@ -403,6 +408,7 @@ export const registerTouchInteractions = ({
             );
           });
         }
+        wake?.();
         break;
       }
       // Pointer click initiated but not released yet on the canvas

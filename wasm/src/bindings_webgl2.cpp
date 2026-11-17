@@ -421,6 +421,8 @@ EXPORT void setWebImage(WebGL2RenderImage* renderImage, int width, int height)
 {
     renderImage->setWebImage(width, height);
     renderImage->unref();
+    // A decode finishes after the file loaded; instances that stopped drawing need to redraw.
+    EM_ASM({ Module["onAssetChange"] && Module["onAssetChange"](); });
 }
 
 #ifdef RIVE_WEBGL2_REPLAY_WORKER
@@ -435,6 +437,7 @@ EXPORT void riveWebImagePageDecoded(WebGL2RenderImage* renderImage, int width, i
 {
     renderImage->decodedOnPage(width, height);
     renderImage->unref();
+    EM_ASM({ Module["onAssetChange"] && Module["onAssetChange"](); });
 }
 #endif
 

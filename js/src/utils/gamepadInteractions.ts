@@ -88,15 +88,17 @@ function toPadState(deviceId: number, pad: Gamepad): PadState {
  * device ids allocated once (monotonic from 1, never reused), and a single window listener.
  */
 class GamepadSource {
-  private subscribers = 0;
+  // One per subscribed instance; the window listener lives while any remain.
+  private connectListeners = new Set<() => void>();
   private hasPads = false;
   private nextDeviceId = 1;
   private slots: { [index: number]: Slot } = {};
   private cachedTime = NaN;
   private cached: PadState[] = [];
 
-  public subscribe(): void {
-    if (this.subscribers++ > 0 || typeof window === "undefined") {
+  public subscribe(onConnected: () => void): void {
+    this.connectListeners.add(onConnected);
+    if (this.connectListeners.size > 1 || typeof window === "undefined") {
       return;
     }
     window.addEventListener("gamepadconnected", this.onConnected);
@@ -104,14 +106,20 @@ class GamepadSource {
     this.hasPads = readNavigatorGamepads().some((pad) => !!pad);
   }
 
-  public unsubscribe(): void {
-    if (--this.subscribers > 0 || typeof window === "undefined") {
+  public unsubscribe(onConnected: () => void): void {
+    this.connectListeners.delete(onConnected);
+    if (this.connectListeners.size > 0 || typeof window === "undefined") {
       return;
     }
     window.removeEventListener("gamepadconnected", this.onConnected);
     this.hasPads = false;
     this.cachedTime = NaN;
     this.cached = [];
+  }
+
+  /** A pad was connected at the last read, or has connected since. */
+  public get hasConnectedPads(): boolean {
+    return this.hasPads;
   }
 
   /** Current pads; cached per rAF timestamp so instances share one read. */
@@ -148,6 +156,7 @@ class GamepadSource {
 
   private onConnected = (): void => {
     this.hasPads = true;
+    this.connectListeners.forEach((listener) => listener());
   };
 }
 
@@ -157,6 +166,8 @@ export interface GamepadInteractionsParams {
   /** Hold button/axis input at rest unless DOM focus is within the canvas/overlay. Pads still connect. */
   requireFocus: boolean;
   isFocusWithin: () => boolean;
+  /** Called when a pad connects, so an instance that stopped its loop can start polling again. */
+  onPadConnected: () => void;
 }
 
 /**
@@ -172,13 +183,24 @@ export class GamepadInteractions {
   private submitFailures = 0;
 
   constructor(private params: GamepadInteractionsParams) {
-    gamepadSource.subscribe();
+    gamepadSource.subscribe(params.onPadConnected);
   }
 
-  /** Poll, diff and submit one batch. Call once per frame before advancing. */
-  public handleGamepadInputs(time: number, stateMachine: rc.StateMachineInstance | undefined): void {
+  /** Whether pads need reading each frame: one is connected, or one still has to be disconnected. */
+  public get isPolling(): boolean {
+    return (
+      this.submitFailures < MAX_SUBMIT_FAILURES &&
+      (gamepadSource.hasConnectedPads || this.lastSentPads.size > 0)
+    );
+  }
+
+  /**
+   * Poll, diff and submit one batch. Call once per frame before advancing.
+   * @returns true when a batch was sent to the state machine
+   */
+  public handleGamepadInputs(time: number, stateMachine: rc.StateMachineInstance | undefined): boolean {
     if (!stateMachine) {
-      return;
+      return false;
     }
     if (stateMachine !== this.stateMachine) {
       // A new state machine knows no devices yet; resend connected records.
@@ -186,14 +208,10 @@ export class GamepadInteractions {
       this.lastSentPads.clear();
       this.submitFailures = 0;
     }
-    if (this.submitFailures >= MAX_SUBMIT_FAILURES) {
-      return;
+    if (!this.isPolling) {
+      return false;
     }
     let pads = gamepadSource.read(time);
-    // Nothing connected and nothing left to disconnect.
-    if (pads.length === 0 && this.lastSentPads.size === 0) {
-      return;
-    }
     if (this.params.requireFocus && !this.params.isFocusWithin()) {
       // Keep devices connected but release everything they hold.
       pads = pads.map(restState);
@@ -201,11 +219,11 @@ export class GamepadInteractions {
     this.encoder.begin();
     this.encodeDiff(pads);
     if (this.encoder.isEmpty) {
-      return;
+      return false;
     }
     if (stateMachine.submitGamepadsFromBuffer(this.encoder.end())) {
       this.submitFailures = 0;
-      return;
+      return true;
     }
     // The core stops at the first bad record, so resend connected records next
     // frame rather than updates for devices it may never have seen.
@@ -216,12 +234,13 @@ export class GamepadInteractions {
           `${MAX_SUBMIT_FAILURES} times in a row; gamepad input is disabled for it.`,
       );
     }
+    return false;
   }
 
   public dispose(): void {
     this.stateMachine = undefined;
     this.lastSentPads.clear();
-    gamepadSource.unsubscribe();
+    gamepadSource.unsubscribe(this.params.onPadConnected);
   }
 
   /** Writes records that bring `lastSentPads` up to `pads`, updating it as it goes. */

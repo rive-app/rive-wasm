@@ -56,6 +56,8 @@ export interface KeyboardInteractionsParams {
    * after keyboard listeners are registered.
    */
   getOverlayElement?: () => HTMLElement | null;
+  /** Called before keyboard, text or focus input reaches the state machine. */
+  onInput?: () => void;
 }
 
 /**
@@ -100,6 +102,7 @@ export class KeyboardInteractions {
   private hasFocusNodes: boolean;
   /** Cached callback that returns the accessibility overlay element once created. */
   private getOverlayElement?: () => HTMLElement | null;
+  private onInput: () => void;
 
   /** Whether the canvas currently has browser DOM focus. */
   private canvasHasFocus = false;
@@ -122,8 +125,10 @@ export class KeyboardInteractions {
     stateMachine,
     hasFocusNodes,
     getOverlayElement,
+    onInput,
   }: KeyboardInteractionsParams) {
     this.canvas = canvas;
+    this.onInput = onInput ?? (() => {});
     this.mainSm = stateMachine;
     this.hasFocusNodes = hasFocusNodes;
     this.getOverlayElement = getOverlayElement;
@@ -139,7 +144,10 @@ export class KeyboardInteractions {
     this.inputProxy = new TextInputProxy({
       container: canvas.parentElement ?? document.body,
       canvas,
-      textInput: (text) => this.mainSm.textInput(text),
+      textInput: (text) => {
+        this.onInput();
+        return this.mainSm.textInput(text);
+      },
       // Proxy keystrokes go through the same handlers as the canvas.
       onKeyDown: this.onKeyDown,
       onKeyUp: this.onKeyUp,
@@ -196,6 +204,7 @@ export class KeyboardInteractions {
   };
 
   private handleProxyBlur(relatedTarget: EventTarget | null): void {
+    this.onInput();
     // Teardown already in progress (endTextInputSession blurred the proxy).
     if (!this.textInputSessionActive) return;
     // Still in Rive or the document blurred: keep the session (pollFocusState tears down).
@@ -238,6 +247,7 @@ export class KeyboardInteractions {
    * gates this so a click doesn't yank Rive focus to the first node on the focus event itself.
    */
   public onCanvasFocus = (event: FocusEvent) => {
+    this.onInput();
     this.syncOverlayListener();
     this.canvasHasFocus = true;
     this.focusDomainReleased = false;
@@ -269,6 +279,7 @@ export class KeyboardInteractions {
    * When we're not in either of those buckets, it's safe to call `clearFocus()` on the SMI.
    */
   public onCanvasBlur = (event: FocusEvent) => {
+    this.onInput();
     // Must stay before the state reset because beginTextInputSession sets the session state and
     // then focuses the proxy, which synchronously blurs the canvas.
     if (this.inputProxy.owns(event.relatedTarget)) return;
@@ -296,6 +307,7 @@ export class KeyboardInteractions {
    */
   private onOverlayFocusIn = (event: FocusEvent) => {
     if (!this.isInOverlay(event.target)) return;
+    this.onInput();
     this.focusDomainReleased = false;
 
     if (!this.hasFocusNodes) return;
@@ -329,6 +341,7 @@ export class KeyboardInteractions {
    * @returns void
    */
   public onKeyDown = (event: KeyboardEvent) => {
+    this.onInput();
     this.syncOverlayListener();
 
     // Keys that are part of an IME composition belong to the IME (candidate
@@ -431,6 +444,7 @@ export class KeyboardInteractions {
   };
 
   public onKeyUp = (event: KeyboardEvent) => {
+    this.onInput();
     if (event.isComposing || event.keyCode === 229) return;
     if (this.claimedKeyCodes.delete(event.code)) return;
     if (this.focusSessionState === FocusSessionState.NotFocused) return;

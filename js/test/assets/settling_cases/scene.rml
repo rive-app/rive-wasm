@@ -1,0 +1,200 @@
+<Rive version="1" kind="fragment">
+    <!-- Settling jest fixture. "Main" plays a 0.5s one-shot on each input kind, then
+         settles; "Looping" never settles; nested "child" plays a 0.3s one-shot. -->
+
+    <!-- ===== Settle (default artboard) ===== -->
+    <Artboard defaultStateMachineId="0:10" viewModelId="0:100" width="200" height="200" name="Settle" id="0:1">
+        <Shape x="20" y="60" name="Box" id="0:11">
+            <Rectangle width="40" height="40" name="Path"/>
+            <Fill name="Fill">
+                <SolidColor colorValue="FFE04040" name="Box Color" id="0:12">
+                    <DataBindContext sourcePathIds="0:100-0:105" propertyKey="37"/>
+                </SolidColor>
+            </Fill>
+        </Shape>
+        <Shape x="170" y="30" name="Spinner" id="0:22">
+            <Rectangle width="20" height="20" name="Path"/>
+            <Fill name="Fill"><SolidColor colorValue="FF40C060" name="Spinner Color"/></Fill>
+        </Shape>
+        <NestedArtboard artboardId="0:2" x="125" y="125" name="child" id="0:30">
+            <NestedStateMachine animationId="0:50" name="ChildSM">
+                <NestedNumber inputId="0:51" nestedValue="0" name="childNum"/>
+            </NestedStateMachine>
+        </NestedArtboard>
+
+        <StateMachine name="Main" id="0:10">
+            <StateMachineTrigger name="trig" id="0:13"/>
+            <StateMachineBool name="bool" id="0:14"/>
+            <StateMachineNumber name="num" id="0:15"/>
+
+            <StateMachineListenerSingle targetId="0:11" listenerTypeValue="down" name="BoxDown" id="0:19">
+                <ListenerTriggerChange inputId="0:13"/>
+            </StateMachineListenerSingle>
+
+            <StateMachineLayer name="Layer" id="0:16">
+                <AnyState x="0" y="-100"/>
+                <ExitState x="300" y="-100"/>
+                <EntryState>
+                    <StateTransition stateToId="0:17"/>
+                </EntryState>
+                <AnimationState x="100" animationId="0:40" id="0:17">
+                    <!-- (a) SM trigger trig -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionTriggerCondition inputId="0:13"/>
+                    </StateTransition>
+                    <!-- (b) SM bool bool == true -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionBoolCondition inputId="0:14" opValue="equal"/>
+                    </StateTransition>
+                    <!-- (c) SM number num > 0 -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionNumberCondition inputId="0:15" opValue="greaterThan" value="0"/>
+                    </StateTransition>
+                    <!-- (d) VM trigger pulse -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyTrigger>
+                                    <DataBindContext sourcePathIds="0:100-0:103" propertyKey="686"/>
+                                </BindablePropertyTrigger>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueTriggerComparator/>
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <!-- (e) VM number level > 0 -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionViewModelCondition opValue="greaterThan">
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyNumber>
+                                    <DataBindContext sourcePathIds="0:100-0:101" propertyKey="636"/>
+                                </BindablePropertyNumber>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueNumberComparator value="0"/>
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                    <!-- (f) VM bool flag == true -->
+                    <StateTransition stateToId="0:18" duration="0">
+                        <TransitionViewModelCondition>
+                            <TransitionPropertyViewModelComparator>
+                                <BindablePropertyBoolean>
+                                    <DataBindContext sourcePathIds="0:100-0:102" propertyKey="634"/>
+                                </BindablePropertyBoolean>
+                            </TransitionPropertyViewModelComparator>
+                            <TransitionValueBooleanComparator value="true"/>
+                        </TransitionViewModelCondition>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="200" animationId="0:41" id="0:18">
+                    <StateTransition stateToId="0:17" duration="0"
+                                     enableExitTime="true" exitTimeIsPercetange="true" exitTime="100"/>
+                </AnimationState>
+            </StateMachineLayer>
+        </StateMachine>
+
+        <StateMachine name="Looping" id="0:70">
+            <StateMachineLayer name="Layer" id="0:71">
+                <AnyState x="0" y="-100"/>
+                <ExitState x="300" y="-100"/>
+                <EntryState>
+                    <StateTransition stateToId="0:72"/>
+                </EntryState>
+                <AnimationState x="100" animationId="0:42" id="0:72"/>
+            </StateMachineLayer>
+        </StateMachine>
+
+        <!-- idle: 1 frame @60fps, one-shot, holds Box x = 20 -->
+        <LinearAnimation duration="1" name="idle" id="0:40">
+            <KeyedObject objectId="0:11">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="20"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <!-- move: 30 frames @60fps = 0.5 s, one-shot, Box x 0 -> 100, event "moved" on the last frame -->
+        <LinearAnimation duration="30" name="move" id="0:41">
+            <KeyedObject objectId="0:11">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="0" interpolationType="linear"/>
+                    <KeyFrameDouble frame="30" value="100"/>
+                </KeyedProperty>
+            </KeyedObject>
+            <KeyedObject objectId="0:60">
+                <KeyedProperty property="trigger">
+                    <KeyFrameCallback frame="30"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <!-- spin: 30 frames @60fps = 0.5 s, LOOP, Spinner rotation 0 -> pi -->
+        <LinearAnimation duration="30" loopValue="loop" name="spin" id="0:42">
+            <KeyedObject objectId="0:22">
+                <KeyedProperty propertyKey="15">
+                    <KeyFrameDouble frame="0" value="0" interpolationType="linear"/>
+                    <KeyFrameDouble frame="30" value="3.14159"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+
+        <Event name="moved" id="0:60"/>
+    </Artboard>
+
+    <!-- ===== Child (nested component) ===== -->
+    <Artboard isComponent="true" defaultStateMachineId="0:50" width="50" height="50" name="Child" id="0:2" x="400">
+        <Shape x="10" y="25" name="Dot" id="0:57">
+            <Rectangle width="16" height="16" name="Path"/>
+            <Fill name="Fill"><SolidColor colorValue="FF4060E0" name="Dot Color"/></Fill>
+        </Shape>
+        <StateMachine name="ChildSM" id="0:50">
+            <StateMachineNumber name="childNum" id="0:51"/>
+            <StateMachineLayer name="Layer" id="0:52">
+                <AnyState x="0" y="-100"/>
+                <ExitState x="300" y="-100"/>
+                <EntryState>
+                    <StateTransition stateToId="0:53"/>
+                </EntryState>
+                <AnimationState x="100" animationId="0:55" id="0:53">
+                    <StateTransition stateToId="0:54" duration="0">
+                        <TransitionNumberCondition inputId="0:51" opValue="greaterThan" value="0"/>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState x="200" animationId="0:56" id="0:54">
+                    <StateTransition stateToId="0:53" duration="0"
+                                     enableExitTime="true" exitTimeIsPercetange="true" exitTime="100"/>
+                </AnimationState>
+            </StateMachineLayer>
+        </StateMachine>
+        <!-- childIdle: 1 frame, one-shot, holds Dot x = 10 -->
+        <LinearAnimation duration="1" name="childIdle" id="0:55">
+            <KeyedObject objectId="0:57">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="10"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <!-- childMove: 18 frames @60fps = 0.3 s, one-shot, Dot x 10 -> 40 -->
+        <LinearAnimation duration="18" name="childMove" id="0:56">
+            <KeyedObject objectId="0:57">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="10" interpolationType="linear"/>
+                    <KeyFrameDouble frame="18" value="40"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+    </Artboard>
+    <ComponentAsset artboardId="0:2" name="Child"/>
+
+
+    <ViewModel defaultInstanceId="0:106" name="SettleVM" id="0:100">
+        <ViewModelPropertyNumber name="level" id="0:101"/>
+        <ViewModelPropertyBoolean name="flag" id="0:102"/>
+        <ViewModelPropertyTrigger name="pulse" id="0:103"/>
+        <ViewModelPropertyString name="label" id="0:104"/>
+        <ViewModelPropertyColor name="tint" id="0:105"/>
+        <ViewModelInstance exports="true" name="Default" id="0:106">
+            <ViewModelInstanceNumber propertyValue="0" viewModelPropertyId="0:101"/>
+            <ViewModelInstanceBoolean propertyValue="false" viewModelPropertyId="0:102"/>
+            <ViewModelInstanceTrigger viewModelPropertyId="0:103"/>
+            <ViewModelInstanceString propertyValue="hello" viewModelPropertyId="0:104"/>
+            <ViewModelInstanceColor propertyValue="FFE04040" viewModelPropertyId="0:105"/>
+        </ViewModelInstance>
+    </ViewModel>
+</Rive>

@@ -15,6 +15,10 @@ export const readFixture = (file: string): ArrayBuffer => {
   ) as ArrayBuffer;
 };
 
+/** Reads a file from the C++ runtime's checkout, by path from its root. */
+export const runtimeFixture = (relativePath: string): ArrayBuffer =>
+  readFixture(path.join(runtimeDir, relativePath));
+
 export const webScriptingFixture = (name: string): ArrayBuffer =>
   readFixture(path.join(runtimeDir, "tests/web_scripting/fixture", name));
 

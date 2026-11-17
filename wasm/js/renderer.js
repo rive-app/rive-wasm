@@ -113,6 +113,8 @@ Module["onRuntimeInitialized"] = function () {
         cri["size"](image.width, image.height);
 
         cri.onComplete && cri.onComplete(cri);
+        // A decode finishes after the file loaded; instances that stopped drawing need to redraw.
+        Module["onAssetChange"] && Module["onAssetChange"]();
       };
       image.src = cri._newObjectUrl;
     },
