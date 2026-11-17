@@ -1,6 +1,12 @@
 // Threads build only. A page whose canvases can move to a worker records each
 // frame on its own thread while one replay worker, shared by every instance,
 // draws the previous one.
+
+// Chromium and WebKit keep at most 4 WebGL contexts alive on a worker, and no
+// API reports it; past that they lose the oldest, so further canvases replay
+// on the page.
+const MAX_REPLAY_WORKER_CANVASES = 4;
+
 if (ENVIRONMENT_IS_PTHREAD) {
   // Runs once on the replay worker, before it takes any canvas or image.
   Module["riveReplayWorkerListen"] = function () {
@@ -63,15 +69,24 @@ if (ENVIRONMENT_IS_PTHREAD) {
 
     // A context of our own, with the attributes a canvas would get, measures
     // the caps scripts read before any canvas arrives.
+    // The antialias probe's context is reused when the canvases will match it,
+    // since WebKit holds a lost context against the worker's limit until GC.
     function probeCaps() {
       let gl = null;
       let handle = 0;
       try {
-        const attributes = riveContextAttributes(
-          canvasAntialiasPreferred(),
-          false,
-        );
-        gl = new OffscreenCanvas(1, 1).getContext("webgl2", attributes);
+        const antialiased = riveContextAttributes(true, false);
+        gl = new OffscreenCanvas(1, 1).getContext("webgl2", antialiased);
+        if (enableMSAA === null) {
+          enableMSAA = !!gl && riveCanvasAntialiasPreferred(gl);
+        }
+        let attributes = antialiased;
+        if (!enableMSAA) {
+          const loseContext = gl && gl.getExtension("WEBGL_lose_context");
+          loseContext && loseContext.loseContext();
+          attributes = riveContextAttributes(false, false);
+          gl = new OffscreenCanvas(1, 1).getContext("webgl2", attributes);
+        }
         handle = gl ? GL.registerContext(gl, attributes) : 0;
       } catch (e) {
         handle = 0;
@@ -443,7 +458,8 @@ if (ENVIRONMENT_IS_PTHREAD) {
         !useOffScreenRenderer &&
         options &&
         options["replayWorker"] &&
-        canvas instanceof HTMLCanvasElement
+        canvas instanceof HTMLCanvasElement &&
+        surfaces.size < MAX_REPLAY_WORKER_CANVASES
       ) {
         record = transfer(canvas);
       }
