@@ -175,6 +175,10 @@ beforeEach(() => {
   advances.length = 0;
   frameQueue.clear();
   (rive.Rive as any).batchStart = { time: -1, now: 0 };
+  // Nothing here checks what's logged; the runtime's view model errors print
+  // the whole single-line wasm bundle as their code frame.
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+  jest.spyOn(console, "error").mockImplementation(() => {});
   // Frames stamp the clock they run at, so a seeded frame start never leads them.
   jest.spyOn(performance, "now").mockImplementation(() => frameTime);
   jest
