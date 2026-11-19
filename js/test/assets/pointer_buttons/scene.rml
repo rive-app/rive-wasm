@@ -1,0 +1,101 @@
+<Rive version="1" kind="fragment">
+    <!-- Pointer button jest fixture. "Pad" covers the whole 200x200 artboard and
+         has a down listener for each mouse button, an up listener for primary
+         and secondary, and a primary click listener, each setting its own bool. "Plain" (x 200..300)
+         has only a primary click listener, like content with no right-click listener.
+         Artboard "Hop": a secondary press on "Target" (x 0..200) moves it off the
+         artboard right away, so nothing is under the pointer by the time the
+         context menu event comes. Build: rive . --publish -->
+    <Artboard defaultStateMachineId="0:10" width="300" height="200" name="Buttons" id="0:1">
+        <Shape x="100" y="100" name="Pad" id="0:2">
+            <Rectangle width="200" height="200" name="Path"/>
+            <Fill name="Fill"><SolidColor colorValue="FF4060E0" name="Pad Color"/></Fill>
+        </Shape>
+        <Shape x="250" y="100" name="Plain" id="0:3">
+            <Rectangle width="100" height="200" name="Path"/>
+            <Fill name="Fill"><SolidColor colorValue="FF40C060" name="Plain Color"/></Fill>
+        </Shape>
+        <StateMachine name="Main" id="0:10">
+            <StateMachineBool name="primaryDown" id="0:20"/>
+            <StateMachineBool name="secondaryDown" id="0:21"/>
+            <StateMachineBool name="middleDown" id="0:22"/>
+            <StateMachineBool name="primaryUp" id="0:23"/>
+            <StateMachineBool name="secondaryUp" id="0:24"/>
+            <StateMachineBool name="primaryClick" id="0:25"/>
+            <StateMachineBool name="plainClick" id="0:26"/>
+            <StateMachineListener targetId="0:2" name="Primary Down" id="0:30">
+                <ListenerInputType listenerTypeValue="down"/>
+                <ListenerBoolChange value="true" inputId="0:20"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:2" name="Secondary Down" id="0:31">
+                <ListenerInputTypePointerButton listenerTypeValue="down" pointerButtonValue="secondary"/>
+                <ListenerBoolChange value="true" inputId="0:21"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:2" name="Middle Down" id="0:32">
+                <ListenerInputTypePointerButton listenerTypeValue="down" pointerButtonValue="middle"/>
+                <ListenerBoolChange value="true" inputId="0:22"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:2" name="Primary Up" id="0:33">
+                <ListenerInputType listenerTypeValue="up"/>
+                <ListenerBoolChange value="true" inputId="0:23"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:2" name="Secondary Up" id="0:34">
+                <ListenerInputTypePointerButton listenerTypeValue="up" pointerButtonValue="secondary"/>
+                <ListenerBoolChange value="true" inputId="0:24"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:2" name="Primary Click" id="0:35">
+                <ListenerInputType listenerTypeValue="click"/>
+                <ListenerBoolChange value="true" inputId="0:25"/>
+            </StateMachineListener>
+            <StateMachineListener targetId="0:3" name="Plain Click" id="0:36">
+                <ListenerInputType listenerTypeValue="click"/>
+                <ListenerBoolChange value="true" inputId="0:26"/>
+            </StateMachineListener>
+            <StateMachineLayer name="Layer 1">
+                <AnyState/>
+                <ExitState/>
+                <EntryState/>
+            </StateMachineLayer>
+        </StateMachine>
+    </Artboard>
+    <Artboard defaultStateMachineId="0:60" width="300" height="200" name="Hop" id="0:50">
+        <Shape x="100" y="100" name="Target" id="0:51">
+            <Rectangle width="200" height="200" name="Path"/>
+            <Fill name="Fill"><SolidColor colorValue="FFE04060" name="Target Color"/></Fill>
+        </Shape>
+        <StateMachine name="Hop" id="0:60">
+            <StateMachineBool name="hopped" id="0:61"/>
+            <StateMachineListener targetId="0:51" name="Secondary Down" id="0:62">
+                <ListenerInputTypePointerButton listenerTypeValue="down" pointerButtonValue="secondary"/>
+                <ListenerBoolChange value="true" inputId="0:61"/>
+            </StateMachineListener>
+            <StateMachineLayer name="Layer 1" id="0:63">
+                <AnyState/>
+                <ExitState/>
+                <EntryState>
+                    <StateTransition stateToId="0:64"/>
+                </EntryState>
+                <AnimationState animationId="0:70" id="0:64">
+                    <StateTransition stateToId="0:65" duration="0">
+                        <TransitionBoolCondition inputId="0:61" opValue="equal"/>
+                    </StateTransition>
+                </AnimationState>
+                <AnimationState animationId="0:71" id="0:65"/>
+            </StateMachineLayer>
+        </StateMachine>
+        <LinearAnimation duration="1" name="home" id="0:70">
+            <KeyedObject objectId="0:51">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="100"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+        <LinearAnimation duration="1" name="away" id="0:71">
+            <KeyedObject objectId="0:51">
+                <KeyedProperty propertyKey="13">
+                    <KeyFrameDouble frame="0" value="1000"/>
+                </KeyedProperty>
+            </KeyedObject>
+        </LinearAnimation>
+    </Artboard>
+</Rive>

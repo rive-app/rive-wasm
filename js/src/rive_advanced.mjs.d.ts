@@ -1141,8 +1141,11 @@ export declare class StateMachineInstance {
    *
    * @param x - X coordinate
    * @param y - Y coordinate
+   * @param id - Pointer id
+   * @param button - Pointer button, as numbered by PointerButton: 0 primary
+   *   (default), 1 secondary, 2 middle
    */
-  pointerDown(x: number, y: number, id: number): void;
+  pointerDown(x: number, y: number, id: number, button?: number): void;
   /**
    * Notifies the state machine that the pointer has moved to the given coordinate in
    * Artboard space. Internally, Rive may advance a state machine if the listener coordinate is of
@@ -1158,8 +1161,11 @@ export declare class StateMachineInstance {
    * interest at a given moment.
    * @param x - X coordinate
    * @param y - Y coordinate
+   * @param id - Pointer id
+   * @param button - Pointer button, as numbered by PointerButton: 0 primary
+   *   (default), 1 secondary, 2 middle
    */
-  pointerUp(x: number, y: number, id: number): void;
+  pointerUp(x: number, y: number, id: number, button?: number): void;
   /**
    * Notifies the state machine that the pointer has exited the detectable area of the canvas surface
    *
@@ -1222,6 +1228,16 @@ export declare class StateMachineInstance {
    * @param y - Y coordinate
    */
   hasScrollTargetAt(x: number, y: number): boolean;
+  /**
+   * Returns true if a listener under the given Artboard coordinate responds to presses of
+   * button, looking through nested artboards.
+   *
+   * @param x - X coordinate
+   * @param y - Y coordinate
+   * @param button - Pointer button, as numbered by PointerButton: 0 primary, 1 secondary,
+   *   2 middle
+   */
+  listensToButtonAt(x: number, y: number, button: number): boolean;
   /**
    * Returns true while a scroll gesture is latched to a scroll view in this state machine or a
    * nested one.

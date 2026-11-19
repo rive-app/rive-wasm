@@ -141,7 +141,7 @@ test("touchstart event can invoke pointerDown", (): void => {
     }),
   );
 
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0, 0);
   expect(mockStateMachines[0].pointerMove).not.toBeCalled();
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
@@ -227,8 +227,8 @@ test("touchstart event can invoke pointerDown with multiple touch events", (): v
     }),
   );
 
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0, 0);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1, 0);
   expect(mockStateMachines[0].pointerMove).not.toBeCalled();
   expect(mockStateMachines[0].pointerUp).not.toBeCalled();
 });
@@ -293,7 +293,7 @@ test("mousedown triggers a synchronous advanceAndApply(0)", (): void => {
     new MouseEvent("mousedown", { clientX: 100, clientY: 100 }),
   );
 
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0, 0);
   expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
   expect(mockAdvanceAndDrain).toBeCalledWith(0, { pointerDown: true });
   expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
@@ -305,7 +305,7 @@ test("mouseup triggers a synchronous advanceAndApply(0)", (): void => {
     new MouseEvent("mouseup", { clientX: 100, clientY: 100 }),
   );
 
-  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerUp).toBeCalledWith(100, 100, 0, 0);
   expect(mockAdvanceAndDrain).toHaveBeenCalledTimes(1);
   expect(mockAdvanceAndDrain).toBeCalledWith(0);
   expect(mockStateMachines[0].advanceAndApply).toHaveBeenCalledTimes(1);
@@ -355,7 +355,7 @@ test("in single-touch mode, a second finger touchstart does not invoke pointerDo
     }),
   );
   expect(mockStateMachines[0].pointerDown).toHaveBeenCalledTimes(1);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0, 0);
 
   // Second finger touches while the first is held
   canvas.dispatchEvent(
@@ -498,7 +498,7 @@ test("in single-touch mode, a new primary touch can be established after the pre
   );
 
   expect(mockStateMachines[0].pointerDown).toHaveBeenCalledTimes(1);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1, 0);
   expect(mockStateMachines[0].pointerMove).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(200, 200, 1);
 });
@@ -532,7 +532,7 @@ test("touchcancel clears the primary touch ID so the next touchstart restores fu
   );
 
   expect(mockStateMachines[0].pointerDown).toHaveBeenCalledTimes(1);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1, 0);
   expect(mockStateMachines[0].pointerMove).toHaveBeenCalledTimes(1);
   expect(mockStateMachines[0].pointerMove).toBeCalledWith(200, 200, 1);
 });
@@ -649,7 +649,7 @@ test("in single-touch mode, cancelling the primary finger ends it and releases t
 
   jest.clearAllMocks();
   touchStart(mockTouchPoint2);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(200, 200, 1, 0);
 });
 
 test("with multi-touch, cancelling one of two fingers ends only that finger", (): void => {
@@ -911,7 +911,7 @@ test("real mousedown is never default-prevented", (): void => {
   });
   canvas.dispatchEvent(mousedown);
   expect(mousedown.defaultPrevented).toBe(false);
-  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0);
+  expect(mockStateMachines[0].pointerDown).toBeCalledWith(100, 100, 0, 0);
 });
 
 // #endregion

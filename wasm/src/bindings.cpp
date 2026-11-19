@@ -1195,6 +1195,15 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {
                 self.pointerDown(rive::Vec2D((float)x, (float)y), id);
             }))
+        // Overloads by argument count: callers that don't name a button still
+        // press the primary one.
+        .function("pointerDown",
+                  optional_override(
+                      [](rive::StateMachineInstance& self, double x, double y, int id, int button) {
+                          self.pointerDown(rive::Vec2D((float)x, (float)y),
+                                           id,
+                                           (rive::PointerButton)button);
+                      }))
         .function(
             "pointerMove",
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {
@@ -1205,6 +1214,19 @@ EMSCRIPTEN_BINDINGS(RiveWASM)
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {
                 self.pointerUp(rive::Vec2D((float)x, (float)y), id);
             }))
+        .function("pointerUp",
+                  optional_override(
+                      [](rive::StateMachineInstance& self, double x, double y, int id, int button) {
+                          self.pointerUp(rive::Vec2D((float)x, (float)y),
+                                         id,
+                                         (rive::PointerButton)button);
+                      }))
+        .function("listensToButtonAt",
+                  optional_override(
+                      [](rive::StateMachineInstance& self, double x, double y, int button) -> bool {
+                          return self.listensToButtonAt(rive::Vec2D((float)x, (float)y),
+                                                        (rive::PointerButton)button);
+                      }))
         .function(
             "pointerExit",
             optional_override([](rive::StateMachineInstance& self, double x, double y, int id) {

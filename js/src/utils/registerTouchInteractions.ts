@@ -44,12 +44,14 @@ interface CanvasTouchState {
   touches: TrackedTouches;
   // The finger single-touch mode follows; null when none is down
   primaryTouchId: number | null;
+  // Whether the last mouse press was a right press that Rive took
+  secondaryPressTaken: boolean;
 }
 
 /**
- * Touch state per canvas. It outlives a single registration, because Rive
+ * Pointer state per canvas. It outlives a single registration, because Rive
  * re-registers the listeners (on play and pause) while a finger can still be
- * down.
+ * down, or between a right press and its context menu event.
  */
 const touchStateByCanvas = new WeakMap<
   HTMLCanvasElement | OffscreenCanvas,
@@ -104,6 +106,33 @@ const getTouchCoordinates = (
   }
   return coordinates;
 };
+
+/** Rive's PointerButton values, which differ from the DOM's MouseEvent.button. */
+const RivePointerButton = {
+  primary: 0,
+  secondary: 1,
+  middle: 2,
+} as const;
+
+/**
+ * The runtime's PointerButton for each DOM MouseEvent.button (left 0,
+ * middle 1, right 2), which numbers middle and right the other way round.
+ */
+const DOM_TO_POINTER_BUTTON = [
+  RivePointerButton.primary, // DOM 0: left
+  RivePointerButton.middle, // DOM 1: middle
+  RivePointerButton.secondary, // DOM 2: right
+];
+
+/**
+ * The pointer button a press or release is for, as the runtime numbers them.
+ * Touch is always primary. Null for buttons a listener can't be bound to, such
+ * as back and forward.
+ */
+const pointerButtonOf = (event: MouseEvent | TouchEvent): number | null =>
+  event instanceof MouseEvent
+    ? (DOM_TO_POINTER_BUTTON[event.button] ?? null)
+    : RivePointerButton.primary;
 
 /**
  * Returns the clientX and clientY properties from touch or mouse events. Also
@@ -211,6 +240,7 @@ export const registerTouchInteractions = ({
   const _touchState: CanvasTouchState = touchStateByCanvas.get(canvas) ?? {
     touches: new Map(),
     primaryTouchId: null,
+    secondaryPressTaken: false,
   };
   touchStateByCanvas.set(canvas, _touchState);
   const _activeTouches = _touchState.touches;
@@ -362,6 +392,7 @@ export const registerTouchInteractions = ({
       });
     }
 
+    const button = pointerButtonOf(event);
     switch (event.type) {
       /**
        * There's a 2px buffer for a hitRadius when translating the pointer coordinates
@@ -414,13 +445,23 @@ export const registerTouchInteractions = ({
       // Pointer click initiated but not released yet on the canvas
       case "touchstart":
       case "mousedown": {
+        if (button === null) {
+          break;
+        }
+        _touchState.secondaryPressTaken = false;
         for (const stateMachine of stateMachines) {
-          coordinateSets.forEach((coordinateSet) => {
-            stateMachine.pointerDown(
-              coordinateSet.transformedX,
-              coordinateSet.transformedY,
-              coordinateSet.identifier,
-            );
+          coordinateSets.forEach(({ transformedX, transformedY, identifier }) => {
+            // Another button's press goes only where something listens for
+            // it. Elsewhere it belongs to the browser, whose context menu
+            // can keep the release, and would hold the pointer down.
+            if (
+              button !== RivePointerButton.primary &&
+              !stateMachine.listensToButtonAt(transformedX, transformedY, button)
+            ) {
+              return;
+            }
+            stateMachine.pointerDown(transformedX, transformedY, identifier, button);
+            _touchState.secondaryPressTaken ||= button === RivePointerButton.secondary;
           });
         }
         // Advance the state machine immediately so pointer down(s) takes effect synchronously
@@ -461,12 +502,16 @@ export const registerTouchInteractions = ({
         break;
       }
       case "mouseup": {
+        if (button === null) {
+          break;
+        }
         for (const stateMachine of stateMachines) {
           coordinateSets.forEach((coordinateSet) => {
             stateMachine.pointerUp(
               coordinateSet.transformedX,
               coordinateSet.transformedY,
               coordinateSet.identifier,
+              button,
             );
           });
         }
@@ -540,6 +585,32 @@ export const registerTouchInteractions = ({
     }
     // Advance immediately so the release takes effect synchronously
     advanceAndDrain(0);
+  };
+
+  /**
+   * Keeps the browser's context menu from opening where the content listens
+   * to the secondary button, so a right click there goes to Rive alone.
+   * Elsewhere the menu opens as usual.
+   */
+  const contextMenuCallback = (event: MouseEvent) => {
+    // The press may have moved or hidden its listener before this event, so
+    // a right press Rive took keeps the menu closed even with nothing there now.
+    if (_touchState.secondaryPressTaken) {
+      _touchState.secondaryPressTaken = false;
+      event.preventDefault();
+      return;
+    }
+    const [point] = mapToArtboard(
+      (event.currentTarget as HTMLCanvasElement).getBoundingClientRect(),
+      [event],
+    );
+    if (
+      stateMachines.some((stateMachine) =>
+        stateMachine.listensToButtonAt(point.x, point.y, RivePointerButton.secondary),
+      )
+    ) {
+      event.preventDefault();
+    }
   };
 
   /**
@@ -650,6 +721,7 @@ export const registerTouchInteractions = ({
   });
   canvas.addEventListener("touchend", callback);
   canvas.addEventListener("touchcancel", touchCancelCallback);
+  canvas.addEventListener("contextmenu", contextMenuCallback);
   // Not passive, or preventDefault could not keep the page from scrolling.
   canvas.addEventListener("wheel", wheelCallback, { passive: false });
   return () => {
@@ -662,6 +734,7 @@ export const registerTouchInteractions = ({
     canvas.removeEventListener("touchstart", callback);
     canvas.removeEventListener("touchend", callback);
     canvas.removeEventListener("touchcancel", touchCancelCallback);
+    canvas.removeEventListener("contextmenu", contextMenuCallback);
     canvas.removeEventListener("wheel", wheelCallback);
   };
 };
