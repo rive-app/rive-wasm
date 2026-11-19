@@ -204,6 +204,9 @@ test.each(fixtures)(
       expect(await firstFrame(fixture, artboard, true)).toEqual(expected);
     }
   },
+  // Every artboard loads and draws twice, so files with many artboards can run
+  // past the default 5s on slow runners.
+  10_000,
 );
 
 test("RiveFile hands deferDecoding to the runtime's load", async () => {
