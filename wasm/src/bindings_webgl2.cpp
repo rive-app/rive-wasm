@@ -119,6 +119,11 @@ public:
     rcp<RenderImage> decodeImage(Span<const uint8_t> bytes) override;
 
 private:
+    // Same routing as decodeImage, so the pixels upload at first draw.
+    rcp<RenderImage> onMakeImageFromPixels(uint32_t width,
+                                           uint32_t height,
+                                           Span<const uint8_t> rgbaPremul) override;
+
     // The renderer currently replaying this session, null while unattached.
     WebGL2Renderer* m_renderer = nullptr;
     bool m_everBound = false;
@@ -167,6 +172,10 @@ public:
 
 private:
     WebGL2Factory() = default;
+
+    rcp<RenderImage> onMakeImageFromPixels(uint32_t width,
+                                           uint32_t height,
+                                           Span<const uint8_t> rgbaPremul) override;
 
     // A GL context belongs to the thread that made it, and the replay worker
     // draws while the page records, so each thread tracks its own renderers.
@@ -340,6 +349,29 @@ public:
         m_Height = 0;
     }
 
+    // Premultiplied RGBA8 pixels, kept to upload to each context that draws
+    // it. Ready on both threads from the start, as the pixels are immutable.
+    WebGL2RenderImage(uint32_t width,
+                      uint32_t height,
+                      Span<const uint8_t> rgbaPremul,
+                      bool share = false) :
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+        m_shared(share),
+        m_pageDecoding(true),
+        m_pageDecoded(true),
+        m_pageWidth(static_cast<int>(width)),
+        m_pageHeight(static_cast<int>(height)),
+        m_arrivedOnWorker(true),
+        m_workerWidth(static_cast<int>(width)),
+        m_workerHeight(static_cast<int>(height)),
+#endif
+        m_pixels(rgbaPremul.begin(), rgbaPremul.end())
+    {
+        m_Width = static_cast<int>(width);
+        m_Height = static_cast<int>(height);
+        m_readyToUpload = true;
+    }
+
     ~WebGL2RenderImage();
 
     uint32_t imageID() const { return m_imageID; }
@@ -412,6 +444,8 @@ private:
     int m_workerHeight = 0;
     Upload m_worker;
 #endif
+    // Set for an image made from pixels rather than decoded by the browser.
+    const std::vector<uint8_t> m_pixels;
 
 public:
     RenderImage* prep(WebGL2Renderer* webglRenderer, const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context);
@@ -1415,6 +1449,15 @@ RenderImage* WebGL2RenderImage::upload(WebGL2Renderer* webglRenderer,
             // The handle outlived the context that owned the texture.
             upload.renderImage.release();
         }
+        // A texture past this context's limit would fail to allocate;
+        // draw nothing instead of caching an empty texture as ready.
+        uint32_t maxTextureSize =
+            webglRenderer->renderContextGL()->platformFeatures().maxTextureSize;
+        if ((width > 0 && static_cast<uint32_t>(width) > maxTextureSize) ||
+            (height > 0 && static_cast<uint32_t>(height) > maxTextureSize))
+        {
+            return nullptr;
+        }
         upload.replayBuild = replayBuild;
         ScopedGLContextMakeCurrent makeCurrent(upload.contextGL = context);
         GLuint textureId = 0;
@@ -1422,7 +1465,22 @@ RenderImage* WebGL2RenderImage::upload(WebGL2Renderer* webglRenderer,
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
         webglRenderer->renderContextGL()->state()->bindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-        upload_image(emscripten_webgl_get_current_context(), m_imageID);
+        if (!m_pixels.empty())
+        {
+            glTexImage2D(GL_TEXTURE_2D,
+                         0,
+                         GL_RGBA8,
+                         width,
+                         height,
+                         0,
+                         GL_RGBA,
+                         GL_UNSIGNED_BYTE,
+                         m_pixels.data());
+        }
+        else
+        {
+            upload_image(emscripten_webgl_get_current_context(), m_imageID);
+        }
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1592,6 +1650,20 @@ rcp<RenderImage> WebGL2DeferredSession::decodeImage(Span<const uint8_t> bytes)
                                        s_replayWorkerEnabled.load(std::memory_order_relaxed));
 #else
     return WebGL2Factory::Instance()->decodeImage(bytes);
+#endif
+}
+
+rcp<RenderImage> WebGL2DeferredSession::onMakeImageFromPixels(uint32_t width,
+                                                              uint32_t height,
+                                                              Span<const uint8_t> rgbaPremul)
+{
+#ifdef RIVE_WEBGL2_REPLAY_WORKER
+    return make_rcp<WebGL2RenderImage>(width,
+                                       height,
+                                       rgbaPremul,
+                                       s_replayWorkerEnabled.load(std::memory_order_relaxed));
+#else
+    return WebGL2Factory::Instance()->makeImageFromPixels(width, height, rgbaPremul);
 #endif
 }
 
@@ -2355,6 +2427,13 @@ EXPORT void riveReplaySurfaceRelease(ReplaySurface* surface)
 rcp<RenderImage> WebGL2Factory::decodeImage(Span<const uint8_t> encodedBytes)
 {
     return make_rcp<WebGL2RenderImage>(encodedBytes);
+}
+
+rcp<RenderImage> WebGL2Factory::onMakeImageFromPixels(uint32_t width,
+                                                      uint32_t height,
+                                                      Span<const uint8_t> rgbaPremul)
+{
+    return make_rcp<WebGL2RenderImage>(width, height, rgbaPremul);
 }
 
 rcp<RenderBuffer> WebGL2Factory::makeRenderBuffer(RenderBufferType type,

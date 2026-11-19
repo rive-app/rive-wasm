@@ -825,6 +825,15 @@ public:
         return static_cast<rive::Factory&>(gCanvas2DFactory).decodeImage(bytes);
     }
 
+    // Replays into Canvas2D, which cannot make images from pixels, so a
+    // recorded one would never draw.
+    rive::rcp<rive::RenderImage> onMakeImageFromPixels(uint32_t,
+                                                       uint32_t,
+                                                       rive::Span<const uint8_t>) override
+    {
+        return nullptr;
+    }
+
     // A claim is for the session's whole life, not just the attachment:
     // detaching resets the replayer's resident table, so the recorded stream's
     // handles resolve against nothing and a second renderer cannot replay it.
