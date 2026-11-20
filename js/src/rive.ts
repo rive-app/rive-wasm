@@ -4,6 +4,7 @@ import {
   RuntimeLoader,
   type RuntimeCallback,
   type ScriptFetchOptions,
+  type ThreadsRefusal,
 } from "./runtimeLoader";
 import {
   SemanticTreeModel,
@@ -262,7 +263,12 @@ export class Layout {
 
 // #region runtime
 
-export { RuntimeLoader, type RuntimeCallback, type ScriptFetchOptions };
+export {
+  RuntimeLoader,
+  type RuntimeCallback,
+  type ScriptFetchOptions,
+  type ThreadsRefusal,
+};
 
 // #endregion
 

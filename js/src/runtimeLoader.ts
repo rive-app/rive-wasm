@@ -14,19 +14,45 @@ const threadsProbe = new Uint8Array([
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0b,
 ]);
 
-// Null when this page can run the threaded build, else why not. A page that
-// is not isolated gets no shared memory, and the threaded build never loads.
-function threadsRefusal(): string | null {
+/**
+ * @experimental Why {@link RuntimeLoader.threadsRefusal} says no threads.
+ * `notIsolated`: the browser could isolate this context but didn't (headers,
+ * framing or policy). `isolationUnsupported`: the browser can't isolate any.
+ */
+export type ThreadsRefusal =
+  | "noThreadedBuild"
+  | "threadsOff"
+  | "wasmBinary"
+  | "notIsolated"
+  | "isolationUnsupported"
+  | "noSharedMemory"
+  | "noWasmThreads"
+  | "loadFailed";
+
+// Words for the refusals the loader warns about when it decides; the
+// package's and host's choices stay silent.
+const pageRefusalWords: Partial<Record<ThreadsRefusal, string>> = {
+  notIsolated: "the page is not cross origin isolated",
+  isolationUnsupported: "the page is not cross origin isolated",
+  noSharedMemory: "the page cannot share memory with workers",
+  noWasmThreads: "the browser cannot run wasm threads with SIMD",
+};
+
+// A page that is not isolated gets no shared memory, and the threaded build
+// never loads.
+function pageThreadsRefusal(): ThreadsRefusal | null {
   if (globalThis.crossOriginIsolated !== true) {
-    return "the page is not cross origin isolated";
+    return globalThis.crossOriginIsolated === undefined
+      ? "isolationUnsupported"
+      : "notIsolated";
   }
   try {
     new MessageChannel().port1.postMessage(new SharedArrayBuffer(1));
   } catch {
-    return "the page cannot share memory with workers";
+    return "noSharedMemory";
   }
-  if (!WebAssembly.validate(threadsProbe)) {
-    return "the browser cannot run wasm threads with SIMD";
+  if (typeof WebAssembly !== "object" || !WebAssembly.validate(threadsProbe)) {
+    return "noWasmThreads";
   }
   return null;
 }
@@ -146,6 +172,8 @@ export class RuntimeLoader {
       : null;
 
   private static triedThreads = false;
+  // Null means threads run, undefined means not decided yet.
+  private static threadsOutcome: ThreadsRefusal | null | undefined;
 
   // The parts a script's parallel call gets on the threaded build, or null
   // for the runtime's default.
@@ -174,6 +202,10 @@ export class RuntimeLoader {
   // the next call to getInstance() / awaitInstance() can retry with a new URL.
   private static notifyError(error: Error): void {
     RuntimeLoader.isLoading = false;
+    // The retry decides again, so the answer follows the settings until then.
+    if (!RuntimeLoader.triedThreads) {
+      RuntimeLoader.threadsOutcome = undefined;
+    }
     while (RuntimeLoader.errorCallbackQueue.length > 0) {
       RuntimeLoader.errorCallbackQueue.shift()?.(error);
     }
@@ -240,38 +272,54 @@ export class RuntimeLoader {
   // Loads the runtime, threaded once per page where it can be, and otherwise
   // without threads.
   private static loadRuntime(): void {
-    // Other packages bundle an empty module here, which webpack's interop
-    // hands over as an object rather than undefined.
-    const threaded = threads.default;
-    const threadsUrl = RuntimeLoader.wasmThreadsURL;
-    // A host's own binary is a build without threads.
-    if (
-      typeof threaded !== "function" ||
-      threadsUrl === null ||
-      RuntimeLoader.wasmBinary !== null ||
-      RuntimeLoader.triedThreads
-    ) {
+    if (RuntimeLoader.triedThreads) {
+      RuntimeLoader.loadUnthreaded();
+      return;
+    }
+    const refusal = RuntimeLoader.decideThreads();
+    RuntimeLoader.threadsOutcome = refusal;
+    const words = refusal && pageRefusalWords[refusal];
+    // A package's or host's choice stays silent, and a retry decides again.
+    if (refusal !== null && !words) {
       RuntimeLoader.loadUnthreaded();
       return;
     }
     RuntimeLoader.triedThreads = true;
-    const refusal = threadsRefusal();
-    if (refusal !== null) {
-      console.warn(`Rive is running without threads: ${refusal}.`);
+    if (words) {
+      console.warn(`Rive is running without threads: ${words}.`);
       RuntimeLoader.loadUnthreaded();
       return;
     }
+    const threadsUrl = RuntimeLoader.wasmThreadsURL;
     if (RuntimeLoader.enablePerfMarks) performance.mark('rive:wasm-init:start');
     // Not a catch, which would also take a throw from a callback.
-    threaded({ locateFile: () => threadsUrl }).then(
+    threads.default!({ locateFile: () => threadsUrl! }).then(
       RuntimeLoader.loaded,
       (error) => {
+        RuntimeLoader.threadsOutcome = "loadFailed";
         console.warn(
           `Rive is running without threads: the threaded build failed to load (${error?.message ?? error}).`,
         );
         RuntimeLoader.loadUnthreaded();
       },
     );
+  }
+
+  // Shared by the loader and threadsRefusal, so the two never disagree.
+  private static decideThreads(): ThreadsRefusal | null {
+    // Other packages bundle an empty module here, which webpack's interop
+    // hands over as an object rather than undefined.
+    if (typeof threads.default !== "function") {
+      return "noThreadedBuild";
+    }
+    if (RuntimeLoader.wasmThreadsURL === null) {
+      return "threadsOff";
+    }
+    // A host's own binary is a build without threads.
+    if (RuntimeLoader.wasmBinary !== null) {
+      return "wasmBinary";
+    }
+    return pageThreadsRefusal();
   }
 
   private static loadUnthreaded(): void {
@@ -293,8 +341,9 @@ export class RuntimeLoader {
           type: error?.name || "Error",
           // Some browsers may provide additional WebAssembly-specific details
           wasmError:
-            error instanceof WebAssembly.CompileError ||
-            error instanceof WebAssembly.RuntimeError,
+            typeof WebAssembly !== "undefined" &&
+            (error instanceof WebAssembly.CompileError ||
+              error instanceof WebAssembly.RuntimeError),
           originalError: error,
         };
 
@@ -435,6 +484,17 @@ export class RuntimeLoader {
   // Gets the threaded build's wasm url (null means threads are off)
   public static getWasmThreadsUrl(): string | null {
     return RuntimeLoader.wasmThreadsURL;
+  }
+
+  /**
+   * @experimental Why this page doesn't run the threaded build, or null when
+   * it does. Before load, what the loader would do with the current settings;
+   * after, what it did. Never loads or logs.
+   */
+  public static threadsRefusal(): ThreadsRefusal | null {
+    return RuntimeLoader.threadsOutcome === undefined
+      ? RuntimeLoader.decideThreads()
+      : RuntimeLoader.threadsOutcome;
   }
 
   /**

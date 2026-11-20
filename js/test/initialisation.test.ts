@@ -326,6 +326,7 @@ describe("RuntimeLoader threads", () => {
       callBackQueue: loader.callBackQueue,
       errorCallbackQueue: loader.errorCallbackQueue,
       triedThreads: loader.triedThreads,
+      threadsOutcome: loader.threadsOutcome,
       threadsUrl: rive.RuntimeLoader.getWasmThreadsUrl(),
       binary: rive.RuntimeLoader.getWasmBinary(),
       rcDefault: rc.default,
@@ -337,6 +338,7 @@ describe("RuntimeLoader threads", () => {
     loader.callBackQueue = [];
     loader.errorCallbackQueue = [];
     loader.triedThreads = false;
+    loader.threadsOutcome = undefined;
     rive.RuntimeLoader.setWasmThreadsUrl(threadsUrl);
     rive.RuntimeLoader.setWasmBinary(null);
     (rc as any).default = jest.fn().mockResolvedValue(unthreadedRuntime);
@@ -358,6 +360,7 @@ describe("RuntimeLoader threads", () => {
     loader.callBackQueue = saved.callBackQueue;
     loader.errorCallbackQueue = saved.errorCallbackQueue;
     loader.triedThreads = saved.triedThreads;
+    loader.threadsOutcome = saved.threadsOutcome;
     rive.RuntimeLoader.setWasmThreadsUrl(saved.threadsUrl as string | null);
     rive.RuntimeLoader.setWasmBinary(saved.binary as ArrayBuffer | null);
     delete (globalThis as any).crossOriginIsolated;
@@ -428,6 +431,174 @@ describe("RuntimeLoader threads", () => {
     expect(scripting.parallelParts).toBe(4);
     rive.RuntimeLoader.setParallelParts(null);
     expect(scripting.parallelParts).toBeNull();
+  });
+
+  const refusal = () => rive.RuntimeLoader.threadsRefusal();
+  const refuseSharedMemory = () =>
+    ((globalThis as any).MessageChannel = class {
+      port1 = {
+        postMessage: () => {
+          throw new Error("DataCloneError");
+        },
+      };
+    });
+  const refuseWasmThreads = () =>
+    jest.spyOn(WebAssembly, "validate").mockReturnValue(false);
+
+  test("threadsRefusal is null where the threaded build can run", () => {
+    expect(refusal()).toBeNull();
+  });
+
+  test("threadsRefusal names each reason the page can't run threads", () => {
+    isolate(false);
+    expect(refusal()).toBe("notIsolated");
+    delete (globalThis as any).crossOriginIsolated;
+    expect(refusal()).toBe("isolationUnsupported");
+    isolate(true);
+    refuseSharedMemory();
+    expect(refusal()).toBe("noSharedMemory");
+    delete (globalThis as any).MessageChannel;
+    expect(refusal()).toBe("noSharedMemory");
+    (globalThis as any).MessageChannel = class {
+      port1 = { postMessage: () => {} };
+    };
+    refuseWasmThreads();
+    expect(refusal()).toBe("noWasmThreads");
+  });
+
+  test("threadsRefusal doesn't throw on a page without WebAssembly", () => {
+    const wasm = globalThis.WebAssembly;
+    delete (globalThis as any).WebAssembly;
+    try {
+      expect(refusal()).toBe("noWasmThreads");
+    } finally {
+      (globalThis as any).WebAssembly = wasm;
+    }
+  });
+
+  test("asking doesn't load the runtime or log", () => {
+    const log = jest.spyOn(console, "log").mockImplementation(() => {});
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+    for (let i = 0; i < 3; i++) {
+      refusal();
+    }
+    isolate(false);
+    refusal();
+    expect(rc.default).not.toHaveBeenCalled();
+    expect(threads.default).not.toHaveBeenCalled();
+    expect((rive.RuntimeLoader as any).isLoading).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    [
+      "notIsolated",
+      () => isolate(false),
+      "the page is not cross origin isolated",
+    ],
+    [
+      "isolationUnsupported",
+      () => delete (globalThis as any).crossOriginIsolated,
+      "the page is not cross origin isolated",
+    ],
+    [
+      "noSharedMemory",
+      refuseSharedMemory,
+      "the page cannot share memory with workers",
+    ],
+    [
+      "noWasmThreads",
+      refuseWasmThreads,
+      "the browser cannot run wasm threads with SIMD",
+    ],
+  ])(
+    "the loader's warning for %s keeps its words",
+    async (code, refuse, words) => {
+      refuse();
+      expect(refusal()).toBe(code);
+      await rive.RuntimeLoader.awaitInstance();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toBe(
+        `Rive is running without threads: ${words}.`,
+      );
+      expect(refusal()).toBe(code);
+    },
+  );
+
+  test("threadsRefusal names the loader's own reasons to skip threads", () => {
+    (threads as any).default = undefined;
+    expect(refusal()).toBe("noThreadedBuild");
+    (threads as any).default = {};
+    expect(refusal()).toBe("noThreadedBuild");
+    (threads as any).default = jest.fn();
+    rive.RuntimeLoader.setWasmThreadsUrl(null);
+    expect(refusal()).toBe("threadsOff");
+    rive.RuntimeLoader.setWasmThreadsUrl(threadsUrl);
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+    expect(refusal()).toBe("wasmBinary");
+  });
+
+  test("a threaded build that fails to load is the answer after load", async () => {
+    (threads as any).default = jest
+      .fn()
+      .mockRejectedValue(new Error("no workers"));
+    expect(refusal()).toBeNull();
+    await rive.RuntimeLoader.awaitInstance();
+    expect(warn.mock.calls[0][0]).toBe(
+      "Rive is running without threads: the threaded build failed to load (no workers).",
+    );
+    expect(refusal()).toBe("loadFailed");
+  });
+
+  test("after load the answer is what the loader did, not later settings", async () => {
+    await rive.RuntimeLoader.awaitInstance();
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+    isolate(false);
+    expect(refusal()).toBeNull();
+  });
+
+  test("after an unthreaded load the answer stays its reason", async () => {
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+    await rive.RuntimeLoader.awaitInstance();
+    rive.RuntimeLoader.setWasmBinary(null);
+    expect(refusal()).toBe("wasmBinary");
+  });
+
+  test("a host's binary that fails to load leaves threads for the retry", async () => {
+    const fallback = rive.RuntimeLoader.getWasmFallbackUrl();
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "debug").mockImplementation(() => {});
+    (rc as any).default = jest.fn().mockRejectedValue(new Error("bad binary"));
+    rive.RuntimeLoader.setWasmBinary(new ArrayBuffer(8));
+    try {
+      await expect(rive.RuntimeLoader.awaitInstance()).rejects.toThrow();
+      expect(refusal()).toBe("wasmBinary");
+      rive.RuntimeLoader.setWasmBinary(null);
+      expect(refusal()).toBeNull();
+      expect(await rive.RuntimeLoader.awaitInstance()).toBe(threadedRuntime);
+      expect(refusal()).toBeNull();
+    } finally {
+      rive.RuntimeLoader.setWasmFallbackUrl(fallback);
+    }
+  });
+
+  test("a failed load on a page without WebAssembly rejects", async () => {
+    const wasm = globalThis.WebAssembly;
+    const fallback = rive.RuntimeLoader.getWasmFallbackUrl();
+    rive.RuntimeLoader.setWasmFallbackUrl(null);
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "debug").mockImplementation(() => {});
+    (rc as any).default = jest.fn().mockRejectedValue(new Error("no wasm"));
+    delete (globalThis as any).WebAssembly;
+    try {
+      await expect(rive.RuntimeLoader.awaitInstance()).rejects.toThrow();
+    } finally {
+      (globalThis as any).WebAssembly = wasm;
+      rive.RuntimeLoader.setWasmFallbackUrl(fallback);
+    }
   });
 });
 
