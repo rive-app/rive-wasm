@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.52.0](https://github.com/rive-app/rive-wasm/compare/2.51.0...2.52.0)
+## [2.53.0](https://github.com/rive-app/rive-wasm/compare/2.52.0...2.53.0)
+
+### Merged
+
+- fix(runtime): guard source state that instancing writes [`#15916`](https://github.com/rive-app/rive-wasm/pull/15916)
+- feat(runtime, editor): let scripts walk their own artboard and rerun when it changes [`#15821`](https://github.com/rive-app/rive-wasm/pull/15821)
+- fix(runtime): a wheel scroll lets the scene come to rest [`#15936`](https://github.com/rive-app/rive-wasm/pull/15936)
+- feat(CommandQueue): Return null for an artboard without a default view model [`#15875`](https://github.com/rive-app/rive-wasm/pull/15875)
+- perf(renderer): Compute depthStencil outsets in the tessellator [`#15924`](https://github.com/rive-app/rive-wasm/pull/15924)
+- test(scripting): stop browser pages waiting on the lines they print last [`#15797`](https://github.com/rive-app/rive-wasm/pull/15797)
+- perf(runtime): draw a paint without a paint image straight away [`#15923`](https://github.com/rive-app/rive-wasm/pull/15923)
+- fix(runtime): a nested artboard's script node takes pointer events only where it shows [`#15905`](https://github.com/rive-app/rive-wasm/pull/15905)
+- feat(scripting): add Image.fromPixels [`#15569`](https://github.com/rive-app/rive-wasm/pull/15569)
+- refactor(renderer): Move common path params into ContourData [`#15898`](https://github.com/rive-app/rive-wasm/pull/15898)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`0eec548`](https://github.com/rive-app/rive-wasm/commit/0eec548bc0eef893307d2899755c347d0d9301ca)
+- chore(downstream): advance submodule/refs [`526687c`](https://github.com/rive-app/rive-wasm/commit/526687c5c143054df1ce720fe9a4764a04756041)
+- chore(downstream): advance submodule/refs [`0b847da`](https://github.com/rive-app/rive-wasm/commit/0b847daa331de3ecfb98096f29311bc6e17864d2)
+- chore(downstream): advance submodule/refs [`f991941`](https://github.com/rive-app/rive-wasm/commit/f99194137e9ba51b51d13bab6a2bad188a319810)
+- chore(downstream): advance submodule/refs [`c81f60b`](https://github.com/rive-app/rive-wasm/commit/c81f60bf616cadcad53c44f6c37b6c6712f13ed3)
+- chore(downstream): advance submodule/refs [`20a5c01`](https://github.com/rive-app/rive-wasm/commit/20a5c010225d5e849b5be8802820b7a5bc46fe3f)
+- chore(downstream): advance submodule/refs [`c3b4926`](https://github.com/rive-app/rive-wasm/commit/c3b4926c1bea86dc9dfc7634b7dd23752619ffe9)
+
+## [2.52.0](https://github.com/rive-app/rive-wasm/compare/2.51.0...2.52.0) - 2026-11-19
 
 ### Merged
 
@@ -51,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.52.0 [`b142323`](https://github.com/rive-app/rive-wasm/commit/b14232317d77258946275fed839063d272b35938)
 - chore(downstream): advance submodule/refs [`842ce5f`](https://github.com/rive-app/rive-wasm/commit/842ce5f1eb81f56564146287b2f570e414749c2a)
 - chore(downstream): advance submodule/refs [`2061f32`](https://github.com/rive-app/rive-wasm/commit/2061f322877ee51ba0d842c813e4d92d7d4be992)
 - chore(downstream): advance submodule/refs [`00f1780`](https://github.com/rive-app/rive-wasm/commit/00f178076eb7e31f6dfc7b3650ad3c2f2c348161)
