@@ -725,9 +725,7 @@ public:
 #endif
         if (inkbleedActive())
         {
-            frameDescriptor.msaaSampleCount = 1;
-            frameDescriptor.inkbleedOverride = true;
-            frameDescriptor.clockwiseFillOverride = true;
+            frameDescriptor.enableInkbleed = true;
         }
         else if (m_renderTarget->sampleCount() > 1)
         {
@@ -1128,11 +1126,10 @@ public:
             .loadAction = gpu::LoadAction::clear,
             .clearColor = clearColor,
         };
-        if (m_screenFrame.inkbleedOverride)
+        if (m_screenFrame.enableInkbleed)
         {
-            canvasFrame.msaaSampleCount = 1;
-            canvasFrame.inkbleedOverride = true;
-            canvasFrame.clockwiseFillOverride = true;
+            canvasFrame.enableInkbleed = true;
+            canvasFrame.inkbleedOverride = m_screenFrame.inkbleedOverride;
         }
         else if (!m_renderContext->platformFeatures().supportsRasterOrderingMode &&
                  !m_renderContext->platformFeatures().supportsAtomicMode)
@@ -1545,9 +1542,7 @@ public:
         };
         if (m_renderer->inkbleedActive())
         {
-            frameDescriptor.msaaSampleCount = 1;
-            frameDescriptor.inkbleedOverride = true;
-            frameDescriptor.clockwiseFillOverride = true;
+            frameDescriptor.enableInkbleed = true;
         }
         m_renderer->gpuRenderContext()->beginFrame(std::move(frameDescriptor));
         // Draws go through the renderer so async decoded images get prepped.
