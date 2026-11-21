@@ -607,21 +607,50 @@ Module["onRuntimeInitialized"] = function () {
       yy,
       tx,
       ty) {
-      const img = image._image
+      // The runtime calls this before every draw of an image paint, so only a real change
+      // may bump _version: that is what rebuilds the cached WebGL2 paint, and without it a
+      // new image, sampler or transform (scale, offset, rotation) never reaches the draw.
+      const img = image ? image._image : null;
 
       if (!img) {
-        this._modulatedImage = null;
+        if (this._modulatedImage !== null) {
+          this._modulatedImage = null;
+          this._version++;
+        }
         return;
       }
 
-      this._modulatedImage = {
-          image: img,
-          webGL2Image: image._webGL2Image,
-          filter,
-          wrapX,
-          wrapY,
-          transform: makeMatrix(xx, xy, yx, yy, tx, ty),
-        }
+      const webGL2Image = image._webGL2Image;
+      let m = this._modulatedImage;
+      if (m !== null &&
+          m.image === img &&
+          m.webGL2Image === webGL2Image &&
+          m.filter === filter &&
+          m.wrapX === wrapX &&
+          m.wrapY === wrapY &&
+          m.xx === xx &&
+          m.xy === xy &&
+          m.yx === yx &&
+          m.yy === yy &&
+          m.tx === tx &&
+          m.ty === ty) {
+        return;
+      }
+      if (m === null) {
+        m = this._modulatedImage = {};
+      }
+      m.image = img;
+      m.webGL2Image = webGL2Image;
+      m.filter = filter;
+      m.wrapX = wrapX;
+      m.wrapY = wrapY;
+      m.xx = xx;
+      m.xy = xy;
+      m.yx = yx;
+      m.yy = yy;
+      m.tx = tx;
+      m.ty = ty;
+      this._version++;
     },
 
     "completeGradient": function () { },
@@ -676,12 +705,12 @@ Module["onRuntimeInitialized"] = function () {
           imgFilter = this._modulatedImage.filter;
           imgWrapX = this._modulatedImage.wrapX;
           imgWrapY = this._modulatedImage.wrapY;
-          imgXX = this._modulatedImage.transform.a;
-          imgXY = this._modulatedImage.transform.b;
-          imgYX = this._modulatedImage.transform.c;
-          imgYY = this._modulatedImage.transform.d;
-          imgTX = this._modulatedImage.transform.e;
-          imgTY = this._modulatedImage.transform.f;
+          imgXX = this._modulatedImage.xx;
+          imgXY = this._modulatedImage.xy;
+          imgYX = this._modulatedImage.yx;
+          imgYY = this._modulatedImage.yy;
+          imgTX = this._modulatedImage.tx;
+          imgTY = this._modulatedImage.ty;
         }
 
         // A null gradient transform is the identity; see _setGradientTransform().
