@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.53.0](https://github.com/rive-app/rive-wasm/compare/2.52.0...2.53.0)
+## [2.54.0](https://github.com/rive-app/rive-wasm/compare/2.53.0...2.54.0)
+
+### Merged
+
+- feat(renderer): shrinkbleed! [`#15934`](https://github.com/rive-app/rive-wasm/pull/15934)
+- feat(js): let a page ask why the runtime can't run threads [`#15949`](https://github.com/rive-app/rive-wasm/pull/15949)
+- fix(runtime): build each nested artboard's focus tree once [`#15948`](https://github.com/rive-app/rive-wasm/pull/15948)
+- perf(artboard): Reduce per-frame allocations [`#15851`](https://github.com/rive-app/rive-wasm/pull/15851)
+- feat(runtime, editor, core): ink vertical trim that hugs the glyph outlines [`#15941`](https://github.com/rive-app/rive-wasm/pull/15941)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`a1a58b6`](https://github.com/rive-app/rive-wasm/commit/a1a58b633c4a74d48c82fd0d426d63a76bb7e0fe)
+- chore(downstream): advance submodule/refs [`c3a5e83`](https://github.com/rive-app/rive-wasm/commit/c3a5e833fd0f89edb41f28c329e1e27ff541a91e)
+- chore(downstream): advance submodule/refs [`684febf`](https://github.com/rive-app/rive-wasm/commit/684febf2d5f916718e33f7549b5ce61568c74650)
+- chore(downstream): advance submodule/refs [`4f7c7c6`](https://github.com/rive-app/rive-wasm/commit/4f7c7c670cb996ad4c9f46a38262da399ddff205)
+- chore(downstream): advance submodule/refs [`cd86333`](https://github.com/rive-app/rive-wasm/commit/cd863338dd4b867fec8aee5337edc8a253801acb)
+
+## [2.53.0](https://github.com/rive-app/rive-wasm/compare/2.52.0...2.53.0) - 2026-11-20
 
 ### Merged
 
@@ -22,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.53.0 [`a89b07a`](https://github.com/rive-app/rive-wasm/commit/a89b07a0c606fe4df13f8e3731937938e1bb240c)
 - chore(downstream): advance submodule/refs [`0eec548`](https://github.com/rive-app/rive-wasm/commit/0eec548bc0eef893307d2899755c347d0d9301ca)
 - chore(downstream): advance submodule/refs [`526687c`](https://github.com/rive-app/rive-wasm/commit/526687c5c143054df1ce720fe9a4764a04756041)
 - chore(downstream): advance submodule/refs [`0b847da`](https://github.com/rive-app/rive-wasm/commit/0b847daa331de3ecfb98096f29311bc6e17864d2)
