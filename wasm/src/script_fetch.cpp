@@ -6,7 +6,7 @@
 
 #include <emscripten.h>
 #include <emscripten/threading.h>
-#include <algorithm>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -84,15 +84,32 @@ public:
 };
 } // namespace
 
-// `meta` holds the status text, the final URL, then each header's name and
-// value, NUL separated.
-EXPORT void riveScriptFetchComplete(uint32_t id,
-                                    uint32_t status,
-                                    const char* meta,
-                                    uint32_t metaLength,
-                                    const uint8_t* body,
-                                    uint32_t bodyLength)
+// The body of the response reported next, written by the transport in place.
+static std::vector<uint8_t> s_body;
+
+// Where to write a body of `size` bytes, or null when the heap has no room.
+EXPORT uint8_t* riveScriptFetchReserveBody(uint32_t size)
 {
+    // A vector that cannot grow aborts, so the room is tried for first, though
+    // another thread can still take it. Volatile keeps the trial compiled in.
+    static void* volatile s_probe;
+    s_probe = malloc(size);
+    if (s_probe == nullptr)
+    {
+        return nullptr;
+    }
+    free(s_probe);
+    s_body.resize(size);
+    return s_body.data();
+}
+
+// `meta` holds the status text, the final URL, then each header's name and
+// value, NUL separated. The body is the one last reserved, if any.
+EXPORT void
+riveScriptFetchComplete(uint32_t id, uint32_t status, const char* meta, uint32_t metaLength)
+{
+    std::vector<uint8_t> body;
+    body.swap(s_body);
     std::vector<std::string> fields;
     size_t fieldStart = 0;
     for (size_t i = 0; i <= metaLength; i++)
@@ -129,7 +146,7 @@ EXPORT void riveScriptFetchComplete(uint32_t id,
             return;
         }
     }
-    response.body.assign(body, body + bodyLength);
+    response.body = std::move(body);
     complete(id, std::move(response));
 }
 
@@ -142,17 +159,13 @@ EXPORT void riveScriptFetchFail(uint32_t id,
     fail(id, {netErrorCodeFromName(code, codeLength), std::string(message, messageLength)});
 }
 
-// A body is copied into the heap more than once on its way to a script, and
-// a failed allocation there aborts the module, so the byte cap has a ceiling.
-static constexpr uint32_t kMaxResponseBytesCeiling = 64 * 1024 * 1024;
-
 // A byte cap of 0 keeps the default.
 EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes)
 {
     NetLimits netLimits;
     if (maxResponseBytes != 0)
     {
-        netLimits.maxResponseBodyBytes = std::min(maxResponseBytes, kMaxResponseBytesCeiling);
+        netLimits.maxResponseBodyBytes = maxResponseBytes;
     }
     setLimits(netLimits);
 }

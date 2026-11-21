@@ -33,21 +33,6 @@
     return new Uint8Array(wasmMemory.buffer);
   }
 
-  // Copies `parts`, Uint8Arrays of `size` bytes in all, into one block; 0
-  // when the heap has no room.
-  function copyIn(parts, size) {
-    const ptr = _malloc(size || 1);
-    if (ptr) {
-      const view = heap();
-      let offset = ptr;
-      for (let i = 0; i < parts.length; i++) {
-        view.set(parts[i], offset);
-        offset += parts[i].byteLength;
-      }
-    }
-    return ptr;
-  }
-
   // [ptr, byte length]; ptr is 0 when the heap has no room.
   function copyString(text) {
     const length = lengthBytesUTF8(text);
@@ -113,19 +98,20 @@
     for (let i = 0; i < body.length; i++) {
       size += body[i].byteLength;
     }
-    const bodyPtr = copyIn(body, size);
-    const ok = meta[0] && bodyPtr;
+    // The runtime sizes the body and the parts are written straight into it.
+    const bodyPtr =
+      meta[0] && size ? Module["_riveScriptFetchReserveBody"](size) >>> 0 : 0;
+    const ok = meta[0] && (bodyPtr || !size);
     if (ok) {
-      Module["_riveScriptFetchComplete"](
-        id,
-        status | 0,
-        meta[0],
-        meta[1],
-        bodyPtr,
-        size,
-      );
+      const view = heap();
+      let offset = bodyPtr;
+      for (let i = 0; i < body.length; i++) {
+        view.set(body[i], offset);
+        offset += body[i].byteLength;
+      }
+      Module["_riveScriptFetchComplete"](id, status | 0, meta[0], meta[1]);
     }
-    release([meta[0], bodyPtr]);
+    release([meta[0]]);
     if (!ok) {
       reportError(id, "tooLarge", "the response does not fit in memory");
     }

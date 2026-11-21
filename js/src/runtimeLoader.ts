@@ -84,23 +84,18 @@ export interface ScriptFetchOptions {
    */
   allowedHosts?: string[];
   /**
-   * Largest response body, in bytes, up to 64 MiB. 0 keeps the default of
-   * 16 MiB.
+   * Largest response body, in bytes. 0 keeps the default of 16 MiB. Bodies
+   * are held whole in the runtime's memory, several at once, so allow no
+   * more than the page can spare: running out can stop the runtime.
    */
   maxResponseBytes?: number;
 }
 
-// The runtime's ceiling for maxResponseBytes.
-const maxScriptFetchResponseBytes = 64 * 1024 * 1024;
-
-// A non-negative integer that fits in a uint32, else the fallback.
-const uint32Option = (value: number | undefined, fallback: number): number =>
-  typeof value === "number" &&
-  Number.isInteger(value) &&
-  value >= 0 &&
-  value <= 0xffffffff
-    ? value
-    : fallback;
+// Whole bytes that fit in a uint32; 0 keeps the runtime's default.
+const responseBytesOption = (value: number | undefined): number =>
+  typeof value === "number" && value > 0
+    ? Math.min(Math.max(Math.floor(value), 1), 0xffffffff)
+    : 0;
 
 const hostPattern = /^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)*$/;
 
@@ -588,12 +583,6 @@ export class RuntimeLoader {
       if (options.proxyUrl) {
         checkProxyUrl(options.proxyUrl);
       }
-      if ((options.maxResponseBytes ?? 0) > maxScriptFetchResponseBytes) {
-        console.warn(
-          "[Rive] maxResponseBytes is capped at 64 MiB " +
-            `(${maxScriptFetchResponseBytes} bytes).`,
-        );
-      }
       RuntimeLoader.scriptFetch = {
         ...options,
         allowedHosts: hosts?.slice(),
@@ -632,8 +621,7 @@ export class RuntimeLoader {
       options && {
         proxyUrl: options.proxyUrl || null,
         allowedHosts: options.allowedHosts ?? null,
-        // 0 keeps the runtime's default.
-        maxResponseBytes: uint32Option(options.maxResponseBytes, 0),
+        maxResponseBytes: responseBytesOption(options.maxResponseBytes),
       },
     );
   }

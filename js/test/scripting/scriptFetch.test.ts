@@ -200,6 +200,44 @@ describe("script fetch()", () => {
     expect(redirect).toContain("fetch redirect failed: policy:");
   });
 
+  test("fails a body the heap has no room for", async () => {
+    rive.RuntimeLoader.setScriptFetch(true);
+    const runtime: any = await rive.RuntimeLoader.awaitInstance();
+    // The heap grows to 2 GiB at most.
+    expect(runtime._riveScriptFetchReserveBody(0x80000000)).toBe(0);
+    const reserveBody = runtime._riveScriptFetchReserveBody;
+    runtime._riveScriptFetchReserveBody = () => 0;
+    try {
+      await play();
+      const [ok] = await awaitOutcomes("ok");
+      expect(ok).toContain(
+        "fetch ok failed: tooLarge: the response does not fit in memory",
+      );
+    } finally {
+      runtime._riveScriptFetchReserveBody = reserveBody;
+    }
+  });
+
+  test("rounds maxResponseBytes to whole bytes that fit", async () => {
+    const runtime: any = await rive.RuntimeLoader.awaitInstance();
+    const configure = jest.spyOn(runtime, "configureScriptFetch");
+    const resolved = (maxResponseBytes: number): number => {
+      configure.mockClear();
+      rive.RuntimeLoader.setScriptFetch({ maxResponseBytes });
+      return (configure.mock.calls[0][0] as any).maxResponseBytes;
+    };
+    try {
+      expect(resolved(256 * 1024 * 1024)).toBe(256 * 1024 * 1024);
+      expect(resolved(71.7 * 1024 * 1024)).toBe(75182899);
+      expect(resolved(0.5)).toBe(1);
+      expect(resolved(2 ** 32)).toBe(0xffffffff);
+      expect(resolved(-1)).toBe(0);
+      expect(resolved(NaN)).toBe(0);
+    } finally {
+      configure.mockRestore();
+    }
+  });
+
   test("reads streamed bodies and enforces the limit across chunks", async () => {
     const ok = streamed(["hel", "lo"]);
     const large = streamed(["x".repeat(40), "x".repeat(40), "x".repeat(40)]);
@@ -484,19 +522,17 @@ describe("script fetch()", () => {
       expect(large).toContain("fetch large failed: tooLarge:");
     });
 
-    test("caps maxResponseBytes at 64 MiB", async () => {
-      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    test("carries the largest maxResponseBytes to the transport", async () => {
       rive.RuntimeLoader.setScriptFetch({
         proxyUrl,
-        maxResponseBytes: 256 * 1024 * 1024,
+        maxResponseBytes: Infinity,
       });
-      expect(warn).toHaveBeenCalledTimes(1);
-      warn.mockRestore();
       await play();
       await loadProxy();
       ready();
-      await awaitOutcomes("ok");
-      expect(sent("fetch", "/ok")[0].maxBodyBytes).toBe(64 * 1024 * 1024);
+      const [ok] = await awaitOutcomes("ok");
+      expect(ok).toContain("fetch ok: 200 OK hello");
+      expect(sent("fetch", "/ok")[0].maxBodyBytes).toBe(0xffffffff);
     });
 
     test("refuses malformed responses", async () => {
