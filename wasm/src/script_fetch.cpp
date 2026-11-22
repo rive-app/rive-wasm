@@ -6,7 +6,6 @@
 
 #include <emscripten.h>
 #include <emscripten/threading.h>
-#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -42,6 +41,13 @@ EM_JS(void, rive_script_fetch_abort, (uint32_t id), {
     var bridge = Module["scriptFetch"];
     if (bridge) {
         bridge["abort"](id);
+    }
+});
+
+EM_JS(void, rive_script_fetch_resume, (uint32_t id), {
+    var bridge = Module["scriptFetch"];
+    if (bridge) {
+        bridge["resume"](id);
     }
 });
 // clang-format on
@@ -81,35 +87,16 @@ public:
     }
 
     void abort(RequestId id) override { rive_script_fetch_abort(id); }
+
+    void resume(RequestId id) override { rive_script_fetch_resume(id); }
 };
 } // namespace
 
-// The body of the response reported next, written by the transport in place.
-static std::vector<uint8_t> s_body;
-
-// Where to write a body of `size` bytes, or null when the heap has no room.
-EXPORT uint8_t* riveScriptFetchReserveBody(uint32_t size)
+// `meta` is the status text, final URL, then header names and values, NUL
+// separated. 0 refuses the response; 1 keeps timing the body, 2 does not.
+EXPORT int
+riveScriptFetchRespond(uint32_t id, uint32_t status, const char* meta, uint32_t metaLength)
 {
-    // A vector that cannot grow aborts, so the room is tried for first, though
-    // another thread can still take it. Volatile keeps the trial compiled in.
-    static void* volatile s_probe;
-    s_probe = malloc(size);
-    if (s_probe == nullptr)
-    {
-        return nullptr;
-    }
-    free(s_probe);
-    s_body.resize(size);
-    return s_body.data();
-}
-
-// `meta` holds the status text, the final URL, then each header's name and
-// value, NUL separated. The body is the one last reserved, if any.
-EXPORT void
-riveScriptFetchComplete(uint32_t id, uint32_t status, const char* meta, uint32_t metaLength)
-{
-    std::vector<uint8_t> body;
-    body.swap(s_body);
     std::vector<std::string> fields;
     size_t fieldStart = 0;
     for (size_t i = 0; i <= metaLength; i++)
@@ -123,7 +110,7 @@ riveScriptFetchComplete(uint32_t id, uint32_t status, const char* meta, uint32_t
     if (fields.size() % 2 != 0 || status > 999)
     {
         fail(id, {NetErrorCode::Network, "the script fetch transport sent a malformed response"});
-        return;
+        return 0;
     }
     HttpResponse response;
     response.status = (uint16_t)status;
@@ -143,19 +130,33 @@ riveScriptFetchComplete(uint32_t id, uint32_t status, const char* meta, uint32_t
         if (!NetPolicy::check(landed, limits(), &error))
         {
             fail(id, {NetErrorCode::Policy, "a redirect was refused: " + error.message});
-            return;
+            return 0;
         }
     }
-    response.body = std::move(body);
-    complete(id, std::move(response));
+    return respond(id, std::move(response)) ? 1 : 2;
 }
 
+// More of the body. False when the transport is to read no more: until it is
+// resumed, or at all once the request is over.
+EXPORT bool riveScriptFetchReceive(uint32_t id, const uint8_t* bytes, uint32_t length)
+{
+    return receive(id, bytes, length);
+}
+
+EXPORT void riveScriptFetchFinish(uint32_t id) { finish(id); }
+
+// With no code and no message, when the page had no memory for either.
 EXPORT void riveScriptFetchFail(uint32_t id,
                                 const char* code,
                                 uint32_t codeLength,
                                 const char* message,
                                 uint32_t messageLength)
 {
+    if (code == nullptr || message == nullptr)
+    {
+        fail(id, {NetErrorCode::Network, "the request failed and the page is out of memory"});
+        return;
+    }
     fail(id, {netErrorCodeFromName(code, codeLength), std::string(message, messageLength)});
 }
 

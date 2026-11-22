@@ -7,11 +7,11 @@
   // How long the proxy page gets to load and answer the first request.
   const HANDSHAKE_TIMEOUT_MS = 10000;
 
-  // https://fetch.spec.whatwg.org/#null-body-status
-  const NULL_BODY_STATUSES = [101, 103, 204, 205, 304];
-
   // Most a proxy response's header names and values may add up to.
   const MAX_PROXY_HEADER_BYTES = 256 * 1024;
+
+  // Most body bytes handed to the runtime in one piece.
+  const MAX_RUN_BYTES = 1 << 20;
 
   let proxyUrl = null;
   // Lower-cased hosts: "api.example.com", "*.example.com" for any subdomain,
@@ -25,8 +25,8 @@
   let handshakeTimer = 0;
   // Proxy requests waiting for the handshake, as [message, transfer].
   let queued = [];
-  // Requests not yet settled or aborted, by id, as {deadline, maxBodyBytes,
-  // timer, controller}; controller is set on direct requests only.
+  // Requests not yet settled or aborted, by id; controller is set on direct
+  // requests only, and resume while the runtime wants no more of the body.
   const pending = new Map();
 
   function heap() {
@@ -53,17 +53,25 @@
   function reportError(id, code, message) {
     const codeString = copyString(code);
     const messageString = copyString(message);
-    // Without room for even this, the runtime's watchdog settles it.
-    if (codeString[0] && messageString[0]) {
-      Module["_riveScriptFetchFail"](
-        id,
-        codeString[0],
-        codeString[1],
-        messageString[0],
-        messageString[1],
-      );
-    }
+    // Without room for even these, it still fails, with no code or message.
+    const told = codeString[0] && messageString[0];
+    Module["_riveScriptFetchFail"](
+      id,
+      told ? codeString[0] : 0,
+      told ? codeString[1] : 0,
+      told ? messageString[0] : 0,
+      told ? messageString[1] : 0,
+    );
     release([codeString[0], messageString[0]]);
+  }
+
+  // Lets a body the runtime paused carry on, or see that it is over.
+  function wake(entry) {
+    if (entry && entry.resume) {
+      const resume = entry.resume;
+      entry.resume = null;
+      resume();
+    }
   }
 
   // Forgets `id`; false when it was not pending.
@@ -74,6 +82,7 @@
     }
     clearTimeout(entry.timer);
     pending.delete(id);
+    wake(entry);
     return true;
   }
 
@@ -83,37 +92,74 @@
     }
   }
 
-  // `headers` as [[name, value]], `body` as Uint8Array parts.
-  function complete(id, status, statusText, url, headers, body) {
-    if (!settle(id)) {
-      return;
+  // The request a response no longer fits in memory for.
+  function outOfMemory(id, entry) {
+    fail(id, "tooLarge", "the response does not fit in memory");
+    cancel(id, entry);
+    return false;
+  }
+
+  // Reports the status and `headers`, as [[name, value]], ahead of the body.
+  // False when the request is over.
+  function respond(id, entry, status, statusText, url, headers) {
+    if (pending.get(id) !== entry || entry.responded) {
+      return false;
     }
+    entry.responded = true;
     // None of these can hold a NUL: the browser's Headers refuse one.
     const fields = [String(statusText), String(url)];
     for (let i = 0; i < headers.length; i++) {
       fields.push(String(headers[i][0]), String(headers[i][1]));
     }
     const meta = copyString(fields.join("\0"));
-    let size = 0;
-    for (let i = 0; i < body.length; i++) {
-      size += body[i].byteLength;
+    if (!meta[0]) {
+      return outOfMemory(id, entry);
     }
-    // The runtime sizes the body and the parts are written straight into it.
-    const bodyPtr =
-      meta[0] && size ? Module["_riveScriptFetchReserveBody"](size) >>> 0 : 0;
-    const ok = meta[0] && (bodyPtr || !size);
-    if (ok) {
-      const view = heap();
-      let offset = bodyPtr;
-      for (let i = 0; i < body.length; i++) {
-        view.set(body[i], offset);
-        offset += body[i].byteLength;
+    const taken = Module["_riveScriptFetchRespond"](
+      id,
+      status | 0,
+      meta[0],
+      meta[1],
+    );
+    _free(meta[0]);
+    // The runtime refused it, and failed the request itself.
+    if (!taken && settle(id)) {
+      cancel(id, entry);
+    }
+    // A body its script reads as it arrives is no longer timed.
+    if (taken === 2) {
+      clearTimeout(entry.timer);
+    }
+    return pending.get(id) === entry;
+  }
+
+  // Hands the runtime more of the body, waiting whenever it asks for no more
+  // yet. False when the request is over.
+  async function deliver(id, entry, bytes) {
+    for (let at = 0; at < bytes.byteLength; at += MAX_RUN_BYTES) {
+      if (pending.get(id) !== entry) {
+        return false;
       }
-      Module["_riveScriptFetchComplete"](id, status | 0, meta[0], meta[1]);
+      const run = bytes.subarray(at, at + MAX_RUN_BYTES);
+      const ptr = _malloc(run.byteLength);
+      if (!ptr) {
+        return outOfMemory(id, entry);
+      }
+      heap().set(run, ptr);
+      const more = Module["_riveScriptFetchReceive"](id, ptr, run.byteLength);
+      _free(ptr);
+      if (!more && pending.get(id) === entry) {
+        await new Promise(function (resolve) {
+          entry.resume = resolve;
+        });
+      }
     }
-    release([meta[0]]);
-    if (!ok) {
-      reportError(id, "tooLarge", "the response does not fit in memory");
+    return pending.get(id) === entry;
+  }
+
+  function finish(id) {
+    if (settle(id)) {
+      Module["_riveScriptFetchFinish"](id);
     }
   }
 
@@ -166,32 +212,6 @@
 
   // Direct transport.
 
-  async function readBody(response, maxBodyBytes) {
-    if (!response.body) {
-      const whole = await response.arrayBuffer();
-      if (whole.byteLength > maxBodyBytes) {
-        throw tooLarge(maxBodyBytes);
-      }
-      return [new Uint8Array(whole)];
-    }
-    const reader = response.body.getReader();
-    const chunks = [];
-    let size = 0;
-    for (;;) {
-      const step = await reader.read();
-      if (step.done) {
-        break;
-      }
-      size += step.value.byteLength;
-      if (size > maxBodyBytes) {
-        reader.cancel().catch(function () {});
-        throw tooLarge(maxBodyBytes);
-      }
-      chunks.push(step.value);
-    }
-    return chunks;
-  }
-
   async function sendDirect(id, entry, request) {
     try {
       const response = await fetch(request["url"], {
@@ -214,28 +234,41 @@
             "cannot follow; fetch the URL it redirects to instead",
         };
       }
-      const maxBodyBytes = request["maxBodyBytes"];
-      const hasBody =
-        request["method"] !== "HEAD" &&
-        NULL_BODY_STATUSES.indexOf(response.status) === -1;
-      const length = Number(response.headers.get("content-length"));
-      if (hasBody && length > maxBodyBytes) {
-        response.body && response.body.cancel().catch(function () {});
-        throw tooLarge(maxBodyBytes);
-      }
-      const body = await readBody(response, maxBodyBytes);
       const list = [];
       response.headers.forEach(function (value, name) {
         list.push([name, value]);
       });
-      complete(
-        id,
-        response.status,
-        response.statusText,
-        response.url || "",
-        list,
-        body,
-      );
+      if (
+        !respond(
+          id,
+          entry,
+          response.status,
+          response.statusText,
+          response.url || "",
+          list,
+        )
+      ) {
+        return;
+      }
+      if (!response.body) {
+        const whole = new Uint8Array(await response.arrayBuffer());
+        if (!(await deliver(id, entry, whole))) {
+          return;
+        }
+      } else {
+        const reader = response.body.getReader();
+        for (;;) {
+          const step = await reader.read();
+          if (step.done) {
+            break;
+          }
+          if (!(await deliver(id, entry, step.value))) {
+            reader.cancel().catch(function () {});
+            return;
+          }
+        }
+      }
+      finish(id);
     } catch (thrown) {
       // A timed out or aborted request is already settled, so fail() ignores it.
       if (thrown && typeof thrown.code === "string") {
@@ -254,6 +287,14 @@
   }
 
   // Proxy transport.
+
+  // Asks the proxy for a streamed body's next run.
+  function readOn(id, entry) {
+    if (port && pending.get(id) === entry) {
+      entry.runOwed = true;
+      port.postMessage({ "type": "read", "id": id });
+    }
+  }
 
   // Takes a request back from the queue, or tells the proxy to stop it.
   function withdraw(id) {
@@ -275,6 +316,26 @@
     } else {
       withdraw(id);
     }
+  }
+
+  // Fails the proxy requests already sent, not those waiting for the handshake.
+  function failSent(message) {
+    const waiting = new Set(
+      queued.map(function (item) {
+        return item[0]["id"];
+      }),
+    );
+    pending.forEach(function (entry, id) {
+      if (!entry.controller && !waiting.has(id)) {
+        fail(id, "network", message);
+      }
+    });
+  }
+
+  // Fails a proxy request and stops what the proxy may still be sending.
+  function refuse(id, code, message) {
+    fail(id, code, message);
+    withdraw(id);
   }
 
   // Drops the iframe and fails every proxy request still waiting on it; the
@@ -325,14 +386,17 @@
     } else if (type === "response") {
       const id = data["id"];
       const request = pending.get(id);
-      if (!request) {
+      // A second answer must not fail a body already being handed over.
+      if (!request || request.responded) {
         return;
       }
       if (!wellFormed(data)) {
-        fail(id, "network", "the script fetch proxy sent a malformed response");
+        refuse(id, "network", "the script fetch proxy sent a malformed response");
         return;
       }
       const body = data["body"];
+      // A proxy that streams sends the body after the response.
+      request.streamed = body === undefined;
       if (body && body.byteLength > request.maxBodyBytes) {
         const error = tooLarge(request.maxBodyBytes);
         fail(id, error.code, error.message);
@@ -341,17 +405,44 @@
       // The proxy may have followed a redirect.
       const landed = hostRefusal(data["url"]);
       if (landed) {
-        fail(id, "policy", landed);
+        refuse(id, "policy", landed);
         return;
       }
-      complete(
-        id,
-        data["status"],
-        typeof data["statusText"] === "string" ? data["statusText"] : "",
-        data["url"],
-        data["headers"],
-        body ? [new Uint8Array(body)] : [],
-      );
+      if (
+        respond(
+          id,
+          request,
+          data["status"],
+          typeof data["statusText"] === "string" ? data["statusText"] : "",
+          data["url"],
+          data["headers"],
+        )
+      ) {
+        if (request.streamed) {
+          readOn(id, request);
+        } else {
+          deliverProxied(id, request, body, finish);
+        }
+      }
+    } else if (type === "body" || type === "end") {
+      const id = data["id"];
+      const request = pending.get(id);
+      // Only the run asked for, so runs never overlap.
+      if (!request || !request.streamed || !request.runOwed) {
+        return;
+      }
+      request.runOwed = false;
+      if (type === "end") {
+        finish(id);
+      } else if (
+        Object.prototype.toString.call(data["body"]) !== "[object ArrayBuffer]"
+      ) {
+        refuse(id, "network", "the script fetch proxy sent a malformed response");
+      } else {
+        deliverProxied(id, request, data["body"], function () {
+          readOn(id, request);
+        });
+      }
     } else if (type === "error") {
       if (data["id"] === 0) {
         reset(String(data["message"]));
@@ -359,6 +450,21 @@
         fail(data["id"], String(data["code"]), String(data["message"]));
       }
     }
+  }
+
+  // Hands the runtime `body` from the proxy, then calls `next` unless the
+  // request ended meanwhile.
+  function deliverProxied(id, entry, body, next) {
+    deliver(id, entry, new Uint8Array(body || 0)).then(
+      function (alive) {
+        if (alive) {
+          next(id);
+        }
+      },
+      function () {
+        fail(id, "network", "the response's body could not be read");
+      },
+    );
   }
 
   // A proxy response needs a three-digit status, the URL it came from,
@@ -435,6 +541,7 @@
       // receives this, since it is addressed to the proxy's origin only.
       if (offered) {
         offered.close();
+        failSent("the script fetch proxy reloaded");
       }
       const channel = new MessageChannel();
       offered = channel.port1;
@@ -494,6 +601,7 @@
         "body": body,
         "timeoutMs": timeoutMs,
         "maxBodyBytes": maxBodyBytes,
+        "stream": true,
       };
       if (entry.controller) {
         sendDirect(id, entry, request);
@@ -506,6 +614,9 @@
       if (settle(id)) {
         cancel(id, entry);
       }
+    },
+    "resume": function (id) {
+      wake(pending.get(id));
     },
   };
 

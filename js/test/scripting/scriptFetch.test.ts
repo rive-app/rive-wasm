@@ -1,8 +1,8 @@
 /**
  * @jest-environment-options {"url": "https://other.example.org/"}
  */
-// Needs fixture/fetch.riv, baked from fixture/fetch/main.as. The page is on
-// the host the "other" probe fetches.
+// Needs fixture/fetch.riv and fixture/stream.riv, baked from each one's
+// main.as. The page is on the host the "other" probe fetches.
 import * as path from "path";
 import { MessageChannel as NodeMessageChannel } from "worker_threads";
 import * as rive from "../../src/rive";
@@ -10,8 +10,8 @@ import { readFixture } from "../helpers";
 
 const lines: string[] = (globalThis as any).riveConsoleLines;
 
-const fixture = (): ArrayBuffer =>
-  readFixture(path.join(__dirname, "fixture/fetch.riv"));
+const fixture = (name = "fetch"): ArrayBuffer =>
+  readFixture(path.join(__dirname, `fixture/${name}.riv`));
 
 const ascii = (text: string): ArrayBuffer =>
   new Uint8Array(Array.from(text, (c) => c.charCodeAt(0))).buffer;
@@ -88,14 +88,14 @@ const stubFetch = () => {
 
 const instances: rive.Rive[] = [];
 
-const play = (): Promise<rive.Rive> =>
+const play = (name = "fetch"): Promise<rive.Rive> =>
   new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
     canvas.width = 100;
     canvas.height = 100;
     const r: rive.Rive = new rive.Rive({
       autoplay: true,
-      buffer: fixture(),
+      buffer: fixture(name),
       canvas,
       onLoad: () => resolve(r),
       onLoadError: (event: rive.Event) =>
@@ -120,7 +120,10 @@ const frames = (count: number): Promise<void> =>
 const outcome = (name: string): string | undefined =>
   lines.find(
     (line) =>
-      line.includes(`fetch ${name}: `) || line.includes(`fetch ${name} failed: `),
+      line.includes(`fetch ${name}: `) ||
+      line.includes(`fetch ${name} failed: `) ||
+      line.includes(`stream ${name}: `) ||
+      line.includes(`stream ${name} failed: `),
   );
 
 // Pumps frames until `done` holds or `ms` pass.
@@ -198,24 +201,6 @@ describe("script fetch()", () => {
     expect(network).toContain("fetch network failed: network:");
     expect(large).toContain("fetch large failed: tooLarge:");
     expect(redirect).toContain("fetch redirect failed: policy:");
-  });
-
-  test("fails a body the heap has no room for", async () => {
-    rive.RuntimeLoader.setScriptFetch(true);
-    const runtime: any = await rive.RuntimeLoader.awaitInstance();
-    // The heap grows to 2 GiB at most.
-    expect(runtime._riveScriptFetchReserveBody(0x80000000)).toBe(0);
-    const reserveBody = runtime._riveScriptFetchReserveBody;
-    runtime._riveScriptFetchReserveBody = () => 0;
-    try {
-      await play();
-      const [ok] = await awaitOutcomes("ok");
-      expect(ok).toContain(
-        "fetch ok failed: tooLarge: the response does not fit in memory",
-      );
-    } finally {
-      runtime._riveScriptFetchReserveBody = reserveBody;
-    }
   });
 
   test("rounds maxResponseBytes to whole bytes that fit", async () => {
@@ -357,6 +342,110 @@ describe("script fetch()", () => {
     expect(outcome("hang")).toBeUndefined();
   });
 
+  describe("with a body read as it arrives", () => {
+    const kRun = 1 << 20;
+
+    // A reply whose body is `count` runs of a megabyte, counting those read.
+    const megabytes = (count: number) => {
+      const state = { reads: 0, cancelled: false };
+      const run = new Uint8Array(kRun);
+      const response = {
+        ...reply(200),
+        body: {
+          getReader: () => ({
+            read: async () =>
+              state.reads < count && !state.cancelled
+                ? { done: false, value: (state.reads++, run) }
+                : { done: true, value: undefined },
+            cancel: async () => {
+              state.cancelled = true;
+            },
+          }),
+        },
+      };
+      return { state, response };
+    };
+
+    // The stream fixture's three requests, answered by path.
+    const answer = (replies: Record<string, unknown>) => {
+      (globalThis as any).fetch = jest.fn((url: string) =>
+        Promise.resolve(replies[new URL(url).pathname] ?? reply(200)),
+      );
+    };
+
+    test("a script reads a body a run at a time or whole", async () => {
+      answer({
+        "/runs": streamed(["ab", "cde"]).response,
+        "/whole": streamed(["hel", "lo"]).response,
+      });
+      rive.RuntimeLoader.setScriptFetch(true);
+      await play("stream");
+      const [runs, whole, hold] = await awaitOutcomes("runs", "whole", "hold");
+      expect(runs).toContain("stream runs: 5 bytes");
+      expect(whole).toContain("stream whole: hello");
+      expect(hold).toContain("stream hold: 200");
+    });
+
+    test("only a body read whole is held to the size limit", async () => {
+      answer({
+        "/runs": streamed(["ab", "cde"]).response,
+        "/whole": streamed(["hel", "lo"]).response,
+      });
+      rive.RuntimeLoader.setScriptFetch({ maxResponseBytes: 4 });
+      await play("stream");
+      const [runs, whole] = await awaitOutcomes("runs", "whole");
+      expect(runs).toContain("stream runs: 5 bytes");
+      expect(whole).toContain("stream whole failed: tooLarge:");
+    });
+
+    test("a body past 64 MiB arrives in runs and whole", async () => {
+      answer({
+        "/runs": megabytes(72).response,
+        "/blob": megabytes(70).response,
+      });
+      rive.RuntimeLoader.setScriptFetch({
+        maxResponseBytes: 128 * 1024 * 1024,
+      });
+      await play("stream");
+      await waitFor(() => !!outcome("runs") && !!outcome("blob"), 30000);
+      expect(outcome("runs")).toContain(`stream runs: ${72 * kRun} bytes`);
+      expect(outcome("blob")).toContain(`stream blob: ${70 * kRun} bytes`);
+    }, 60000);
+
+    test("a body is read no faster than its script takes it", async () => {
+      const read = megabytes(24);
+      // Finite, so a body that is never stopped fails this instead of
+      // running on.
+      const unread = megabytes(64);
+      answer({ "/runs": read.response, "/hold": unread.response });
+      rive.RuntimeLoader.setScriptFetch(true);
+      await play("stream");
+      const [runs] = await awaitOutcomes("runs");
+      // Past the megabytes that wait unread at once, so the transport was
+      // stopped and started again.
+      expect(runs).toContain(`stream runs: ${24 * kRun} bytes`);
+      // Nothing takes the other body, so reading it stops.
+      await frames(20);
+      const settled = unread.state.reads;
+      await frames(20);
+      expect(unread.state.reads).toBe(settled);
+      expect(settled).toBeGreaterThanOrEqual(8);
+      expect(settled).toBeLessThan(12);
+    });
+
+    test("cleanup stops a body still arriving", async () => {
+      const unread = megabytes(64);
+      answer({ "/hold": unread.response });
+      rive.RuntimeLoader.setScriptFetch(true);
+      const r = await play("stream");
+      await awaitOutcomes("hold");
+      await frames(10);
+      cleanupNow(r);
+      await frames(5);
+      expect(unread.state.cancelled).toBe(true);
+    });
+  });
+
   describe("through a proxy", () => {
     const proxyUrl = "https://proxy.example.net/fetch.html";
     // jsdom has no MessageChannel; the transport uses the global one.
@@ -369,15 +458,48 @@ describe("script fetch()", () => {
     let received: any[];
     // Fields to replace in the response to a path.
     let overrides: Record<string, object>;
+    // Bodies sent a run per read when a request asks to stream, by path.
+    let streams: Record<string, Uint8Array[]>;
+    // Each streamed request's runs still to send, and how many were read.
+    let streaming: Map<number, { runs: Uint8Array[]; reads: number }>;
 
     // Answers like the proxy page, by the path fetched; /hang never settles.
     const answer = (port: MessagePort, data: any) => {
+      if (data.type === "read") {
+        const body = streaming.get(data.id);
+        if (!body) {
+          return;
+        }
+        const run = body.runs.shift();
+        if (run) {
+          body.reads++;
+          port.postMessage({ type: "body", id: data.id, body: run.slice().buffer });
+        } else {
+          streaming.delete(data.id);
+          port.postMessage({ type: "end", id: data.id });
+        }
+        return;
+      }
+      if (data.type === "abort") {
+        streaming.delete(data.id);
+        return;
+      }
       if (data.type !== "fetch") {
         return;
       }
       const { id, url } = data;
       const pathname = new URL(url).pathname;
-      if (pathname === "/network") {
+      if (data.stream && streams[pathname]) {
+        streaming.set(id, { runs: [...streams[pathname]], reads: 0 });
+        port.postMessage({
+          type: "response",
+          id,
+          status: 200,
+          statusText: "OK",
+          url,
+          headers: [],
+        });
+      } else if (pathname === "/network") {
         port.postMessage({ type: "error", id, code: "network", message: "x" });
       } else if (pathname === "/redirect") {
         // A proxy page that followed a redirect to another public host.
@@ -422,6 +544,8 @@ describe("script fetch()", () => {
       connects = [];
       received = [];
       overrides = {};
+      streams = {};
+      streaming = new Map();
       jest
         .spyOn(HTMLIFrameElement.prototype, "contentWindow", "get")
         .mockReturnValue({
@@ -625,7 +749,7 @@ describe("script fetch()", () => {
       expect(received).toEqual([]);
     });
 
-    test("a proxy page that reloads and never answers fails its requests", async () => {
+    test("a proxy page that reloads fails the requests it had", async () => {
       rive.RuntimeLoader.setScriptFetch({ proxyUrl });
       await play();
       const frame = await loadProxy();
@@ -650,7 +774,8 @@ describe("script fetch()", () => {
       jest.useRealTimers();
       const [hang] = await awaitOutcomes("hang");
       expect(hang).toContain("fetch hang failed: network:");
-      expect(hang).toContain("did not answer");
+      expect(hang).toContain("reloaded");
+      // The reloaded page never answered either.
       expect(document.querySelector("iframe")).toBeNull();
     });
 
@@ -700,6 +825,95 @@ describe("script fetch()", () => {
       } finally {
         base.remove();
       }
+    });
+
+    describe("that streams", () => {
+      const text = (value: string) => new Uint8Array(ascii(value));
+      const megabytes = (count: number) =>
+        new Array(count).fill(new Uint8Array(1 << 20));
+
+      test("sends a body a run per read", async () => {
+        streams = {
+          "/runs": [text("ab"), text("cde")],
+          "/whole": [text("hel"), text("lo")],
+          "/hold": [text("x")],
+        };
+        rive.RuntimeLoader.setScriptFetch({ proxyUrl, maxResponseBytes: 4 });
+        await play("stream");
+        await loadProxy();
+        ready();
+        const [runs, whole, hold] = await awaitOutcomes("runs", "whole", "hold");
+        expect(runs).toContain("stream runs: 5 bytes");
+        // Only a body read whole is held to the size limit.
+        expect(whole).toContain("stream whole failed: tooLarge:");
+        expect(hold).toContain("stream hold: 200");
+        expect(sent("fetch", "/runs")[0].stream).toBe(true);
+        expect(sent("read").length).toBeGreaterThanOrEqual(3);
+      });
+
+      test("asks for no more than its script takes", async () => {
+        streams = { "/runs": megabytes(72), "/hold": megabytes(64) };
+        rive.RuntimeLoader.setScriptFetch({ proxyUrl });
+        await play("stream");
+        await loadProxy();
+        ready();
+        await waitFor(() => !!outcome("runs"), 30000);
+        expect(outcome("runs")).toContain(`stream runs: ${72 << 20} bytes`);
+        const [hold] = sent("fetch", "/hold");
+        await frames(20);
+        const settled = streaming.get(hold.id)!.reads;
+        await frames(20);
+        expect(streaming.get(hold.id)!.reads).toBe(settled);
+        expect(settled).toBeGreaterThanOrEqual(8);
+        expect(settled).toBeLessThan(12);
+      }, 60000);
+
+      test("a proxy that answers whole still serves a reader", async () => {
+        overrides = { "/runs": { body: ascii("abcde") } };
+        rive.RuntimeLoader.setScriptFetch({ proxyUrl });
+        await play("stream");
+        await loadProxy();
+        ready();
+        const [runs] = await awaitOutcomes("runs");
+        expect(runs).toContain("stream runs: 5 bytes");
+        expect(sent("read")).toEqual([]);
+      });
+
+      test("cleanup stops a body still arriving", async () => {
+        streams = { "/hold": megabytes(64) };
+        rive.RuntimeLoader.setScriptFetch({ proxyUrl });
+        const r = await play("stream");
+        await loadProxy();
+        ready();
+        await awaitOutcomes("hold");
+        const [hold] = sent("fetch", "/hold");
+        cleanupNow(r);
+        await waitFor(() => sent("abort").length > 0, 2000);
+        expect(sent("abort")).toContainEqual({ type: "abort", id: hold.id });
+      });
+
+      test("refuses a run that isn't an ArrayBuffer", async () => {
+        streams = { "/runs": [text("ab")] };
+        rive.RuntimeLoader.setScriptFetch({ proxyUrl });
+        await play("stream");
+        await loadProxy();
+        const port = connects[0].port;
+        const reply = port.onmessage!;
+        port.onmessage = (event: MessageEvent) => {
+          if (event.data.type === "read") {
+            received.push(event.data);
+            port.postMessage({ type: "body", id: event.data.id, body: "ab" });
+            return;
+          }
+          reply.call(port, event);
+        };
+        ready();
+        const [runs] = await awaitOutcomes("runs");
+        expect(runs).toContain("stream runs failed: network:");
+        const [request] = sent("fetch", "/runs");
+        await waitFor(() => sent("abort").length > 0, 2000);
+        expect(sent("abort")).toContainEqual({ type: "abort", id: request.id });
+      });
     });
 
     test("a malformed proxyUrl fails requests instead of throwing", async () => {

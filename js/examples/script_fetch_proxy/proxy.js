@@ -17,8 +17,8 @@
   const NULL_BODY_STATUSES = [101, 103, 204, 205, 304];
 
   let port = null;
-  // id -> { controller, timer, error }. `error` is set when this page stops
-  // a request, and is reported in place of the abort that follows.
+  // id -> { controller, timer, error, streaming, reader, reading }. `error`,
+  // set when this page stops a request, replaces the abort that follows.
   const inFlight = new Map();
 
   const tooLarge = (maxBodyBytes) => ({
@@ -32,6 +32,10 @@
     const entry = inFlight.get(id);
     if (entry && !entry.error) {
       entry.error = error;
+      // A streamed body reports nothing more, read or not.
+      if (entry.streaming) {
+        inFlight.delete(id);
+      }
       entry.controller.abort();
     }
   }
@@ -62,6 +66,44 @@
       offset += chunk.byteLength;
     }
     return body.buffer;
+  }
+
+  // Sends a streamed body's next run, or its end.
+  async function readOn(id) {
+    const entry = inFlight.get(id);
+    if (!entry?.streaming || entry.reading) {
+      return;
+    }
+    entry.reading = true;
+    let step = null;
+    try {
+      step = entry.reader ? await entry.reader.read() : { done: true };
+    } catch {}
+    entry.reading = false;
+    if (inFlight.get(id) !== entry) {
+      return;
+    }
+    if (!step || step.done) {
+      inFlight.delete(id);
+      reply(
+        step
+          ? { type: "end", id }
+          : {
+              type: "error",
+              id,
+              code: "network",
+              message: "the response's body could not be read",
+            },
+      );
+      return;
+    }
+    const bytes = step.value;
+    // Transfers only the run, not a larger buffer it may view.
+    const buffer =
+      bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
+        ? bytes.buffer
+        : bytes.slice().buffer;
+    reply({ type: "body", id, body: buffer }, [buffer]);
   }
 
   async function start(request) {
@@ -101,6 +143,21 @@
             "cannot follow; fetch the URL it redirects to instead",
         };
       }
+      const answer = {
+        type: "response",
+        id,
+        status: response.status,
+        statusText: response.statusText,
+        // The URL the script asked for; the runtime checks its host again.
+        url: request.url,
+        headers: [...response.headers],
+      };
+      if (request.stream) {
+        entry.streaming = true;
+        entry.reader = response.body?.getReader() ?? null;
+        reply(answer);
+        return;
+      }
       const hasBody =
         request.method !== "HEAD" &&
         !NULL_BODY_STATUSES.includes(response.status);
@@ -112,19 +169,7 @@
         throw tooLarge(maxBodyBytes);
       }
       const body = await readBody(response, maxBodyBytes);
-      reply(
-        {
-          type: "response",
-          id,
-          status: response.status,
-          statusText: response.statusText,
-          // The URL the script asked for; the runtime checks its host again.
-          url: request.url,
-          headers: [...response.headers],
-          body,
-        },
-        [body],
-      );
+      reply({ ...answer, body }, [body]);
     } catch (thrown) {
       let error = entry.error;
       if (!error && typeof thrown?.code === "string") {
@@ -143,13 +188,17 @@
       }
     } finally {
       clearTimeout(entry.timer);
-      inFlight.delete(id);
+      if (!entry.streaming) {
+        inFlight.delete(id);
+      }
     }
   }
 
   function onRequest({ data }) {
     if (data?.type === "fetch") {
       start(data);
+    } else if (data?.type === "read") {
+      readOn(data.id);
     } else if (data?.type === "abort") {
       stop(data.id, { code: "aborted", message: "the request was cancelled" });
     }

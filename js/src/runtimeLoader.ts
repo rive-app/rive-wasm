@@ -84,9 +84,11 @@ export interface ScriptFetchOptions {
    */
   allowedHosts?: string[];
   /**
-   * Largest response body, in bytes. 0 keeps the default of 16 MiB. Bodies
-   * are held whole in the runtime's memory, several at once, so allow no
-   * more than the page can spare: running out can stop the runtime.
+   * Largest response body a script may read whole, in bytes. 0 keeps the
+   * default of 16 MiB. Such bodies are held in the runtime's memory, several
+   * at once, so allow no more than the page can spare: running out can stop
+   * the runtime. A body a script reads as it arrives has no limit, except
+   * through a proxy page, which hands bodies over whole.
    */
   maxResponseBytes?: number;
 }

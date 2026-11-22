@@ -81,11 +81,19 @@ travels on the port.
 
 | Direction | Message |
 | --- | --- |
-| runtime → proxy | `{ type: "fetch", id, url, method, headers: [[name, value]], body: ArrayBuffer \| null, timeoutMs, maxBodyBytes }` |
+| runtime → proxy | `{ type: "fetch", id, url, method, headers: [[name, value]], body: ArrayBuffer \| null, timeoutMs, maxBodyBytes, stream: true }` |
+| runtime → proxy | `{ type: "read", id }` |
 | runtime → proxy | `{ type: "abort", id }` |
 | proxy → runtime | `{ type: "ready", version: 1 }` |
 | proxy → runtime | `{ type: "response", id, status, statusText, url, headers: [[name, value]], body: ArrayBuffer }` |
+| proxy → runtime | `{ type: "body", id, body: ArrayBuffer }` |
+| proxy → runtime | `{ type: "end", id }` |
 | proxy → runtime | `{ type: "error", id, code, message }` |
+
+With `stream`, the proxy sends the `response` without its `body`, then one
+`body` per `read`, then `end` or an `error`. The timeout then ends at the
+response, and the runtime limits the body's size itself. A proxy that ignores
+`stream` and answers with the whole body still works, under `maxBodyBytes`.
 
 `code` is one of `network`, `timeout`, `tooLarge`, `policy` or `aborted`. An
 `error` with `id: 0` tells the runtime the proxy can't serve it at all; the
@@ -99,7 +107,7 @@ Whatever the proxy sends, the runtime still:
 - refuses a response with no `url`, a `status` that isn't a three-digit
   integer, headers that aren't string pairs, more than 256 KiB of headers or
   a body that isn't an `ArrayBuffer` (or absent).
-- refuses a body larger than `maxBodyBytes`.
+- refuses a whole body larger than `maxBodyBytes`.
 - ignores messages for requests it no longer waits on.
 
 ## Troubleshooting
