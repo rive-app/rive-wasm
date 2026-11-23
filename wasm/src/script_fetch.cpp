@@ -6,6 +6,7 @@
 
 #include <emscripten.h>
 #include <emscripten/threading.h>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,7 +22,7 @@ namespace
 EM_JS_DEPS(riveScriptFetch, "$UTF8ToString,$stringToUTF8,$lengthBytesUTF8,malloc,free");
 
 // Views wasmMemory directly: memory growth detaches cached heap views.
-EM_JS(int, rive_script_fetch_start, (uint32_t id, const char* url, const char* method, const char* const* headers, uint32_t headerCount, const uint8_t* body, uint32_t bodySize, uint32_t timeoutMs, uint32_t maxBodyBytes), {
+EM_JS(int, rive_script_fetch_start, (uint32_t id, const char* url, const char* method, const char* const* headers, uint32_t headerCount, const uint8_t* body, uint32_t bodySize, uint32_t timeoutMs, uint32_t maxBodyBytes, int hostChosen), {
     var bridge = Module["scriptFetch"];
     if (!bridge || typeof fetch !== "function") {
         return 0;
@@ -33,7 +34,7 @@ EM_JS(int, rive_script_fetch_start, (uint32_t id, const char* url, const char* m
     }
     // A copy out of the shared heap, so it can be transferred.
     var bytes = bodySize === 0 ? null : new Uint8Array(wasmMemory.buffer, body, bodySize).slice().buffer;
-    bridge["start"](id, UTF8ToString(url), UTF8ToString(method), list, bytes, timeoutMs, maxBodyBytes >>> 0);
+    bridge["start"](id, UTF8ToString(url), UTF8ToString(method), list, bytes, timeoutMs, maxBodyBytes >>> 0, hostChosen !== 0);
     return 1;
 });
 
@@ -44,6 +45,17 @@ EM_JS(void, rive_script_fetch_abort, (uint32_t id), {
     }
 });
 
+// Signs with the page's device key, which answers riveScriptCloudSigned
+// exactly once with `done`.
+EM_JS(int, rive_script_cloud_sign, (void* done, const char* message), {
+    var bridge = Module["scriptCloud"];
+    if (!bridge) {
+        return 0;
+    }
+    bridge["sign"](done, UTF8ToString(message));
+    return 1;
+});
+
 EM_JS(void, rive_script_fetch_resume, (uint32_t id), {
     var bridge = Module["scriptFetch"];
     if (bridge) {
@@ -51,6 +63,16 @@ EM_JS(void, rive_script_fetch_resume, (uint32_t id), {
     }
 });
 // clang-format on
+
+void signWithPageKey(const std::string& message, CloudEndpoint::HelloSigned done)
+{
+    auto* waiting = new CloudEndpoint::HelloSigned(std::move(done));
+    if (!rive_script_cloud_sign(waiting, message.c_str()))
+    {
+        std::unique_ptr<CloudEndpoint::HelloSigned> owned(waiting);
+        (*owned)(false, "", "");
+    }
+}
 
 class WebProvider : public Provider
 {
@@ -80,7 +102,8 @@ public:
                                      request.body.data(),
                                      (uint32_t)request.body.size(),
                                      request.timeoutMs,
-                                     limits().maxResponseBodyBytes))
+                                     limits().maxResponseBodyBytes,
+                                     request.hostChosen))
         {
             fail(id, {NetErrorCode::Disabled, "this page has no script fetch transport"});
         }
@@ -170,6 +193,66 @@ EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes)
     }
     setLimits(netLimits);
 }
+
+// An endpoint at `baseUrl` that signs with the page's device key.
+static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId)
+{
+    CloudEndpoint endpoint;
+    endpoint.baseUrl = baseUrl;
+    endpoint.namespaceId = namespaceId;
+    if (!endpoint.baseUrl.empty())
+    {
+        endpoint.signHello = signWithPageKey;
+    }
+    return endpoint;
+}
+
+// Where rive-cloud: requests go; an empty address turns them off. Null when
+// the runtime took the endpoint, else why it refused it, valid until the next
+// call.
+EXPORT const char* riveScriptCloudSet(const char* baseUrl, const char* namespaceId)
+{
+    static std::string s_refusal;
+    s_refusal.clear();
+    return setCloudEndpoint(pageEndpoint(baseUrl, namespaceId), &s_refusal) ? nullptr
+                                                                            : s_refusal.c_str();
+}
+
+// An endpoint for one file to own, as `load()`'s cloudEndpoint; why the runtime
+// refused it is riveScriptCloudRefusal(), until the next call.
+static std::string s_addRefusal;
+EXPORT uint32_t riveScriptCloudAdd(const char* baseUrl, const char* namespaceId)
+{
+    s_addRefusal.clear();
+    return (uint32_t)addCloudEndpoint(pageEndpoint(baseUrl, namespaceId), &s_addRefusal);
+}
+
+EXPORT const char* riveScriptCloudRefusal()
+{
+    return s_addRefusal.empty() ? nullptr : s_addRefusal.c_str();
+}
+
+// `ok` false when the key could not sign; then the strings are not read.
+EXPORT void riveScriptCloudSigned(CloudEndpoint::HelloSigned* waiting,
+                                  bool ok,
+                                  const char* jwk,
+                                  uint32_t jwkLength,
+                                  const char* signature,
+                                  uint32_t signatureLength)
+{
+    std::unique_ptr<CloudEndpoint::HelloSigned> done(waiting);
+    if (ok)
+    {
+        (*done)(true, std::string(jwk, jwkLength), std::string(signature, signatureLength));
+    }
+    else
+    {
+        (*done)(false, "", "");
+    }
+}
+
+// Whether scripts may fetch() any URL, rather than only rive-cloud:.
+EXPORT void riveScriptFetchSetGeneral(bool enabled) { setGeneralFetchEnabled(enabled); }
 
 // Requests already started finish on the transport that started them.
 EXPORT void riveScriptFetchSetEnabled(bool enabled)

@@ -462,10 +462,13 @@ public:
 // deferDecoding decodes animations, artboards (other than the default one) and
 // file level view model instances the first time they're used instead of at
 // import (FileImportOptions::deferDecoding).
+// cloudEndpoint is an endpoint the file takes over (addScriptCloud), or 0
+// for the page's.
 rive::File* load(emscripten::val byteArray,
                  rive::FileAssetLoader* fileAssetLoader,
                  emscripten::val session,
-                 bool deferDecoding)
+                 bool deferDecoding,
+                 uint32_t cloudEndpoint)
 {
     std::vector<unsigned char> rv;
 
@@ -481,6 +484,7 @@ rive::File* load(emscripten::val byteArray,
     // factory, and the session carries the bound render context.
     rive::FileImportOptions options;
     options.deferDecoding = deferDecoding;
+    options.cloudEndpoint = cloudEndpoint;
     auto file = rive::File::import(rv,
                                    jsSessionFactory(session),
                                    nullptr,

@@ -17,6 +17,15 @@
   // Lower-cased hosts: "api.example.com", "*.example.com" for any subdomain,
   // or "*" for any host. null allows any host.
   let allowedHosts = null;
+  // Whether scripts may fetch() any URL, and where rive-cloud: requests go
+  // ("url namespace"), or null without an endpoint.
+  let generalFetch = false;
+  let cloudEndpoint = null;
+  // Whether any file has an endpoint of its own, which needs the transport
+  // whatever the page's settings.
+  let fileCloud = false;
+  // A promise of this origin's device key, {privateKey, jwk}, once asked for.
+  let deviceKey = null;
 
   let frame = null;
   // The channel offered to the proxy, and the one it accepted.
@@ -244,7 +253,10 @@
           entry,
           response.status,
           response.statusText,
-          response.url || "",
+          // The runtime re-checks a final URL against the fetch() rules,
+          // which the host's own engine address need not meet (http: in
+          // development).
+          request["cloud"] ? "" : response.url || "",
           list,
         )
       ) {
@@ -386,8 +398,10 @@
     } else if (type === "response") {
       const id = data["id"];
       const request = pending.get(id);
-      // A second answer must not fail a body already being handed over.
-      if (!request || request.responded) {
+      // A direct request (rive-cloud:, or any without a proxy when it began)
+      // is the page's own: the proxy never settles it. A second answer must
+      // not fail a body already being handed over.
+      if (!request || request.controller || request.responded) {
         return;
       }
       if (!wellFormed(data)) {
@@ -444,9 +458,10 @@
         });
       }
     } else if (type === "error") {
+      const request = pending.get(data["id"]);
       if (data["id"] === 0) {
         reset(String(data["message"]));
-      } else {
+      } else if (request && !request.controller) {
         fail(data["id"], String(data["code"]), String(data["message"]));
       }
     }
@@ -575,8 +590,17 @@
   }
 
   Module["scriptFetch"] = {
-    "start": function (id, url, method, headers, body, timeoutMs, maxBodyBytes) {
-      const refusal = hostRefusal(url);
+    "start": function (id, url, method, headers, body, timeoutMs, maxBodyBytes, cloud) {
+      // `cloud` requests go to the host's own endpoint (rive-cloud: and its
+      // hellos), which allowedHosts does not govern. They never go through
+      // the proxy, whose origin is not the one the engine binds this page's
+      // token to.
+      if (cloud) {
+        // Made on the first cloud request, so a page whose scripts never use
+        // the cloud stores nothing; ready before the challenge comes back.
+        loadDeviceKeyOnce();
+      }
+      const refusal = cloud ? null : hostRefusal(url);
       if (refusal) {
         reportError(id, "policy", refusal);
         return;
@@ -585,7 +609,7 @@
         deadline: performance.now() + timeoutMs,
         maxBodyBytes: maxBodyBytes,
         timer: 0,
-        controller: proxyUrl ? null : new AbortController(),
+        controller: proxyUrl && !cloud ? null : new AbortController(),
       };
       pending.set(id, entry);
       entry.timer = setTimeout(function () {
@@ -601,6 +625,7 @@
         "body": body,
         "timeoutMs": timeoutMs,
         "maxBodyBytes": maxBodyBytes,
+        "cloud": cloud,
         "stream": true,
       };
       if (entry.controller) {
@@ -634,11 +659,202 @@
           return String(host).trim().toLowerCase();
         })
       : null;
-    if (!options) {
-      Module["_riveScriptFetchSetEnabled"](0);
-      return;
+    generalFetch = !!options;
+    if (options) {
+      Module["_riveScriptFetchSetLimits"](options["maxResponseBytes"] >>> 0);
     }
-    Module["_riveScriptFetchSetLimits"](options["maxResponseBytes"] >>> 0);
-    Module["_riveScriptFetchSetEnabled"](1);
+    applyEnabled();
+  };
+
+  // The transport is on for fetch(), for rive-cloud:, or for both.
+  function applyEnabled() {
+    Module["_riveScriptFetchSetGeneral"](generalFetch ? 1 : 0);
+    Module["_riveScriptFetchSetEnabled"](
+      generalFetch || cloudEndpoint || fileCloud ? 1 : 0,
+    );
+  }
+
+  // Rive Cloud. The page's player is a P-256 key made on first use and kept
+  // in this origin's IndexedDB. Its private half cannot be exported, so it
+  // never reaches a script or this code; clearing the site's data makes a
+  // new player.
+
+  function idb(request) {
+    return new Promise(function (resolve, reject) {
+      request.onsuccess = function () {
+        resolve(request.result);
+      };
+      request.onerror = function () {
+        reject(request.error);
+      };
+    });
+  }
+
+  async function loadDeviceKey() {
+    const open = indexedDB.open("rive-cloud", 1);
+    open.onupgradeneeded = function () {
+      open.result.createObjectStore("keys");
+    };
+    const db = await idb(open);
+    try {
+      const keys = function (mode) {
+        return db.transaction("keys", mode).objectStore("keys");
+      };
+      const kept = await idb(keys("readonly").get("device"));
+      if (kept) {
+        return kept;
+      }
+      const pair = await crypto.subtle.generateKey(
+        { "name": "ECDSA", "namedCurve": "P-256" },
+        false,
+        ["sign"],
+      );
+      const pub = await crypto.subtle.exportKey("jwk", pair.publicKey);
+      const made = {
+        "privateKey": pair.privateKey,
+        "jwk": JSON.stringify({
+          "kty": "EC",
+          "crv": "P-256",
+          "x": pub["x"],
+          "y": pub["y"],
+        }),
+      };
+      try {
+        // Kept only once the write has committed: a key used before then
+        // could be lost to an aborted transaction, and the player with it.
+        const store = keys("readwrite");
+        const committed = new Promise(function (resolve, reject) {
+          store.transaction.oncomplete = resolve;
+          store.transaction.onabort = function () {
+            reject(store.transaction.error);
+          };
+        });
+        // add()'s own failure is the one reported; this one is then moot.
+        committed.catch(function () {});
+        await idb(store.add(made, "device"));
+        await committed;
+        return made;
+      } catch (e) {
+        // Another tab stored one first, and the first stored is the player.
+        const first = await idb(keys("readonly").get("device"));
+        if (!first) {
+          throw e;
+        }
+        return first;
+      }
+    } finally {
+      db.close();
+    }
+  }
+
+  function base64url(bytes) {
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function loadDeviceKeyOnce() {
+    if (!deviceKey) {
+      const loading = loadDeviceKey();
+      deviceKey = loading;
+      // A failure is tried again at the next hello.
+      loading.catch(function () {
+        if (deviceKey === loading) {
+          deviceKey = null;
+        }
+      });
+    }
+    return deviceKey;
+  }
+
+  async function sign(message) {
+    const key = await loadDeviceKeyOnce();
+    // WebCrypto's ECDSA signature is already raw r||s.
+    const signature = await crypto.subtle.sign(
+      { "name": "ECDSA", "hash": "SHA-256" },
+      key["privateKey"],
+      new TextEncoder().encode(message),
+    );
+    return [key["jwk"], base64url(new Uint8Array(signature))];
+  }
+
+  function reportSigned(done, jwk, signature) {
+    const jwkString = copyString(jwk || "");
+    const signatureString = copyString(signature || "");
+    const ok = !!jwk && jwkString[0] && signatureString[0];
+    Module["_riveScriptCloudSigned"](
+      done,
+      ok ? 1 : 0,
+      jwkString[0],
+      jwkString[1],
+      signatureString[0],
+      signatureString[1],
+    );
+    release([jwkString[0], signatureString[0]]);
+  }
+
+  Module["scriptCloud"] = {
+    // `done` is the runtime's handle for the hello waiting on this signature.
+    "sign": function (done, message) {
+      sign(message).then(
+        function (signed) {
+          reportSigned(done, signed[0], signed[1]);
+        },
+        function (e) {
+          console.warn("Rive Cloud: the device key could not sign: " + e);
+          reportSigned(done, null, null);
+        },
+      );
+    },
+  };
+
+  // Calls `fn` with `texts` copied into the heap as C strings, then frees them.
+  function withStrings(texts, fn) {
+    const copies = texts.map(copyString);
+    try {
+      return fn.apply(
+        null,
+        copies.map(function (copy) {
+          return copy[0];
+        }),
+      );
+    } finally {
+      release(
+        copies.map(function (copy) {
+          return copy[0];
+        }),
+      );
+    }
+  }
+
+  // An endpoint for one file to own: {id, refused}, where refused says why the
+  // runtime turned it off, or is null. Pass id to load().
+  Module["addScriptCloud"] = function (options) {
+    const id = withStrings(
+      [String(options["url"]), String(options["namespace"])],
+      Module["_riveScriptCloudAdd"],
+    );
+    const refused = Module["_riveScriptCloudRefusal"]();
+    fileCloud = true;
+    applyEnabled();
+    return { "id": id >>> 0, "refused": refused ? UTF8ToString(refused) : null };
+  };
+
+  // {url, namespace}, or null to turn rive-cloud: off. Returns why the
+  // runtime refused them, or null.
+  Module["configureScriptCloud"] = function (options) {
+    const url = options ? String(options["url"]) : "";
+    const namespace = options ? String(options["namespace"]) : "";
+    const endpoint = options ? url + " " + namespace : null;
+    if (endpoint === cloudEndpoint) {
+      // Naming the same endpoint again would only drop the player's token.
+      return null;
+    }
+    const refused = withStrings([url, namespace], Module["_riveScriptCloudSet"]);
+    cloudEndpoint = refused ? null : endpoint;
+    applyEnabled();
+    return refused ? UTF8ToString(refused) : null;
   };
 })();

@@ -447,7 +447,8 @@ Module["onRuntimeInitialized"] = function () {
     fileAssetLoader,
     enableRiveAssetCDN = true,
     session = null,
-    deferDecoding = false
+    deferDecoding = false,
+    cloudEndpoint = 0
   ) {
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
@@ -459,7 +460,7 @@ Module["onRuntimeInitialized"] = function () {
     }
 
     return Module["startFileScripts"](
-      load(bytes, loader, session ?? null, !!deferDecoding)
+      load(bytes, loader, session ?? null, !!deferDecoding, cloudEndpoint >>> 0)
     );
   };
 

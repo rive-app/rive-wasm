@@ -1391,7 +1391,8 @@ Module["onRuntimeInitialized"] = function () {
     fileAssetLoader,
     enableRiveAssetCDN = true,
     session = null,
-    deferDecoding = false
+    deferDecoding = false,
+    cloudEndpoint = 0
   ) {
     const loader = new Module["FallbackFileAssetLoader"]();
     if (fileAssetLoader !== undefined) {
@@ -1410,7 +1411,13 @@ Module["onRuntimeInitialized"] = function () {
           resolve(result);
         },
       };
-      result = load(bytes, loader, session ?? null, !!deferDecoding);
+      result = load(
+        bytes,
+        loader,
+        session ?? null,
+        !!deferDecoding,
+        cloudEndpoint >>> 0
+      );
       // Script modules compile while the assets load; the prepare that
       // startFileScripts awaits joins this one.
       const scripting = Module["riveScripting"];

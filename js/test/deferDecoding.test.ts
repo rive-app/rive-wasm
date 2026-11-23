@@ -220,6 +220,8 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     false,
+    // No file Rive Cloud endpoint of its own.
+    0,
   );
 
   const deferred = await loadRiveFile({
@@ -232,6 +234,8 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     true,
+    // No file Rive Cloud endpoint of its own.
+    0,
   );
 
   // A re-import (another instance's mode) keeps the file's flag.
@@ -242,6 +246,8 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     true,
+    // No file Rive Cloud endpoint of its own.
+    0,
   );
 
   eager.cleanup();
@@ -263,6 +269,8 @@ test("Rive forwards deferDecoding to the file it imports", async () => {
     true,
     null,
     true,
+    // No file Rive Cloud endpoint of its own.
+    0,
   );
 
   // Reloading keeps the constructor's flag.
@@ -276,6 +284,8 @@ test("Rive forwards deferDecoding to the file it imports", async () => {
     true,
     null,
     true,
+    // No file Rive Cloud endpoint of its own.
+    0,
   );
   r.cleanup();
 });

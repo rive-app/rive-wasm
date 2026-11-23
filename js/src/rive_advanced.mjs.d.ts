@@ -113,6 +113,27 @@ export interface RiveCanvas {
   configureScriptFetch?(options: ScriptFetchConfig | null): void;
 
   /**
+   * @experimental Sends scripts' rive/cloud calls to a namespace, or turns
+   * them off with null. Only in builds with script networking, so always
+   * feature-detect it. Use RuntimeLoader.setCloud. Returns why the runtime
+   * refused the options, or null.
+   */
+  configureScriptCloud?(
+    options: { url: string; namespace: string } | null,
+  ): string | null;
+
+  /**
+   * @experimental Adds a Rive Cloud endpoint for one file to own: pass `id` to
+   * `load()`. A refused endpoint still gets an id, turned off, and `refused`
+   * says why. Only in builds with script networking. Use the `cloud` option
+   * on RiveFile or Rive.
+   */
+  addScriptCloud?(options: { url: string; namespace: string }): {
+    id: number;
+    refused: string | null;
+  };
+
+  /**
    * Loads a Rive file for the runtime and returns a Rive-specific File class
    *
    * @param buffer - Array buffer of a Rive file
@@ -131,6 +152,7 @@ export interface RiveCanvas {
     enableRiveAssetCDN?: boolean,
     session?: DeferredSession | null,
     deferDecoding?: boolean,
+    cloudEndpoint?: number,
   ): Promise<File>;
 
   /**

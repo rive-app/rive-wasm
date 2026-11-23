@@ -93,6 +93,28 @@ export interface ScriptFetchOptions {
   maxResponseBytes?: number;
 }
 
+/**
+ * @experimental Options for {@link RuntimeLoader.setCloud}.
+ */
+export interface CloudOptions {
+  /**
+   * The Rive Cloud engine's address, such as `https://cloud.uat.rive.app`,
+   * with no query, fragment or credentials.
+   */
+  url: string;
+  /** The namespace's ID. */
+  namespace: string;
+}
+
+/**
+ * @internal A copy of `options`, as plain strings, which is what the runtime
+ * is given.
+ */
+export const cloudOptions = (options: CloudOptions): CloudOptions => ({
+  url: String(options.url),
+  namespace: String(options.namespace),
+});
+
 // Whole bytes that fit in a uint32; 0 keeps the runtime's default.
 const responseBytesOption = (value: number | undefined): number =>
   typeof value === "number" && value > 0
@@ -182,6 +204,9 @@ export class RuntimeLoader {
   // Script fetch options, or null while disabled.
   private static scriptFetch: ScriptFetchOptions | null = null;
   private static warnedNoScriptFetch = false;
+  // Where scripts' rive/cloud calls go, or null while they are off.
+  private static cloud: CloudOptions | null = null;
+  private static warnedNoCloud = false;
 
   // Error callbacks enqueued from .getInstance()
   private static errorCallbackQueue: ((error: Error) => void)[] = [];
@@ -260,6 +285,7 @@ export class RuntimeLoader {
       rive.enableReplayWorker?.();
     }
     RuntimeLoader.applyScriptFetch();
+    RuntimeLoader.applyCloud();
     // Fire all the callbacks
     while (RuntimeLoader.callBackQueue.length > 0) {
       RuntimeLoader.callBackQueue.shift()?.(RuntimeLoader.runtime);
@@ -626,6 +652,85 @@ export class RuntimeLoader {
         maxResponseBytes: responseBytesOption(options.maxResponseBytes),
       },
     );
+  }
+
+  /**
+   * @experimental Lets scripts in Rive files use `rive/cloud`, which talks to
+   * a Rive Cloud namespace as this browser's player, or turns it off with
+   * `null`. Scripts get no other network access from this: that is
+   * {@link RuntimeLoader.setScriptFetch}. Only scripts on the page's main
+   * thread can reach the cloud, and only in `@rive-app/webgl2-threads`
+   * running its threaded build; elsewhere this warns once and does nothing.
+   *
+   * The player is a device key made on first use and kept in this origin's
+   * IndexedDB, so clearing the site's data makes a new player. The page's
+   * origin must be on the namespace's `web.origins` list.
+   *
+   * Off by default.
+   */
+  public static setCloud(options: CloudOptions | null): void {
+    // The runtime checks both, as every host's does, and says why it refuses.
+    RuntimeLoader.cloud = options ? cloudOptions(options) : null;
+    RuntimeLoader.applyCloud();
+  }
+
+  /**
+   * @internal Adds the endpoint a file's `cloud` option names, for that file
+   * to own: the id to import it with, or 0 for the page's. Warns when the
+   * runtime refuses it or has no Rive Cloud.
+   */
+  public static addFileCloud(
+    runtime: rc.RiveCanvas,
+    cloud: CloudOptions | null,
+  ): number {
+    if (!cloud) {
+      return 0;
+    }
+    if (!runtime.addScriptCloud) {
+      RuntimeLoader.warnNoCloud();
+      return 0;
+    }
+    const added = runtime.addScriptCloud(cloudOptions(cloud));
+    if (added.refused) {
+      console.warn(
+        `[Rive] cloud: ${added.refused}. This file's rive/cloud calls fail.`,
+      );
+    }
+    return added.id;
+  }
+
+  // Gets the cloud options (null means off)
+  public static getCloud(): CloudOptions | null {
+    return RuntimeLoader.cloud && { ...RuntimeLoader.cloud };
+  }
+
+  private static warnNoCloud(): void {
+    if (!RuntimeLoader.warnedNoCloud) {
+      RuntimeLoader.warnedNoCloud = true;
+      console.warn(
+        "[Rive] Rive Cloud is only available in @rive-app/webgl2-threads " +
+          "on a cross origin isolated page. Scripts' rive/cloud calls fail.",
+      );
+    }
+  }
+
+  private static applyCloud(): void {
+    const runtime = RuntimeLoader.runtime;
+    if (!runtime) {
+      return;
+    }
+    if (!runtime.configureScriptCloud) {
+      if (RuntimeLoader.cloud) {
+        RuntimeLoader.warnNoCloud();
+      }
+      return;
+    }
+    const refused = runtime.configureScriptCloud(RuntimeLoader.cloud);
+    if (refused) {
+      console.warn(
+        `[Rive] setCloud: ${refused}. Scripts' rive/cloud calls fail.`,
+      );
+    }
   }
 
   // Manually sets the wasm binary or clears it with null
