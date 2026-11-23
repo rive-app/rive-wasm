@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.55.0](https://github.com/rive-app/rive-wasm/compare/2.54.0...2.55.0)
+## [2.55.1](https://github.com/rive-app/rive-wasm/compare/2.55.0...2.55.1)
+
+### Merged
+
+- feat(runtime): Rive Cloud for scripts in the web runtime, per file [`#15926`](https://github.com/rive-app/rive-wasm/pull/15926)
+- feat(scripting): script fetch on android over the platform's http stack [`#16000`](https://github.com/rive-app/rive-wasm/pull/16000)
+- feat(runtime, editor): let scripts read a node's box with bounds() and worldBounds() [`#15994`](https://github.com/rive-app/rive-wasm/pull/15994)
+- perf(runtime): let list rows that host a script go quiet [`#15992`](https://github.com/rive-app/rive-wasm/pull/15992)
+- chore(js): Switch jest suite to use non-single JS builds and add tests to assert WASM bindings and the API contract on core JS runtime builds [`#15996`](https://github.com/rive-app/rive-wasm/pull/15996)
+- feat(apple): expose per-file deferred decoding [`#15960`](https://github.com/rive-app/rive-wasm/pull/15960)
+
+### Commits
+
+- chore(downstream): advance submodule/refs [`48105f0`](https://github.com/rive-app/rive-wasm/commit/48105f0b7e59bfb1d69eda6886837dcff1edbb0b)
+- chore(downstream): advance submodule/refs [`208cd38`](https://github.com/rive-app/rive-wasm/commit/208cd38906d68e776e4d59d53236c84863ddd573)
+- chore(downstream): advance submodule/refs [`cf2b935`](https://github.com/rive-app/rive-wasm/commit/cf2b935fdf4166f29b93c451fd5fd2b9ac71b826)
+- chore(downstream): advance submodule/refs [`9433066`](https://github.com/rive-app/rive-wasm/commit/9433066edb0c623a7426e83e3285eec1d690e9b2)
+- chore(downstream): advance submodule/refs [`0923d6b`](https://github.com/rive-app/rive-wasm/commit/0923d6bd638084d36d29878b0a186b35da1e40cb)
+- chore(downstream): advance submodule/refs [`680f589`](https://github.com/rive-app/rive-wasm/commit/680f589ac4650ede7a145d4fafe6f1c3010c3876)
+
+## [2.55.0](https://github.com/rive-app/rive-wasm/compare/2.54.0...2.55.0) - 2026-11-23
 
 ### Merged
 
@@ -24,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
+- chore: tag 2.55.0 [`e8ed73e`](https://github.com/rive-app/rive-wasm/commit/e8ed73e4ac579a5d11dd71aa80723066058cdc64)
 - chore(downstream): advance submodule/refs [`b44f776`](https://github.com/rive-app/rive-wasm/commit/b44f776ac6a20a865818693b2e42347881b4ab43)
 - chore(downstream): advance submodule/refs [`4006406`](https://github.com/rive-app/rive-wasm/commit/400640640b5c635e2f70f8ea3e80d5ec5e75fdb0)
 - chore(downstream): advance submodule/refs [`3a45b85`](https://github.com/rive-app/rive-wasm/commit/3a45b854a1565235267696330b21d3ac8f068703)
