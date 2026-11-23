@@ -149,7 +149,7 @@ beforeAll(async () => {
     // silent bail-out here would report "all green" for a stale artifact.
     throw new Error(
       "deferredRendering requires a runtime build with makeDeferredSession(). " +
-        "Rebuild with ./build.sh -r canvas-single from a branch that has deferred support.",
+        "Rebuild with ./build.sh -r canvas from a branch that has deferred support.",
     );
   }
 });

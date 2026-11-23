@@ -1,7 +1,6 @@
-// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
-// which means there is no loading an external WASM file for tests
 import * as rive from "../src/rive";
 import { loadFile } from "./helpers";
+import { testWith } from "./buildFeatures";
 
 // DOM MouseEvent.button values.
 const LEFT = 0;
@@ -241,7 +240,7 @@ describe("scroll views follow only the primary button", () => {
     return { smi, x, y };
   }
 
-  test("A left drag scrolls", async () => {
+  testWith("layout")("A left drag scrolls", async () => {
     const { smi, x, y } = await dragUp(LEFT);
     expect(smi.wantsScroll(x, y, 0, 50, 1, false)).toBe(true);
   });

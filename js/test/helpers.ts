@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import * as rive from "../src/rive";
 
 // The runtime sits beside us in our monorepo and in a submodule in rive-wasm.
 const runtimeDir = [
@@ -50,4 +51,56 @@ export const arrayToArrayBuffer = (array: number[]): ArrayBuffer => {
 export const loadFile = (filePath: string): ArrayBuffer => {
   return fs.readFileSync(path.join(__dirname, filePath));
 }
+
+/**
+ * Polls until the predicate returns a truthy value and resolves with it.
+ * Rejects after the timeout, so a test fails instead of hanging.
+ */
+export async function waitForPredicate<T>(
+  predicate: () => T | null | undefined | false,
+  timeoutMs = 4000,
+  intervalMs = 25,
+): Promise<T> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const result = predicate();
+    if (result) return result;
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error("Timed out waiting for condition");
+}
+
+/** Resolves after `count` animation frames. */
+export const frames = (count: number): Promise<void> =>
+  new Promise((resolve) => {
+    let remaining = count;
+    const tick = () => {
+      if (--remaining <= 0) {
+        resolve();
+      } else {
+        requestAnimationFrame(tick);
+      }
+    };
+    requestAnimationFrame(tick);
+  });
+
+/**
+ * Creates a Rive instance and resolves once it has loaded, so tests can
+ * assert in the test body. Event callbacks run inside the render loop, where a
+ * failed expect doesn't fail the test.
+ */
+export const loadRive = (params: rive.RiveParameters): Promise<rive.Rive> =>
+  new Promise((resolve, reject) => {
+    const r: rive.Rive = new rive.Rive({
+      ...params,
+      onLoad: (event) => {
+        params.onLoad?.(event);
+        resolve(r);
+      },
+      onLoadError: (event) => {
+        params.onLoadError?.(event);
+        reject(new Error(`Rive failed to load: ${event.data}`));
+      },
+    });
+  });
   

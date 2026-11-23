@@ -1,5 +1,3 @@
-// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
-// which means there is no loading an external WASM file for tests
 import * as rc from "../src/rive_advanced.mjs";
 import * as threads from "../src/rive_threads.mjs";
 import * as rive from "../src/rive";
@@ -10,34 +8,12 @@ import {
   oneShotRiveFileBuffer,
   stateMachineFileBuffer,
 } from "./assets/bytes";
-import { loadFile } from "./helpers";
+import { loadFile, loadRive, waitForPredicate } from "./helpers";
+import { testWith } from "./buildFeatures";
 
 class MockResizeObserver {
   observe = jest.fn();
   disconnect = jest.fn();
-}
-
-function setTimeoutPromise(callback, ms) {
-  return new Promise((resolve) =>
-    setTimeout(() => {
-      const output = callback();
-      resolve(output);
-    }, ms),
-  );
-}
-
-async function waitForPredicate<T>(
-  predicate: () => T | null | undefined | false,
-  timeoutMs = 1500,
-  intervalMs = 25,
-): Promise<T> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const result = predicate();
-    if (result) return result;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  throw new Error("Timed out waiting for condition");
 }
 
 // #region setup and teardown
@@ -96,14 +72,12 @@ test("Runtime can be loaded using promises", async () => {
   expect(rive1.Fit.none).not.toBe(rive1.Fit.cover);
 
   const rive2 = await rive.RuntimeLoader.awaitInstance();
-  expect(rive2).toBeDefined;
   expect(rive2).toBe(rive1);
 
-  await setTimeoutPromise(async () => {
-    const rive3 = await rive.RuntimeLoader.awaitInstance();
-    expect(rive3).toBeDefined;
-    expect(rive3).toBe(rive2);
-  }, 500);
+  // A call made after the load has settled gets the same runtime.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const rive3 = await rive.RuntimeLoader.awaitInstance();
+  expect(rive3).toBe(rive1);
 });
 
 describe("RuntimeLoader WASM fallback URL behavior", () => {
@@ -251,7 +225,7 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
 
     rive.RuntimeLoader.getInstance(() => {});
 
-    await new Promise((r) => setTimeout(r, 50));
+    await waitForPredicate(() => errorMock.mock.calls.length > 0);
 
     expect(rcDefaultMock).toHaveBeenCalledTimes(2);
     expect(errorMock).toHaveBeenCalledWith(
@@ -286,22 +260,24 @@ describe("RuntimeLoader WASM fallback URL behavior", () => {
     expect(runtime).toBe(mockRuntime);
   });
 
-  test("Rive onLoadError is called when WASM fails to load", (done) => {
+  test("Rive onLoadError is called when WASM fails to load", async () => {
     rive.RuntimeLoader.setWasmFallbackUrl(null);
     (rc as any).default = jest.fn().mockRejectedValue(new Error("Load failed"));
 
     const canvas = document.createElement("canvas");
-    new rive.Rive({
-      canvas,
-      buffer: pingPongRiveFileBuffer,
-      onLoadError: (e) => {
-        expect((e.data as string)).toContain("Load failed");
-        done();
-      },
-      onLoad: () => {
-        throw new Error("onLoad should not be called when WASM fails");
-      },
-    });
+    const onLoad = jest.fn();
+    const onLoadError = jest.fn();
+    await expect(
+      loadRive({
+        canvas,
+        buffer: pingPongRiveFileBuffer,
+        onLoadError,
+        onLoad,
+      }),
+    ).rejects.toThrow("Load failed");
+    expect(onLoadError).toHaveBeenCalledTimes(1);
+    expect(onLoadError.mock.calls[0][0].data as string).toContain("Load failed");
+    expect(onLoad).not.toHaveBeenCalled();
   });
 });
 
@@ -614,35 +590,38 @@ test("Rive objects require a src url or byte buffer", () => {
   expect(badConstructor).toThrow(Error);
 });
 
-test("Rive objects initialize correctly", (done) => {
+test("Rive objects initialize correctly", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const onLoadError = jest.fn();
+  const r = await loadRive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
-    onLoad: () => {
-      expect(r).toBeDefined();
-      done();
-    },
-    onLoadError: () => expect(false).toBeTruthy(),
+    onLoadError,
   });
+  expect(r).toBeDefined();
+  expect(onLoadError).not.toHaveBeenCalled();
+  r.cleanup();
 });
 
-test("Corrupt riv file invokes onLoadError", (done) => {
+test("Corrupt riv file invokes onLoadError", async () => {
   const canvas = document.createElement("canvas");
+  const onLoad = jest.fn();
+  const onLoadError = jest.fn();
 
-  new rive.Rive({
-    canvas: canvas,
-    buffer: corruptRiveFileBuffer,
-    onLoadError: () => {
-      done();
-    },
-    onLoad: () => {
-      expect(false).toBeTruthy();
-    },
-  });
+  await expect(
+    loadRive({
+      canvas: canvas,
+      buffer: corruptRiveFileBuffer,
+      onLoadError,
+      onLoad,
+    }),
+  ).rejects.toThrow("Rive failed to load");
+  expect(onLoadError).toHaveBeenCalledTimes(1);
+  expect(onLoad).not.toHaveBeenCalled();
 });
 
-test("Rive creates a semantic tree and accessibility overlay for semantic files", (done) => {
+// The file's list and labels need layout and text.
+testWith("layout", "text")("Rive creates a semantic tree and accessibility overlay for semantic files", async () => {
   const semanticDataBindingListsBuffer = loadFile(
     "assets/data_binding_lists.riv",
   );
@@ -651,210 +630,234 @@ test("Rive creates a semantic tree and accessibility overlay for semantic files"
   canvas.height = 500;
   document.body.appendChild(canvas);
 
-  const r = new rive.Rive({
-    canvas,
-    buffer: semanticDataBindingListsBuffer,
-    semanticsMode: rive.SemanticMode.Enabled,
-    stateMachines: "State Machine 1",
-    autoplay: true,
-    autoBind: true,
-    onAdvance: () => {
-      const tree = r.semanticTree;
-      expect(tree?.nodeCount).toBeGreaterThan(0);
-      expect(
-        tree.flattened().some(({ node }) => node.label?.length > 0),
-      ).toBe(true);
+  const onAdvance = jest.fn();
+  try {
+    const r = await loadRive({
+      canvas,
+      buffer: semanticDataBindingListsBuffer,
+      semanticsMode: rive.SemanticMode.Enabled,
+      stateMachines: "State Machine 1",
+      autoplay: true,
+      autoBind: true,
+      onAdvance,
+    });
+    await waitForPredicate(() => onAdvance.mock.calls.length > 0);
 
-      const overlay = document.querySelector<HTMLElement>('[id^="rive-a11y-"]');
-      expect(overlay).not.toBeNull();
-      expect(overlay!.getAttribute("role")).toBe("region");
-      expect(overlay!.querySelector('[id*="-sem-"]')).not.toBeNull();
-      canvas.remove();
-      done();
-    },
-  });
+    const tree = r.semanticTree;
+    expect(tree?.nodeCount).toBeGreaterThan(0);
+    expect(
+      tree.flattened().some(({ node }) => node.label?.length > 0),
+    ).toBe(true);
+
+    const overlay = document.querySelector<HTMLElement>('[id^="rive-a11y-"]');
+    expect(overlay).not.toBeNull();
+    expect(overlay!.getAttribute("role")).toBe("region");
+    expect(overlay!.querySelector('[id*="-sem-"]')).not.toBeNull();
+    r.cleanup();
+  } finally {
+    canvas.remove();
+  }
 });
 
 // #endregion
 
 // #region loading files
 
-test("Multiple files can be loaded and played", (done) => {
+test("Multiple files can be loaded and played", async () => {
   const canvas = document.createElement("canvas");
+  type Snapshot = { isStopped: boolean; isPaused: boolean; isPlaying: boolean };
+  const snapshot = (): Snapshot => ({
+    isStopped: r.isStopped,
+    isPaused: r.isPaused,
+    isPlaying: r.isPlaying,
+  });
+  const loads: Snapshot[] = [];
+  const plays: Snapshot[] = [];
+  const loops: { loopOccurredBefore: boolean; snapshot: Snapshot }[] = [];
+  const stops: { loopOccurred: boolean; snapshot: Snapshot }[] = [];
   let loopOccurred = false;
-  let firstLoadOccurred = false;
 
-  const r = new rive.Rive({
+  const r: rive.Rive = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
     onLoad: () => {
-      // Nothing should be playing whenever a file is loaded
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
-      if (firstLoadOccurred) {
-        done();
-      } else {
-        firstLoadOccurred = true;
-      }
+      loads.push(snapshot());
     },
     onPlay: () => {
-      // We expect things to start playing shortly after load
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
+      plays.push(snapshot());
     },
-    onLoop: (event: rive.Event) => {
-      expect(r.isPlaying).toBeTruthy();
-      expect(loopOccurred).toBeFalsy();
+    onLoop: () => {
+      loops.push({ loopOccurredBefore: loopOccurred, snapshot: snapshot() });
       loopOccurred = true;
       // After the first loop, load a new file
-      r.load({ buffer: oneShotRiveFileBuffer, autoplay: true });
+      if (loops.length === 1) {
+        r.load({ buffer: oneShotRiveFileBuffer, autoplay: true });
+      }
     },
-    onStop: (event: rive.Event) => {
-      expect(r.isStopped).toBeTruthy();
-      expect(r.isPlaying).toBeFalsy();
-      expect(loopOccurred).toBeTruthy();
+    onStop: () => {
+      stops.push({ loopOccurred, snapshot: snapshot() });
     },
   });
+
+  await waitForPredicate(() => loads.length >= 2);
+
+  // Each callback ran, so the checks below can't pass on empty lists.
+  expect(plays.length).toBeGreaterThan(0);
+  expect(loops.length).toBeGreaterThan(0);
+  expect(stops.length).toBeGreaterThan(0);
+  // Both loads left the instance playing
+  for (const l of loads) {
+    expect(l.isStopped).toBeFalsy();
+    expect(l.isPlaying).toBeTruthy();
+  }
+  // We expect things to start playing shortly after load
+  for (const pl of plays) {
+    expect(pl.isStopped).toBeFalsy();
+    expect(pl.isPaused).toBeFalsy();
+    expect(pl.isPlaying).toBeTruthy();
+  }
+  expect(loops[0].loopOccurredBefore).toBeFalsy();
+  expect(loops[0].snapshot.isPlaying).toBeTruthy();
+  for (const st of stops) {
+    expect(st.snapshot.isStopped).toBeTruthy();
+    expect(st.snapshot.isPlaying).toBeFalsy();
+    expect(st.loopOccurred).toBeTruthy();
+  }
+  r.cleanup();
 });
 
-test("Layout is set to canvas dimensions if not specified", (done) => {
+test("Layout is set to canvas dimensions if not specified", async () => {
   const canvas = document.createElement("canvas");
   canvas.width = 400;
   canvas.height = 300;
 
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
-    onLoad: () => {
-      expect(r.layout.minX).toBe(0);
-      expect(r.layout.minY).toBe(0);
-      expect(r.layout.maxX).toBe(400);
-      expect(r.layout.maxY).toBe(300);
-      done();
-    },
   });
+  expect(r.layout.minX).toBe(0);
+  expect(r.layout.minY).toBe(0);
+  expect(r.layout.maxX).toBe(400);
+  expect(r.layout.maxY).toBe(300);
+  r.cleanup();
 });
 
-test("enableInkbleed loads normally and reports inkbleed off on a renderer without inkbleed", (done) => {
+test("enableInkbleed loads normally and reports inkbleed off on a renderer without inkbleed", async () => {
   jest.spyOn(console, "warn").mockImplementation(() => {});
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     enableInkbleed: true,
-    onLoad: () => {
-      expect(r.inkbleed).toBe(false);
-      r.inkbleed = true;
-      // Tests currently use canvas-single variant, which doesn't support inkbleed so we expect false here
-      expect(r.inkbleed).toBe(false);
-      done();
-    },
-    onLoadError: () => expect(false).toBeTruthy(),
   });
+  expect(r.inkbleed).toBe(false);
+  r.inkbleed = true;
+  // The canvas build doesn't support inkbleed, so it stays false.
+  expect(r.inkbleed).toBe(false);
+  r.cleanup();
 });
 
 // #endregion
 
 // #region Rive properties
 
-test("Rive file contents can be read", (done) => {
+test("Rive file contents can be read", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
-    onLoad: () => {
-      const contents = r.contents;
-      expect(contents).toBeDefined();
-      expect(contents.artboards).toBeDefined();
-      expect(contents.artboards).toHaveLength(2);
-      expect(contents.artboards[0].name).toBe("MyArtboard");
-      expect(contents.artboards[1].name).toBe("Artboard2");
-      expect(contents.artboards[0].animations).toBeDefined();
-      expect(contents.artboards[0].animations).toHaveLength(6);
-      expect(contents.artboards[0].animations[0]).toBe(
-        "WorkAreaPingPongAnimation",
-      );
-      expect(contents.artboards[0].stateMachines).toBeDefined();
-      expect(contents.artboards[0].stateMachines).toHaveLength(1);
-      expect(contents.artboards[0].stateMachines[0].name).toBe("StateMachine");
-      expect(contents.artboards[0].stateMachines[0].inputs).toHaveLength(3);
-      expect(contents.artboards[0].stateMachines[0].inputs[0].name).toBe(
-        "MyNum",
-      );
-      expect(contents.artboards[0].stateMachines[0].inputs[0].type).toBe(
-        rive.StateMachineInputType.Number,
-      );
-      expect(contents.artboards[0].stateMachines[0].inputs[1].name).toBe(
-        "MyBool",
-      );
-      expect(contents.artboards[0].stateMachines[0].inputs[1].type).toBe(
-        rive.StateMachineInputType.Boolean,
-      );
-      expect(contents.artboards[0].stateMachines[0].inputs[2].name).toBe(
-        "MyTrig",
-      );
-      expect(contents.artboards[0].stateMachines[0].inputs[2].type).toBe(
-        rive.StateMachineInputType.Trigger,
-      );
-      done();
-    },
   });
+  const contents = r.contents;
+  expect(contents).toBeDefined();
+  expect(contents.artboards).toBeDefined();
+  expect(contents.artboards).toHaveLength(2);
+  expect(contents.artboards[0].name).toBe("MyArtboard");
+  expect(contents.artboards[1].name).toBe("Artboard2");
+  expect(contents.artboards[0].animations).toBeDefined();
+  expect(contents.artboards[0].animations).toHaveLength(6);
+  expect(contents.artboards[0].animations[0]).toBe(
+    "WorkAreaPingPongAnimation",
+  );
+  expect(contents.artboards[0].stateMachines).toBeDefined();
+  expect(contents.artboards[0].stateMachines).toHaveLength(1);
+  expect(contents.artboards[0].stateMachines[0].name).toBe("StateMachine");
+  expect(contents.artboards[0].stateMachines[0].inputs).toHaveLength(3);
+  expect(contents.artboards[0].stateMachines[0].inputs[0].name).toBe(
+    "MyNum",
+  );
+  expect(contents.artboards[0].stateMachines[0].inputs[0].type).toBe(
+    rive.StateMachineInputType.Number,
+  );
+  expect(contents.artboards[0].stateMachines[0].inputs[1].name).toBe(
+    "MyBool",
+  );
+  expect(contents.artboards[0].stateMachines[0].inputs[1].type).toBe(
+    rive.StateMachineInputType.Boolean,
+  );
+  expect(contents.artboards[0].stateMachines[0].inputs[2].name).toBe(
+    "MyTrig",
+  );
+  expect(contents.artboards[0].stateMachines[0].inputs[2].type).toBe(
+    rive.StateMachineInputType.Trigger,
+  );
+  r.cleanup();
 });
 
 // #endregion
 
 // #region resetting
 
-test("Artboards can be reset back to their starting state", (done) => {
+test("Artboards can be reset back to their starting state", async () => {
   const canvas = document.createElement("canvas");
 
   // Track the nr of loops
   let loopCount = 0;
+  const loads: { artboard: string; loopCount: number }[] = [];
 
   // Start up a looping animation
-  const r = new rive.Rive({
+  const r: rive.Rive = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
     onLoad: () => {
-      // Default artboard should be selected
-      expect(r.activeArtboard).toBe("New Artboard");
-      // This should only ever happen once
-      expect(loopCount).toBe(0);
+      loads.push({ artboard: r.activeArtboard, loopCount });
     },
-    onLoop: (event: rive.Event) => {
+    onLoop: () => {
       if (loopCount == 0) {
         // Reset the animation; animation should continue to play
         r.reset({ autoplay: true });
-      } else {
-        done();
       }
       loopCount++;
     },
   });
+
+  await waitForPredicate(() => loopCount >= 2, 4000);
+
+  expect(loads.length).toBeGreaterThan(0);
+  // Default artboard should be selected
+  expect(loads[0].artboard).toBe("New Artboard");
+  // Loading only happens before the first loop, reset included
+  loads.forEach((load) => expect(load.loopCount).toBe(0));
+  r.cleanup();
 });
 
 // #endregion
 
 // #region cleanup
 
-test("Rive deletes instances on the cleanup", (done) => {
+test("Rive deletes instances on the cleanup", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     autoplay: true,
     artboard: "MyArtboard",
-    onLoad: () => {
-      expect(r.activeArtboard).toBe("MyArtboard");
-      r.cleanup();
-      expect(r.activeArtboard).toBe("");
-      expect(r["renderer"]).toBeNull();
-      done();
-    },
   });
+  expect(r.activeArtboard).toBe("MyArtboard");
+  r.cleanup();
+  expect(r.activeArtboard).toBe("");
+  expect(r["renderer"]).toBeNull();
 });
 
 test("Rive doesn't error out when cleaning up if the file is not set yet", () => {
@@ -868,47 +871,44 @@ test("Rive doesn't error out when cleaning up if the file is not set yet", () =>
   r.cleanup();
 });
 
-test("Rive renderer is deleted on deleteRiveRenderer", (done) => {
+test("Rive renderer is deleted on deleteRiveRenderer", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: stateMachineFileBuffer,
     autoplay: true,
     artboard: "MyArtboard",
-    onLoad: () => {
-      expect(r.activeArtboard).toBe("MyArtboard");
-      r.cleanup();
-      r.deleteRiveRenderer();
-      expect(r["renderer"]).toBe(null);
-      done();
-    },
   });
+  expect(r.activeArtboard).toBe("MyArtboard");
+  r.cleanup();
+  r.deleteRiveRenderer();
+  expect(r["renderer"]).toBe(null);
 });
 
-test("Two Rive renderers can be deleted in reverse order", (done) => {
+test("Two Rive renderers can be deleted in reverse order", async () => {
   const canvas1 = document.createElement("canvas");
   const canvas2 = document.createElement("canvas");
   let r1: rive.Rive,
     r2: rive.Rive,
     r1DrawCountWithR2Stopped = 0,
-    r2DrawCount = 0;
+    r2DrawCount = 0,
+    cleanedUp = false;
   r1 = new rive.Rive({
     canvas: canvas1,
     buffer: stateMachineFileBuffer,
     autoplay: true,
     artboard: "MyArtboard",
     onAdvance: (event: rive.Event) => {
+      if (cleanedUp) return;
       // Draw until r2 has stopped for a while (make sure we have the final draw).
       if (r2 && r2.isStopped) ++r1DrawCountWithR2Stopped;
       if (r1DrawCountWithR2Stopped >= 3) {
         // Cleanup in reverse order.
+        cleanedUp = true;
         r2.cleanup();
         r2.deleteRiveRenderer();
-        expect(r2["renderer"]).toBe(null);
         r1.cleanup();
         r1.deleteRiveRenderer();
-        expect(r1["renderer"]).toBe(null);
-        done();
       }
     },
   });
@@ -921,6 +921,10 @@ test("Two Rive renderers can be deleted in reverse order", (done) => {
       if (r2DrawCount >= 3) r2.stop();
     },
   });
+
+  await waitForPredicate(() => cleanedUp);
+  expect(r2["renderer"]).toBe(null);
+  expect(r1["renderer"]).toBe(null);
 });
 
 test("Rive deletes rive file instance on the cleanup", async () => {
@@ -930,21 +934,16 @@ test("Rive deletes rive file instance on the cleanup", async () => {
   });
   await riveFile.init();
 
-  await new Promise<void>((resolve) => {
-    const r = new rive.Rive({
-      canvas: canvas,
-      riveFile: riveFile,
-      autoplay: true,
-      artboard: "MyArtboard",
-      onLoad: () => {
-        expect(r.activeArtboard).toBe("MyArtboard");
-        expect(riveFile.referenceCount).toBe(1);
-        r.cleanup();
-        expect(riveFile.referenceCount).toBe(0);
-        resolve();
-      },
-    });
+  const r = await loadRive({
+    canvas: canvas,
+    riveFile: riveFile,
+    autoplay: true,
+    artboard: "MyArtboard",
   });
+  expect(r.activeArtboard).toBe("MyArtboard");
+  expect(riveFile.referenceCount).toBe(1);
+  r.cleanup();
+  expect(riveFile.referenceCount).toBe(0);
 });
 
 test("one RiveFile with immediate renderer drives five instances", async () => {
@@ -1108,58 +1107,58 @@ test("Cleaning up file before load does not reduce reference count", async () =>
 
 // #region sizing the canvas
 
-test("resizeDrawingSurfaceToCanvas scales canvas with devicePixelRatio by default", (done) => {
-  Element.prototype.getBoundingClientRect = jest.fn(() => {
-    return {
-      width: 500,
-      height: 500,
-    } as DOMRect;
-  });
-  window.devicePixelRatio = 3;
-  const canvas = document.createElement("canvas");
-  canvas.style.width = "500px";
-  canvas.style.height = "500px";
-  canvas.width = 500;
-  canvas.height = 500;
-  const r = new rive.Rive({
-    canvas: canvas,
-    buffer: pingPongRiveFileBuffer,
-    onLoad: () => {
-      expect(canvas.width).toBe(500);
-      expect(canvas.height).toBe(500);
-      r.resizeDrawingSurfaceToCanvas();
-      console.log(canvas.getBoundingClientRect());
-      expect(canvas.width).toBe(1500);
-      expect(canvas.height).toBe(1500);
-      done();
-    },
-  });
-});
+describe("resizeDrawingSurfaceToCanvas", () => {
+  const savedDevicePixelRatio = window.devicePixelRatio;
 
-test("resizeDrawingSurfaceToCanvas scales canvas with passed in ratio if present", (done) => {
-  Element.prototype.getBoundingClientRect = jest.fn(() => {
-    return {
-      width: 500,
-      height: 500,
-    } as DOMRect;
+  // jest.restoreAllMocks() in the top-level afterEach restores the spy.
+  const mockCanvasRect500AtDpr3 = () => {
+    jest
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockReturnValue({ width: 500, height: 500 } as DOMRect);
+    window.devicePixelRatio = 3;
+  };
+
+  afterEach(() => {
+    window.devicePixelRatio = savedDevicePixelRatio;
   });
-  window.devicePixelRatio = 3;
-  const canvas = document.createElement("canvas");
-  canvas.style.width = "500px";
-  canvas.style.height = "500px";
-  canvas.width = 500;
-  canvas.height = 500;
-  const r = new rive.Rive({
-    canvas: canvas,
-    buffer: pingPongRiveFileBuffer,
-    onLoad: () => {
-      expect(canvas.width).toBe(500);
-      expect(canvas.height).toBe(500);
-      r.resizeDrawingSurfaceToCanvas(1);
-      expect(canvas.width).toBe(500);
-      expect(canvas.height).toBe(500);
-      done();
-    },
+
+  test("resizeDrawingSurfaceToCanvas scales canvas with devicePixelRatio by default", async () => {
+    mockCanvasRect500AtDpr3();
+    const canvas = document.createElement("canvas");
+    canvas.style.width = "500px";
+    canvas.style.height = "500px";
+    canvas.width = 500;
+    canvas.height = 500;
+    const r = await loadRive({
+      canvas: canvas,
+      buffer: pingPongRiveFileBuffer,
+    });
+    expect(canvas.width).toBe(500);
+    expect(canvas.height).toBe(500);
+    r.resizeDrawingSurfaceToCanvas();
+    console.log(canvas.getBoundingClientRect());
+    expect(canvas.width).toBe(1500);
+    expect(canvas.height).toBe(1500);
+    r.cleanup();
+  });
+
+  test("resizeDrawingSurfaceToCanvas scales canvas with passed in ratio if present", async () => {
+    mockCanvasRect500AtDpr3();
+    const canvas = document.createElement("canvas");
+    canvas.style.width = "500px";
+    canvas.style.height = "500px";
+    canvas.width = 500;
+    canvas.height = 500;
+    const r = await loadRive({
+      canvas: canvas,
+      buffer: pingPongRiveFileBuffer,
+    });
+    expect(canvas.width).toBe(500);
+    expect(canvas.height).toBe(500);
+    r.resizeDrawingSurfaceToCanvas(1);
+    expect(canvas.width).toBe(500);
+    expect(canvas.height).toBe(500);
+    r.cleanup();
   });
 });
 
@@ -1178,36 +1177,34 @@ describe("makeRenderer checks", () => {
     jest.restoreAllMocks();
   });
 
-  test("onLoadError is called when makeRenderer returns null", (done) => {
+  test("onLoadError is called when makeRenderer returns null", async () => {
     jest.spyOn(runtime, "makeRenderer").mockReturnValue(null);
 
     const canvas = document.createElement("canvas");
-    new rive.Rive({
-      canvas,
-      buffer: pingPongRiveFileBuffer,
-      onLoadError: (e) => {
-        expect(e.data as string).not.toBeNull();
-        done();
-      },
-      onLoad: () => done(new Error("onLoad should not be called when makeRenderer returns null")),
-    });
+    const onLoad = jest.fn();
+    const onLoadError = jest.fn();
+    await expect(
+      loadRive({ canvas, buffer: pingPongRiveFileBuffer, onLoadError, onLoad }),
+    ).rejects.toThrow("Rive failed to load");
+    expect(onLoadError.mock.calls[0][0].data as string).not.toBeNull();
+    // onLoad should not be called when makeRenderer returns null
+    expect(onLoad).not.toHaveBeenCalled();
   });
 
-  test("onLoadError is called when makeRenderer throws", (done) => {
+  test("onLoadError is called when makeRenderer throws", async () => {
     jest.spyOn(runtime, "makeRenderer").mockImplementation(() => {
       throw new Error("WebGL context creation failed");
     });
 
     const canvas = document.createElement("canvas");
-    new rive.Rive({
-      canvas,
-      buffer: pingPongRiveFileBuffer,
-      onLoadError: (e) => {
-        expect(e.data as string).not.toBeNull();
-        done();
-      },
-      onLoad: () => done(new Error("onLoad should not be called when makeRenderer throws")),
-    });
+    const onLoad = jest.fn();
+    const onLoadError = jest.fn();
+    await expect(
+      loadRive({ canvas, buffer: pingPongRiveFileBuffer, onLoadError, onLoad }),
+    ).rejects.toThrow("Rive failed to load");
+    expect(onLoadError.mock.calls[0][0].data as string).not.toBeNull();
+    // onLoad should not be called when makeRenderer throws
+    expect(onLoad).not.toHaveBeenCalled();
   });
 });
 

@@ -1,11 +1,15 @@
-// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
-// which means there is no loading an external WASM file for tests
 import * as rc from "../src/rive_advanced.mjs.js";
 import eventsBuffer from "./test-rive-buffers/eventsFile.json";
 import * as rive from "../src/rive";
 import listenerBuffer from "./test-rive-buffers/listenerFile.js";
 import { pingPongRiveFileBuffer, loopRiveFileBuffer, oneShotRiveFileBuffer, stateMachineFileBuffer } from "./assets/bytes";
-import { arrayToArrayBuffer, loadFile } from "./helpers";
+import {
+  arrayToArrayBuffer,
+  loadFile,
+  loadRive,
+  waitForPredicate,
+} from "./helpers";
+import { testWith } from "./buildFeatures";
 
 // #region event
 
@@ -53,258 +57,274 @@ test("Creating loop event accepts enum and string values", (): void => {
 
 // #region Firing events
 
-test("Statemachines have pointer events", (done) => {
-  rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
-    const file = await runtime.load(new Uint8Array(stateMachineFileBuffer));
-    const ab = file.artboardByIndex(0);
-    const sm = ab.stateMachineByIndex(0);
-    const smi = new runtime.StateMachineInstance(sm, ab);
+test("Statemachines have pointer events", async () => {
+  const runtime = await rive.RuntimeLoader.awaitInstance();
+  const file = await runtime.load(new Uint8Array(stateMachineFileBuffer));
+  const ab = file.artboardByIndex(0);
+  const sm = ab.stateMachineByIndex(0);
+  const smi = new runtime.StateMachineInstance(sm, ab);
 
-    smi.pointerDown(0, 0, 0);
-    smi.pointerMove(0, 0, 0);
-    smi.pointerUp(0, 0, 0);
+  smi.pointerDown(0, 0, 0);
+  smi.pointerMove(0, 0, 0);
+  smi.pointerUp(0, 0, 0);
 
-    smi.delete();
-    ab.delete();
-    //  file.delete();  // todo: need to expose delete() on file
-    done();
-  });
+  smi.delete();
+  ab.delete();
+  //  file.delete();  // todo: need to expose delete() on file
 });
 
-test("Statemachines take wheel scrolling", (done) => {
-  rive.RuntimeLoader.awaitInstance().then(async (runtime) => {
-    const file = await runtime.load(
-      new Uint8Array(loadFile("assets/layout_scroll_vertical.riv")),
-    );
-    const ab = file.artboardByIndex(0);
-    const sm = ab.stateMachineByName("State Machine 1");
-    const smi = new runtime.StateMachineInstance(sm, ab);
-    smi.advanceAndApply(0);
+testWith("layout")("Statemachines take wheel scrolling", async () => {
+  const runtime = await rive.RuntimeLoader.awaitInstance();
+  const file = await runtime.load(
+    new Uint8Array(loadFile("assets/layout_scroll_vertical.riv")),
+  );
+  const ab = file.artboardByIndex(0);
+  const sm = ab.stateMachineByName("State Machine 1");
+  const smi = new runtime.StateMachineInstance(sm, ab);
+  smi.advanceAndApply(0);
 
-    expect(smi.hasScrollTargetAt(50, 250)).toBe(true);
-    // Already at the top, so a wheel up has nothing to move and would go to
-    // the page.
-    expect(smi.wantsScroll(50, 250, 0, 50, 1, false)).toBe(false);
-    expect(smi.pointerScroll(50, 250, 0, 50, 1, false, 0, 0)).toBe(0);
-    expect(smi.hasScrollLatch()).toBe(false);
+  expect(smi.hasScrollTargetAt(50, 250)).toBe(true);
+  // Already at the top, so a wheel up has nothing to move and would go to
+  // the page.
+  expect(smi.wantsScroll(50, 250, 0, 50, 1, false)).toBe(false);
+  expect(smi.pointerScroll(50, 250, 0, 50, 1, false, 0, 0)).toBe(0);
+  expect(smi.hasScrollLatch()).toBe(false);
 
-    expect(smi.wantsScroll(50, 250, 0, -50, 1, false)).toBe(true);
-    expect(smi.pointerScroll(50, 250, 0, -50, 1, false, 0, 0)).not.toBe(0);
-    expect(smi.hasScrollLatch()).toBe(true);
+  expect(smi.wantsScroll(50, 250, 0, -50, 1, false)).toBe(true);
+  expect(smi.pointerScroll(50, 250, 0, -50, 1, false, 0, 0)).not.toBe(0);
+  expect(smi.hasScrollLatch()).toBe(true);
 
-    smi.cancelScroll();
-    expect(smi.hasScrollLatch()).toBe(false);
+  smi.cancelScroll();
+  expect(smi.hasScrollLatch()).toBe(false);
 
-    smi.delete();
-    ab.delete();
-    done();
-  });
+  smi.delete();
+  ab.delete();
 });
 
 
-test("Playing a ping-pong animation will fire a loop event", (done) => {
+test("Playing a ping-pong animation will fire a loop event", async () => {
   const canvas = document.createElement("canvas");
+  const playStates: boolean[][] = [];
+  const loops: { playing: boolean; event: rive.Event }[] = [];
   const r = new rive.Rive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
     onPlay: () => {
-      // We expect things to start playing shortly after load
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
+      playStates.push([r.isStopped, r.isPaused, r.isPlaying]);
     },
     onLoop: (event: rive.Event) => {
-      expect(r.isPlaying).toBeTruthy();
-      expect(event.type).toBe(rive.EventType.Loop);
-      expect(event.data).toBeDefined();
-      expect((event.data as rive.LoopEvent).type).toBe(rive.LoopType.PingPong);
-      done();
+      loops.push({ playing: r.isPlaying, event });
     },
   });
+  await waitForPredicate(() => loops.length > 0, 4000);
+
+  // We expect things to start playing shortly after load
+  expect(playStates.length).toBeGreaterThan(0);
+  expect(playStates[0][0]).toBeFalsy();
+  expect(playStates[0][1]).toBeFalsy();
+  expect(playStates[0][2]).toBeTruthy();
+  const { playing, event } = loops[0];
+  expect(playing).toBeTruthy();
+  expect(event.type).toBe(rive.EventType.Loop);
+  expect(event.data).toBeDefined();
+  expect((event.data as rive.LoopEvent).type).toBe(rive.LoopType.PingPong);
+  r.cleanup();
 });
 
-test("Playing a loop animation will fire a loop event", (done) => {
+test("Playing a loop animation will fire a loop event", async () => {
   const canvas = document.createElement("canvas");
+  const playStates: boolean[][] = [];
+  const loops: { playing: boolean; event: rive.Event }[] = [];
   const r = new rive.Rive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
     autoplay: true,
     onPlay: () => {
-      // We expect things to start playing shortly after load
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
+      playStates.push([r.isStopped, r.isPaused, r.isPlaying]);
     },
     onLoop: (event: rive.Event) => {
-      expect(r.isPlaying).toBeTruthy();
-      expect(event.type).toBe(rive.EventType.Loop);
-      expect(event.data).toBeDefined();
-      expect((event.data as rive.LoopEvent).type).toBe(rive.LoopType.Loop);
-      done();
+      loops.push({ playing: r.isPlaying, event });
     },
   });
+  await waitForPredicate(() => loops.length > 0, 4000);
+
+  // We expect things to start playing shortly after load
+  expect(playStates.length).toBeGreaterThan(0);
+  expect(playStates[0][0]).toBeFalsy();
+  expect(playStates[0][1]).toBeFalsy();
+  expect(playStates[0][2]).toBeTruthy();
+  const { playing, event } = loops[0];
+  expect(playing).toBeTruthy();
+  expect(event.type).toBe(rive.EventType.Loop);
+  expect(event.data).toBeDefined();
+  expect((event.data as rive.LoopEvent).type).toBe(rive.LoopType.Loop);
+  r.cleanup();
 });
 
-test("Playing a one-shot animation will fire a stop event", (done) => {
+test("Playing a one-shot animation will fire a stop event", async () => {
   const canvas = document.createElement("canvas");
+  const playStates: boolean[][] = [];
+  const stops: { stopped: boolean; event: rive.Event }[] = [];
   const r = new rive.Rive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
     onPlay: () => {
-      // We expect things to start playing shortly after load
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
+      playStates.push([r.isStopped, r.isPaused, r.isPlaying]);
     },
     onStop: (event: rive.Event) => {
-      expect(r.isStopped).toBeTruthy();
-      expect(event.type).toBe(rive.EventType.Stop);
-      done();
+      stops.push({ stopped: r.isStopped, event });
     },
   });
+  await waitForPredicate(() => stops.length > 0, 4000);
+
+  // We expect things to start playing shortly after load
+  expect(playStates.length).toBeGreaterThan(0);
+  expect(playStates[0][0]).toBeFalsy();
+  expect(playStates[0][1]).toBeFalsy();
+  expect(playStates[0][2]).toBeTruthy();
+  expect(stops[0].stopped).toBeTruthy();
+  expect(stops[0].event.type).toBe(rive.EventType.Stop);
+  r.cleanup();
 });
 
-test("Stop events are received", (done) => {
+test("Stop events are received", async () => {
   const canvas = document.createElement("canvas");
+  const stopStates: boolean[][] = [];
   const r = new rive.Rive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
     onStop: () => {
-      // We expect to receive a stop event when the animation's done
-      expect(r.isStopped).toBeTruthy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeFalsy();
-      done();
+      stopStates.push([r.isStopped, r.isPaused, r.isPlaying]);
     },
   });
+  await waitForPredicate(() => stopStates.length > 0, 4000);
+
+  // We expect to receive a stop event when the animation's done
+  expect(stopStates[0][0]).toBeTruthy();
+  expect(stopStates[0][1]).toBeFalsy();
+  expect(stopStates[0][2]).toBeFalsy();
+  r.cleanup();
 });
 
-test("Advance events are received", (done) => {
+test("Advance events are received", async () => {
   const canvas = document.createElement("canvas");
-  let hasAdvancedOnce = false;
-  new rive.Rive({
+  const advances: rive.Event[] = [];
+  const r = await loadRive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
     autoplay: true,
     onAdvance: (event) => {
-      expect(event.type).toBe(rive.EventType.Advance);
-      if (hasAdvancedOnce) {
-        expect(event.data).toBeGreaterThan(0);
-        done();
-      }
-      if (!hasAdvancedOnce) {
-        hasAdvancedOnce = true;
-      }
+      advances.push(event);
     },
   });
+  await waitForPredicate(() => advances.length >= 2);
+
+  advances.forEach((event) => expect(event.type).toBe(rive.EventType.Advance));
+  // The first advance is skipped: it may carry no time.
+  expect(advances[1].data).toBeGreaterThan(0);
+  r.cleanup();
 });
 
-test("Rive Events are received", (done) => {
+
+test("Rive Events are received", async () => {
   const canvas = document.createElement("canvas");
-  const eventsArrayBuffer = arrayToArrayBuffer(eventsBuffer);
   const events: rive.RiveEventPayload[] = [];
-  const riveEventCb = jest.fn((riveEvent: rive.Event) => {
-    events.push(riveEvent.data as rive.RiveEventPayload);
-  });
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
-    buffer: eventsArrayBuffer,
+    buffer: arrayToArrayBuffer(eventsBuffer),
     stateMachines: "State Machine 1",
     autoplay: false,
-    onLoad: () => {
-      r.play("State Machine 1");
-      const input = r.stateMachineInputs("State Machine 1")[0];
-      setTimeout(() => input.fire(), 100);
-    },
+  });
+  r.on(rive.EventType.RiveEvent, (riveEvent: rive.Event) => {
+    events.push(riveEvent.data as rive.RiveEventPayload);
   });
 
-  r.on(rive.EventType.RiveEvent, riveEventCb);
-  setTimeout(() => {
-    expect(events[0].name).toBe('genEvent');
-    expect(events[1].name).toBe('urlEvent');
-    done();
-  }, 200);
+  r.play("State Machine 1");
+  r.stateMachineInputs("State Machine 1")[0].fire();
+
+  await waitForPredicate(() => events.length >= 2);
+  expect(events.map((e) => e.name)).toEqual(["genEvent", "urlEvent"]);
+  r.cleanup();
 });
 
-test("Events can be unsubscribed from", (done) => {
+test("Events can be unsubscribed from", async () => {
   const canvas = document.createElement("canvas");
-
-  const stopCallback = (event: rive.Event) =>
-    // We should never reach this
-    expect(false).toBeTruthy();
-
-  const r = new rive.Rive({
+  const removedStop = jest.fn();
+  const keptStop = jest.fn();
+  const r = await loadRive({
     canvas: canvas,
     buffer: oneShotRiveFileBuffer,
-    autoplay: true,
-    onStop: stopCallback,
-    onPlay: (event: rive.Event) => {
-      // Deregister stop subscription
-      r.off(rive.EventType.Stop, stopCallback);
-    },
+    autoplay: false,
+    onStop: removedStop,
   });
-  // Time out after 200 ms
-  setTimeout(() => done(), 200);
+  r.on(rive.EventType.Stop, keptStop);
+  r.off(rive.EventType.Stop, removedStop);
+
+  r.play();
+  r.stop();
+
+  expect(keptStop).toHaveBeenCalledTimes(1);
+  expect(removedStop).not.toHaveBeenCalled();
+  r.cleanup();
 });
 
-test("Events of a single type can be mass unsubscribed", (done) => {
+test("Events of a single type can be mass unsubscribed", async () => {
   const canvas = document.createElement("canvas");
-
-  const loopCallback1 = (event: rive.Event) => expect(false).toBeTruthy();
-  const loopCallback2 = (event: rive.Event) => expect(false).toBeTruthy();
-  const loopCallback3 = (event: rive.Event) => expect(false).toBeTruthy();
-
-  const r = new rive.Rive({
+  const removedLoops = [jest.fn(), jest.fn(), jest.fn()];
+  const keptStop = jest.fn();
+  const r = await loadRive({
     canvas: canvas,
-    buffer: oneShotRiveFileBuffer,
-    autoplay: true,
-    onLoop: loopCallback1,
-    onPlay: (event: rive.Event) => {
-      r.on(rive.EventType.Loop, loopCallback2);
-      r.on(rive.EventType.Loop, loopCallback3);
-      // Deregisters all loop subscriptions
-      r.removeAllRiveEventListeners(rive.EventType.Loop);
-    },
-    onStop: (event: rive.Event) => {
-      // This should not hgave been removed
-      done();
-    },
+    buffer: loopRiveFileBuffer,
+    autoplay: false,
+    onLoop: removedLoops[0],
+    onStop: keptStop,
   });
+  r.on(rive.EventType.Loop, removedLoops[1]);
+  r.on(rive.EventType.Loop, removedLoops[2]);
+  r.removeAllRiveEventListeners(rive.EventType.Loop);
+  // Added after the removal, so it proves the animation did loop.
+  const loopAfterRemoval = jest.fn();
+  r.on(rive.EventType.Loop, loopAfterRemoval);
 
-  setTimeout(() => r.stop(), 200);
+  r.play();
+  await waitForPredicate(() => loopAfterRemoval.mock.calls.length > 0, 4000);
+  r.stop();
+
+  removedLoops.forEach((loop) => expect(loop).not.toHaveBeenCalled());
+  // Listeners of other types are kept.
+  expect(keptStop).toHaveBeenCalledTimes(1);
+  r.cleanup();
 });
 
-test("All events can be mass unsubscribed", (done) => {
+test("All events can be mass unsubscribed", async () => {
   const canvas = document.createElement("canvas");
-
-  const loopCallback1 = (event: rive.Event) => expect(false).toBeTruthy();
-  const loopCallback2 = (event: rive.Event) => expect(false).toBeTruthy();
-  const loopCallback3 = (event: rive.Event) => expect(false).toBeTruthy();
-  const stopCallback1 = (event: rive.Event) => expect(false).toBeTruthy();
-  const stopCallback2 = (event: rive.Event) => expect(false).toBeTruthy();
-
-  const r = new rive.Rive({
+  const removed = [jest.fn(), jest.fn(), jest.fn(), jest.fn()];
+  const r = await loadRive({
     canvas: canvas,
-    buffer: oneShotRiveFileBuffer,
-    autoplay: true,
-    onLoop: loopCallback1,
-    onPlay: (event: rive.Event) => {
-      r.on(rive.EventType.Loop, loopCallback2);
-      r.on(rive.EventType.Loop, loopCallback3);
-      r.on(rive.EventType.Stop, stopCallback2);
-      // Deregisters all loop subscriptions
-      r.removeAllRiveEventListeners();
-    },
-    onStop: stopCallback1,
+    buffer: loopRiveFileBuffer,
+    autoplay: false,
+    onLoop: removed[0],
+    onStop: removed[1],
   });
+  r.on(rive.EventType.Loop, removed[2]);
+  r.on(rive.EventType.Stop, removed[3]);
+  r.removeAllRiveEventListeners();
+  // Added after the removal, so they prove both events still fire.
+  const loopAfterRemoval = jest.fn();
+  const stopAfterRemoval = jest.fn();
+  r.on(rive.EventType.Loop, loopAfterRemoval);
+  r.on(rive.EventType.Stop, stopAfterRemoval);
 
-  setTimeout(() => {
-    r.stop();
-    done();
-  }, 200);
+  r.play();
+  await waitForPredicate(() => loopAfterRemoval.mock.calls.length > 0, 4000);
+  r.stop();
+
+  expect(stopAfterRemoval).toHaveBeenCalledTimes(1);
+  removed.forEach((callback) => expect(callback).not.toHaveBeenCalled());
+  r.cleanup();
 });
 
 // #endregion
@@ -312,9 +332,11 @@ test("All events can be mass unsubscribed", (done) => {
 
 // #region remove mouse events
 
-test("Mouse events are removed from canvas when reset", (done) => {
+test("Mouse events are removed from canvas when reset", async () => {
   const canvas = document.createElement("canvas");
   let resetMe = true;
+  let stateChanges = 0;
+  let dispatchError: unknown = undefined;
 
   // Start up a looping animation
   const r = new rive.Rive({
@@ -339,91 +361,100 @@ test("Mouse events are removed from canvas when reset", (done) => {
           // If those are illegal, we'll crash
           canvas.dispatchEvent(new Event("mousedown"));
         } catch (err) {
-          done(err);
+          dispatchError = err;
         }
-        done();
+        stateChanges++;
       }
     },
   });
+  await waitForPredicate(() => stateChanges > 0, 4000);
+
+  expect(dispatchError).toBeUndefined();
+  r.cleanup();
 });
 
-test("Canvas has listener events attached on a Rive file with Rive Listeners", (done) => {
+test("Canvas has listener events attached on a Rive file with Rive Listeners", async () => {
   const canvasEl = document.createElement("canvas");
   const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
-  new rive.Rive({
+  const stateChange = jest.fn();
+  const r = await loadRive({
     canvas: canvasEl,
     buffer: arrayToArrayBuffer(listenerBuffer()),
     autoplay: true,
     stateMachines: "State Machine 1",
-    onStateChange: () => {
-      expect(listenerSpy).toHaveBeenCalled();
-      done();
-    },
+    onStateChange: stateChange,
   });
+  await waitForPredicate(() => stateChange.mock.calls.length > 0, 4000);
+  expect(listenerSpy).toHaveBeenCalled();
+  r.cleanup();
 });
 
-test("Canvas does not have listener events if shouldDisableRiveListeners is true", (done) => {
+test("Canvas does not have listener events if shouldDisableRiveListeners is true", async () => {
   const canvasEl = document.createElement("canvas");
   const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
-  new rive.Rive({
+  const stateChange = jest.fn();
+  const r = await loadRive({
     canvas: canvasEl,
     buffer: arrayToArrayBuffer(listenerBuffer()),
     autoplay: true,
     stateMachines: "State Machine 1",
     shouldDisableRiveListeners: true,
-    onStateChange: () => {
-      expect(listenerSpy).not.toHaveBeenCalled();
-      done();
-    },
+    onStateChange: stateChange,
   });
+  // Positive control: the state machine ran, so listeners would have been
+  // attached by now if they were going to be.
+  await waitForPredicate(() => stateChange.mock.calls.length > 0, 4000);
+  expect(listenerSpy).not.toHaveBeenCalled();
+  r.cleanup();
 });
 
-test("Canvas has listeners attached once play() is invoked with a state machine", (done) => {
+test("Canvas has listeners attached once play() is invoked with a state machine", async () => {
   const canvasEl = document.createElement("canvas");
   const listenerSpy = jest.spyOn(canvasEl, "addEventListener");
   const stateMachineName = "State Machine 1";
-  const r = new rive.Rive({
+  const advance = jest.fn();
+  const r = await loadRive({
     canvas: canvasEl,
     buffer: arrayToArrayBuffer(listenerBuffer()),
     autoplay: false,
     stateMachines: stateMachineName,
-    onLoad: () => {
-      // onLoad called first
-      expect(listenerSpy).not.toHaveBeenCalled();
-      r.play(stateMachineName);
-    },
-    onAdvance: () => {
-      // onAdvance invoked after play() is called
-      expect(listenerSpy).toHaveBeenCalled();
-      done();
-    },
+    onAdvance: advance,
   });
+  // loadRive resolves from onLoad, which runs before play() is called
+  expect(listenerSpy).not.toHaveBeenCalled();
+  expect(advance).not.toHaveBeenCalled();
+  r.play(stateMachineName);
+
+  await waitForPredicate(() => advance.mock.calls.length > 0, 4000);
+  // onAdvance invoked after play() is called
+  expect(listenerSpy).toHaveBeenCalled();
+  r.cleanup();
 });
 
-test("Canvas has listeners detached once stop() is invoked with a state machine", (done) => {
+test("Canvas has listeners detached once stop() is invoked with a state machine", async () => {
   const canvasEl = document.createElement("canvas");
   const addEventListenerSpy = jest.spyOn(canvasEl, "addEventListener");
   const removeEventListenerSpy = jest.spyOn(canvasEl, "removeEventListener");
   const stateMachineName = "State Machine 1";
-  const r = new rive.Rive({
+  const advance = jest.fn();
+  const r = await loadRive({
     canvas: canvasEl,
     buffer: arrayToArrayBuffer(listenerBuffer()),
     autoplay: false,
     stateMachines: stateMachineName,
-    onLoad: () => {
-      // onLoad called first
-      expect(addEventListenerSpy).not.toHaveBeenCalled();
-      expect(removeEventListenerSpy).not.toHaveBeenCalled();
-      r.play(stateMachineName);
-    },
-    onAdvance: () => {
-      // onAdvance invoked after play() is called
-      expect(addEventListenerSpy).toHaveBeenCalled();
-      r.stop(stateMachineName);
-      expect(removeEventListenerSpy).toHaveBeenCalled();
-      done();
-    },
+    onAdvance: advance,
   });
+  // onLoad called first
+  expect(addEventListenerSpy).not.toHaveBeenCalled();
+  expect(removeEventListenerSpy).not.toHaveBeenCalled();
+  r.play(stateMachineName);
+
+  await waitForPredicate(() => advance.mock.calls.length > 0, 4000);
+  // onAdvance invoked after play() is called
+  expect(addEventListenerSpy).toHaveBeenCalled();
+  r.stop(stateMachineName);
+  expect(removeEventListenerSpy).toHaveBeenCalled();
+  r.cleanup();
 });
 
 // #endregion

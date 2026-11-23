@@ -14,4 +14,6 @@ module.exports = {
   testMatch: ["<rootDir>/test/scripting/**/*.test.ts"],
   testPathIgnorePatterns: ["/node_modules/"],
   setupFiles: [...base.setupFiles, "./test/scripting/setup.ts"],
+  // Its build isn't one of jest.config.js's, so skip that build check.
+  globalSetup: undefined,
 };

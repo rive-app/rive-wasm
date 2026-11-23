@@ -1,44 +1,41 @@
-// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
-// which means there is no loading an external WASM file for tests
 import * as rive from "../src/rive";
 import { pingPongRiveFileBuffer } from "./assets/bytes";
+import { loadRive, waitForPredicate } from "./helpers";
 
 // #region playbackstates
 
-test("Playback state for new Rive objects is pause", (done) => {
+test("Playback state for new Rive objects is pause", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const r = await loadRive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
-    onLoad: () => {
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeTruthy();
-      expect(r.isPlaying).toBeFalsy();
-      done();
-    },
   });
+  expect(r.isStopped).toBeFalsy();
+  expect(r.isPaused).toBeTruthy();
+  expect(r.isPlaying).toBeFalsy();
+  r.cleanup();
 });
 
-test("Playback state for auto-playing new Rive objects is play", (done) => {
+test("Playback state for auto-playing new Rive objects is play", async () => {
   const canvas = document.createElement("canvas");
-  const r = new rive.Rive({
+  const onPlay = jest.fn();
+  const r = await loadRive({
     canvas: canvas,
     buffer: pingPongRiveFileBuffer,
     autoplay: true,
-    onLoad: () => {
-      // We expect things to be stopped right after loading
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
-    },
-    onPlay: () => {
-      // We expect things to start playing shortly after load
-      expect(r.isStopped).toBeFalsy();
-      expect(r.isPaused).toBeFalsy();
-      expect(r.isPlaying).toBeTruthy();
-      done();
-    },
+    onPlay: onPlay,
   });
+  // We expect things to be playing right after loading
+  expect(r.isStopped).toBeFalsy();
+  expect(r.isPaused).toBeFalsy();
+  expect(r.isPlaying).toBeTruthy();
+
+  // We expect the play event to fire shortly after load
+  await waitForPredicate(() => onPlay.mock.calls.length > 0);
+  expect(r.isStopped).toBeFalsy();
+  expect(r.isPaused).toBeFalsy();
+  expect(r.isPlaying).toBeTruthy();
+  r.cleanup();
 });
 
 // #endregion

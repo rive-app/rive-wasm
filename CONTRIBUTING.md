@@ -120,8 +120,11 @@ To run the test suite:
 ```sh
 # Top level of the project
 cd js
+./build.sh -r canvas   # or a full ./build.sh; npm test needs the canvas build
 npm test
 ```
+
+`npm test` runs against the SIMD canvas build. `npm run test:matrix` runs the suite on the lite build and an API check on the canvas fallback and webgl2 builds; it needs a full `./build.sh`.
 
 ## Making changes
 

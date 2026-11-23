@@ -1,3 +1,3 @@
-window.AudioContext = jest.fn().mockImplementation(() => {
+window.AudioContext = jest.fn().mockImplementation(function () {
     return {}
 });

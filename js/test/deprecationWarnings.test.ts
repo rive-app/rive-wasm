@@ -1,15 +1,15 @@
 import * as rive from "../src/rive";
 import { loopRiveFileBuffer } from "./assets/bytes";
+import { loadRive } from "./helpers";
 
 let warnSpy: jest.SpyInstance;
 let r: rive.Rive;
 
-beforeAll((done) => {
+beforeAll(async () => {
   const canvas = document.createElement("canvas");
-  r = new rive.Rive({
+  r = await loadRive({
     canvas: canvas,
     buffer: loopRiveFileBuffer,
-    onLoad: () => done(),
   });
 });
 

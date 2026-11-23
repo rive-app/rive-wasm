@@ -1,5 +1,3 @@
-// Note: This uses the canvas-advanced-single module, which has WASM embedded in JS
-// which means there is no loading an external WASM file for tests
 import * as rive from "../src/rive";
 import { KeyboardInteractions, FocusSessionState } from "../src/utils";
 import { stateMachineFileBuffer } from "./assets/bytes";

@@ -1,6 +1,7 @@
 // This suite's build has no tools, unlike test/scripting's.
 import * as rive from "../src/rive";
-import { webScriptingFixture } from "./helpers";
+import { frames, webScriptingFixture } from "./helpers";
+import { testWith } from "./buildFeatures";
 
 // The runtime binds console when it loads, so collect lines from the start.
 const lines: string[] = [];
@@ -12,20 +13,7 @@ for (const level of ["log", "warn", "error"] as const) {
 
 const fixture = webScriptingFixture;
 
-const frames = (count: number): Promise<void> =>
-  new Promise((resolve) => {
-    let remaining = count;
-    const tick = () => {
-      if (--remaining <= 0) {
-        resolve();
-      } else {
-        requestAnimationFrame(tick);
-      }
-    };
-    requestAnimationFrame(tick);
-  });
-
-test("a module importing the raw shader op starts, and calling it traps", async () => {
+testWith("scripting")("a module importing the raw shader op starts, and calling it traps", async () => {
   const canvas = document.createElement("canvas");
   const r = await new Promise<rive.Rive>((resolve, reject) => {
     const instance: rive.Rive = new rive.Rive({

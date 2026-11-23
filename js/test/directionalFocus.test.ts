@@ -1,5 +1,6 @@
 import * as rive from "../src/rive";
 import { loadFile } from "./helpers";
+import { describeWith, testWith } from "./buildFeatures";
 
 let canvas: HTMLCanvasElement;
 let r: rive.Rive;
@@ -72,7 +73,7 @@ afterEach(() => {
   canvas?.remove();
 });
 
-describe("Grid: 3x3 Buttons p1..p9, row by row", () => {
+describeWith("layout")("Grid: 3x3 Buttons p1..p9, row by row", () => {
   beforeEach(() => load("Grid"));
 
   const focused = () => focusedButtons(9);
@@ -174,7 +175,7 @@ describe("TextInput: a text field (first Tab stop) above a Next Button (p1)", ()
     expect(text()).toBe(value);
   }
 
-  test("arrows in a focused text field move the caret, not focus", () => {
+  testWith("text")("arrows in a focused text field move the caret, not focus", () => {
     enterTreeViaTab();
     expect(focusedButtons(1)).toEqual([]);
     seedText("ab");

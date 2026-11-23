@@ -18,10 +18,10 @@ const mockRive = {
   computeAlignment: jest.fn(() => {
     return mockMat2D;
   }),
-  Mat2D: jest.fn().mockImplementation(() => {
+  Mat2D: jest.fn().mockImplementation(function () {
     return mockMat2D;
   }),
-  Vec2D: jest.fn().mockImplementation((x, y) => {
+  Vec2D: jest.fn().mockImplementation(function (x, y) {
     return {
       x: jest.fn(() => x),
       y: jest.fn(() => y),

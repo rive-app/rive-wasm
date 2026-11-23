@@ -37,9 +37,9 @@ describe('RiveFile', () => {
             })
         );
 
-        global.Request = jest.fn().mockImplementation((url) => ({
+        global.Request = jest.fn().mockImplementation(function (url) { return {
             url,
-        })) as any;
+        }; }) as any;
 
         const onLoadMock = jest.fn();
         const onLoadErrorMock = jest.fn();
@@ -65,9 +65,9 @@ describe('RiveFile', () => {
             })
         );
 
-        global.Request = jest.fn().mockImplementation((url) => ({
+        global.Request = jest.fn().mockImplementation(function (url) { return {
             url,
-        })) as any;
+        }; }) as any;
 
         const onLoadMock = jest.fn();
         const onLoadErrorMock = jest.fn();
