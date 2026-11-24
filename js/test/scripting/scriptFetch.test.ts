@@ -281,6 +281,31 @@ describe("script fetch()", () => {
     expect(calls).toEqual([]);
   });
 
+  test('"*." and "*.." in allowedHosts allow no host', async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    rive.RuntimeLoader.setScriptFetch({ allowedHosts: ["*.", "*.."] });
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+    await play();
+    const [ok, other] = await awaitOutcomes("ok", "other");
+    expect(ok).toContain("fetch ok failed: policy:");
+    expect(other).toContain("fetch other failed: policy:");
+    expect(calls).toEqual([]);
+  });
+
+  test("an allowedHosts entry holding a NUL allows no host", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    rive.RuntimeLoader.setScriptFetch({
+      allowedHosts: ["api.example.com\u0000*"],
+    });
+    warn.mockRestore();
+    await play();
+    const [ok, other] = await awaitOutcomes("ok", "other");
+    expect(ok).toContain("fetch ok failed: policy:");
+    expect(other).toContain("fetch other failed: policy:");
+    expect(calls).toEqual([]);
+  });
+
   test("an allowedHosts that isn't an array allows no host", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     rive.RuntimeLoader.setScriptFetch({
@@ -328,6 +353,16 @@ describe("script fetch()", () => {
     expect(ok).toContain("fetch ok: 200 OK hello");
     expect(other).toContain("fetch other failed: policy:");
     expect(callTo("/other")).toBeUndefined();
+  });
+
+  test("allowedHosts matches regardless of case or a trailing dot", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    rive.RuntimeLoader.setScriptFetch({ allowedHosts: ["API.Example.com."] });
+    await play();
+    const [ok] = await awaitOutcomes("ok");
+    expect(ok).toContain("fetch ok: 200 OK hello");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   test("cleanup aborts requests in flight", async () => {

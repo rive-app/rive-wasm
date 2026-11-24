@@ -183,13 +183,26 @@ EXPORT void riveScriptFetchFail(uint32_t id,
     fail(id, {netErrorCodeFromName(code, codeLength), std::string(message, messageLength)});
 }
 
-// A byte cap of 0 keeps the default.
-EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes)
+// A byte cap of 0 keeps the default. `hosts` holds the allowed hosts, NUL
+// separated; with no bytes it allows none.
+EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes,
+                                     const char* hosts,
+                                     uint32_t hostsLength)
 {
     NetLimits netLimits;
     if (maxResponseBytes != 0)
     {
         netLimits.maxResponseBodyBytes = maxResponseBytes;
+    }
+    netLimits.allowedHosts.clear();
+    size_t start = 0;
+    for (size_t i = 0; hostsLength != 0 && i <= hostsLength; i++)
+    {
+        if (i == hostsLength || hosts[i] == '\0')
+        {
+            netLimits.allowedHosts.emplace_back(hosts + start, i - start);
+            start = i + 1;
+        }
     }
     setLimits(netLimits);
 }

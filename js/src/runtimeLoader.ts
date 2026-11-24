@@ -127,10 +127,12 @@ const hostPattern = /^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)*$/;
 // top-level domain.
 const checkAllowedHosts = (hosts: string[]): void => {
   for (const entry of hosts) {
-    const host = String(entry).trim().toLowerCase();
-    if (host === "*") {
+    const given = String(entry).trim().toLowerCase();
+    if (given === "*") {
       continue;
     }
+    // A trailing dot names the same host, but "*." is not "*".
+    const host = given.replace(/\.$/, "");
     if (!hostPattern.test(host)) {
       console.warn(
         `[Rive] allowedHosts entry "${entry}" never matches. Use a host name ` +

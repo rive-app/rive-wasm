@@ -185,7 +185,8 @@
   }
 
   // Why `url`'s host is refused, or null. The page's own host is refused
-  // unless allowedHosts names it.
+  // unless allowedHosts names it; the runtime checks every host against
+  // allowedHosts itself.
   function hostRefusal(url) {
     let host;
     try {
@@ -193,30 +194,18 @@
     } catch (e) {
       return "the URL is not valid";
     }
-    if (host === withoutTrailingDot(location.hostname)) {
-      return allowedHosts && allowedHosts.indexOf(host) !== -1
-        ? null
-        : "scripts cannot fetch this page's own host unless allowedHosts names it";
+    if (
+      host === withoutTrailingDot(location.hostname) &&
+      !(
+        allowedHosts &&
+        allowedHosts.some(function (entry) {
+          return withoutTrailingDot(entry) === host;
+        })
+      )
+    ) {
+      return "scripts cannot fetch this page's own host unless allowedHosts names it";
     }
-    if (!allowedHosts) {
-      return null;
-    }
-    for (let i = 0; i < allowedHosts.length; i++) {
-      const pattern = allowedHosts[i];
-      if (pattern === "*" || host === pattern) {
-        return null;
-      }
-      if (pattern.lastIndexOf("*.", 0) === 0) {
-        const suffix = pattern.slice(1);
-        if (
-          host.length > suffix.length &&
-          host.slice(host.length - suffix.length) === suffix
-        ) {
-          return null;
-        }
-      }
-    }
-    return "the page does not allow scripts to fetch from this host";
+    return null;
   }
 
   // Direct transport.
@@ -654,14 +643,34 @@
     }
     const hosts = options && options["allowedHosts"];
     // An empty list allows no host.
+    // The list crosses to the runtime NUL separated, so an entry holding a
+    // NUL, which names no host, is dropped rather than split into others.
     allowedHosts = hosts
-      ? hosts.map(function (host) {
-          return String(host).trim().toLowerCase();
-        })
+      ? hosts
+          .map(function (host) {
+            // The runtime drops a trailing dot itself, after it checks for
+            // "*", so "*." can't become "*" here.
+            return String(host).trim().toLowerCase();
+          })
+          .filter(function (host) {
+            return host.indexOf("\0") === -1;
+          })
       : null;
     generalFetch = !!options;
     if (options) {
-      Module["_riveScriptFetchSetLimits"](options["maxResponseBytes"] >>> 0);
+      // Omitted allows every host. Without room for the list, fetch() stays
+      // off rather than running on the last one.
+      const list = copyString((allowedHosts || ["*"]).join("\0"));
+      if (list[0]) {
+        Module["_riveScriptFetchSetLimits"](
+          options["maxResponseBytes"] >>> 0,
+          list[0],
+          list[1],
+        );
+        release([list[0]]);
+      } else {
+        generalFetch = false;
+      }
     }
     applyEnabled();
   };
