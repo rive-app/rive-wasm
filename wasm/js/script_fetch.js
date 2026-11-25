@@ -210,12 +210,63 @@
 
   // Direct transport.
 
+  // A cloud request as the engine's wrapped form: a POST with a text/plain
+  // body, which a browser sends without first asking the engine (a CORS
+  // preflight, a round trip for each URL). The method, the token and the key
+  // go in the body; the engine unwraps it before routing
+  // (packages/cloud_engine/include/cloud_engine/wrapped_request.hpp).
+  function wrapForCloud(request) {
+    const method = request["method"];
+    let wrapper = '{"method":' + JSON.stringify(method);
+    // The first of each, as the engine reads a plain request's headers.
+    let token = null;
+    let key = null;
+    const headers = request["headers"];
+    for (let i = 0; i < headers.length; i++) {
+      const name = headers[i][0].toLowerCase();
+      const value = headers[i][1];
+      if (token === null && name === "authorization" &&
+          value.lastIndexOf("Bearer ", 0) === 0) {
+        token = value.slice(7);
+      } else if (key === null && name === "idempotency-key") {
+        key = value;
+      }
+    }
+    if (token !== null) {
+      wrapper += ',"token":' + JSON.stringify(token);
+    }
+    if (key !== null) {
+      wrapper += ',"idempotencyKey":' + JSON.stringify(key);
+    }
+    // Only a PUT or POST carries a body to the engine, which ignores any
+    // other's.
+    const body = method === "PUT" || method === "POST" ? request["body"] : null;
+    if (body && body.byteLength) {
+      let text;
+      try {
+        text = new TextDecoder("utf-8", { "fatal": true }).decode(body);
+        // Checked whole, then sent as it is: parsing and writing it again
+        // would round integers past 2^53.
+        JSON.parse(text);
+      } catch (e) {
+        throw { code: "policy", message: "a rive-cloud: body is JSON" };
+      }
+      wrapper += ',"body":' + text;
+    }
+    return {
+      "method": "POST",
+      "headers": [["content-type", "text/plain;charset=UTF-8"]],
+      "body": wrapper + "}",
+    };
+  }
+
   async function sendDirect(id, entry, request) {
     try {
+      const sent = request["cloud"] ? wrapForCloud(request) : request;
       const response = await fetch(request["url"], {
-        "method": request["method"],
-        "headers": request["headers"],
-        "body": request["body"],
+        "method": sent["method"],
+        "headers": sent["headers"],
+        "body": sent["body"],
         "mode": "cors",
         "credentials": "omit",
         "cache": "no-store",
