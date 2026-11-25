@@ -17,7 +17,7 @@
   // Lower-cased hosts: "api.example.com", "*.example.com" for any subdomain,
   // or "*" for any host. null allows any host.
   let allowedHosts = null;
-  // Whether scripts may fetch() any URL, and where rive-cloud: requests go
+  // Whether scripts may fetch() any URL, and where rive-relay: requests go
   // ("url namespace"), or null without an endpoint.
   let generalFetch = false;
   let cloudEndpoint = null;
@@ -249,7 +249,7 @@
         // would round integers past 2^53.
         JSON.parse(text);
       } catch (e) {
-        throw { code: "policy", message: "a rive-cloud: body is JSON" };
+        throw { code: "policy", message: "a rive-relay: body is JSON" };
       }
       wrapper += ',"body":' + text;
     }
@@ -438,7 +438,7 @@
     } else if (type === "response") {
       const id = data["id"];
       const request = pending.get(id);
-      // A direct request (rive-cloud:, or any without a proxy when it began)
+      // A direct request (rive-relay:, or any without a proxy when it began)
       // is the page's own: the proxy never settles it. A second answer must
       // not fail a body already being handed over.
       if (!request || request.controller || request.responded) {
@@ -631,7 +631,7 @@
 
   Module["scriptFetch"] = {
     "start": function (id, url, method, headers, body, timeoutMs, maxBodyBytes, cloud) {
-      // `cloud` requests go to the host's own endpoint (rive-cloud: and its
+      // `cloud` requests go to the host's own endpoint (rive-relay: and its
       // hellos), which allowedHosts does not govern. They never go through
       // the proxy, whose origin is not the one the engine binds this page's
       // token to.
@@ -726,7 +726,7 @@
     applyEnabled();
   };
 
-  // The transport is on for fetch(), for rive-cloud:, or for both.
+  // The transport is on for fetch(), for rive-relay:, or for both.
   function applyEnabled() {
     Module["_riveScriptFetchSetGeneral"](generalFetch ? 1 : 0);
     Module["_riveScriptFetchSetEnabled"](
@@ -734,7 +734,7 @@
     );
   }
 
-  // Rive Cloud. The page's player is a P-256 key made on first use and kept
+  // Rive Relay. The page's player is a P-256 key made on first use and kept
   // in this origin's IndexedDB. Its private half cannot be exported, so it
   // never reaches a script or this code; clearing the site's data makes a
   // new player.
@@ -863,7 +863,7 @@
           reportSigned(done, signed[0], signed[1]);
         },
         function (e) {
-          console.warn("Rive Cloud: the device key could not sign: " + e);
+          console.warn("Rive Relay: the device key could not sign: " + e);
           reportSigned(done, null, null);
         },
       );
@@ -902,7 +902,7 @@
     return { "id": id >>> 0, "refused": refused ? UTF8ToString(refused) : null };
   };
 
-  // {url, namespace}, or null to turn rive-cloud: off. Returns why the
+  // {url, namespace}, or null to turn rive-relay: off. Returns why the
   // runtime refused them, or null.
   Module["configureScriptCloud"] = function (options) {
     const url = options ? String(options["url"]) : "";

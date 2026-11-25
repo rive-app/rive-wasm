@@ -220,7 +220,7 @@ static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId)
     return endpoint;
 }
 
-// Where rive-cloud: requests go; an empty address turns them off. Null when
+// Where rive-relay: requests go; an empty address turns them off. Null when
 // the runtime took the endpoint, else why it refused it, valid until the next
 // call.
 EXPORT const char* riveScriptCloudSet(const char* baseUrl, const char* namespaceId)
@@ -264,7 +264,7 @@ EXPORT void riveScriptCloudSigned(CloudEndpoint::HelloSigned* waiting,
     }
 }
 
-// Whether scripts may fetch() any URL, rather than only rive-cloud:.
+// Whether scripts may fetch() any URL, rather than only rive-relay:.
 EXPORT void riveScriptFetchSetGeneral(bool enabled) { setGeneralFetchEnabled(enabled); }
 
 // Requests already started finish on the transport that started them.

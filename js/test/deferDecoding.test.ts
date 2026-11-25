@@ -220,7 +220,7 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     false,
-    // No file Rive Cloud endpoint of its own.
+    // No file Rive Relay endpoint of its own.
     0,
   );
 
@@ -234,7 +234,7 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     true,
-    // No file Rive Cloud endpoint of its own.
+    // No file Rive Relay endpoint of its own.
     0,
   );
 
@@ -246,7 +246,7 @@ test("RiveFile hands deferDecoding to the runtime's load", async () => {
     true,
     null,
     true,
-    // No file Rive Cloud endpoint of its own.
+    // No file Rive Relay endpoint of its own.
     0,
   );
 
@@ -269,7 +269,7 @@ test("Rive forwards deferDecoding to the file it imports", async () => {
     true,
     null,
     true,
-    // No file Rive Cloud endpoint of its own.
+    // No file Rive Relay endpoint of its own.
     0,
   );
 
@@ -284,7 +284,7 @@ test("Rive forwards deferDecoding to the file it imports", async () => {
     true,
     null,
     true,
-    // No file Rive Cloud endpoint of its own.
+    // No file Rive Relay endpoint of its own.
     0,
   );
   r.cleanup();

@@ -94,11 +94,11 @@ export interface ScriptFetchOptions {
 }
 
 /**
- * @experimental Options for {@link RuntimeLoader.setCloud}.
+ * @experimental Options for {@link RuntimeLoader.setRelay}.
  */
-export interface CloudOptions {
+export interface RelayOptions {
   /**
-   * The Rive Cloud engine's address, such as `https://cloud.uat.rive.app`,
+   * The Rive Relay engine's address, such as `https://relay.uat.rive.app`,
    * with no query, fragment or credentials.
    */
   url: string;
@@ -110,7 +110,7 @@ export interface CloudOptions {
  * @internal A copy of `options`, as plain strings, which is what the runtime
  * is given.
  */
-export const cloudOptions = (options: CloudOptions): CloudOptions => ({
+export const relayOptions = (options: RelayOptions): RelayOptions => ({
   url: String(options.url),
   namespace: String(options.namespace),
 });
@@ -206,8 +206,8 @@ export class RuntimeLoader {
   // Script fetch options, or null while disabled.
   private static scriptFetch: ScriptFetchOptions | null = null;
   private static warnedNoScriptFetch = false;
-  // Where scripts' rive/cloud calls go, or null while they are off.
-  private static cloud: CloudOptions | null = null;
+  // Where scripts' rive/relay calls go, or null while they are off.
+  private static cloud: RelayOptions | null = null;
   private static warnedNoCloud = false;
 
   // Error callbacks enqueued from .getInstance()
@@ -657,11 +657,11 @@ export class RuntimeLoader {
   }
 
   /**
-   * @experimental Lets scripts in Rive files use `rive/cloud`, which talks to
-   * a Rive Cloud namespace as this browser's player, or turns it off with
+   * @experimental Lets scripts in Rive files use `rive/relay`, which talks to
+   * a Rive Relay namespace as this browser's player, or turns it off with
    * `null`. Scripts get no other network access from this: that is
    * {@link RuntimeLoader.setScriptFetch}. Only scripts on the page's main
-   * thread can reach the cloud, and only in `@rive-app/webgl2-threads`
+   * thread can reach Relay, and only in `@rive-app/webgl2-threads`
    * running its threaded build; elsewhere this warns once and does nothing.
    *
    * The player is a device key made on first use and kept in this origin's
@@ -670,20 +670,20 @@ export class RuntimeLoader {
    *
    * Off by default.
    */
-  public static setCloud(options: CloudOptions | null): void {
+  public static setRelay(options: RelayOptions | null): void {
     // The runtime checks both, as every host's does, and says why it refuses.
-    RuntimeLoader.cloud = options ? cloudOptions(options) : null;
+    RuntimeLoader.cloud = options ? relayOptions(options) : null;
     RuntimeLoader.applyCloud();
   }
 
   /**
-   * @internal Adds the endpoint a file's `cloud` option names, for that file
+   * @internal Adds the endpoint a file's `relay` option names, for that file
    * to own: the id to import it with, or 0 for the page's. Warns when the
-   * runtime refuses it or has no Rive Cloud.
+   * runtime refuses it or has no Rive Relay.
    */
   public static addFileCloud(
     runtime: rc.RiveCanvas,
-    cloud: CloudOptions | null,
+    cloud: RelayOptions | null,
   ): number {
     if (!cloud) {
       return 0;
@@ -692,17 +692,17 @@ export class RuntimeLoader {
       RuntimeLoader.warnNoCloud();
       return 0;
     }
-    const added = runtime.addScriptCloud(cloudOptions(cloud));
+    const added = runtime.addScriptCloud(relayOptions(cloud));
     if (added.refused) {
       console.warn(
-        `[Rive] cloud: ${added.refused}. This file's rive/cloud calls fail.`,
+        `[Rive] relay: ${added.refused}. This file's rive/relay calls fail.`,
       );
     }
     return added.id;
   }
 
-  // Gets the cloud options (null means off)
-  public static getCloud(): CloudOptions | null {
+  // Gets the Relay options (null means off)
+  public static getRelay(): RelayOptions | null {
     return RuntimeLoader.cloud && { ...RuntimeLoader.cloud };
   }
 
@@ -710,8 +710,8 @@ export class RuntimeLoader {
     if (!RuntimeLoader.warnedNoCloud) {
       RuntimeLoader.warnedNoCloud = true;
       console.warn(
-        "[Rive] Rive Cloud is only available in @rive-app/webgl2-threads " +
-          "on a cross origin isolated page. Scripts' rive/cloud calls fail.",
+        "[Rive] Rive Relay is only available in @rive-app/webgl2-threads " +
+          "on a cross origin isolated page. Scripts' rive/relay calls fail.",
       );
     }
   }
@@ -730,7 +730,7 @@ export class RuntimeLoader {
     const refused = runtime.configureScriptCloud(RuntimeLoader.cloud);
     if (refused) {
       console.warn(
-        `[Rive] setCloud: ${refused}. Scripts' rive/cloud calls fail.`,
+        `[Rive] setRelay: ${refused}. Scripts' rive/relay calls fail.`,
       );
     }
   }

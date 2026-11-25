@@ -2,10 +2,10 @@ import * as rc from "./rive_advanced.mjs";
 import { Animation } from "./animation";
 import {
   RuntimeLoader,
-  cloudOptions,
+  relayOptions,
   type RuntimeCallback,
   type ScriptFetchOptions,
-  type CloudOptions,
+  type RelayOptions,
   type ThreadsRefusal,
 } from "./runtimeLoader";
 import {
@@ -269,7 +269,7 @@ export {
   RuntimeLoader,
   type RuntimeCallback,
   type ScriptFetchOptions,
-  type CloudOptions,
+  type RelayOptions,
   type ThreadsRefusal,
 };
 
@@ -1638,11 +1638,11 @@ export interface RiveParameters {
    */
   deferDecoding?: boolean;
   /**
-   * @experimental The Rive Cloud namespace this instance's file reaches, as
-   * {@link RiveFileParameters.cloud}. Only applies when this instance loads its
+   * @experimental The Rive Relay namespace this instance's file reaches, as
+   * {@link RiveFileParameters.relay}. Only applies when this instance loads its
    * own file (`src`/`buffer`).
    */
-  cloud?: CloudOptions;
+  relay?: RelayOptions;
   /**
    * @experimental This API is early and may encounter breaking behavior change without a major version bump
    *
@@ -1885,13 +1885,13 @@ export interface RiveFileParameters {
    */
   deferDecoding?: boolean;
   /**
-   * @experimental The Rive Cloud namespace this file's scripts reach with
-   * `rive/cloud`, in place of the page's (see {@link RuntimeLoader.setCloud}),
+   * @experimental The Rive Relay namespace this file's scripts reach with
+   * `rive/relay`, in place of the page's (see {@link RuntimeLoader.setRelay}),
    * so files on one page can each reach their own. Fixed at import. Only
-   * `@rive-app/webgl2-threads` running its threaded build has Rive Cloud;
-   * elsewhere this warns and the file's cloud calls fail.
+   * `@rive-app/webgl2-threads` running its threaded build has Rive Relay;
+   * elsewhere this warns and the file's Relay calls fail.
    */
-  cloud?: CloudOptions;
+  relay?: RelayOptions;
   onLoad?: EventCallback;
   onLoadError?: EventCallback;
   /**
@@ -1986,8 +1986,8 @@ export class RiveFile implements rc.FinalizableTarget {
   // Decode parts of the file on first use instead of at import.
   private deferDecoding: boolean = false;
 
-  // The Rive Cloud namespace this file's scripts reach, if not the page's.
-  private cloud?: CloudOptions;
+  // The Rive Relay namespace this file's scripts reach, if not the page's.
+  private relay?: RelayOptions;
 
   // When true, emits performance.mark/measure entries during RiveFile load.
   private enablePerfMarks: boolean = false;
@@ -2036,7 +2036,7 @@ export class RiveFile implements rc.FinalizableTarget {
         ? params.enableRiveAssetCDN
         : true;
     this.deferDecoding = !!params.deferDecoding;
-    this.cloud = params.cloud && cloudOptions(params.cloud);
+    this.relay = params.relay && relayOptions(params.relay);
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
 
@@ -2108,7 +2108,7 @@ export class RiveFile implements rc.FinalizableTarget {
         this.enableRiveAssetCDN,
         this.session,
         this.deferDecoding,
-        RuntimeLoader.addFileCloud(this.runtime, this.cloud ?? null),
+        RuntimeLoader.addFileCloud(this.runtime, this.relay ?? null),
       );
     } catch (error) {
       // The finalizer that would reclaim the session is only registered once
@@ -2321,7 +2321,7 @@ export class RiveFile implements rc.FinalizableTarget {
       assetLoader: this.assetLoader,
       enableRiveAssetCDN: this.enableRiveAssetCDN,
       deferDecoding: this.deferDecoding,
-      cloud: this.cloud,
+      relay: this.relay,
       enablePerfMarks: this.enablePerfMarks,
       enableGPUCanvas: deferred,
     });
@@ -2544,7 +2544,7 @@ export class Rive {
 
   // Forwarded to the file this instance imports itself.
   private deferDecoding = false;
-  private cloud?: CloudOptions;
+  private relay?: RelayOptions;
 
   private semanticsMode: SemanticMode = SemanticMode.Disabled;
 
@@ -2697,7 +2697,7 @@ export class Rive {
         ? true
         : params.enableRiveAssetCDN;
     this.deferDecoding = !!params.deferDecoding;
-    this.cloud = params.cloud && cloudOptions(params.cloud);
+    this.relay = params.relay && relayOptions(params.relay);
     this.enablePerfMarks = !!params.enablePerfMarks;
     if (this.enablePerfMarks) RuntimeLoader.enablePerfMarks = true;
     this._focusOptions = params.focusOptions ?? this._focusOptions;
@@ -3227,7 +3227,7 @@ export class Rive {
           buffer: this.buffer,
           enableRiveAssetCDN: this.enableRiveAssetCDN,
           deferDecoding: this.deferDecoding,
-          cloud: this.cloud,
+          relay: this.relay,
           assetLoader: this.assetLoader,
           enablePerfMarks: this.enablePerfMarks,
           // The instance owns this file, so its flag is the file's flag.

@@ -113,9 +113,9 @@ export interface RiveCanvas {
   configureScriptFetch?(options: ScriptFetchConfig | null): void;
 
   /**
-   * @experimental Sends scripts' rive/cloud calls to a namespace, or turns
+   * @experimental Sends scripts' rive/relay calls to a namespace, or turns
    * them off with null. Only in builds with script networking, so always
-   * feature-detect it. Use RuntimeLoader.setCloud. Returns why the runtime
+   * feature-detect it. Use RuntimeLoader.setRelay. Returns why the runtime
    * refused the options, or null.
    */
   configureScriptCloud?(
@@ -123,9 +123,9 @@ export interface RiveCanvas {
   ): string | null;
 
   /**
-   * @experimental Adds a Rive Cloud endpoint for one file to own: pass `id` to
+   * @experimental Adds a Rive Relay endpoint for one file to own: pass `id` to
    * `load()`. A refused endpoint still gets an id, turned off, and `refused`
-   * says why. Only in builds with script networking. Use the `cloud` option
+   * says why. Only in builds with script networking. Use the `relay` option
    * on RiveFile or Rive.
    */
   addScriptCloud?(options: { url: string; namespace: string }): {

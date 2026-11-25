@@ -1,4 +1,4 @@
-// The web transport sends a rive-cloud: request as the engine's wrapped form
+// The web transport sends a rive-relay: request as the engine's wrapped form
 // (cloud_engine/include/cloud_engine/wrapped_request.hpp), a POST with a
 // text/plain body a browser sends without a CORS preflight. Runs
 // wasm/js/script_fetch.js on its own, with a stub fetch and none of the wasm.
@@ -77,7 +77,7 @@ function loadTransport() {
   return { start, stop, sent, failures };
 }
 
-describe("a rive-cloud: request on the web", () => {
+describe("a rive-relay: request on the web", () => {
   let t: ReturnType<typeof loadTransport>;
   beforeEach(() => {
     t = loadTransport();
@@ -138,6 +138,6 @@ describe("a rive-cloud: request on the web", () => {
     // sendDirect fails it once it runs.
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(t.sent).toEqual([]);
-    expect(t.failures).toEqual(["policy: a rive-cloud: body is JSON"]);
+    expect(t.failures).toEqual(["policy: a rive-relay: body is JSON"]);
   });
 });
