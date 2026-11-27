@@ -855,7 +855,38 @@
     release([jwkString[0], signatureString[0]]);
   }
 
+  // The player's home region, kept per engine address and namespace, as the
+  // device key is per page: the next load starts there. Storage a page cannot
+  // use (a private window, blocked site data) only costs a first call to the
+  // engine's first address, which names the home again.
+  function homeKey(url, namespace) {
+    return "rive-relay-home " + url + " " + namespace;
+  }
+
+  // Named as a property of window, which Closure knows; the callers catch
+  // its absence off the page's main thread.
+  function storage() {
+    return window["localStorage"];
+  }
+
+  function savedHome(url, namespace) {
+    try {
+      return storage().getItem(homeKey(url, namespace)) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
   Module["scriptCloud"] = {
+    // The runtime follows a home only inside the engine address's zone, and
+    // takes this saved one back on the same terms.
+    "homeChanged": function (url, namespace, home) {
+      try {
+        storage().setItem(homeKey(url, namespace), home);
+      } catch (e) {
+        // Kept for this load only.
+      }
+    },
     // `done` is the runtime's handle for the hello waiting on this signature.
     "sign": function (done, message) {
       sign(message).then(
@@ -892,8 +923,10 @@
   // An endpoint for one file to own: {id, refused}, where refused says why the
   // runtime turned it off, or is null. Pass id to load().
   Module["addScriptCloud"] = function (options) {
+    const url = String(options["url"]);
+    const namespace = String(options["namespace"]);
     const id = withStrings(
-      [String(options["url"]), String(options["namespace"])],
+      [url, namespace, savedHome(url, namespace)],
       Module["_riveScriptCloudAdd"],
     );
     const refused = Module["_riveScriptCloudRefusal"]();
@@ -912,7 +945,10 @@
       // Naming the same endpoint again would only drop the player's token.
       return null;
     }
-    const refused = withStrings([url, namespace], Module["_riveScriptCloudSet"]);
+    const refused = withStrings(
+      [url, namespace, url ? savedHome(url, namespace) : ""],
+      Module["_riveScriptCloudSet"],
+    );
     cloudEndpoint = refused ? null : endpoint;
     applyEnabled();
     return refused ? UTF8ToString(refused) : null;

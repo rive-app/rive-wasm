@@ -56,6 +56,15 @@ EM_JS(int, rive_script_cloud_sign, (void* done, const char* message), {
     return 1;
 });
 
+// Hands the page the player's home region to keep for its next load
+// (scriptnet::CloudEndpoint::homeChanged).
+EM_JS(void, rive_script_cloud_home, (const char* baseUrl, const char* namespaceId, const char* homeUrl), {
+    var bridge = Module["scriptCloud"];
+    if (bridge) {
+        bridge["homeChanged"](UTF8ToString(baseUrl), UTF8ToString(namespaceId), UTF8ToString(homeUrl));
+    }
+});
+
 EM_JS(void, rive_script_fetch_resume, (uint32_t id), {
     var bridge = Module["scriptFetch"];
     if (bridge) {
@@ -207,8 +216,9 @@ EXPORT void riveScriptFetchSetLimits(uint32_t maxResponseBytes,
     setLimits(netLimits);
 }
 
-// An endpoint at `baseUrl` that signs with the page's device key.
-static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId)
+// An endpoint at `baseUrl` that signs with the page's device key, starting at
+// `homeUrl`, the home the page kept from an earlier load, and keeping the next.
+static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId, const char* homeUrl)
 {
     CloudEndpoint endpoint;
     endpoint.baseUrl = baseUrl;
@@ -216,6 +226,12 @@ static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId)
     if (!endpoint.baseUrl.empty())
     {
         endpoint.signHello = signWithPageKey;
+        // Null when the page could not copy its kept home: none, then.
+        endpoint.homeUrl = homeUrl ? homeUrl : "";
+        endpoint.homeChanged = [base = endpoint.baseUrl,
+                                ns = endpoint.namespaceId](const std::string& url) {
+            rive_script_cloud_home(base.c_str(), ns.c_str(), url.c_str());
+        };
     }
     return endpoint;
 }
@@ -223,21 +239,26 @@ static CloudEndpoint pageEndpoint(const char* baseUrl, const char* namespaceId)
 // Where rive-relay: requests go; an empty address turns them off. Null when
 // the runtime took the endpoint, else why it refused it, valid until the next
 // call.
-EXPORT const char* riveScriptCloudSet(const char* baseUrl, const char* namespaceId)
+EXPORT const char* riveScriptCloudSet(const char* baseUrl,
+                                      const char* namespaceId,
+                                      const char* homeUrl)
 {
     static std::string s_refusal;
     s_refusal.clear();
-    return setCloudEndpoint(pageEndpoint(baseUrl, namespaceId), &s_refusal) ? nullptr
-                                                                            : s_refusal.c_str();
+    return setCloudEndpoint(pageEndpoint(baseUrl, namespaceId, homeUrl), &s_refusal)
+               ? nullptr
+               : s_refusal.c_str();
 }
 
 // An endpoint for one file to own, as `load()`'s cloudEndpoint; why the runtime
 // refused it is riveScriptCloudRefusal(), until the next call.
 static std::string s_addRefusal;
-EXPORT uint32_t riveScriptCloudAdd(const char* baseUrl, const char* namespaceId)
+EXPORT uint32_t riveScriptCloudAdd(const char* baseUrl,
+                                   const char* namespaceId,
+                                   const char* homeUrl)
 {
     s_addRefusal.clear();
-    return (uint32_t)addCloudEndpoint(pageEndpoint(baseUrl, namespaceId), &s_addRefusal);
+    return (uint32_t)addCloudEndpoint(pageEndpoint(baseUrl, namespaceId, homeUrl), &s_addRefusal);
 }
 
 EXPORT const char* riveScriptCloudRefusal()
